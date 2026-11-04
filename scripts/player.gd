@@ -1,6 +1,6 @@
 extends Node3D
 ## Grid-based first-person movement.
-## W/S = forward/back, A/D = strafe, Q/E = turn 90 degrees.
+## W/S = forward/back, A/D = strafe, Q/E = turn 90 degrees, F = open door.
 ## Every action is tweened; input is ignored while a tween is running.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
@@ -42,6 +42,8 @@ func _process(_delta: float) -> void:
 		_try_move(DIRS[(facing + 1) % 4])  # Left of facing.
 	elif Input.is_physical_key_pressed(KEY_D):
 		_try_move(DIRS[(facing + 3) % 4])  # Right of facing.
+	elif Input.is_physical_key_pressed(KEY_F):
+		_interact()
 	elif Input.is_physical_key_pressed(KEY_Q):
 		_turn(1)
 	elif Input.is_physical_key_pressed(KEY_E):
@@ -51,11 +53,19 @@ func _process(_delta: float) -> void:
 ## Step one tile in grid direction `dir`, unless a wall is in the way.
 func _try_move(dir: Vector2i) -> void:
 	var target := cell + dir
-	if DungeonMap.is_wall(target):
+	if DungeonMap.is_blocked(target):  # Walls and closed doors.
 		return
 	cell = target
 	tween = create_tween()
 	tween.tween_property(self, "position", DungeonMap.cell_to_world(cell), MOVE_TIME)
+
+
+## F: open the door on the tile in front of us. The dungeon (group "dungeon")
+## owns the door nodes, so we just ask it.
+func _interact() -> void:
+	var front := cell + DIRS[facing]
+	if DungeonMap.is_door(front) and not DungeonMap.open_doors.has(front):
+		get_tree().call_group("dungeon", "open_door", front)
 
 
 ## Turn 90 degrees: +1 = left (counter-clockwise), -1 = right.

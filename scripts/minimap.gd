@@ -6,6 +6,7 @@ const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const CELL_PX := 6  # Size of one map cell on screen, in internal-resolution pixels.
 const WALL_COLOR := Color(0.7, 0.7, 0.7)
 const FLOOR_COLOR := Color(0.12, 0.12, 0.12)
+const DOOR_COLOR := Color(0.6, 0.4, 0.2)
 const PLAYER_COLOR := Color(1.0, 0.3, 0.2)
 
 var player: Node3D  # Assigned by debug_overlay.gd.
@@ -20,7 +21,11 @@ func _ready() -> void:
 func _draw() -> void:
 	for z in DungeonMap.MAP.size():
 		for x in DungeonMap.MAP[z].size():
-			var color := WALL_COLOR if DungeonMap.MAP[z][x] == 1 else FLOOR_COLOR
+			var color := FLOOR_COLOR
+			if DungeonMap.MAP[z][x] == 1:
+				color = WALL_COLOR
+			elif DungeonMap.is_door(Vector2i(x, z)):
+				color = DOOR_COLOR if not DungeonMap.open_doors.has(Vector2i(x, z)) else FLOOR_COLOR
 			draw_rect(Rect2(Vector2(x, z) * CELL_PX, Vector2.ONE * CELL_PX), color)
 
 	if player == null:
