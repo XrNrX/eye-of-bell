@@ -56,9 +56,11 @@ const LEVERS := [
 	{"cell": Vector2i(8, 7), "side": 3, "target": "gate"},
 ]
 
-# Floor cells that hold a key. Walk onto one to pick it up.
-const KEYS: Array[Vector2i] = [
-	Vector2i(8, 1),
+# Items lying on the floor at the start: the cell and an ItemDef resource (see
+# scripts/item_def.gd). dungeon_builder.gd owns their sprites and run-time state
+# (picked up / dropped); this is just the starting layout.
+const ITEMS := [
+	{"cell": Vector2i(8, 1), "def": "res://data/items/key.tres"},
 ]
 
 # Monsters: the floor cell they start on and their definition resource (see
@@ -72,8 +74,6 @@ const MONSTERS := [
 static var occupied := {}        # Tiles holding a monster (cell -> monster node).
 static var open_doors := {}      # Doors that have finished opening (cell -> true).
 static var unlocked_doors := {}  # Locked doors a key has been used on (cell -> true).
-static var taken_keys := {}      # Keys already picked up (cell -> true).
-static var keys_held := 0
 static var player_cell := Vector2i(-1, -1)  # Set by player.gd as it moves.
 
 
@@ -111,8 +111,6 @@ static func reset_run() -> void:
 	occupied.clear()
 	open_doors.clear()
 	unlocked_doors.clear()
-	taken_keys.clear()
-	keys_held = 0
 
 
 ## True if the cell is a door of any kind (open, closed or locked).

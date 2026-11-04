@@ -15,8 +15,8 @@ const CEILING_TEXTURE := "res://art/tiles/ceiling.png"
 const STAIRS_TEXTURE := "res://art/tiles/stairs.png"
 const DOOR_TEXTURE := "res://art/tiles/door.png"
 const DOOR_LOCKED_TEXTURE := "res://art/tiles/door_locked.png"
-const KEY_SPRITE := "res://art/sprites/key.png"
-const KEY_PIXEL_SIZE := 0.03
+const ITEM_HEIGHT := 0.22  # Low, near the floor -- "at the feet" of the view, not hip-height.
+const ITEM_BOB := 0.05
 const TORCH_SHEET := "res://art/sprites/torch.png"  # 4 frames of 16x32, side by side.
 const WALL_COLOR := Color(0.45, 0.40, 0.35)
 const FLOOR_COLOR := Color(0.28, 0.25, 0.22)
@@ -45,7 +45,7 @@ const LEVER_HEIGHT := 1.0
 var doors := {}       # Vector2i cell -> door MeshInstance3D
 var door_want := {}   # Vector2i cell -> true if the door is currently told to be open
 var door_tweens := {} # Vector2i cell -> the Tween moving it
-var keys := {}        # Vector2i cell -> key Sprite3D still lying on the floor
+var items := {}        # Vector2i cell -> {"sprite": Sprite3D, "def": ItemDef} on the floor
 var plates := {}      # Vector2i cell -> pressure plate MeshInstance3D
 var levers := {}      # Vector3i (x, z, side) -> lever Sprite3D
 var lever_on := {}    # Vector3i (x, z, side) -> true if switched on
@@ -101,8 +101,8 @@ func _ready() -> void:
 
 	for torch in DungeonMap.TORCHES:
 		_add_torch(Vector2i(torch.x, torch.y), torch.z)
-	for key_cell in DungeonMap.KEYS:
-		_add_key(key_cell)
+	for entry in DungeonMap.ITEMS:
+		place_item(entry.cell, load(entry.def))
 	for entry in DungeonMap.MONSTERS:
 		var monster := MonsterScript.new()
 		monster.setup(load(entry.def), entry.cell)
@@ -185,30 +185,40 @@ func _face_yaw(side: int) -> float:
 	return atan2(float(SIDE_DIRS[side].x) * -1.0, float(SIDE_DIRS[side].y) * -1.0)
 
 
-## Remove a picked-up key's sprite. Called by the player via the "dungeon" group.
-func remove_key(cell: Vector2i) -> void:
-	if keys.has(cell):
-		keys[cell].queue_free()
-		keys.erase(cell)
+## The item lying on this floor cell, or null if there isn't one. Called directly
+## by the player (get_tree().get_first_node_in_group("dungeon")), not via call_group,
+## since it needs to return a value.
+func item_at(cell: Vector2i) -> Resource:
+	return items[cell].def if items.has(cell) else null
 
 
-## A floating, bobbing key sprite that always faces the camera.
-func _add_key(cell: Vector2i) -> void:
+## Remove and return the item on this cell (null if there wasn't one).
+func take_item(cell: Vector2i) -> Resource:
+	if not items.has(cell):
+		return null
+	var def: Resource = items[cell].def
+	items[cell].sprite.queue_free()
+	items.erase(cell)
+	return def
+
+
+## Put an item on a floor cell: a small sprite that bobs gently near the ground.
+## Used both for the level's starting items and for one dropped back from the cursor.
+func place_item(cell: Vector2i, def: Resource) -> void:
 	var sprite := Sprite3D.new()
-	if ResourceLoader.exists(KEY_SPRITE):
-		sprite.texture = load(KEY_SPRITE)
-	sprite.pixel_size = KEY_PIXEL_SIZE
+	sprite.texture = def.icon
+	sprite.pixel_size = def.icon_pixel_size
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	sprite.shaded = false
 	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
-	sprite.position = DungeonMap.cell_to_world(cell) + Vector3(0, 0.5, 0)
+	sprite.position = DungeonMap.cell_to_world(cell) + Vector3(0, ITEM_HEIGHT, 0)
 	add_child(sprite)
-	keys[cell] = sprite
+	items[cell] = {"sprite": sprite, "def": def}
 	# Bob up and down forever (the tween is owned by the sprite, so it dies with it).
 	var bob := sprite.create_tween().set_loops()
-	bob.tween_property(sprite, "position:y", 0.65, 0.8).set_trans(Tween.TRANS_SINE)
-	bob.tween_property(sprite, "position:y", 0.45, 0.8).set_trans(Tween.TRANS_SINE)
+	bob.tween_property(sprite, "position:y", ITEM_HEIGHT + ITEM_BOB, 0.9).set_trans(Tween.TRANS_SINE)
+	bob.tween_property(sprite, "position:y", ITEM_HEIGHT - ITEM_BOB, 0.9).set_trans(Tween.TRANS_SINE)
 
 
 ## Open an ordinary door (F). Called by the player via the "dungeon" group.

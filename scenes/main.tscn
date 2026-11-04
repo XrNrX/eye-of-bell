@@ -1,5 +1,6 @@
-[gd_scene load_steps=15 format=3]
+[gd_scene load_steps=16 format=3]
 
+[ext_resource type="PackedScene" path="res://scenes/cursor_item.tscn" id="14_cursor"]
 [ext_resource type="Script" path="res://scripts/party.gd" id="7_party"]
 [ext_resource type="Resource" path="res://data/party/fighter.tres" id="8_fighter"]
 [ext_resource type="PackedScene" path="res://scenes/party_hud.tscn" id="9_party_hud"]
@@ -61,3 +62,5 @@ player_path = NodePath("../Player")
 [node name="PartyHud" parent="." instance=ExtResource("9_party_hud")]
 
 [node name="GameOver" parent="." instance=ExtResource("10_game_over")]
+
+[node name="CursorItem" parent="." instance=ExtResource("14_cursor")]

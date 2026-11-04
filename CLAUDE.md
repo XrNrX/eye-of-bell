@@ -59,7 +59,7 @@ Nothing is checked in for the game itself. The working approach has been throwaw
 **Other top-level scenes:** `scenes/main_menu.tscn` (a minimal title + New Game button) is reached via `get_tree().change_scene_to_file()` from Game over's "Quit to Menu" button, not as a child of `main.tscn`.
 
 **Decoupling is by node groups.** The player never holds references to the world; it calls `get_tree().call_group(...)`:
-- `"dungeon"` (builder): `open_door`, `pull_lever`, `remove_key`, `refresh`
+- `"dungeon"` (builder): `open_door`, `pull_lever`, `refresh` via `call_group`; `item_at`/`take_item`/`place_item` need a return value, so callers fetch the node directly instead (`get_tree().get_first_node_in_group("dungeon")`)
 - `"hud"`: `show_message`
 - `"level_complete"` / `"game_over"`: `show_screen`
 - `"party"`: `attack(slot)`, `take_hit_from(monster)`
@@ -69,6 +69,8 @@ So the overlay, HUD and level-complete scenes can be deleted from `main.tscn` wi
 **Grid movement** (`player.gd`): input is polled in `_process`; a step or turn is a 0.2 s tween and input is ignored while it runs. Logical position (`cell`, `facing`) changes at the *start* of a move, and `_report_position()` publishes it via `DungeonMap.player_cell` plus a `refresh` call. F is edge-triggered (a held key must not repeat a lever pull). Facing indices: 0 N, 1 W, 2 S, 3 E (increasing = turning left).
 
 **Doors, plates, levers** (all in `dungeon_builder.gd`): `_drive_door(cell, open)` is the single path that opens or closes any door. A door is only walkable once its slide finishes (`DungeonMap.open_doors`), closing blocks immediately, and a door never closes while the player or a monster stands in it. Doors with an ID in `DOOR_IDS` ignore F and are driven only by their plates/levers via `refresh()`; a door is open if *any* of its switches is active.
+
+**Items** (`item_def.gd` resource in `data/items/*.tres`, listed by cell in `DungeonMap.ITEMS`): `dungeon_builder.gd` owns both the floor sprites and the run-time state (`item_at`/`take_item`/`place_item`), unlike monsters/doors there's no DungeonMap-level tracking. Left click picks up the item on the tile in front onto the cursor overlay (`cursor_item.gd`, group `"cursor"`, fetched directly like `"dungeon"`) or drops the held one there; there's no inventory yet, so the cursor holds at most one item. A locked door checks `cursor.holding_type(ItemDef.Type.KEY)` instead of a key counter. Pickup/drop isn't gated on the click actually landing on the sprite, only on the item being on the front tile -- deliberate, for headless-testability.
 
 **Monsters** (`monster.gd` + `MonsterDef` resource in `data/monsters/*.tres`): new monsters are data plus a line in `MONSTERS`. A monster claims its destination tile in `DungeonMap.occupied` when a step starts and frees the old one when it ends. AI is a staggered timer: chase if within sight range (grid distance) with `has_line_of_sight`, else wander; orthogonal moves only. Next to the party a monster stops moving and attacks on its own `attack_interval` timer.
 

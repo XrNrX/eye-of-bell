@@ -1,10 +1,12 @@
 extends Node3D
 ## Grid-based first-person movement.
 ## W/S = forward/back, A/D = strafe, Q/E = turn 90 degrees, F = open door / pull lever,
-## 1-4 = that party slot attacks (see party.gd).
+## 1-4 = that party slot attacks (see party.gd), left click = pick up/put down the
+## item on the tile in front, onto the cursor (see cursor_item.gd).
 ## Every move/turn is tweened; movement input is ignored while a tween is running.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
+const ItemDef := preload("res://scripts/item_def.gd")
 
 const MOVE_TIME := 0.2  # Seconds per step or turn.
 
@@ -24,12 +26,57 @@ var tween: Tween
 var interact_was_down := false  # So holding F triggers once, not every frame.
 var attack_was_down := [false, false, false, false]  # Same for the 1-4 attack keys.
 
+# The dungeon (for item_at/take_item/place_item, which need return values, so we
+# call them directly) and the cursor overlay (what's currently "held"). Both are
+# optional: if either scene is removed, items just stop being interactive.
+var dungeon: Node
+var cursor: Node
+
 
 func _ready() -> void:
 	yaw_degrees = facing * 90.0
 	rotation_degrees.y = yaw_degrees
 	position = DungeonMap.cell_to_world(cell)
+	# Deferred: CursorItem is declared after us in main.tscn, so its _ready() (which
+	# adds it to the group) hasn't run yet at this point -- call_deferred waits until
+	# every sibling's _ready() this frame has finished, regardless of node order.
+	call_deferred("_find_singletons")
 	_report_position()
+
+
+func _find_singletons() -> void:
+	dungeon = get_tree().get_first_node_in_group("dungeon")
+	cursor = get_tree().get_first_node_in_group("cursor")
+
+
+## Left click: pick up the item on the tile in front of us onto the cursor, or (if
+## already holding one) put it down there -- Eye-of-the-Beholder style. Whether the
+## click actually landed on the item's sprite doesn't matter, only that it's there;
+## see the summary for why (headless-testable determinism over pixel-precise picking).
+func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_click_item()
+
+
+func _click_item() -> void:
+	if dungeon == null or cursor == null:
+		return
+	var front := cell + DIRS[facing]
+	if DungeonMap.is_blocked(front) or DungeonMap.is_occupied(front):
+		return
+	if cursor.is_holding():
+		if dungeon.item_at(front) != null:
+			return  # Something's already there; no stacking two items on one tile.
+		var def: Resource = cursor.release()
+		dungeon.place_item(front, def)
+		_say("You put down the %s." % def.display_name)
+	else:
+		var def: Resource = dungeon.item_at(front)
+		if def == null:
+			return
+		dungeon.take_item(front)
+		cursor.hold(def)
+		_say("You pick up the %s." % def.display_name)
 
 
 func _process(_delta: float) -> void:
@@ -87,16 +134,10 @@ func _report_position() -> void:
 	get_tree().call_group("dungeon", "refresh")
 
 
-## Called when a step finishes: take the stairs, or pick up a key if we're on one.
+## Called when a step finishes: take the stairs if we're on them.
 func _arrive() -> void:
 	if DungeonMap.is_stairs(cell):
 		get_tree().call_group("level_complete", "show_screen")
-		return
-	if DungeonMap.KEYS.has(cell) and not DungeonMap.taken_keys.has(cell):
-		DungeonMap.taken_keys[cell] = true
-		DungeonMap.keys_held += 1
-		get_tree().call_group("dungeon", "remove_key", cell)
-		_say("You found a key.")
 
 
 ## F: pull a lever on the wall in front of us, or open the door in front of us.
@@ -115,10 +156,10 @@ func _interact() -> void:
 		_say("It won't budge.")  # Only its switches can open it.
 		return
 	if DungeonMap.is_locked(front):
-		if DungeonMap.keys_held == 0:
+		if not cursor or not cursor.holding_type(ItemDef.Type.KEY):
 			_say("The door is locked.")
 			return
-		DungeonMap.keys_held -= 1
+		cursor.release()
 		DungeonMap.unlocked_doors[front] = true
 		_say("You unlock the door.")
 	get_tree().call_group("dungeon", "open_door", front)
