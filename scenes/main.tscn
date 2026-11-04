@@ -1,5 +1,6 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
+[ext_resource type="PackedScene" path="res://scenes/level_complete.tscn" id="6_complete"]
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="5_hud"]
 [ext_resource type="PackedScene" path="res://scenes/debug_overlay.tscn" id="4_debug"]
 
@@ -41,3 +42,5 @@ script = ExtResource("3_torch")
 player_path = NodePath("../Player")
 
 [node name="Hud" parent="." instance=ExtResource("5_hud")]
+
+[node name="LevelComplete" parent="." instance=ExtResource("6_complete")]

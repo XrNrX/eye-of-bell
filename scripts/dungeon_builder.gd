@@ -11,6 +11,7 @@ const TorchLight := preload("res://scripts/torch.gd")
 const WALL_TEXTURE := "res://art/tiles/wall.png"
 const FLOOR_TEXTURE := "res://art/tiles/floor.png"
 const CEILING_TEXTURE := "res://art/tiles/ceiling.png"
+const STAIRS_TEXTURE := "res://art/tiles/stairs.png"
 const DOOR_TEXTURE := "res://art/tiles/door.png"
 const DOOR_LOCKED_TEXTURE := "res://art/tiles/door_locked.png"
 const KEY_SPRITE := "res://art/sprites/key.png"
@@ -65,6 +66,11 @@ func _ready() -> void:
 	floor_mesh.size = Vector2(s, s)
 	floor_mesh.material = _make_material(FLOOR_COLOR, FLOOR_TEXTURE)
 
+	# The stairs are just a floor tile with a "steps going down" picture on it.
+	var stairs_mesh := PlaneMesh.new()
+	stairs_mesh.size = Vector2(s, s)
+	stairs_mesh.material = _make_material(Color(0.1, 0.1, 0.12), STAIRS_TEXTURE)
+
 	var ceiling_mesh := PlaneMesh.new()
 	ceiling_mesh.size = Vector2(s, s)
 	ceiling_mesh.material = _make_material(CEILING_COLOR, CEILING_TEXTURE)
@@ -85,7 +91,7 @@ func _ready() -> void:
 				_add_mesh(wall_mesh, pos + Vector3(0, h / 2.0, 0))
 				continue
 			# Everything that isn't a wall (floor and doors) gets a floor and ceiling.
-			_add_mesh(floor_mesh, pos)
+			_add_mesh(stairs_mesh if DungeonMap.is_stairs(cell) else floor_mesh, pos)
 			# Flip the plane upside down so its face points down at the player.
 			_add_mesh(ceiling_mesh, pos + Vector3(0, h, 0), Vector3(PI, 0, 0))
 			if DungeonMap.is_door(cell):

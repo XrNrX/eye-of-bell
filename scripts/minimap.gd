@@ -7,6 +7,7 @@ const CELL_PX := 6  # Size of one map cell on screen, in internal-resolution pix
 const WALL_COLOR := Color(0.7, 0.7, 0.7)
 const FLOOR_COLOR := Color(0.12, 0.12, 0.12)
 const DOOR_COLOR := Color(0.6, 0.4, 0.2)
+const STAIRS_COLOR := Color(0.3, 0.6, 0.9)
 const LOCKED_COLOR := Color(0.8, 0.2, 0.2)
 const PLAYER_COLOR := Color(1.0, 0.3, 0.2)
 
@@ -25,6 +26,8 @@ func _draw() -> void:
 			var color := FLOOR_COLOR
 			if DungeonMap.MAP[z][x] == 1:
 				color = WALL_COLOR
+			elif DungeonMap.is_stairs(Vector2i(x, z)):
+				color = STAIRS_COLOR
 			elif DungeonMap.is_door(Vector2i(x, z)):
 				var c := Vector2i(x, z)
 				if DungeonMap.is_locked(c):

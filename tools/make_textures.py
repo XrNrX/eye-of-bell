@@ -159,6 +159,27 @@ def lever_sheet():
     return sheet
 
 
+def stairs(seed):
+    """Stairs going down, seen from above: step bands that get darker toward the
+    bottom of the tile, each with a lit front edge, between two stone rails."""
+    rng = random.Random(seed)
+    img = Image.new("RGB", (SIZE, SIZE))
+    px = img.load()
+    steps = 8
+    band = SIZE // steps
+    for y in range(SIZE):
+        step = y // band
+        depth = 1.0 - 0.1 * step               # Deeper steps are darker.
+        for x in range(SIZE):
+            if x < 6 or x >= SIZE - 6:         # Side rails stay level and light.
+                px[x, y] = shade((95, 90, 85), rng.uniform(0.92, 1.08))
+                continue
+            edge = y % band
+            f = 1.25 if edge == 0 else (0.6 if edge == band - 1 else 1.0)
+            px[x, y] = shade((105, 100, 95), depth * f * rng.uniform(0.94, 1.06))
+    return img
+
+
 def key_sprite():
     """Small gold key, 16x16, drawn pointing up-right with a ring bow."""
     img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
@@ -223,6 +244,7 @@ def main():
     door(4).save(OUT / "door.png")
     locked_door(4).save(OUT / "door_locked.png")
     plate(5).save(OUT / "plate.png")
+    stairs(6).save(OUT / "stairs.png")
     print("Wrote", [p.name for p in sorted(OUT.glob("*.png"))])
 
     sprites = OUT.parent / "sprites"

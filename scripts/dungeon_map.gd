@@ -1,7 +1,8 @@
 extends RefCounted
 ## The level data (used via preload, see dungeon_builder.gd / player.gd).
 ## Edit MAP below like a text file:
-## 1 = wall, 0 = floor, 2 = door (starts closed), 3 = locked door (needs a key).
+## 1 = wall, 0 = floor, 2 = door (starts closed), 3 = locked door (needs a key),
+## 4 = stairs down (stepping on it completes the level).
 ## Row index is Z (north at top), column index is X.
 
 const TILE_SIZE := 2.0   # World units per grid tile.
@@ -17,7 +18,7 @@ const MAP := [
 	[1, 1, 1, 1, 1, 1, 1, 1, 2, 1],
 	[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
 	[1, 3, 1, 1, 1, 1, 1, 1, 1, 1],
-	[1, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+	[1, 0, 0, 4, 1, 1, 1, 1, 1, 1],
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ]
 
@@ -93,6 +94,13 @@ static func is_door(cell: Vector2i) -> bool:
 	if cell.y < 0 or cell.y >= MAP.size() or cell.x < 0 or cell.x >= MAP[cell.y].size():
 		return false
 	return MAP[cell.y][cell.x] == 2 or MAP[cell.y][cell.x] == 3
+
+
+## True if the cell is the stairs down.
+static func is_stairs(cell: Vector2i) -> bool:
+	if cell.y < 0 or cell.y >= MAP.size() or cell.x < 0 or cell.x >= MAP[cell.y].size():
+		return false
+	return MAP[cell.y][cell.x] == 4
 
 
 ## True if the cell is a locked door that hasn't been unlocked yet.

@@ -78,8 +78,11 @@ func _report_position() -> void:
 	get_tree().call_group("dungeon", "refresh")
 
 
-## Called when a step finishes: pick up a key if we're standing on one.
+## Called when a step finishes: take the stairs, or pick up a key if we're on one.
 func _arrive() -> void:
+	if DungeonMap.is_stairs(cell):
+		get_tree().call_group("level_complete", "show_screen")
+		return
 	if DungeonMap.KEYS.has(cell) and not DungeonMap.taken_keys.has(cell):
 		DungeonMap.taken_keys[cell] = true
 		DungeonMap.keys_held += 1
