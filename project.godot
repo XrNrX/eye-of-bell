@@ -17,15 +17,11 @@ config/icon="res://icon.svg"
 
 [display]
 
-; Internal render size: the 3D scene is drawn at 320x200...
 window/size/viewport_width=320
 window/size/viewport_height=200
-; ...but the OS window opens at 3x that size.
 window/size/window_width_override=960
 window/size/window_height_override=600
-; "viewport" stretch renders at the small size, then scales the final image up.
 window/stretch/mode="viewport"
-window/stretch/aspect="keep"
 
 [physics]
 
