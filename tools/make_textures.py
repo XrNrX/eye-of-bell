@@ -1,4 +1,4 @@
-"""Generates the placeholder 64x64 pixel-art textures into res://textures/.
+"""Generates the placeholder 64x64 pixel-art textures into res://art/tiles/.
 
 Run from the project root:  python tools/make_textures.py
 Deterministic (seeded), so re-running reproduces the same PNGs.
@@ -11,7 +11,7 @@ from pathlib import Path
 from PIL import Image
 
 SIZE = 64
-OUT = Path(__file__).resolve().parent.parent / "textures"
+OUT = Path(__file__).resolve().parent.parent / "art" / "tiles"
 
 
 def shade(color, f):
@@ -67,7 +67,7 @@ def rough(base, seed):
 
 
 def main():
-    OUT.mkdir(exist_ok=True)
+    OUT.mkdir(parents=True, exist_ok=True)
     blocks((120, 100, 85), (45, 38, 32), 16, 8, True, 1).save(OUT / "wall.png")
     blocks((85, 80, 75), (35, 32, 30), 32, 32, False, 2, noise=0.1).save(OUT / "floor.png")
     rough((60, 55, 52), 3).save(OUT / "ceiling.png")
