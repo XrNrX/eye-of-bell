@@ -12,6 +12,9 @@ const WALL_TEXTURE := "res://art/tiles/wall.png"
 const FLOOR_TEXTURE := "res://art/tiles/floor.png"
 const CEILING_TEXTURE := "res://art/tiles/ceiling.png"
 const DOOR_TEXTURE := "res://art/tiles/door.png"
+const DOOR_LOCKED_TEXTURE := "res://art/tiles/door_locked.png"
+const KEY_SPRITE := "res://art/sprites/key.png"
+const KEY_PIXEL_SIZE := 0.03
 const TORCH_SHEET := "res://art/sprites/torch.png"  # 4 frames of 16x32, side by side.
 const WALL_COLOR := Color(0.45, 0.40, 0.35)
 const FLOOR_COLOR := Color(0.28, 0.25, 0.22)
@@ -31,11 +34,12 @@ const SIDE_DIRS: Array[Vector2i] = [
 
 var doors := {}     # Vector2i cell -> door MeshInstance3D
 var opening := {}   # Vector2i cell -> true while a door is sliding open
+var keys := {}      # Vector2i cell -> key Sprite3D still lying on the floor
 
 
 func _ready() -> void:
 	add_to_group("dungeon")  # Lets the player find us (see player.gd _interact).
-	DungeonMap.open_doors.clear()
+	DungeonMap.reset_run()
 
 	var s := DungeonMap.TILE_SIZE
 	var h := DungeonMap.WALL_HEIGHT
@@ -57,6 +61,10 @@ func _ready() -> void:
 	door_mesh.size = Vector3(s, h, DOOR_THICKNESS)
 	door_mesh.material = _make_material(DOOR_COLOR, DOOR_TEXTURE)
 
+	var locked_mesh := BoxMesh.new()
+	locked_mesh.size = door_mesh.size
+	locked_mesh.material = _make_material(DOOR_COLOR, DOOR_LOCKED_TEXTURE)
+
 	for z in DungeonMap.MAP.size():
 		for x in DungeonMap.MAP[z].size():
 			var cell := Vector2i(x, z)
@@ -69,15 +77,45 @@ func _ready() -> void:
 			# Flip the plane upside down so its face points down at the player.
 			_add_mesh(ceiling_mesh, pos + Vector3(0, h, 0), Vector3(PI, 0, 0))
 			if DungeonMap.is_door(cell):
-				_add_door(door_mesh, cell, pos + Vector3(0, h / 2.0, 0))
+				var mesh := locked_mesh if DungeonMap.is_locked(cell) else door_mesh
+				_add_door(mesh, cell, pos + Vector3(0, h / 2.0, 0))
 
 	for torch in DungeonMap.TORCHES:
 		_add_torch(Vector2i(torch.x, torch.y), torch.z)
+	for key_cell in DungeonMap.KEYS:
+		_add_key(key_cell)
+
+
+## Remove a picked-up key's sprite. Called by the player via the "dungeon" group.
+func remove_key(cell: Vector2i) -> void:
+	if keys.has(cell):
+		keys[cell].queue_free()
+		keys.erase(cell)
+
+
+## A floating, bobbing key sprite that always faces the camera.
+func _add_key(cell: Vector2i) -> void:
+	var sprite := Sprite3D.new()
+	if ResourceLoader.exists(KEY_SPRITE):
+		sprite.texture = load(KEY_SPRITE)
+	sprite.pixel_size = KEY_PIXEL_SIZE
+	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sprite.shaded = false
+	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	sprite.position = DungeonMap.cell_to_world(cell) + Vector3(0, 0.5, 0)
+	add_child(sprite)
+	keys[cell] = sprite
+	# Bob up and down forever (the tween is owned by the sprite, so it dies with it).
+	var bob := sprite.create_tween().set_loops()
+	bob.tween_property(sprite, "position:y", 0.65, 0.8).set_trans(Tween.TRANS_SINE)
+	bob.tween_property(sprite, "position:y", 0.45, 0.8).set_trans(Tween.TRANS_SINE)
 
 
 ## Slide a door up into the ceiling. Called by the player via the "dungeon" group.
 func open_door(cell: Vector2i) -> void:
-	if not doors.has(cell) or opening.has(cell) or DungeonMap.open_doors.has(cell):
+	if not doors.has(cell) or opening.has(cell) or DungeonMap.open_doors.has(cell) \
+			or DungeonMap.is_locked(cell):
 		return
 	opening[cell] = true
 	var door: MeshInstance3D = doors[cell]

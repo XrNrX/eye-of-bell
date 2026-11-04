@@ -95,6 +95,50 @@ def door(seed):
     return img
 
 
+def locked_door(seed):
+    """The plain door with a big brass padlock and keyhole on top."""
+    img = door(seed)
+    px = img.load()
+    brass, dark = (200, 160, 50), (20, 14, 8)
+    for x in range(26, 38):                       # Shackle (arch above the lock body).
+        for y in range(18, 30):
+            if (x in (26, 27, 36, 37)) or (y in (18, 19) and 28 <= x <= 35):
+                px[x, y] = (150, 150, 160)
+    for y in range(28, 46):                       # Lock body.
+        for x in range(22, 42):
+            edge = x in (22, 41) or y in (28, 45)
+            px[x, y] = shade(brass, 0.7 if edge else (1.15 if y < 33 else 1.0))
+    for y in range(34, 40):                       # Keyhole.
+        for x in (31, 32):
+            px[x, y] = dark
+    for y in range(39, 43):
+        px[31, y] = dark
+        px[32, y] = dark
+    for x in (30, 33):
+        px[x, 36] = dark
+    return img
+
+
+def key_sprite():
+    """Small gold key, 16x16, drawn pointing up-right with a ring bow."""
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    gold, light, shadow = (235, 190, 60, 255), (255, 235, 140, 255), (150, 105, 25, 255)
+    for dx, dy in [(-2, -1), (-2, 0), (-2, 1), (-1, -2), (0, -2), (1, -2),   # Bow (ring).
+                   (-1, 2), (0, 2), (1, 2), (2, -1), (2, 0), (2, 1)]:
+        px[4 + dx + 1, 4 + dy + 1] = gold
+    px[4, 3] = light
+    px[5, 3] = light
+    for i in range(7, 14):                         # Shaft, diagonal down-right.
+        px[i - 1, i - 1] = gold
+        px[i, i - 1] = shadow
+    for (x, y) in [(11, 13), (12, 13), (13, 12), (13, 11)]:   # Teeth.
+        px[x, y] = gold
+    for (x, y) in [(10, 13), (13, 10)]:
+        px[x, y] = shadow
+    return img
+
+
 def torch_sheet():
     """Wall torch, 4 animation frames of 16x32 laid out left to right (64x32)."""
     fw, fh = 16, 32
@@ -137,11 +181,13 @@ def main():
     blocks((85, 80, 75), (35, 32, 30), 32, 32, False, 2, noise=0.1).save(OUT / "floor.png")
     rough((60, 55, 52), 3).save(OUT / "ceiling.png")
     door(4).save(OUT / "door.png")
+    locked_door(4).save(OUT / "door_locked.png")
     print("Wrote", [p.name for p in sorted(OUT.glob("*.png"))])
 
     sprites = OUT.parent / "sprites"
     sprites.mkdir(parents=True, exist_ok=True)
     torch_sheet().save(sprites / "torch.png")
+    key_sprite().save(sprites / "key.png")
     print("Wrote", [p.name for p in sorted(sprites.glob("*.png"))])
 
 

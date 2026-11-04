@@ -1,6 +1,7 @@
 extends RefCounted
 ## The level data (used via preload, see dungeon_builder.gd / player.gd).
-## Edit MAP below like a text file: 1 = wall, 0 = floor, 2 = door (starts closed).
+## Edit MAP below like a text file:
+## 1 = wall, 0 = floor, 2 = door (starts closed), 3 = locked door (needs a key).
 ## Row index is Z (north at top), column index is X.
 
 const TILE_SIZE := 2.0   # World units per grid tile.
@@ -15,7 +16,8 @@ const MAP := [
 	[1, 0, 0, 0, 0, 1, 0, 0, 0, 1],
 	[1, 1, 1, 1, 2, 1, 1, 1, 2, 1],
 	[1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-	[1, 0, 1, 1, 1, 1, 1, 1, 1, 1],
+	[1, 3, 1, 1, 1, 1, 1, 1, 1, 1],
+	[1, 0, 0, 0, 1, 1, 1, 1, 1, 1],
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
 ]
 
@@ -31,17 +33,38 @@ const TORCHES: Array[Vector3i] = [
 	Vector3i(1, 5, 1),
 	Vector3i(3, 7, 2),
 	Vector3i(8, 7, 2),
+	Vector3i(2, 9, 2),  # Inside the locked room.
 ]
 
-## Doors that have finished opening (cell -> true). Reset by dungeon_builder.gd.
-static var open_doors := {}
+# Floor cells that hold a key. Walk onto one to pick it up.
+const KEYS: Array[Vector2i] = [
+	Vector2i(8, 1),
+]
+
+# --- Run state (reset by reset_run() when the dungeon is built) ---
+static var open_doors := {}      # Doors that have finished opening (cell -> true).
+static var unlocked_doors := {}  # Locked doors a key has been used on (cell -> true).
+static var taken_keys := {}      # Keys already picked up (cell -> true).
+static var keys_held := 0
 
 
-## True if the cell is a door (open or closed).
+static func reset_run() -> void:
+	open_doors.clear()
+	unlocked_doors.clear()
+	taken_keys.clear()
+	keys_held = 0
+
+
+## True if the cell is a door of any kind (open, closed or locked).
 static func is_door(cell: Vector2i) -> bool:
 	if cell.y < 0 or cell.y >= MAP.size() or cell.x < 0 or cell.x >= MAP[cell.y].size():
 		return false
-	return MAP[cell.y][cell.x] == 2
+	return MAP[cell.y][cell.x] == 2 or MAP[cell.y][cell.x] == 3
+
+
+## True if the cell is a locked door that hasn't been unlocked yet.
+static func is_locked(cell: Vector2i) -> bool:
+	return is_door(cell) and MAP[cell.y][cell.x] == 3 and not unlocked_doors.has(cell)
 
 
 ## True if the player can't walk into the cell: a wall or a door that isn't open yet.

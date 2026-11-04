@@ -58,14 +58,37 @@ func _try_move(dir: Vector2i) -> void:
 	cell = target
 	tween = create_tween()
 	tween.tween_property(self, "position", DungeonMap.cell_to_world(cell), MOVE_TIME)
+	tween.tween_callback(_arrive)
 
 
-## F: open the door on the tile in front of us. The dungeon (group "dungeon")
-## owns the door nodes, so we just ask it.
+## Called when a step finishes: pick up a key if we're standing on one.
+func _arrive() -> void:
+	if DungeonMap.KEYS.has(cell) and not DungeonMap.taken_keys.has(cell):
+		DungeonMap.taken_keys[cell] = true
+		DungeonMap.keys_held += 1
+		get_tree().call_group("dungeon", "remove_key", cell)
+		_say("You found a key.")
+
+
+## F: open the door on the tile in front of us. Locked doors need (and use up)
+## a key. The dungeon (group "dungeon") owns the door nodes, so we just ask it.
 func _interact() -> void:
 	var front := cell + DIRS[facing]
-	if DungeonMap.is_door(front) and not DungeonMap.open_doors.has(front):
-		get_tree().call_group("dungeon", "open_door", front)
+	if not DungeonMap.is_door(front) or DungeonMap.open_doors.has(front):
+		return
+	if DungeonMap.is_locked(front):
+		if DungeonMap.keys_held == 0:
+			_say("The door is locked.")
+			return
+		DungeonMap.keys_held -= 1
+		DungeonMap.unlocked_doors[front] = true
+		_say("You unlock the door.")
+	get_tree().call_group("dungeon", "open_door", front)
+
+
+## Show a message on the HUD (group "hud"), if there is one.
+func _say(text: String) -> void:
+	get_tree().call_group("hud", "show_message", text)
 
 
 ## Turn 90 degrees: +1 = left (counter-clockwise), -1 = right.
