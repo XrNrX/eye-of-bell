@@ -54,7 +54,9 @@ Nothing is checked in for the game itself. The working approach has been throwaw
 
 **`DungeonMap` is `preload`ed, not a `class_name`.** Each script does `const DungeonMap := preload("res://scripts/dungeon_map.gd")`. A `class_name` isn't registered until the editor scans, so headless runs and fresh files fail with "Identifier not declared". Follow this for new shared scripts (`MonsterDef` is likewise referenced untyped).
 
-**Scene tree** (`scenes/main.tscn`): `Dungeon` (builder; creates all meshes/sprites/lights in code), `Player` (with `Camera3D` and a torch light), plus self-contained overlays `DebugOverlay` (Tab), `Hud`, `LevelComplete`.
+**Scene tree** (`scenes/main.tscn`): `Dungeon` (builder; creates all meshes/sprites/lights in code), `Player` (with `Camera3D` and a torch light), `Party`, plus self-contained overlays `DebugOverlay` (Tab), `Hud`, `PartyHud`, `LevelComplete`, `GameOver`.
+
+**Other top-level scenes:** `scenes/main_menu.tscn` (a minimal title + New Game button) is reached via `get_tree().change_scene_to_file()` from Game over's "Quit to Menu" button, not as a child of `main.tscn`.
 
 **Decoupling is by node groups.** The player never holds references to the world; it calls `get_tree().call_group(...)`:
 - `"dungeon"` (builder): `open_door`, `pull_lever`, `remove_key`, `refresh`
