@@ -1,10 +1,15 @@
 extends CanvasLayer
-## Party HUD: one panel per hero (name, HP, weapon-hand button), floating damage
-## numbers when a hero is hit, and a red screen flash. Click a hand (or press 1-4)
-## to attack; the hand greys out while that hero's attack cools down.
-## Talks to the party only through its signals and the "party" group.
+## Party HUD: a 2x2 grid of hero panels (portrait, HP bar, two hand slots), floating
+## damage numbers when a hero is hit, and a red screen flash. Click a hand (or press
+## 1-4) to attack; both hands in a panel trigger the same attack and cooldown --
+## there's only one weapon per hero so far, but the UI has room for dual-wielding
+## or an off-hand item later. Talks to the party only through its signals and group.
 
 const CombatRules := preload("res://scripts/combat_rules.gd")
+
+const PORTRAIT_SIZE := Vector2(24, 24)
+const HAND_SIZE := Vector2(12, 12)
+const BAR_WIDTH := 24.0
 
 const HAND_READY := Color(1, 1, 1)
 const HAND_COOLING := Color(0.35, 0.33, 0.38)
@@ -15,12 +20,13 @@ const HP_BACK := Color(0.078, 0.063, 0.102)          # Palette ink.
 const COOL_FILL := Color(0.588, 0.557, 0.604)        # Palette stone_300.
 const HIT_COLOUR := Color(0.85, 0.51, 0.26)          # Palette rust_300.
 const MISS_COLOUR := Color(0.76, 0.74, 0.75)         # Palette stone_100.
+const HURT_FLASH_TIME := 0.3  # How long the portrait shows its red-tinted variant.
 
 @onready var flash: ColorRect = %Flash
-@onready var panels_box: HBoxContainer = %Panels
+@onready var panels_grid: GridContainer = %Panels
 
 var party: Node
-var panels := {}  # slot -> {hand, cool_bar, hp_bar, hp_label, root}
+var panels := {}  # slot -> {portrait, hand_a, hand_b, cool_bar, hp_bar, root}
 
 
 func _ready() -> void:
@@ -40,8 +46,9 @@ func _process(_delta: float) -> void:
 	for m in party.members:
 		var p: Dictionary = panels[m.slot]
 		var cooling: bool = m.cooldown_left > 0.0 or not m.is_alive()
-		p.hand.disabled = cooling
-		p.hand.modulate = HAND_COOLING if cooling else HAND_READY
+		for hand in [p.hand_a, p.hand_b]:
+			hand.disabled = cooling
+			hand.modulate = HAND_COOLING if cooling else HAND_READY
 		var total := CombatRules.hero_cooldown(m.def.speed)
 		p.cool_bar.value = (m.cooldown_left / total) * 100.0 if m.is_alive() else 0.0
 
@@ -51,13 +58,14 @@ func _update_hp(slot: int) -> void:
 	var p: Dictionary = panels[slot]
 	p.hp_bar.max_value = m.def.max_hp
 	p.hp_bar.value = m.hp
-	p.hp_label.text = "%d/%d" % [m.hp, m.def.max_hp]
-	if not m.is_alive():
-		p.root.modulate = Color(0.5, 0.5, 0.5)
+	p.portrait.texture = m.def.portrait if m.is_alive() else m.def.portrait_dead
+	p.root.modulate = Color(0.5, 0.5, 0.5) if not m.is_alive() else Color.WHITE
 
 
-## A hero was attacked: float the damage (or "Miss") above their panel; red flash on a hit.
+## A hero was attacked: float the damage (or "Miss") above their panel, flash the
+## screen red on a hit, and briefly swap in the hurt (red-tinted) portrait.
 func _on_hero_hit(slot: int, damage: int) -> void:
+	var m = party.member(slot)
 	var p: Dictionary = panels[slot]
 	var label := Label.new()
 	label.text = str(damage) if damage > 0 else "Miss"
@@ -77,6 +85,12 @@ func _on_hero_hit(slot: int, damage: int) -> void:
 	if damage > 0:
 		flash.color.a = 0.35
 		create_tween().tween_property(flash, "color:a", 0.0, 0.35)
+		if m.is_alive():  # Still alive: flash the hurt portrait, then revert. Dead
+			p.portrait.texture = m.def.portrait_hurt  # already shows portrait_dead permanently.
+			var timer := get_tree().create_timer(HURT_FLASH_TIME)
+			timer.timeout.connect(func():
+				if m.is_alive():
+					p.portrait.texture = m.def.portrait)
 
 
 func _make_panel(m) -> Dictionary:
@@ -88,43 +102,54 @@ func _make_panel(m) -> Dictionary:
 	box.set_content_margin_all(3)
 	root.add_theme_stylebox_override("panel", box)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panels_box.add_child(root)
+	panels_grid.add_child(root)
 
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 4)
-	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(row)
+	var col := VBoxContainer.new()
+	col.add_theme_constant_override("separation", 1)
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(col)
 
-	# Weapon hand: a button, with a thin cooldown bar under it.
-	var hand_col := VBoxContainer.new()
-	hand_col.add_theme_constant_override("separation", 1)
-	row.add_child(hand_col)
+	var portrait := TextureRect.new()
+	portrait.texture = m.def.portrait
+	portrait.custom_minimum_size = PORTRAIT_SIZE
+	portrait.stretch_mode = TextureRect.STRETCH_SCALE
+	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(portrait)
+
+	col.add_child(_label(m.def.display_name, 8))
+
+	var hp_bar := _bar(HP_FILL, Vector2(BAR_WIDTH, 3), m.def.max_hp)
+	col.add_child(hp_bar)
+
+	# Two weapon-hand slots (left/right), both attacking with this hero.
+	var hands_row := HBoxContainer.new()
+	hands_row.add_theme_constant_override("separation", 2)
+	hands_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(hands_row)
+	var hand_a := _make_hand(m)
+	var hand_b := _make_hand(m)
+	hands_row.add_child(hand_a)
+	hands_row.add_child(hand_b)
+
+	var cool_bar := _bar(COOL_FILL, Vector2(BAR_WIDTH, 2), 100)
+	col.add_child(cool_bar)
+
+	return {"root": root, "portrait": portrait, "hand_a": hand_a, "hand_b": hand_b,
+		"cool_bar": cool_bar, "hp_bar": hp_bar}
+
+
+func _make_hand(m) -> TextureButton:
 	var hand := TextureButton.new()
 	hand.texture_normal = m.def.hand_icon
-	hand.custom_minimum_size = Vector2(24, 24)
+	hand.custom_minimum_size = HAND_SIZE
 	hand.ignore_texture_size = true
 	hand.stretch_mode = TextureButton.STRETCH_KEEP_CENTERED
 	hand.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	hand.focus_mode = Control.FOCUS_NONE  # Space/Enter shouldn't trigger it.
 	hand.tooltip_text = "Attack (%d)" % (m.slot + 1)
 	hand.pressed.connect(func(): party.attack(m.slot))
-	hand_col.add_child(hand)
-	var cool_bar := _bar(COOL_FILL, Vector2(24, 2), 100)
-	hand_col.add_child(cool_bar)
-
-	# Name, HP numbers and HP bar.
-	var info := VBoxContainer.new()
-	info.add_theme_constant_override("separation", 1)
-	info.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	row.add_child(info)
-	var name_label := _label(m.def.display_name, 9)
-	info.add_child(name_label)
-	var hp_label := _label("", 8)
-	info.add_child(hp_label)
-	var hp_bar := _bar(HP_FILL, Vector2(36, 3), m.def.max_hp)
-	info.add_child(hp_bar)
-
-	return {"root": root, "hand": hand, "cool_bar": cool_bar, "hp_bar": hp_bar, "hp_label": hp_label}
+	return hand
 
 
 func _label(text: String, size: int) -> Label:
@@ -133,6 +158,7 @@ func _label(text: String, size: int) -> Label:
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", Color(0.92, 0.89, 0.82))
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	return l
 
 

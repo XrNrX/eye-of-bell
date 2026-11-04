@@ -1,9 +1,12 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/party.gd" id="7_party"]
 [ext_resource type="Resource" path="res://data/party/fighter.tres" id="8_fighter"]
 [ext_resource type="PackedScene" path="res://scenes/party_hud.tscn" id="9_party_hud"]
 [ext_resource type="PackedScene" path="res://scenes/game_over.tscn" id="10_game_over"]
+[ext_resource type="Resource" path="res://data/party/cleric.tres" id="11_cleric"]
+[ext_resource type="Resource" path="res://data/party/thief.tres" id="12_thief"]
+[ext_resource type="Resource" path="res://data/party/mage.tres" id="13_mage"]
 
 [ext_resource type="PackedScene" path="res://scenes/level_complete.tscn" id="6_complete"]
 [ext_resource type="PackedScene" path="res://scenes/hud.tscn" id="5_hud"]
@@ -52,7 +55,7 @@ player_path = NodePath("../Player")
 
 [node name="Party" type="Node" parent="."]
 script = ExtResource("7_party")
-hero_defs = Array[Resource]([ExtResource("8_fighter")])
+hero_defs = Array[Resource]([ExtResource("8_fighter"), ExtResource("11_cleric"), ExtResource("12_thief"), ExtResource("13_mage")])
 player_path = NodePath("../Player")
 
 [node name="PartyHud" parent="." instance=ExtResource("9_party_hud")]

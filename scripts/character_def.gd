@@ -9,4 +9,9 @@ extends Resource
 @export var speed := 2        # Shortens the attack cooldown.
 @export var damage_min := 1
 @export var damage_max := 6
-@export var hand_icon: Texture2D  # The weapon-hand button on the party HUD.
+@export var hand_icon: Texture2D  # The weapon-hand buttons on the party HUD.
+
+@export_group("Portrait")
+@export var portrait: Texture2D        # Shown while alive.
+@export var portrait_hurt: Texture2D   # Briefly shown (red tint) when hit.
+@export var portrait_dead: Texture2D   # Shown once hp reaches 0 (greyed out).
