@@ -1,0 +1,19 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/monster_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/monsters/slime/slime_sheet.png" id="2_sheet"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Slime"
+max_hp = 6
+damage = 2
+speed = 0.7
+sight_range = 3
+sheet = ExtResource("2_sheet")
+hframes = 8
+idle_frames = PackedInt32Array(0, 1, 2, 1)
+attack_frames = PackedInt32Array(3, 4, 5)
+hurt_frames = PackedInt32Array(6, 7)
+idle_fps = 3.0
+pixel_size = 0.04

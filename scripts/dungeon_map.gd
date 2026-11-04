@@ -65,6 +65,7 @@ const KEYS: Array[Vector2i] = [
 # scripts/monster_def.gd). New monsters are just new .tres files listed here.
 const MONSTERS := [
 	{"cell": Vector2i(3, 5), "def": "res://data/monsters/skeleton.tres"},
+	{"cell": Vector2i(1, 5), "def": "res://data/monsters/slime.tres"},
 ]
 
 # --- Run state (reset by reset_run() when the dungeon is built) ---
