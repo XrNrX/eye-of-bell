@@ -1,4 +1,6 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/debug_overlay.tscn" id="4_debug"]
 
 [ext_resource type="Script" path="res://scripts/dungeon_builder.gd" id="1_dungeon"]
 [ext_resource type="Script" path="res://scripts/player.gd" id="2_player"]
@@ -33,3 +35,6 @@ light_energy = 1.6
 omni_range = 9.0
 omni_attenuation = 1.5
 script = ExtResource("3_torch")
+
+[node name="DebugOverlay" parent="." instance=ExtResource("4_debug")]
+player_path = NodePath("../Player")
