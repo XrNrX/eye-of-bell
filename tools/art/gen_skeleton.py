@@ -1,8 +1,8 @@
-"""Procedural skeleton-warrior sprites (48x64, front-facing) for the dungeon crawler.
+"""Procedural skeleton-warrior sprites (48x64, front-facing), palette-bound.
 
-    python tools/make_skeleton.py                         # default skeleton
-    python tools/make_skeleton.py --seed 7 --bone ash --weapon axe --helmet \
-        --name skeleton_guard                             # a variant
+    python tools/art/gen_skeleton.py                         # default skeleton
+    python tools/art/gen_skeleton.py --seed 7 --bone ash --weapon axe --helmet \
+        --name skeleton_guard                                # a variant
 
 Writes to res://art/monsters/<name>/ :
     idle_0.png idle_1.png
@@ -14,11 +14,10 @@ How it works
 - Every body part (skull, jaw, ribcage, spine, pelvis, each arm/leg bone, hand, foot,
   helmet, weapon) is a separate pixel mask. A pose is just a few numbers that say where
   each part goes, so parts move independently from frame to frame.
-- Each part is shaded on its own (light on the top-left edges, dark on the bottom-right),
-  all parts are composited back to front, then a 1px outline is added around the whole
-  silhouette.
-- Only colours from PALETTE are used (checked at the end). Edit PALETTE below, or pass
-  --palette my_palette.json with the same structure.
+- Each part is shaded on its own (toolkit lighting: light top-left, dark bottom-right),
+  all parts are composited back to front, then the toolkit adds a 1px outline around the
+  whole silhouette.
+- Only palette.json colours are used; save_png refuses anything else.
 """
 import argparse
 import json
@@ -28,34 +27,27 @@ from pathlib import Path
 
 from PIL import Image
 
+from artio import save_png
+from lighting import shade_mask
+from noise import hash01
+from outline import add_outline
+from palette import ART_DIR, PAL
+
 W, H = 48, 64
 CX = 24  # Horizontal centre line of the skeleton.
 
-# Palette. Ramps are [light, mid, dark]. Everything drawn comes from here.
-PALETTE = {
-    "outline": "#1b1521",
-    "white": "#ffffff",
-    "ivory": ["#efe6cc", "#c9bb97", "#8d7d62"],
-    "ash": ["#cfd3d6", "#9fa6ad", "#656d77"],
-    "mossy": ["#c8d0a0", "#94a070", "#5b6b45"],
-    "iron": ["#9aa3b2", "#646b7c", "#3b4152"],
-    "rust": ["#d08a45", "#9c5a2b", "#5e3419"],
-    "wood": ["#7a5634", "#55391f", "#33210f"],
+# Colour ramps, [dark, mid, light], all from the palette.
+BONE_RAMPS = {
+    "ivory": [PAL["bone_700"], PAL["bone_500"], PAL["bone_300"]],
+    "ash": [PAL["stone_500"], PAL["stone_300"], PAL["stone_100"]],
+    "mossy": [PAL["moss_700"], PAL["moss_500"], PAL["slime_300"]],
 }
-
-
-def hex_rgb(h):
-    h = h.lstrip("#")
-    return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
-
-
-def load_palette(path=None):
-    """Palette as RGB tuples. `path` is an optional JSON file shaped like PALETTE."""
-    raw = json.loads(Path(path).read_text()) if path else PALETTE
-    pal = {}
-    for key, val in raw.items():
-        pal[key] = [hex_rgb(c) for c in val] if isinstance(val, list) else hex_rgb(val)
-    return pal
+IRON = [PAL["stone_700"], PAL["stone_500"], PAL["stone_300"]]
+RUST = PAL.ramp("rust")
+WOOD = [PAL["wood_700"], PAL["wood_500"], PAL["leather_400"]]
+OUTLINE = PAL["ink"]
+FLASH = PAL["bone_300"]    # The palette's white, used flat for the hurt flash.
+FLAKE = PAL["stone_300"]   # Bare metal showing through the rust.
 
 
 # --------------------------------------------------------------------------
@@ -111,35 +103,7 @@ def ik(a, b, l1, l2, side):
 
 def rnd(seed, name, a, b):
     """Deterministic pseudo-random 0..1 from (seed, part name, two ints)."""
-    h = (seed * 2654435761 + sum(map(ord, name)) * 40503 + a * 73856093 + b * 19349663) & 0xFFFFFFFF
-    h ^= h >> 13
-    h = (h * 0x5BD1E995) & 0xFFFFFFFF
-    h ^= h >> 15
-    return (h % 1000) / 1000.0
-
-
-def shade(mask, ramp):
-    """Colour a mask: light top-left edges, dark bottom-right edges, a soft
-    diagonal gradient on the interior of bigger parts."""
-    light, mid, dark = ramp
-    xs = [p[0] for p in mask]
-    ys = [p[1] for p in mask]
-    x0, y0 = min(xs), min(ys)
-    span = max(1, (max(xs) - x0) + (max(ys) - y0))
-    out = {}
-    for (x, y) in mask:
-        lit = (x - 1, y) not in mask or (x, y - 1) not in mask
-        shadow = (x + 1, y) not in mask or (x, y + 1) not in mask
-        if lit and not shadow:
-            out[(x, y)] = light
-        elif shadow and not lit:
-            out[(x, y)] = dark
-        elif lit and shadow:
-            out[(x, y)] = mid
-        else:
-            t = ((x - x0) + (y - y0)) / span
-            out[(x, y)] = light if t < 0.33 else (dark if t > 0.66 else mid)
-    return out
+    return hash01(seed + sum(map(ord, name)) * 40503, a, b)
 
 
 # --------------------------------------------------------------------------
@@ -166,11 +130,11 @@ def stamp(grip, ang, u0, u1, v0, v1, uv=None):
     return mask
 
 
-def weapon_parts(kind, grip, ang, seed, pal):
+def weapon_parts(kind, grip, ang, seed):
     """List of (mask, material, details) for the chosen weapon."""
     if kind == "none":
         return []
-    rust_flake = pal["iron"][0]
+    rust_flake = FLAKE
     if kind == "sword":
         uv = {}
         blade = stamp(grip, ang, 2, 10, -1, 1, uv) | stamp(grip, ang, 10.5, 13, -0.5, 0.5, uv)
@@ -234,9 +198,9 @@ def arm_points(shoulder, upper, fore, l1=7.0, l2=7.0):
     return elbow, wrist, hand
 
 
-def build_frame(pose, traits, pal, opts, flash=False):
+def build_frame(pose, traits, opts, flash=False):
     """Composite one frame and return it as an RGBA image."""
-    ramps = {"bone": pal[opts["bone"]], "iron": pal["iron"], "rust": pal["rust"], "wood": pal["wood"]}
+    ramps = {"bone": BONE_RAMPS[opts["bone"]], "iron": IRON, "rust": RUST, "wood": WOOD}
     seed = opts["seed"]
     damage = opts["damage"]
     parts = []  # (name, mask, material, details, anchor), drawn in this order.
@@ -247,7 +211,7 @@ def build_frame(pose, traits, pal, opts, flash=False):
     hx, hy = pose["head"]
     rx, ry = pose["ribs"]
     px, py = pose["pelvis"]
-    dark = pal["outline"]
+    dark = OUTLINE
 
     # Legs, hips fixed to the pelvis and feet planted on the floor (IK bends the knees).
     for side, sx, hip_dx, foot_dx in (("L", -1, -5, -7), ("R", 1, 4, 6)):
@@ -325,7 +289,7 @@ def build_frame(pose, traits, pal, opts, flash=False):
     elbow, wrist, hand = arm_points(shoulder_r, *pose["R"])
     add("upper_arm_R", bone_mask(shoulder_r, elbow), "bone", anchor=shoulder_r)
     add("forearm_R", bone_mask(elbow, wrist), "bone", anchor=elbow)
-    for i, (mask, mat, det) in enumerate(weapon_parts(opts["weapon"], hand, pose["sword"], seed, pal)):
+    for i, (mask, mat, det) in enumerate(weapon_parts(opts["weapon"], hand, pose["sword"], seed)):
         add(f"weapon_{i}", mask, mat, det, anchor=hand)
     add("hand_R", rect_mask(round(hand[0]) - 1, round(hand[1]) - 1, 3, 3), "bone", anchor=hand)
 
@@ -333,10 +297,10 @@ def build_frame(pose, traits, pal, opts, flash=False):
     canvas = {}
     for name, mask, mat, details, anchor in parts:
         ramp = ramps[mat]
-        layer = shade(mask, ramp)
+        layer = shade_mask(mask, ramp)
         for p in layer:
             if mat == "bone" and rnd(seed, name, p[0] - round(anchor[0]), p[1] - round(anchor[1])) < damage:
-                layer[p] = ramp[2]  # Chips and cracks.
+                layer[p] = ramp[0]  # Chips and cracks (darkest tone).
         for p, colour in details.items():
             if p in layer:
                 layer[p] = colour
@@ -344,20 +308,13 @@ def build_frame(pose, traits, pal, opts, flash=False):
 
     canvas = {p: c for p, c in canvas.items() if 0 <= p[0] < W and 0 <= p[1] < H}
     if flash:  # Hurt flash: the whole body goes white.
-        canvas = {p: pal["white"] for p in canvas}
-
-    # 1px outline around the whole silhouette (including the gaps between bones).
-    outline = {}
-    for (x, y) in canvas:
-        for nx, ny in ((x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)):
-            if (nx, ny) not in canvas and 0 <= nx < W and 0 <= ny < H:
-                outline[(nx, ny)] = pal["outline"]
-    canvas.update(outline)
+        canvas = {p: FLASH for p in canvas}
 
     img = Image.new("RGBA", (W, H), (0, 0, 0, 0))
+    px = img.load()
     for (x, y), c in canvas.items():
-        img.putpixel((x, y), (*c, 255))
-    return img
+        px[x, y] = (*c, 255)
+    return add_outline(img, OUTLINE)  # 1px outline around the whole silhouette.
 
 
 # --------------------------------------------------------------------------
@@ -389,65 +346,60 @@ ANIMATIONS = {
 }
 
 
+ORDER = ["idle_0", "idle_1", "attack_0", "attack_1", "attack_2", "hurt_0", "hurt_0_flash"]
+
+
+def render(seed=1, bone="ivory", weapon="sword", helmet=False, damage=0.04):
+    """All frames as {name: RGBA image}."""
+    opts = {"seed": seed, "bone": bone, "weapon": weapon, "helmet": helmet, "damage": damage}
+    traits = make_traits(seed)
+    images = {name: build_frame(p, traits, opts) for name, p in FRAMES.items()}
+    images["hurt_0_flash"] = build_frame(FRAMES["hurt_0"], traits, opts, flash=True)
+    return images
+
+
+def build(name="skeleton", out_dir=None, **options):
+    """Write the frames, sheet and sheet JSON. Default folder: res://art/monsters/<name>/.
+    Options: seed, bone (ivory/ash/mossy), weapon (sword/axe/club/none), helmet, damage."""
+    images = render(**options)
+    root, sub = (Path(out_dir), "") if out_dir else (None, f"monsters/{name}/")
+    written = []
+    sheet = Image.new("RGBA", (W * len(ORDER), H), (0, 0, 0, 0))
+    rects = {}
+    for i, frame in enumerate(ORDER):
+        written.append(save_png(images[frame], f"{sub}{frame}.png", root=root))
+        sheet.paste(images[frame], (i * W, 0))
+        rects[frame] = {"x": i * W, "y": 0, "w": W, "h": H}
+    written.append(save_png(sheet, f"{sub}{name}_sheet.png", root=root))
+    json_path = (root or ART_DIR) / sub / f"{name}_sheet.json"
+    json_path.write_text(json.dumps({"frame_size": [W, H], "frames": rects, "animations": ANIMATIONS}, indent=2))
+    written.append(json_path)
+    return written
+
+
 def main():
-    root = Path(__file__).resolve().parent.parent
     ap = argparse.ArgumentParser(description="Generate a skeleton warrior sprite set.")
     ap.add_argument("--seed", type=int, default=1, help="Body variation + rust/crack pattern.")
-    ap.add_argument("--bone", default="ivory", help="Bone colour ramp from the palette (ivory/ash/mossy).")
+    ap.add_argument("--bone", default="ivory", choices=list(BONE_RAMPS), help="Bone colour ramp.")
     ap.add_argument("--weapon", default="sword", choices=["sword", "axe", "club", "none"])
     ap.add_argument("--helmet", action="store_true", help="Add an iron helmet.")
     ap.add_argument("--damage", type=float, default=0.04, help="Fraction of bone pixels chipped (0-0.2).")
     ap.add_argument("--name", default="skeleton", help="Output folder and sheet name.")
     ap.add_argument("--out", help="Output folder (default: art/monsters/<name>).")
-    ap.add_argument("--palette", help="JSON palette file shaped like PALETTE.")
     ap.add_argument("--preview", help="Also write a 6x enlarged preview PNG here.")
     args = ap.parse_args()
-
-    pal = load_palette(args.palette)
-    if args.bone not in pal or not isinstance(pal[args.bone], list):
-        raise SystemExit(f"--bone must be a colour ramp in the palette, got {args.bone!r}")
-    opts = {"seed": args.seed, "bone": args.bone, "weapon": args.weapon,
-            "helmet": args.helmet, "damage": args.damage}
-    traits = make_traits(args.seed)
-
-    images = {name: build_frame(p, traits, pal, opts) for name, p in FRAMES.items()}
-    images["hurt_0_flash"] = build_frame(FRAMES["hurt_0"], traits, pal, opts, flash=True)
-    order = ["idle_0", "idle_1", "attack_0", "attack_1", "attack_2", "hurt_0", "hurt_0_flash"]
-
-    # Safety check: nothing outside the palette.
-    allowed = set()
-    for val in pal.values():
-        allowed.update(val if isinstance(val, list) else [val])
-    for name, img in images.items():
-        px = img.load()
-        for y in range(H):
-            for x in range(W):
-                r, g, b, a = px[x, y]
-                if a and (r, g, b) not in allowed:
-                    raise SystemExit(f"{name}: colour {(r, g, b)} is not in the palette")
-
-    out = Path(args.out) if args.out else root / "art" / "monsters" / args.name
-    out.mkdir(parents=True, exist_ok=True)
-    sheet = Image.new("RGBA", (W * len(order), H), (0, 0, 0, 0))
-    rects = {}
-    for i, name in enumerate(order):
-        images[name].save(out / f"{name}.png")
-        sheet.paste(images[name], (i * W, 0))
-        rects[name] = {"x": i * W, "y": 0, "w": W, "h": H}
-    sheet.save(out / f"{args.name}_sheet.png")
-    (out / f"{args.name}_sheet.json").write_text(json.dumps(
-        {"frame_size": [W, H], "frames": rects, "animations": ANIMATIONS}, indent=2))
-    print(f"Wrote {len(order)} frames + {args.name}_sheet.png/.json to {out}")
+    options = {"seed": args.seed, "bone": args.bone, "weapon": args.weapon,
+               "helmet": args.helmet, "damage": args.damage}
+    written = build(args.name, args.out, **options)
+    print(f"Wrote {len(written)} files, e.g. {written[0]}")
 
     if args.preview:
-        scale = 6
-        pad = 8
-        pw = (W * scale + pad) * len(order) + pad
-        prev = Image.new("RGBA", (pw, H * scale + pad * 2), (52, 46, 60, 255))
-        for i, name in enumerate(order):
-            big = images[name].resize((W * scale, H * scale), Image.NEAREST)
+        images = render(**options)
+        scale, pad = 6, 8
+        prev = Image.new("RGBA", ((W * scale + pad) * len(ORDER) + pad, H * scale + pad * 2), (*PAL["stone_900"], 255))
+        for i, frame in enumerate(ORDER):
+            big = images[frame].resize((W * scale, H * scale), Image.NEAREST)
             prev.alpha_composite(big, (pad + i * (W * scale + pad), pad))
-        Path(args.preview).parent.mkdir(parents=True, exist_ok=True)
         prev.save(args.preview)
         print("Preview:", args.preview)
 
