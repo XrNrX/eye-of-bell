@@ -19,11 +19,22 @@ signal wiped
 @export var player_path: NodePath
 
 
+## Backpack size and hand-slot count, shared by every member (see inventory_screen.gd).
+const BACKPACK_SIZE := 12
+const HAND_SLOTS := 2
+
+
 class Member:
 	var def: Resource
 	var slot: int
 	var hp: int
 	var cooldown_left := 0.0
+
+	# Inventory: ItemDef or null per slot. Pure data for now -- nothing in combat
+	# reads hands/armour yet, same as ItemDef's own stat fields (see item_def.gd).
+	var hands: Array = [null, null]
+	var armour: Resource = null
+	var backpack: Array = []
 
 	func is_alive() -> bool:
 		return hp > 0
@@ -43,6 +54,7 @@ func _ready() -> void:
 		m.def = hero_defs[i]
 		m.slot = i
 		m.hp = m.def.max_hp
+		m.backpack.resize(BACKPACK_SIZE)
 		members.append(m)
 
 

@@ -3,7 +3,8 @@ extends CanvasLayer
 ## damage numbers when a hero is hit, and a red screen flash. Click a hand (or press
 ## 1-4) to attack; both hands in a panel trigger the same attack and cooldown --
 ## there's only one weapon per hero so far, but the UI has room for dual-wielding
-## or an off-hand item later. Talks to the party only through its signals and group.
+## or an off-hand item later. Click a portrait to open that hero's inventory screen
+## (group "inventory"). Talks to the party only through its signals and group.
 
 const CombatRules := preload("res://scripts/combat_rules.gd")
 
@@ -58,7 +59,7 @@ func _update_hp(slot: int) -> void:
 	var p: Dictionary = panels[slot]
 	p.hp_bar.max_value = m.def.max_hp
 	p.hp_bar.value = m.hp
-	p.portrait.texture = m.def.portrait if m.is_alive() else m.def.portrait_dead
+	p.portrait.texture_normal = m.def.portrait if m.is_alive() else m.def.portrait_dead
 	p.root.modulate = Color(0.5, 0.5, 0.5) if not m.is_alive() else Color.WHITE
 
 
@@ -86,11 +87,11 @@ func _on_hero_hit(slot: int, damage: int) -> void:
 		flash.color.a = 0.35
 		create_tween().tween_property(flash, "color:a", 0.0, 0.35)
 		if m.is_alive():  # Still alive: flash the hurt portrait, then revert. Dead
-			p.portrait.texture = m.def.portrait_hurt  # already shows portrait_dead permanently.
+			p.portrait.texture_normal = m.def.portrait_hurt  # already shows portrait_dead permanently.
 			var timer := get_tree().create_timer(HURT_FLASH_TIME)
 			timer.timeout.connect(func():
 				if m.is_alive():
-					p.portrait.texture = m.def.portrait)
+					p.portrait.texture_normal = m.def.portrait)
 
 
 func _make_panel(m) -> Dictionary:
@@ -109,12 +110,16 @@ func _make_panel(m) -> Dictionary:
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(col)
 
-	var portrait := TextureRect.new()
-	portrait.texture = m.def.portrait
+	# A button (not a plain TextureRect) so clicking it can open the inventory.
+	var portrait := TextureButton.new()
+	portrait.texture_normal = m.def.portrait
 	portrait.custom_minimum_size = PORTRAIT_SIZE
-	portrait.stretch_mode = TextureRect.STRETCH_SCALE
+	portrait.ignore_texture_size = true
+	portrait.stretch_mode = TextureButton.STRETCH_SCALE
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	portrait.focus_mode = Control.FOCUS_NONE
+	portrait.tooltip_text = "Inventory"
+	portrait.pressed.connect(func(): get_tree().call_group("inventory", "show_screen", m.slot))
 	col.add_child(portrait)
 
 	col.add_child(_label(m.def.display_name, 8))

@@ -18,3 +18,13 @@ enum Type { WEAPON, ARMOUR, CONSUMABLE, KEY }
 @export var damage_max := 0
 @export var defence_bonus := 0       # Armour: added to the wearer's defence.
 @export var heal_amount := 0         # Consumable: HP restored when used.
+
+
+## Which item types a hand slot / the armour slot will accept (see inventory_slot.gd).
+## A backpack slot takes anything, so it has no such check.
+static func allowed_in_hand(item_type: Type) -> bool:
+	return item_type == Type.WEAPON or item_type == Type.CONSUMABLE
+
+
+static func allowed_in_armour(item_type: Type) -> bool:
+	return item_type == Type.ARMOUR

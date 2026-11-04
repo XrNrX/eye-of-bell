@@ -34,6 +34,7 @@ var cursor: Node
 
 
 func _ready() -> void:
+	add_to_group("player")  # Lets other singletons (e.g. inventory_screen.gd) find us.
 	yaw_degrees = facing * 90.0
 	rotation_degrees.y = yaw_degrees
 	position = DungeonMap.cell_to_world(cell)

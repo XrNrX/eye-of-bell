@@ -3,7 +3,7 @@
 [ext_resource type="Script" path="res://scripts/cursor_item.gd" id="1_cursor"]
 
 [node name="CursorItem" type="CanvasLayer"]
-layer = 10
+layer = 15
 script = ExtResource("1_cursor")
 
 [node name="Icon" type="TextureRect" parent="."]
