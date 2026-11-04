@@ -206,7 +206,7 @@ func take_item(cell: Vector2i) -> Resource:
 ## Used both for the level's starting items and for one dropped back from the cursor.
 func place_item(cell: Vector2i, def: Resource) -> void:
 	var sprite := Sprite3D.new()
-	sprite.texture = def.icon
+	sprite.texture = def.floor_icon if def.floor_icon else def.icon  # The small floor version.
 	sprite.pixel_size = def.icon_pixel_size
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED

@@ -7,7 +7,7 @@ Steps, in order:
   2. Patch the Godot .import files under art/ so everything stays crisp.
 
 Current generators: tiles (wall, floor, ceiling, door, ...), sprites (torch, key,
-lever), ui (hand icon), skeleton, slime, portraits (party faces), swatch.
+lever), ui (hand icon), items (item icons), skeleton, slime, portraits (party faces), swatch.
 To add one, drop a gen_<name>.py with build() into this folder.
 
 Options:  --only NAME   run just the generator with that name (e.g. --only tiles)

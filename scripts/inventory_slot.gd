@@ -6,7 +6,8 @@ extends Panel
 ## Eye-of-the-Beholder style, one system only: the cursor (cursor_item.gd) is the
 ## "hand". Click a slot to pick its item up onto the cursor; click a slot while
 ## holding something to put it there (swapping with whatever was there). There is
-## no drag and drop.
+## no drag and drop. Right-click uses a consumable in the slot: a potion heals this
+## member, a scroll casts at the monster ahead (see Party.use_item).
 ##
 ## Acts on the mouse PRESS. Godot routes the release to whichever control got the
 ## press, wherever the pointer has moved since, so the press is the only event that
@@ -16,7 +17,8 @@ const ItemDef := preload("res://scripts/item_def.gd")
 
 enum Kind { HAND, ARMOUR, BACKPACK, CHARACTER }
 
-const SLOT_SIZE := Vector2(16, 16)
+const ITEM_SLOT := Vector2(24, 24)      # Holds a 24x24 item icon at its native size.
+const PORTRAIT_SLOT := Vector2(16, 16)  # A 32x32 portrait scaled to exactly half.
 const EMPTY_BG := Color(0.137, 0.118, 0.169, 0.6)  # Palette stone_900, translucent.
 const FILLED_BG := Color(0.275, 0.247, 0.31)        # Palette stone_700.
 const EDGE := Color(0.588, 0.557, 0.604)            # Palette stone_300.
@@ -30,14 +32,17 @@ var icon: TextureRect
 
 
 func _ready() -> void:
-	custom_minimum_size = SLOT_SIZE
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	clip_contents = true
 	icon = TextureRect.new()
 	icon.set_anchors_preset(Control.PRESET_FULL_RECT)
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon.stretch_mode = TextureRect.STRETCH_SCALE
+	# Without this a TextureRect is never smaller than its texture, so a 32x32
+	# portrait overflowed its 16x16 slot and overlapped its neighbours.
+	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	add_child(icon)
+	_apply_kind()
 
 
 func setup(a_screen: Node, a_member_slot: int, a_kind: Kind, a_index: int = 0) -> void:
@@ -45,6 +50,15 @@ func setup(a_screen: Node, a_member_slot: int, a_kind: Kind, a_index: int = 0) -
 	member_slot = a_member_slot
 	kind = a_kind
 	index = a_index
+	_apply_kind()
+
+
+## Item slots show their icon at native size, centred; a portrait slot scales it.
+func _apply_kind() -> void:
+	custom_minimum_size = PORTRAIT_SLOT if kind == Kind.CHARACTER else ITEM_SLOT
+	if icon:
+		icon.stretch_mode = TextureRect.STRETCH_SCALE if kind == Kind.CHARACTER \
+				else TextureRect.STRETCH_KEEP_CENTERED
 
 
 ## The ItemDef in this slot, or null. CHARACTER slots never hold anything directly.
@@ -79,10 +93,13 @@ func refresh() -> void:
 		var m = screen.party.member(member_slot)
 		icon.texture = m.def.portrait if m.is_alive() else m.def.portrait_dead
 		filled = member_slot == screen.focused_slot  # Highlight whichever member is shown.
+		tooltip_text = m.def.display_name
 	else:
 		var def := get_item()
 		icon.texture = def.icon if def else null
 		filled = def != null
+		tooltip_text = "" if def == null else def.display_name + \
+				("\nRight-click to use" if def.type == ItemDef.Type.CONSUMABLE else "")
 	var box := StyleBoxFlat.new()
 	box.bg_color = FILLED_BG if filled else EMPTY_BG
 	box.border_color = EDGE
@@ -91,12 +108,35 @@ func refresh() -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	if not (event is InputEventMouseButton and event.pressed):
+		return
+	if event.button_index == MOUSE_BUTTON_LEFT:
 		accept_event()
 		if kind == Kind.CHARACTER:
 			_click_portrait()
 		else:
 			_click_slot()
+	elif event.button_index == MOUSE_BUTTON_RIGHT:
+		accept_event()
+		if kind != Kind.CHARACTER:
+			_use_item()
+
+
+## Right-click: use the consumable in this slot. A potion heals whoever's inventory
+## this is; a scroll casts at the monster ahead and closes the screen so you can see it.
+func _use_item() -> void:
+	var def := get_item()
+	if def == null or def.type != ItemDef.Type.CONSUMABLE:
+		return
+	var result: Dictionary = screen.party.use_item(member_slot, def)
+	screen.say(result.message)
+	if not result.used:
+		return
+	set_item(null)  # Spent.
+	screen.refresh()
+	if result.close:
+		get_tree().call_group("hud", "show_message", result.message)
+		screen.hide_screen()
 
 
 ## Pick up, put down, or swap with the cursor.

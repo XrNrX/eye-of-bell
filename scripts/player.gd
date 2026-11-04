@@ -31,6 +31,7 @@ var attack_was_down := [false, false, false, false]  # Same for the 1-4 attack k
 # optional: if either scene is removed, items just stop being interactive.
 var dungeon: Node
 var cursor: Node
+var party: Node  # Where keys in backpacks are looked for (see _take_key).
 
 
 func _ready() -> void:
@@ -48,6 +49,7 @@ func _ready() -> void:
 func _find_singletons() -> void:
 	dungeon = get_tree().get_first_node_in_group("dungeon")
 	cursor = get_tree().get_first_node_in_group("cursor")
+	party = get_tree().get_first_node_in_group("party")
 
 
 ## Left click: pick up the item on the tile in front of us onto the cursor, or (if
@@ -157,13 +159,22 @@ func _interact() -> void:
 		_say("It won't budge.")  # Only its switches can open it.
 		return
 	if DungeonMap.is_locked(front):
-		if not cursor or not cursor.holding_type(ItemDef.Type.KEY):
+		if _take_key() == null:
 			_say("The door is locked.")
 			return
-		cursor.release()
 		DungeonMap.unlocked_doors[front] = true
 		_say("You unlock the door.")
 	get_tree().call_group("dungeon", "open_door", front)
+
+
+## Use up a key to unlock a door: the one on the cursor if there is one, otherwise
+## one from any party member's backpack. Returns it, or null if there is no key.
+func _take_key() -> Resource:
+	if cursor and cursor.holding_type(ItemDef.Type.KEY):
+		return cursor.release()
+	if party:
+		return party.take_key()
+	return null
 
 
 ## Show a message on the HUD (group "hud"), if there is one.

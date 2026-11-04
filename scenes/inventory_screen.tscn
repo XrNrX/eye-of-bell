@@ -59,8 +59,15 @@ text = "Fighter"
 [node name="HpLabel" type="Label" parent="Center/Window/Box/Header"]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 9
 text = "30/30 HP"
+
+[node name="CloseButton" type="Button" parent="Center/Window/Box/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 8
+text = "Close"
 
 [node name="Strip" type="HBoxContainer" parent="Center/Window/Box"]
 unique_name_in_owner = true
@@ -87,7 +94,7 @@ unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 2
 theme_override_constants/v_separation = 2
-columns = 4
+columns = 6
 
 [node name="StatusLabel" type="Label" parent="Center/Window/Box"]
 unique_name_in_owner = true
@@ -96,9 +103,3 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.85, 0.51, 0.26, 1)
 theme_override_font_sizes/font_size = 8
 autowrap_mode = 3
-
-[node name="CloseButton" type="Button" parent="Center/Window/Box"]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 10
-text = "Close"

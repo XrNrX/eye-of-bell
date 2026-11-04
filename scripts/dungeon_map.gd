@@ -61,6 +61,12 @@ const LEVERS := [
 # (picked up / dropped); this is just the starting layout.
 const ITEMS := [
 	{"cell": Vector2i(8, 1), "def": "res://data/items/key.tres"},
+	{"cell": Vector2i(1, 2), "def": "res://data/items/short_sword.tres"},    # In front of the start.
+	{"cell": Vector2i(3, 3), "def": "res://data/items/leather_armour.tres"},
+	{"cell": Vector2i(5, 2), "def": "res://data/items/healing_potion.tres"},
+	{"cell": Vector2i(6, 3), "def": "res://data/items/mace.tres"},
+	{"cell": Vector2i(7, 5), "def": "res://data/items/scroll.tres"},
+	{"cell": Vector2i(2, 9), "def": "res://data/items/healing_potion.tres"},  # In the locked room.
 ]
 
 # Monsters: the floor cell they start on and their definition resource (see

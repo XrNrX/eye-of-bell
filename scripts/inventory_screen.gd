@@ -90,27 +90,26 @@ func focus(member_slot: int) -> void:
 	refresh()
 
 
+## Create every slot once. Each is told what it is before it enters the tree, so it
+## starts at the right size; refresh() later re-points hands/armour/backpack at
+## whichever member is focused.
 func _build_slots() -> void:
+	var Kind = InventorySlotScript.Kind
 	for i in party.members.size():
-		var s: Panel = InventorySlotScript.new()
-		strip_box.add_child(s)
-		s.setup(self, i, InventorySlotScript.Kind.CHARACTER)
-		strip_slots.append(s)
-
+		strip_slots.append(_add_slot(strip_box, i, Kind.CHARACTER))
 	for i in PartyScript.HAND_SLOTS:
-		var s: Panel = InventorySlotScript.new()
-		hands_box.add_child(s)
-		hand_slots.append(s)
-
-	armour_slot = InventorySlotScript.new()
-	hands_box.add_child(armour_slot)  # Shown alongside the hands, visually grouped.
-
+		hand_slots.append(_add_slot(hands_box, focused_slot, Kind.HAND, i))
+	armour_slot = _add_slot(hands_box, focused_slot, Kind.ARMOUR)  # Beside the hands.
 	for i in PartyScript.BACKPACK_SIZE:
-		var s: Panel = InventorySlotScript.new()
-		backpack_grid.add_child(s)
-		backpack_slots.append(s)
-
+		backpack_slots.append(_add_slot(backpack_grid, focused_slot, Kind.BACKPACK, i))
 	refresh()
+
+
+func _add_slot(parent: Container, member_slot: int, slot_kind: int, slot_index: int = 0) -> Panel:
+	var s: Panel = InventorySlotScript.new()
+	s.setup(self, member_slot, slot_kind, slot_index)
+	parent.add_child(s)
+	return s
 
 
 ## Redraw everything for whichever member is focused. Called after any move (by the
