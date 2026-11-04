@@ -7,6 +7,7 @@ const CELL_PX := 6  # Size of one map cell on screen, in internal-resolution pix
 const WALL_COLOR := Color(0.7, 0.7, 0.7)
 const FLOOR_COLOR := Color(0.12, 0.12, 0.12)
 const DOOR_COLOR := Color(0.6, 0.4, 0.2)
+const MONSTER_COLOR := Color(0.9, 0.15, 0.15)
 const STAIRS_COLOR := Color(0.3, 0.6, 0.9)
 const LOCKED_COLOR := Color(0.8, 0.2, 0.2)
 const PLAYER_COLOR := Color(1.0, 0.3, 0.2)
@@ -35,6 +36,9 @@ func _draw() -> void:
 				elif not DungeonMap.open_doors.has(c):
 					color = DOOR_COLOR
 			draw_rect(Rect2(Vector2(x, z) * CELL_PX, Vector2.ONE * CELL_PX), color)
+
+	for monster_cell in DungeonMap.occupied:  # Monsters as red squares.
+		draw_rect(Rect2(Vector2(monster_cell) * CELL_PX + Vector2.ONE, Vector2.ONE * (CELL_PX - 2)), MONSTER_COLOR)
 
 	if player == null:
 		return

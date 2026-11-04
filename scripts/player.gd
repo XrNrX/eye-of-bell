@@ -62,7 +62,7 @@ func _process(_delta: float) -> void:
 ## Step one tile in grid direction `dir`, unless a wall is in the way.
 func _try_move(dir: Vector2i) -> void:
 	var target := cell + dir
-	if DungeonMap.is_blocked(target):  # Walls and closed doors.
+	if DungeonMap.is_blocked(target) or DungeonMap.is_occupied(target):  # Walls, closed doors, monsters.
 		return
 	cell = target
 	_report_position()

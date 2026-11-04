@@ -61,7 +61,14 @@ const KEYS: Array[Vector2i] = [
 	Vector2i(8, 1),
 ]
 
+# Monsters: the floor cell they start on and their definition resource (see
+# scripts/monster_def.gd). New monsters are just new .tres files listed here.
+const MONSTERS := [
+	{"cell": Vector2i(3, 5), "def": "res://data/monsters/skeleton.tres"},
+]
+
 # --- Run state (reset by reset_run() when the dungeon is built) ---
+static var occupied := {}        # Tiles holding a monster (cell -> monster node).
 static var open_doors := {}      # Doors that have finished opening (cell -> true).
 static var unlocked_doors := {}  # Locked doors a key has been used on (cell -> true).
 static var taken_keys := {}      # Keys already picked up (cell -> true).
@@ -82,7 +89,25 @@ static func lever_at(cell: Vector2i, side: int) -> Dictionary:
 	return {}
 
 
+## True if a monster stands on (or is stepping onto) the cell.
+static func is_occupied(cell: Vector2i) -> bool:
+	return occupied.has(cell)
+
+
+## True if nothing solid (wall or closed door) lies between the two cells, so
+## one can see the other. Samples the straight line between the cell centres.
+static func has_line_of_sight(a: Vector2i, b: Vector2i) -> bool:
+	var d := b - a
+	var n: int = maxi(absi(d.x), absi(d.y))
+	for i in range(1, n):
+		var c := Vector2i(roundi(a.x + d.x * float(i) / n), roundi(a.y + d.y * float(i) / n))
+		if is_blocked(c):
+			return false
+	return true
+
+
 static func reset_run() -> void:
+	occupied.clear()
 	open_doors.clear()
 	unlocked_doors.clear()
 	taken_keys.clear()
@@ -108,7 +133,8 @@ static func is_locked(cell: Vector2i) -> bool:
 	return is_door(cell) and MAP[cell.y][cell.x] == 3 and not unlocked_doors.has(cell)
 
 
-## True if the player can't walk into the cell: a wall or a door that isn't open yet.
+## True if the cell is solid terrain: a wall or a door that isn't open yet.
+## (Monsters are separate, see is_occupied.)
 static func is_blocked(cell: Vector2i) -> bool:
 	return is_wall(cell) or (is_door(cell) and not open_doors.has(cell))
 

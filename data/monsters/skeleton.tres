@@ -1,0 +1,19 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/monster_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/monsters/skeleton/skeleton_sheet.png" id="2_sheet"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Skeleton"
+max_hp = 12
+damage = 3
+speed = 1.0
+sight_range = 4
+sheet = ExtResource("2_sheet")
+hframes = 7
+idle_frames = PackedInt32Array(0, 1)
+attack_frames = PackedInt32Array(2, 3, 4)
+hurt_frames = PackedInt32Array(5, 6)
+idle_fps = 2.0
+pixel_size = 0.028
