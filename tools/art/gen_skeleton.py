@@ -27,7 +27,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from artio import save_png
+from artio import save_frames
 from lighting import shade_mask
 from noise import hash01
 from outline import add_outline
@@ -361,20 +361,7 @@ def render(seed=1, bone="ivory", weapon="sword", helmet=False, damage=0.04):
 def build(name="skeleton", out_dir=None, **options):
     """Write the frames, sheet and sheet JSON. Default folder: res://art/monsters/<name>/.
     Options: seed, bone (ivory/ash/mossy), weapon (sword/axe/club/none), helmet, damage."""
-    images = render(**options)
-    root, sub = (Path(out_dir), "") if out_dir else (None, f"monsters/{name}/")
-    written = []
-    sheet = Image.new("RGBA", (W * len(ORDER), H), (0, 0, 0, 0))
-    rects = {}
-    for i, frame in enumerate(ORDER):
-        written.append(save_png(images[frame], f"{sub}{frame}.png", root=root))
-        sheet.paste(images[frame], (i * W, 0))
-        rects[frame] = {"x": i * W, "y": 0, "w": W, "h": H}
-    written.append(save_png(sheet, f"{sub}{name}_sheet.png", root=root))
-    json_path = (root or ART_DIR) / sub / f"{name}_sheet.json"
-    json_path.write_text(json.dumps({"frame_size": [W, H], "frames": rects, "animations": ANIMATIONS}, indent=2))
-    written.append(json_path)
-    return written
+    return save_frames(render(**options), ORDER, ANIMATIONS, name, out_dir)
 
 
 def main():

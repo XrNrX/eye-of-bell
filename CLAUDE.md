@@ -24,9 +24,10 @@ Art (Python 3 + Pillow, run from the repo root):
 
 ```bash
 python tools/art/build_all.py                 # regenerate ALL art, then patch .import files
-python tools/art/build_all.py --only tiles    # one generator: tiles, sprites, skeleton, swatch
+python tools/art/build_all.py --only tiles    # one generator: tiles, sprites, skeleton, slime, swatch
 python tools/art/test_toolkit.py              # self-test of the art helpers
 python tools/art/gen_skeleton.py --seed 7 --bone ash --weapon axe --helmet --name skeleton_guard
+python tools/art/gen_slime.py --seed 5 --colour acid --contents skull --name slime_acid
 ```
 
 There is no linter and no committed game test suite.
@@ -64,7 +65,7 @@ So the overlay, HUD and level-complete scenes can be deleted from `main.tscn` wi
 ## Art pipeline (`tools/art/`)
 
 - `palette.json` is the 24-colour palette. Every generated image must use only those colours; `artio.save_png()` raises on any off-palette pixel. Use `PAL`/ramps from `palette.py`, not literal RGB.
-- Helpers are flat modules (`from noise import ...`, no package): `noise` (seeded, tileable), `dither`, `outline`, `lighting` (light from the top-left), `artio`.
+- Helpers are flat modules (`from noise import ...`, no package): `noise` (seeded, tileable), `dither`, `outline`, `lighting` (light from the top-left), `artio` (`save_png`; `save_frames` for animation sets: frame PNGs + sheet + JSON; `patch_imports`).
 - `build_all.py` runs every `gen_*.py` that defines `build()` returning the written paths. To add art, drop in a new `gen_<name>.py`.
 - `art/` PNGs are **generated outputs**: edit the generators, or the next `build_all.py` overwrites your change. To use hand-made or PixelLab art instead, keep the same filenames and stop that generator from overwriting it.
 - Frame/file names are the contract with the game (e.g. `art/monsters/skeleton/skeleton_sheet.png`, 7 frames of 48x64, referenced by `data/monsters/skeleton.tres`).
