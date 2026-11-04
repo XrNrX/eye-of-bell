@@ -1,0 +1,42 @@
+{
+  "name": "Dark Stone Dungeon 24",
+  "colors": [
+    {"name": "ink",        "hex": "#14101a", "group": "grey"},
+    {"name": "stone_900",  "hex": "#231e2b", "group": "grey"},
+    {"name": "stone_800",  "hex": "#322c3b", "group": "grey"},
+    {"name": "stone_700",  "hex": "#463f4f", "group": "grey"},
+    {"name": "stone_500",  "hex": "#6a6272", "group": "grey"},
+    {"name": "stone_300",  "hex": "#968e9a", "group": "grey"},
+    {"name": "stone_100",  "hex": "#c3bcc0", "group": "grey"},
+
+    {"name": "soil_900",   "hex": "#2a1a14", "group": "brown"},
+    {"name": "wood_700",   "hex": "#4a2e1e", "group": "brown"},
+    {"name": "wood_500",   "hex": "#6e4629", "group": "brown"},
+    {"name": "leather_400","hex": "#94643a", "group": "brown"},
+
+    {"name": "rust_700",   "hex": "#7a3a1c", "group": "rust"},
+    {"name": "rust_500",   "hex": "#b0592a", "group": "rust"},
+    {"name": "rust_300",   "hex": "#d98343", "group": "rust"},
+
+    {"name": "moss_900",   "hex": "#232c1e", "group": "green"},
+    {"name": "moss_700",   "hex": "#3c4a2a", "group": "green"},
+    {"name": "moss_500",   "hex": "#667a35", "group": "green"},
+    {"name": "slime_300",  "hex": "#a3b04a", "group": "green"},
+
+    {"name": "bone_700",   "hex": "#8d7d62", "group": "bone"},
+    {"name": "bone_500",   "hex": "#c4b698", "group": "bone"},
+    {"name": "bone_300",   "hex": "#e6dcc0", "group": "bone"},
+
+    {"name": "torch_700",  "hex": "#c78a1e", "group": "torch"},
+    {"name": "torch_500",  "hex": "#f0b83a", "group": "torch"},
+    {"name": "torch_300",  "hex": "#ffe38a", "group": "torch"}
+  ],
+  "ramps": {
+    "stone": ["stone_900", "stone_800", "stone_700", "stone_500", "stone_300", "stone_100"],
+    "wood":  ["soil_900", "wood_700", "wood_500", "leather_400"],
+    "rust":  ["rust_700", "rust_500", "rust_300"],
+    "moss":  ["moss_900", "moss_700", "moss_500", "slime_300"],
+    "bone":  ["bone_700", "bone_500", "bone_300"],
+    "torch": ["torch_700", "torch_500", "torch_300"]
+  }
+}
