@@ -32,9 +32,21 @@ const SIDE_DIRS: Array[Vector2i] = [
 	Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0),
 ]
 
-var doors := {}     # Vector2i cell -> door MeshInstance3D
-var opening := {}   # Vector2i cell -> true while a door is sliding open
-var keys := {}      # Vector2i cell -> key Sprite3D still lying on the floor
+const PLATE_TEXTURE := "res://art/tiles/plate.png"
+const LEVER_SHEET := "res://art/sprites/lever.png"  # 2 frames of 16x16: off, on.
+const PLATE_SIZE := 1.1
+const PLATE_UP_Y := 0.05     # Plate centre height when raised...
+const PLATE_DOWN_Y := -0.03  # ...and when pressed (sunk below the floor line).
+const LEVER_PIXEL_SIZE := 0.05
+const LEVER_HEIGHT := 1.0
+
+var doors := {}       # Vector2i cell -> door MeshInstance3D
+var door_want := {}   # Vector2i cell -> true if the door is currently told to be open
+var door_tweens := {} # Vector2i cell -> the Tween moving it
+var keys := {}        # Vector2i cell -> key Sprite3D still lying on the floor
+var plates := {}      # Vector2i cell -> pressure plate MeshInstance3D
+var levers := {}      # Vector3i (x, z, side) -> lever Sprite3D
+var lever_on := {}    # Vector3i (x, z, side) -> true if switched on
 
 
 func _ready() -> void:
@@ -84,6 +96,82 @@ func _ready() -> void:
 		_add_torch(Vector2i(torch.x, torch.y), torch.z)
 	for key_cell in DungeonMap.KEYS:
 		_add_key(key_cell)
+	for plate in DungeonMap.PLATES:
+		_add_plate(plate.cell)
+	for lever in DungeonMap.LEVERS:
+		_add_lever(lever.cell, lever.side)
+	refresh()
+
+
+## Re-evaluate every switch: sink/raise plates and open/close linked doors.
+## The player calls this (via the "dungeon" group) whenever it changes tile.
+func refresh() -> void:
+	for cell in plates:
+		plates[cell].position.y = PLATE_DOWN_Y if DungeonMap.player_cell == cell else PLATE_UP_Y
+	for cell in doors:
+		var id := DungeonMap.door_id(cell)
+		if id != "":
+			_drive_door(cell, _linked_open(id))
+
+
+## Toggle a lever and its sprite, then update the doors. Called by the player.
+func pull_lever(cell: Vector2i, side: int) -> void:
+	var key := Vector3i(cell.x, cell.y, side)
+	if not levers.has(key):
+		return
+	lever_on[key] = not lever_on.get(key, false)
+	levers[key].frame = 1 if lever_on[key] else 0
+	refresh()
+
+
+## Should the door with this ID be open? Yes if any of its levers is on or the
+## player is standing on any of its plates.
+func _linked_open(id: String) -> bool:
+	for plate in DungeonMap.PLATES:
+		if plate.target == id and DungeonMap.player_cell == plate.cell:
+			return true
+	for lever in DungeonMap.LEVERS:
+		if lever.target == id and lever_on.get(Vector3i(lever.cell.x, lever.cell.y, lever.side), false):
+			return true
+	return false
+
+
+func _add_plate(cell: Vector2i) -> void:
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3(PLATE_SIZE, 0.1, PLATE_SIZE)
+	mesh.material = _make_material(Color(0.5, 0.5, 0.55), PLATE_TEXTURE)
+	var plate := _add_mesh(mesh, DungeonMap.cell_to_world(cell))
+	plate.position.y = PLATE_UP_Y
+	plates[cell] = plate
+
+
+## A wall lever: a 2-frame sprite (off / on) hung on one wall of a cell.
+func _add_lever(cell: Vector2i, side: int) -> void:
+	var sprite := Sprite3D.new()
+	if ResourceLoader.exists(LEVER_SHEET):
+		sprite.texture = load(LEVER_SHEET)
+	sprite.hframes = 2
+	sprite.pixel_size = LEVER_PIXEL_SIZE
+	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	sprite.shaded = false
+	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	sprite.position = _wall_point(cell, side, LEVER_HEIGHT)
+	sprite.rotation.y = _face_yaw(side)
+	add_child(sprite)
+	levers[Vector3i(cell.x, cell.y, side)] = sprite
+
+
+## Point on the wall face at `side` of `cell`, at the given height (nudged off the wall).
+func _wall_point(cell: Vector2i, side: int, height: float) -> Vector3:
+	var d := SIDE_DIRS[side]
+	var p := DungeonMap.cell_to_world(cell) + Vector3(d.x, 0, d.y) * (DungeonMap.TILE_SIZE / 2.0 - 0.02)
+	p.y = height
+	return p
+
+
+## Yaw that turns a sprite (front = +Z) to face into the room, away from that wall.
+func _face_yaw(side: int) -> float:
+	return atan2(float(SIDE_DIRS[side].x) * -1.0, float(SIDE_DIRS[side].y) * -1.0)
 
 
 ## Remove a picked-up key's sprite. Called by the player via the "dungeon" group.
@@ -112,17 +200,37 @@ func _add_key(cell: Vector2i) -> void:
 	bob.tween_property(sprite, "position:y", 0.45, 0.8).set_trans(Tween.TRANS_SINE)
 
 
-## Slide a door up into the ceiling. Called by the player via the "dungeon" group.
+## Open an ordinary door (F). Called by the player via the "dungeon" group.
 func open_door(cell: Vector2i) -> void:
-	if not doors.has(cell) or opening.has(cell) or DungeonMap.open_doors.has(cell) \
-			or DungeonMap.is_locked(cell):
+	if not DungeonMap.is_locked(cell):
+		_drive_door(cell, true)
+
+
+## Slide a door up into the ceiling (open) or back down (closed). Doors can be
+## reversed mid-slide. Open doors are walkable only once fully open; closing makes
+## them solid immediately. A door never closes on the player standing in it: it
+## stays open until the player leaves and the next refresh() shuts it.
+func _drive_door(cell: Vector2i, open: bool) -> void:
+	if not doors.has(cell) or door_want.get(cell, false) == open:
 		return
-	opening[cell] = true
+	if not open and DungeonMap.player_cell == cell:
+		return
+	door_want[cell] = open
+	if door_tweens.has(cell):
+		door_tweens[cell].kill()
+
+	var h := DungeonMap.WALL_HEIGHT
 	var door: MeshInstance3D = doors[cell]
+	var target_y := h / 2.0 + (h if open else 0.0)
+	var time := DOOR_OPEN_TIME * absf(target_y - door.position.y) / h
 	var tween := create_tween()
-	tween.tween_property(door, "position:y", door.position.y + DungeonMap.WALL_HEIGHT, DOOR_OPEN_TIME)
-	# Only become walkable once the panel is out of the way.
-	tween.tween_callback(func(): DungeonMap.open_doors[cell] = true)
+	tween.tween_property(door, "position:y", target_y, time)
+	if open:
+		# Only become walkable once the panel is out of the way.
+		tween.tween_callback(func(): DungeonMap.open_doors[cell] = true)
+	else:
+		DungeonMap.open_doors.erase(cell)
+	door_tweens[cell] = tween
 
 
 func _add_door(mesh: Mesh, cell: Vector2i, pos: Vector3) -> void:
@@ -135,8 +243,7 @@ func _add_door(mesh: Mesh, cell: Vector2i, pos: Vector3) -> void:
 ## Hang an animated torch sprite (plus a flickering light) on one wall of a cell.
 func _add_torch(cell: Vector2i, side: int) -> void:
 	var dir := Vector3(SIDE_DIRS[side].x, 0, SIDE_DIRS[side].y)
-	var wall_pos := DungeonMap.cell_to_world(cell) + dir * (DungeonMap.TILE_SIZE / 2.0 - 0.02)
-	wall_pos.y = TORCH_HEIGHT
+	var wall_pos := _wall_point(cell, side, TORCH_HEIGHT)
 
 	var sprite := AnimatedSprite3D.new()
 	sprite.sprite_frames = _make_torch_frames()
@@ -145,7 +252,7 @@ func _add_torch(cell: Vector2i, side: int) -> void:
 	sprite.shaded = false                               # Glows regardless of lights.
 	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD   # Hard pixel edges, no sorting issues.
 	sprite.position = wall_pos
-	sprite.rotation.y = atan2(-dir.x, -dir.z)           # Face into the room (sprite front is +Z).
+	sprite.rotation.y = _face_yaw(side)                 # Face into the room.
 	add_child(sprite)
 	sprite.play("default")
 

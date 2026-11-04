@@ -119,6 +119,46 @@ def locked_door(seed):
     return img
 
 
+def plate(seed):
+    """Pressure plate: a bevelled stone slab with a ring and a gold diamond rune."""
+    img = blocks((100, 95, 90), (40, 38, 36), SIZE, SIZE, False, seed, noise=0.05)
+    px = img.load()
+    cx = cy = SIZE // 2
+    for y in range(SIZE):
+        for x in range(SIZE):
+            d = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
+            if 17 <= d < 19:                       # Carved ring.
+                px[x, y] = (45, 42, 40)
+            if abs(x - cx) + abs(y - cy) <= 8:     # Gold diamond.
+                px[x, y] = (215, 175, 60) if abs(x - cx) + abs(y - cy) <= 5 else (140, 105, 35)
+    return img
+
+
+def lever_sheet():
+    """Wall lever, 2 frames of 16x16 side by side: handle up (off), handle down (on)."""
+    sheet = Image.new("RGBA", (32, 16), (0, 0, 0, 0))
+    px = sheet.load()
+    iron, dark, steel, knob = (88, 90, 98, 255), (40, 42, 48, 255), (170, 172, 180, 255), (200, 50, 40, 255)
+    for f in range(2):
+        ox = f * 16
+        for y in range(1, 15):                     # Back plate.
+            for x in range(4, 12):
+                edge = x in (4, 11) or y in (1, 14)
+                px[ox + x, y] = dark if edge else iron
+        for y in range(3, 13):                     # Slot the handle moves in.
+            px[ox + 7, y] = dark
+            px[ox + 8, y] = dark
+        for y in ((3, 4, 5, 6, 7, 8) if f == 0 else (8, 9, 10, 11, 12)):
+            px[ox + 7, y] = steel                  # Handle shaft.
+            px[ox + 8, y] = steel
+        ky = 2 if f == 0 else 13                   # Red knob at the free end.
+        for dx in (-1, 0, 1, 2):
+            for dy in (-1, 0, 1):
+                px[ox + 7 + dx, ky + dy] = knob
+        px[ox + 6, 8] = px[ox + 9, 8] = (230, 230, 235, 255)   # Pivot bolt.
+    return sheet
+
+
 def key_sprite():
     """Small gold key, 16x16, drawn pointing up-right with a ring bow."""
     img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
@@ -182,12 +222,14 @@ def main():
     rough((60, 55, 52), 3).save(OUT / "ceiling.png")
     door(4).save(OUT / "door.png")
     locked_door(4).save(OUT / "door_locked.png")
+    plate(5).save(OUT / "plate.png")
     print("Wrote", [p.name for p in sorted(OUT.glob("*.png"))])
 
     sprites = OUT.parent / "sprites"
     sprites.mkdir(parents=True, exist_ok=True)
     torch_sheet().save(sprites / "torch.png")
     key_sprite().save(sprites / "key.png")
+    lever_sheet().save(sprites / "lever.png")
     print("Wrote", [p.name for p in sorted(sprites.glob("*.png"))])
 
 
