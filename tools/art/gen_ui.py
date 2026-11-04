@@ -1,8 +1,17 @@
-"""UI icons written to res://art/ui/.
+"""UI art written to res://art/ui/.
 
 hand_sword.png (24x24): an armoured fist gripping a sword pointing up and to the
 right, the weapon-hand button on the party HUD. Each part is a pixel mask shaded
 with top-left lighting; the whole icon gets a 1px dark outline.
+
+Quick-slot art, all 14x14 (a 12x12 floor icon plus a 1px border):
+    quickslot.png        frame of a slot that holds an item
+    quickslot_empty.png  faint outline of an empty slot
+    quickslot_sweep.png  flat grey, tinted translucent at runtime and swept as a
+                         clock wipe over the slot while it cools down
+The frames use the same stone colours as the HUD's portrait panels (a stone_700
+border on stone_900), with the toolkit's top-left light: a lit top/left edge and a
+shaded bottom/right edge.
 """
 import math
 
@@ -61,5 +70,50 @@ def hand_sword():
     return add_outline(img, PAL["ink"])
 
 
+QUICK = 14
+
+
+def quickslot_frame(filled):
+    """A filled slot: stone_700 bevel (lit top-left, shaded bottom-right) around a
+    stone_900 inside. An empty slot: just a faint stone_800 outline with cut corners
+    and a see-through middle, so the panel shows through."""
+    img = Image.new("RGBA", (QUICK, QUICK), (0, 0, 0, 0))
+    px = img.load()
+    last = QUICK - 1
+    for y in range(QUICK):
+        for x in range(QUICK):
+            edge_x, edge_y = x in (0, last), y in (0, last)
+            if not (edge_x or edge_y):
+                if filled:
+                    px[x, y] = (*PAL["stone_900"], 255)
+                continue
+            if filled:
+                if (x, y) == (0, 0):
+                    colour = PAL["stone_500"]
+                elif (x, y) == (last, last):
+                    colour = PAL["stone_800"]
+                elif edge_x and edge_y:
+                    colour = PAL["stone_700"]
+                elif y == 0 or x == 0:
+                    colour = PAL["stone_500"]   # Lit edges.
+                else:
+                    colour = PAL["stone_800"]   # Shaded edges.
+            else:
+                if edge_x and edge_y:
+                    continue                    # Cut corners.
+                colour = PAL["stone_800"]
+            px[x, y] = (*colour, 255)
+    return img
+
+
+def quickslot_sweep():
+    return Image.new("RGBA", (QUICK, QUICK), (*PAL["stone_500"], 255))
+
+
 def build():
-    return [save_png(hand_sword(), "ui/hand_sword.png")]
+    return [
+        save_png(hand_sword(), "ui/hand_sword.png"),
+        save_png(quickslot_frame(True), "ui/quickslot.png"),
+        save_png(quickslot_frame(False), "ui/quickslot_empty.png"),
+        save_png(quickslot_sweep(), "ui/quickslot_sweep.png"),
+    ]

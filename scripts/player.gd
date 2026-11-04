@@ -1,7 +1,7 @@
 extends Node3D
 ## Grid-based first-person movement.
 ## W/S = forward/back, A/D = strafe, Q/E = turn 90 degrees, F = open door / pull lever,
-## 1-4 = that party slot attacks (see party.gd), left click = pick up/put down the
+## 1-8 = use that quick slot (hero 1 = keys 1-2, hero 2 = 3-4...; see party.gd), left click = pick up/put down the
 ## item on the tile in front, onto the cursor (see cursor_item.gd).
 ## Every move/turn is tweened; movement input is ignored while a tween is running.
 
@@ -24,7 +24,7 @@ var facing: int = DungeonMap.START_FACING
 var yaw_degrees: float  # Accumulated (unwrapped) yaw so turn tweens take the short way.
 var tween: Tween
 var interact_was_down := false  # So holding F triggers once, not every frame.
-var attack_was_down := [false, false, false, false]  # Same for the 1-4 attack keys.
+var quick_was_down := [false, false, false, false, false, false, false, false]  # Same for the 1-8 quick-slot keys.
 
 # The dungeon (for item_at/take_item/place_item, which need return values, so we
 # call them directly) and the cursor overlay (what's currently "held"). Both are
@@ -88,12 +88,12 @@ func _process(_delta: float) -> void:
 	var interact_pressed := interact_down and not interact_was_down
 	interact_was_down = interact_down
 
-	# 1-4: that party slot attacks. Combat is real time, so this works mid-move too.
-	for i in 4:
+	# 1-8: use that quick slot (two per hero, in party order). Real time, so this works mid-move too.
+	for i in 8:
 		var down := Input.is_physical_key_pressed(KEY_1 + i)
-		if down and not attack_was_down[i]:
-			get_tree().call_group("party", "attack", i)
-		attack_was_down[i] = down
+		if down and not quick_was_down[i]:
+			get_tree().call_group("party", "use_quick", i >> 1, i & 1)
+		quick_was_down[i] = down
 
 	# Busy animating: ignore input.
 	if tween and tween.is_running():

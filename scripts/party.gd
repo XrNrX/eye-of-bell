@@ -12,8 +12,11 @@ const CombatRules := preload("res://scripts/combat_rules.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
 
 const MISSILE_RANGE := 4  # How many tiles down the corridor ahead a scroll's missile reaches.
+const QUICK_SLOTS := 2        # Quick slots per member (see use_quick), shown under their portrait.
+const QUICK_COOLDOWN := 1.0   # Seconds a quick slot is unusable after an item is used from it.
 
 signal hp_changed(slot: int)
+signal quick_changed(slot: int)  # A member's quick slots changed (contents or cooldown started).
 signal cooldown_started(slot: int, duration: float)
 signal hero_hit(slot: int, damage: int)  # damage 0 means the monster missed.
 signal wiped
@@ -39,6 +42,13 @@ class Member:
 	var hands: Array = [null, null]
 	var armour: Resource = null
 	var backpack: Array = []
+
+	# Quick slots: consumables ready to use with one click or a number key. Stored
+	# here, on the runtime member, not on the CharacterDef -- that resource is shared
+	# and must never be changed while the game runs. Cooldowns count down in
+	# Party._process.
+	var quick: Array = [null, null]
+	var quick_cooldown: Array = [0.0, 0.0]
 
 	func is_alive() -> bool:
 		return hp > 0
@@ -74,6 +84,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	for m in members:
 		m.cooldown_left = maxf(0.0, m.cooldown_left - delta)
+		for i in QUICK_SLOTS:
+			m.quick_cooldown[i] = maxf(0.0, m.quick_cooldown[i] - delta)
 
 
 func member(slot: int) -> Member:
@@ -129,6 +141,48 @@ func take_key() -> Resource:
 				m.backpack[i] = null
 				return item
 	return null
+
+
+## Quick slots take consumables only (potions, scrolls, and later throwables).
+func quick_accepts(def: Resource) -> bool:
+	return def != null and def.type == ItemDef.Type.CONSUMABLE
+
+
+## Put an item (or null, to empty it) in a quick slot. Returns false, changing
+## nothing, if the slot doesn't exist or the item isn't a consumable.
+func set_quick(slot: int, index: int, def: Resource) -> bool:
+	var m := member(slot)
+	if m == null or index < 0 or index >= QUICK_SLOTS:
+		return false
+	if def != null and not quick_accepts(def):
+		return false
+	m.quick[index] = def
+	quick_changed.emit(slot)
+	return true
+
+
+## Use the item in a member's quick slot on that member, right now. A potion heals
+## them; a scroll casts at the monster ahead (both via use_item). If it was used it
+## is spent and the slot starts a cooldown; if it couldn't be (full health, nothing
+## to target) nothing is spent and there is no cooldown. Nothing happens for an empty
+## slot, a dead member, or a slot that is still cooling down. Returns use_item's
+## {used, message, close} dictionary (used is false when nothing happened).
+func use_quick(slot: int, index: int) -> Dictionary:
+	var nothing := {"used": false, "message": "", "close": false}
+	var m := member(slot)
+	if m == null or index < 0 or index >= QUICK_SLOTS:
+		return nothing
+	var def = m.quick[index]
+	if def == null or not m.is_alive() or m.quick_cooldown[index] > 0.0:
+		return nothing
+	var result := use_item(slot, def)
+	if result.used:
+		m.quick[index] = null
+		m.quick_cooldown[index] = QUICK_COOLDOWN
+		quick_changed.emit(slot)
+	if result.message != "":
+		_say(result.message)
+	return result
 
 
 ## Use a consumable on behalf of a member. Returns {used: bool, message: String,

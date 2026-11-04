@@ -1,12 +1,13 @@
 extends CanvasLayer
-## Party HUD: a 2x2 grid of hero panels (portrait, HP bar, two hand slots), floating
-## damage numbers when a hero is hit, and a red screen flash. Click a hand (or press
-## 1-4) to attack; both hands in a panel trigger the same attack and cooldown --
+## Party HUD: a 2x2 grid of hero panels (portrait, two quick slots, HP bar, two hand
+## slots), floating damage numbers when a hero is hit, and a red screen flash. Click a
+## hand to attack (keys 1-8 are the quick slots now); both hands in a panel trigger the same attack and cooldown --
 ## there's only one weapon per hero so far, but the UI has room for dual-wielding
 ## or an off-hand item later. Click a portrait to open that hero's inventory screen
 ## (group "inventory"). Talks to the party only through its signals and group.
 
 const CombatRules := preload("res://scripts/combat_rules.gd")
+const QuickSlot := preload("res://scripts/quick_slot.gd")
 
 const PORTRAIT_SIZE := Vector2(24, 24)
 const HAND_SIZE := Vector2(12, 12)
@@ -122,6 +123,19 @@ func _make_panel(m) -> Dictionary:
 	portrait.pressed.connect(func(): get_tree().call_group("inventory", "show_screen", m.slot))
 	col.add_child(portrait)
 
+	# Two quick slots under the portrait (consumables; see quick_slot.gd).
+	var quick_row := HBoxContainer.new()
+	quick_row.add_theme_constant_override("separation", -2)
+	quick_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	quick_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(quick_row)
+	var quick_slots := []
+	for qi in party.QUICK_SLOTS:
+		var qs := QuickSlot.new()
+		qs.setup(party, m.slot, qi)
+		quick_row.add_child(qs)
+		quick_slots.append(qs)
+
 	col.add_child(_label(m.def.display_name, 8))
 
 	var hp_bar := _bar(HP_FILL, Vector2(BAR_WIDTH, 3), m.def.max_hp)
@@ -141,7 +155,7 @@ func _make_panel(m) -> Dictionary:
 	col.add_child(cool_bar)
 
 	return {"root": root, "portrait": portrait, "hand_a": hand_a, "hand_b": hand_b,
-		"cool_bar": cool_bar, "hp_bar": hp_bar}
+		"cool_bar": cool_bar, "hp_bar": hp_bar, "quick": quick_slots}
 
 
 func _make_hand(m) -> TextureButton:
@@ -152,7 +166,7 @@ func _make_hand(m) -> TextureButton:
 	hand.stretch_mode = TextureButton.STRETCH_KEEP_CENTERED
 	hand.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	hand.focus_mode = Control.FOCUS_NONE  # Space/Enter shouldn't trigger it.
-	hand.tooltip_text = "Attack (%d)" % (m.slot + 1)
+	hand.tooltip_text = "Attack"
 	hand.pressed.connect(func(): party.attack(m.slot))
 	return hand
 

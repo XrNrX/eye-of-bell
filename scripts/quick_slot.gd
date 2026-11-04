@@ -1,0 +1,182 @@
+extends Control
+## One quick slot under a character's portrait in the party panel: a 14x14 frame
+## holding a consumable (potion, scroll, later throwables) that can be used with one
+## click or a number key (1-8, in party order: hero 1 = keys 1 and 2, hero 2 = 3 and 4...).
+##
+## Same click system as the inventory, no drag and drop -- the cursor
+## (cursor_item.gd) is the hand:
+##   left click, hand full   put the held item in (swapping with what's there)
+##   left click, hand empty  use the item on this character now (see Party.use_quick)
+##   right click             pick the item back up onto the cursor
+## Using an item starts a short cooldown, drawn as a grey clock-wipe over the slot.
+## A dead character's slot is disabled: it can't be used or filled. Right-click still
+## lifts its item out, so a consumable can't be stranded on a corpse.
+##
+## The contents live on the Party.Member (member.quick), not here; this is just the
+## view and the click handling. Acts on the mouse PRESS (see inventory_slot.gd for why).
+
+const PartyScript := preload("res://scripts/party.gd")
+const FRAME_FILLED := preload("res://art/ui/quickslot.png")
+const FRAME_EMPTY := preload("res://art/ui/quickslot_empty.png")
+const SWEEP_TEXTURE := preload("res://art/ui/quickslot_sweep.png")
+
+const SLOT_SIZE := Vector2(14, 14)   # The frame art; its 12x12 inside holds a floor icon.
+const SWEEP_TINT := Color(1, 1, 1, 0.65)
+
+var party: Node
+var member_slot: int
+var index: int
+
+var frame: TextureRect
+var icon: TextureRect
+var sweep: TextureProgressBar
+var hovering := false
+var hover_text := ""  # What this slot currently has showing in the message line.
+
+
+## Call before adding to the tree.
+func setup(a_party: Node, a_member_slot: int, a_index: int) -> void:
+	party = a_party
+	member_slot = a_member_slot
+	index = a_index
+
+
+func _ready() -> void:
+	custom_minimum_size = SLOT_SIZE
+	mouse_filter = Control.MOUSE_FILTER_STOP
+
+	frame = _make_rect(Vector2.ZERO, SLOT_SIZE)
+	add_child(frame)
+	icon = _make_rect(Vector2(1, 1), SLOT_SIZE - Vector2(2, 2))
+	add_child(icon)
+
+	sweep = TextureProgressBar.new()
+	sweep.texture_progress = SWEEP_TEXTURE
+	sweep.tint_progress = SWEEP_TINT
+	sweep.fill_mode = TextureProgressBar.FILL_CLOCKWISE
+	sweep.min_value = 0.0
+	sweep.max_value = 100.0
+	sweep.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sweep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sweep.visible = false
+	add_child(sweep)
+
+	party.quick_changed.connect(_on_quick_changed)
+	mouse_entered.connect(_on_mouse_entered)
+	mouse_exited.connect(_on_mouse_exited)
+	refresh()
+
+
+func _make_rect(pos: Vector2, rect_size: Vector2) -> TextureRect:
+	var r := TextureRect.new()
+	r.position = pos
+	r.size = rect_size
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE  # Otherwise never smaller than the texture.
+	r.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return r
+
+
+func _item() -> Resource:
+	return party.member(member_slot).quick[index]
+
+
+func _process(_delta: float) -> void:
+	var left: float = party.member(member_slot).quick_cooldown[index]
+	sweep.visible = left > 0.0
+	sweep.value = left / PartyScript.QUICK_COOLDOWN * 100.0
+
+
+func _on_quick_changed(changed_member: int) -> void:
+	if changed_member == member_slot:
+		refresh()
+
+
+## Redraw from the member's data: frame, icon, and the hover text if the pointer is on us.
+func refresh() -> void:
+	var item := _item()
+	frame.texture = FRAME_FILLED if item else FRAME_EMPTY
+	icon.texture = null
+	if item:
+		# The small floor icon fits the frame exactly; anything else is scaled to fit.
+		icon.texture = item.floor_icon if item.floor_icon else item.icon
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED \
+				if icon.texture.get_size() == Vector2(12, 12) else TextureRect.STRETCH_SCALE
+	_update_hint()
+
+
+# --------------------------------------------------------------------------
+# Hover text in the message line
+# --------------------------------------------------------------------------
+
+func _on_mouse_entered() -> void:
+	hovering = true
+	_update_hint()
+
+
+func _on_mouse_exited() -> void:
+	hovering = false
+	_update_hint()
+
+
+## Keep the message line showing this slot's item name while hovered, and take it
+## down again afterwards (only if it's still our text).
+func _update_hint() -> void:
+	var item := _item()
+	var wanted: String = item.display_name if (hovering and item) else ""
+	if wanted == hover_text:
+		return
+	if hover_text != "":
+		get_tree().call_group("hud", "clear_message", hover_text)
+	hover_text = wanted
+	if wanted != "":
+		get_tree().call_group("hud", "show_message", wanted, true)
+
+
+# --------------------------------------------------------------------------
+# Clicks
+# --------------------------------------------------------------------------
+
+func _gui_input(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton and event.pressed):
+		return
+	if event.button_index == MOUSE_BUTTON_LEFT:
+		accept_event()
+		_left_click()
+	elif event.button_index == MOUSE_BUTTON_RIGHT:
+		accept_event()
+		_right_click()
+
+
+func _left_click() -> void:
+	var m = party.member(member_slot)
+	if not m.is_alive():
+		return  # Disabled.
+	var cursor = get_tree().get_first_node_in_group("cursor")
+	var here := _item()
+	if cursor and cursor.is_holding():
+		var held: Resource = cursor.held
+		if not party.quick_accepts(held):
+			_say("The %s can't go in a quick slot." % held.display_name)
+			return
+		party.set_quick(member_slot, index, cursor.release())
+		if here != null:
+			cursor.hold(here)  # Swap: what was here is now on the cursor.
+	elif here != null:
+		party.use_quick(member_slot, index)
+
+
+func _right_click() -> void:
+	var here := _item()
+	var cursor = get_tree().get_first_node_in_group("cursor")
+	if here == null or cursor == null:
+		return
+	if cursor.is_holding():
+		_say("Your hand is full.")
+		return
+	party.set_quick(member_slot, index, null)
+	cursor.hold(here)
+
+
+func _say(text: String) -> void:
+	get_tree().call_group("hud", "show_message", text)
