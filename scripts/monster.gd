@@ -2,13 +2,18 @@ extends Node3D
 ## A monster: occupies one tile, blocks movement, shown as a billboard sprite.
 ## Its AI acts on a timer. If the player is within sight_range tiles with a clear
 ## line of sight it steps towards them, otherwise it wanders. Never diagonal.
+## Next to the party it stops moving and attacks every attack_interval seconds.
 ## All stats and art come from a MonsterDef resource, so new monsters are data.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
+const FloatingText := preload("res://scripts/floating_text.gd")
 
 const AI_TICK := 0.8      # Seconds between actions at speed 1.0.
 const STEP_TIME := 0.3    # Seconds a step takes to animate.
 const WANDER_PAUSE := 0.3 # Chance a wandering monster just stands still this tick.
+const WIND_UP := 0.5      # Fraction of attack_interval it waits after reaching the party.
+const DAMAGE_COLOUR := Color(1.0, 0.89, 0.54)  # Palette torch_300.
+const MISS_COLOUR := Color(0.76, 0.74, 0.75)   # Palette stone_100.
 
 const DIRS: Array[Vector2i] = [
 	Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0),
@@ -17,8 +22,13 @@ const DIRS: Array[Vector2i] = [
 var def: Resource  # The MonsterDef.
 var cell: Vector2i
 var hp: int
+var dying := false
 var sprite: Sprite3D
 var anim_time := 0.0
+var attack_cooldown := 0.0
+var _one_shot := PackedInt32Array()  # Frames of an attack/hurt animation playing now.
+var _one_shot_time := 0.0
+var _one_shot_fps := 10.0
 
 
 ## Call before adding to the tree.
@@ -31,6 +41,7 @@ func setup(monster_def: Resource, start_cell: Vector2i) -> void:
 func _ready() -> void:
 	position = DungeonMap.cell_to_world(cell)
 	DungeonMap.occupied[cell] = self
+	attack_cooldown = def.attack_interval * WIND_UP
 
 	sprite = Sprite3D.new()
 	sprite.texture = def.sheet
@@ -40,7 +51,7 @@ func _ready() -> void:
 	sprite.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y  # Always faces the camera, stays upright.
 	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
 	# Stand on the floor: lift by half the frame height.
-	sprite.position.y = (def.sheet.get_height() * def.pixel_size) / 2.0
+	sprite.position.y = _sprite_height() / 2.0
 	add_child(sprite)
 
 	var timer := Timer.new()
@@ -51,18 +62,118 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
-	if DungeonMap.occupied.get(cell) == self:
-		DungeonMap.occupied.erase(cell)
+	_release_tiles()
 
 
 func _process(delta: float) -> void:
+	_animate(delta)
+	if dying:
+		return
+	if _next_to_player():
+		attack_cooldown -= delta
+		if attack_cooldown <= 0.0:
+			_attack()
+	else:
+		# Arriving next to the party: a short wind-up before the first blow.
+		attack_cooldown = maxf(attack_cooldown, def.attack_interval * WIND_UP)
+
+
+## Show the attack/hurt animation if one is playing, otherwise loop the idle frames.
+func _animate(delta: float) -> void:
 	anim_time += delta
+	if not _one_shot.is_empty():
+		_one_shot_time += delta
+		var i := int(_one_shot_time * _one_shot_fps)
+		if i < _one_shot.size():
+			sprite.frame = _one_shot[i]
+			return
+		if dying:
+			sprite.frame = _one_shot[_one_shot.size() - 1]  # Hold the last frame while dying.
+			return
+		_one_shot = PackedInt32Array()
 	var frames: PackedInt32Array = def.idle_frames
 	sprite.frame = frames[int(anim_time * def.idle_fps) % frames.size()]
 
 
-## One AI step: chase if the player is close and visible, else wander.
+func _play(frames: PackedInt32Array, fps: float) -> void:
+	_one_shot = frames
+	_one_shot_time = 0.0
+	_one_shot_fps = fps
+
+
+# --------------------------------------------------------------------------
+# Combat
+# --------------------------------------------------------------------------
+
+func _next_to_player() -> bool:
+	var d := DungeonMap.player_cell - cell
+	return absi(d.x) + absi(d.y) == 1
+
+
+func _attack() -> void:
+	attack_cooldown = def.attack_interval
+	if not def.attack_frames.is_empty():
+		_play(def.attack_frames, 8.0)
+	get_tree().call_group("party", "take_hit_from", self)
+
+
+## Called by the party with a CombatRules result: show the number, flash, maybe die.
+func take_hit(result: Dictionary) -> void:
+	if dying:
+		return
+	if not result.hit:
+		_float_text("Miss", MISS_COLOUR)
+		return
+	hp -= result.damage
+	_float_text(str(result.damage), DAMAGE_COLOUR)
+	if def.hurt_frames.size() >= 2:  # Flash: alternate the white frame with the hurt frame.
+		var hurt: int = def.hurt_frames[0]
+		var flash: int = def.hurt_frames[1]
+		_play(PackedInt32Array([flash, hurt, flash, hurt]), 14.0)
+	if hp <= 0:
+		_die()
+
+
+## Free the tile at once (so the player can walk in), then sink into the floor.
+func _die() -> void:
+	dying = true
+	_release_tiles()
+	get_tree().call_group("dungeon", "refresh")
+	var tween := create_tween()
+	tween.tween_interval(0.3)  # Let the hurt flash play first.
+	tween.tween_property(sprite, "scale:y", 0.0, 0.3).set_ease(Tween.EASE_IN)
+	tween.parallel().tween_property(sprite, "position:y", 0.0, 0.3).set_ease(Tween.EASE_IN)
+	tween.tween_callback(queue_free)
+
+
+## Remove every tile this monster holds (it can hold two while mid-step).
+func _release_tiles() -> void:
+	for c in DungeonMap.occupied.keys():
+		if DungeonMap.occupied[c] == self:
+			DungeonMap.occupied.erase(c)
+
+
+func _float_text(value: String, colour: Color) -> void:
+	var label := FloatingText.new()
+	label.setup(value, colour)
+	# Parented to the dungeon, not the monster, so it outlives a monster that dies.
+	label.position = position + Vector3(randf_range(-0.25, 0.25), _sprite_height() * 0.75, 0.0)
+	get_parent().add_child(label)
+
+
+func _sprite_height() -> float:
+	return def.sheet.get_height() * def.pixel_size
+
+
+# --------------------------------------------------------------------------
+# Movement AI
+# --------------------------------------------------------------------------
+
+## One AI step: hold position next to the party, chase if it's close and visible,
+## else wander.
 func _on_tick() -> void:
+	if dying or _next_to_player():
+		return
 	var to_player := DungeonMap.player_cell - cell
 	var distance := absi(to_player.x) + absi(to_player.y)
 	var dir := Vector2i.ZERO

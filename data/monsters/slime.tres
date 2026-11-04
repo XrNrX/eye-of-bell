@@ -7,7 +7,11 @@
 script = ExtResource("1_def")
 display_name = "Slime"
 max_hp = 6
-damage = 2
+attack = 1
+defence = 0
+damage_min = 1
+damage_max = 4
+attack_interval = 2.5
 speed = 0.7
 sight_range = 3
 sheet = ExtResource("2_sheet")

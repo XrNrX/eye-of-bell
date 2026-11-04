@@ -50,7 +50,8 @@ Nothing is checked in for the game itself. The working approach has been throwaw
 **Decoupling is by node groups.** The player never holds references to the world; it calls `get_tree().call_group(...)`:
 - `"dungeon"` (builder): `open_door`, `pull_lever`, `remove_key`, `refresh`
 - `"hud"`: `show_message`
-- `"level_complete"`: `show_screen`
+- `"level_complete"` / `"game_over"`: `show_screen`
+- `"party"`: `attack(slot)`, `take_hit_from(monster)`
 
 So the overlay, HUD and level-complete scenes can be deleted from `main.tscn` without breaking anything. Keep new UI the same way.
 
@@ -58,7 +59,9 @@ So the overlay, HUD and level-complete scenes can be deleted from `main.tscn` wi
 
 **Doors, plates, levers** (all in `dungeon_builder.gd`): `_drive_door(cell, open)` is the single path that opens or closes any door. A door is only walkable once its slide finishes (`DungeonMap.open_doors`), closing blocks immediately, and a door never closes while the player or a monster stands in it. Doors with an ID in `DOOR_IDS` ignore F and are driven only by their plates/levers via `refresh()`; a door is open if *any* of its switches is active.
 
-**Monsters** (`monster.gd` + `MonsterDef` resource in `data/monsters/*.tres`): new monsters are data plus a line in `MONSTERS`. A monster claims its destination tile in `DungeonMap.occupied` when a step starts and frees the old one when it ends. AI is a staggered timer: chase if within sight range (grid distance) with `has_line_of_sight`, else wander; orthogonal moves only. There is no combat yet, so a chasing monster can block a one-tile corridor.
+**Monsters** (`monster.gd` + `MonsterDef` resource in `data/monsters/*.tres`): new monsters are data plus a line in `MONSTERS`. A monster claims its destination tile in `DungeonMap.occupied` when a step starts and frees the old one when it ends. AI is a staggered timer: chase if within sight range (grid distance) with `has_line_of_sight`, else wander; orthogonal moves only. Next to the party a monster stops moving and attacks on its own `attack_interval` timer.
+
+**Combat** (design reference: https://claude.ai/artifact/BGAw8C4bkJfdBrSScE49yY). Real time, no turns. `combat_rules.gd` holds all the maths (hit % = 60 + 5 × (attack − defence), clamped 10–95; damage rolled from damage_min to damage_max; hero cooldown = max(0.8, 2.0 − 0.15 × speed)) and a seedable RNG (`CombatRules.seed_rng(n)` in tests). `CharacterDef` and `MonsterDef` share the stat fields, so `resolve_attack` works either way. The `Party` node (group `"party"`, heroes in slots 0–3, front row = 0–1) owns hero HP and cooldowns. `attack(slot)` hits the monster in `DungeonMap.occupied` in front of the player; `take_hit_from(monster)` picks a target by which side the monster is on. The party HUD reacts only to `Party` signals. Level complete and Game over share `end_screen.gd`, configured by `group_name`.
 
 **Rendering.** `project.godot` renders at 320x200 with `viewport` stretch. All pixel art must use nearest filtering and no mipmaps: materials set `TEXTURE_FILTER_NEAREST`, and each PNG's `.import` needs `mipmaps/generate=false`, `detect_3d/compress_to=0`, `compress/mode=0`. Godot rewrites `.import` defaults for new PNGs, so after importing run `build_all.py` (it patches them). The editor also rewrites `project.godot` and may strip comments.
 

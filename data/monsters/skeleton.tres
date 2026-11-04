@@ -7,7 +7,11 @@
 script = ExtResource("1_def")
 display_name = "Skeleton"
 max_hp = 12
-damage = 3
+attack = 3
+defence = 2
+damage_min = 1
+damage_max = 6
+attack_interval = 2.0
 speed = 1.0
 sight_range = 4
 sheet = ExtResource("2_sheet")

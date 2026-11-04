@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/character_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/ui/hand_sword.png" id="2_hand"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Fighter"
+max_hp = 30
+attack = 4
+defence = 4
+speed = 3
+damage_min = 2
+damage_max = 8
+hand_icon = ExtResource("2_hand")

@@ -1,7 +1,8 @@
 extends Node3D
 ## Grid-based first-person movement.
-## W/S = forward/back, A/D = strafe, Q/E = turn 90 degrees, F = open door / pull lever.
-## Every action is tweened; input is ignored while a tween is running.
+## W/S = forward/back, A/D = strafe, Q/E = turn 90 degrees, F = open door / pull lever,
+## 1-4 = that party slot attacks (see party.gd).
+## Every move/turn is tweened; movement input is ignored while a tween is running.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 
@@ -21,6 +22,7 @@ var facing: int = DungeonMap.START_FACING
 var yaw_degrees: float  # Accumulated (unwrapped) yaw so turn tweens take the short way.
 var tween: Tween
 var interact_was_down := false  # So holding F triggers once, not every frame.
+var attack_was_down := [false, false, false, false]  # Same for the 1-4 attack keys.
 
 
 func _ready() -> void:
@@ -35,6 +37,13 @@ func _process(_delta: float) -> void:
 	var interact_down := Input.is_physical_key_pressed(KEY_F)
 	var interact_pressed := interact_down and not interact_was_down
 	interact_was_down = interact_down
+
+	# 1-4: that party slot attacks. Combat is real time, so this works mid-move too.
+	for i in 4:
+		var down := Input.is_physical_key_pressed(KEY_1 + i)
+		if down and not attack_was_down[i]:
+			get_tree().call_group("party", "attack", i)
+		attack_was_down[i] = down
 
 	# Busy animating: ignore input.
 	if tween and tween.is_running():
