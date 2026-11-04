@@ -6,6 +6,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A first-person, grid-based dungeon crawler in the style of Eye of the Beholder, in Godot 4.7 (Forward Plus, GDScript). Python (Pillow) generates all pixel art. Development is on Windows; use Git Bash or PowerShell.
 
+## Design references
+
+**Combat design blueprint:** https://claude.ai/artifact/BGAw8C4bkJfdBrSScE49yY
+
+This page is the source of truth for combat rules. It covers stats, hit chance and damage formulas, cooldowns, party slots and melee, monster targeting, data structures, the script list, starting numbers, and the agreed decisions (swinging at air uses the cooldown; the back row steps up; adjacent monsters stop moving).
+- Read it before any combat work, using the Artifact tool with `action: "read"` and that URL. Don't use WebFetch or curl; the page is private.
+- Follow it rather than re-deriving or inventing rules.
+- If the user changes a rule, update the code and the page together: republish to that same URL so the link stays stable. Then fix the summary under **Combat** below.
+
 ## Commands
 
 Godot lives outside the repo; the install folder itself is named `.exe`:
@@ -61,7 +70,7 @@ So the overlay, HUD and level-complete scenes can be deleted from `main.tscn` wi
 
 **Monsters** (`monster.gd` + `MonsterDef` resource in `data/monsters/*.tres`): new monsters are data plus a line in `MONSTERS`. A monster claims its destination tile in `DungeonMap.occupied` when a step starts and frees the old one when it ends. AI is a staggered timer: chase if within sight range (grid distance) with `has_line_of_sight`, else wander; orthogonal moves only. Next to the party a monster stops moving and attacks on its own `attack_interval` timer.
 
-**Combat** (design reference: https://claude.ai/artifact/BGAw8C4bkJfdBrSScE49yY). Real time, no turns. `combat_rules.gd` holds all the maths (hit % = 60 + 5 × (attack − defence), clamped 10–95; damage rolled from damage_min to damage_max; hero cooldown = max(0.8, 2.0 − 0.15 × speed)) and a seedable RNG (`CombatRules.seed_rng(n)` in tests). `CharacterDef` and `MonsterDef` share the stat fields, so `resolve_attack` works either way. The `Party` node (group `"party"`, heroes in slots 0–3, front row = 0–1) owns hero HP and cooldowns. `attack(slot)` hits the monster in `DungeonMap.occupied` in front of the player; `take_hit_from(monster)` picks a target by which side the monster is on. The party HUD reacts only to `Party` signals. Level complete and Game over share `end_screen.gd`, configured by `group_name`.
+**Combat** (rules come from the blueprint under *Design references*; this is only a summary). Real time, no turns. `combat_rules.gd` holds all the maths (hit % = 60 + 5 × (attack − defence), clamped 10–95; damage rolled from damage_min to damage_max; hero cooldown = max(0.8, 2.0 − 0.15 × speed)) and a seedable RNG (`CombatRules.seed_rng(n)` in tests). `CharacterDef` and `MonsterDef` share the stat fields, so `resolve_attack` works either way. The `Party` node (group `"party"`, heroes in slots 0–3, front row = 0–1) owns hero HP and cooldowns. `attack(slot)` hits the monster in `DungeonMap.occupied` in front of the player; `take_hit_from(monster)` picks a target by which side the monster is on. The party HUD reacts only to `Party` signals. Level complete and Game over share `end_screen.gd`, configured by `group_name`.
 
 **Rendering.** `project.godot` renders at 320x200 with `viewport` stretch. All pixel art must use nearest filtering and no mipmaps: materials set `TEXTURE_FILTER_NEAREST`, and each PNG's `.import` needs `mipmaps/generate=false`, `detect_3d/compress_to=0`, `compress/mode=0`. Godot rewrites `.import` defaults for new PNGs, so after importing run `build_all.py` (it patches them). The editor also rewrites `project.godot` and may strip comments.
 
