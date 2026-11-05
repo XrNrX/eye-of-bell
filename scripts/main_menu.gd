@@ -38,7 +38,7 @@ const TORCH_300 := Color("ffe38a")
 
 const TITLE_SIZE := 32        # Four native pixels per font pixel: chunky.
 const TEXT_SIZE := 16         # Two (the same pixel size as the 2x dungeon view).
-const VIEW_CELL := Vector2i(1, 7)  # Camera starts in this cell of the level, facing east...
+const VIEW_CELL := Vector2i(6, 13)  # Camera starts in this cell of the level, facing east...
 const VIEW_FACING_DEG := -90.0     # ...down the long south corridor (torches on the right wall).
 const SWAY := 0.035           # How far the camera drifts, in world units, so the view is alive.
 const VOLUME_STEP := 0.1
