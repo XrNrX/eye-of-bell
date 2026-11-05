@@ -12,7 +12,7 @@ extends Panel
 ## Backpack cells hold stacks of identical stackable items (ItemDef.max_stack) with a
 ## small count in the corner. Clicking picks up the whole stack; putting a stack on a
 ## matching one merges them (the overflow stays on the cursor); right-clicking a stack
-## of 2+ splits one off onto the cursor (it only uses an item when there is just one).
+## of 2+ splits one off onto the cursor (shift+right-click uses one; a single item is used).
 ## Hands and armour hold a single item, so a stack can't go there.
 ##
 ## Acts on the mouse PRESS. Godot routes the release to whichever control got the
@@ -120,6 +120,8 @@ func refresh() -> void:
 			tooltip_text = stack.label()
 			if stack.count > 1:
 				tooltip_text += "\nRight-click to take one"
+				if stack.def.type == ItemDef.Type.CONSUMABLE:
+					tooltip_text += "\nShift+right-click to use one"
 			elif stack.def.type == ItemDef.Type.CONSUMABLE:
 				tooltip_text += "\nRight-click to use"
 	var box := StyleBoxFlat.new()
@@ -141,16 +143,17 @@ func _gui_input(event: InputEvent) -> void:
 	elif event.button_index == MOUSE_BUTTON_RIGHT:
 		accept_event()
 		if kind != Kind.CHARACTER:
-			_right_click()
+			_right_click(event.shift_pressed)
 
 
 ## Right-click: on a stack of 2+, split one off onto the cursor (or onto the matching
-## stack already held). Otherwise use the consumable in this slot.
-func _right_click() -> void:
+## stack already held). Shift+right-click uses one from the stack instead. A single
+## item is just used.
+func _right_click(use_one := false) -> void:
 	var here := get_item()
 	if here == null:
 		return
-	if here.count > 1:
+	if here.count > 1 and not use_one:
 		if not screen.cursor.accepts_more(here):
 			screen.say("Your hand is full.")
 			return
@@ -171,7 +174,7 @@ func _use_item() -> void:
 	screen.say(result.message)
 	if not result.used:
 		return
-	stack.count -= 1  # Spent (the right-click path only gets here for a stack of one).
+	stack.count -= 1  # Spent: one from the stack.
 	if stack.count <= 0:
 		set_item(null)
 	screen.refresh()
