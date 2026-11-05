@@ -1,6 +1,7 @@
 [gd_scene load_steps=17 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/cursor_item.tscn" id="14_cursor"]
+[ext_resource type="Script" path="res://scripts/combat_feel.gd" id="20_feel"]
 [ext_resource type="PackedScene" path="res://scenes/inventory_screen.tscn" id="15_inventory"]
 [ext_resource type="Script" path="res://scripts/party.gd" id="7_party"]
 [ext_resource type="Resource" path="res://data/party/fighter.tres" id="8_fighter"]
@@ -59,6 +60,9 @@ player_path = NodePath("../Player")
 script = ExtResource("7_party")
 hero_defs = Array[Resource]([ExtResource("8_fighter"), ExtResource("11_cleric"), ExtResource("12_thief"), ExtResource("13_mage")])
 player_path = NodePath("../Player")
+
+[node name="CombatFeel" type="Node" parent="."]
+script = ExtResource("20_feel")
 
 [node name="PartyHud" parent="." instance=ExtResource("9_party_hud")]
 

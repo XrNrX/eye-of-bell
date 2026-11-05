@@ -14,6 +14,7 @@ const CombatRules := preload("res://scripts/combat_rules.gd")
 const QuickSlot := preload("res://scripts/quick_slot.gd")
 const SpellMenu := preload("res://scripts/spell_menu.gd")
 const SpellDef := preload("res://scripts/spell_def.gd")
+const FeelConfigScript := preload("res://scripts/combat_feel_config.gd")
 const StackCount := preload("res://scripts/stack_count.gd")
 
 const PORTRAIT_SIZE := Vector2(24, 24)
@@ -33,6 +34,7 @@ const MANA_FILL := Color(0.941, 0.722, 0.227)        # Palette torch_500 (the pa
 const BUFF_EDGE := MANA_FILL                         # Outline on a buffed hero's portrait.
 const HURT_FLASH_TIME := 0.3  # How long the portrait shows its red-tinted variant.
 
+var feel_cfg: Resource = FeelConfigScript.get_config()  # data/combat_feel.tres
 @onready var flash: ColorRect = %Flash
 @onready var panels_grid: GridContainer = %Panels
 
@@ -226,6 +228,7 @@ func _on_hero_hit(slot: int, damage: int) -> void:
 	t.chain().tween_callback(label.queue_free)
 
 	if damage > 0:
+		_shake_portrait(p.portrait, damage)
 		flash.color.a = 0.35
 		create_tween().tween_property(flash, "color:a", 0.0, 0.35)
 		if m.is_alive():  # Still alive: flash the hurt portrait, then revert. Dead
@@ -234,6 +237,25 @@ func _on_hero_hit(slot: int, damage: int) -> void:
 			timer.timeout.connect(func():
 				if m.is_alive():
 					p.portrait.texture_normal = m.def.portrait)
+
+
+## The portrait of a hero who was hit jolts sideways and settles (a bigger hit shakes
+## a little harder). Pure feedback; see data/combat_feel.tres.
+func _shake_portrait(portrait: Control, damage: int) -> void:
+	if not feel_cfg.portrait_shake_enabled or damage < feel_cfg.portrait_shake_min_damage:
+		return
+	var amp: float = feel_cfg.portrait_shake_pixels * (1.0 + minf(damage, 8) / 8.0)
+	var t: float = feel_cfg.portrait_shake_seconds
+	if portrait.has_meta("shake_tween"):
+		portrait.get_meta("shake_tween").kill()
+	var tween := create_tween()
+	portrait.set_meta("shake_tween", tween)
+	var steps := 6
+	for i in steps:
+		var fall := 1.0 - float(i) / steps
+		var dir := 1.0 if i % 2 == 0 else -1.0
+		tween.tween_property(portrait, "position:x", dir * amp * fall, t / (steps + 1))
+	tween.tween_property(portrait, "position:x", 0.0, t / (steps + 1))
 
 
 func _make_panel(m) -> Dictionary:
@@ -262,7 +284,14 @@ func _make_panel(m) -> Dictionary:
 	portrait.focus_mode = Control.FOCUS_NONE
 	portrait.tooltip_text = "Inventory"
 	portrait.pressed.connect(_on_portrait.bind(m.slot))
-	col.add_child(portrait)
+	# In a plain Control frame, not straight in the column: a container keeps resetting
+	# its children's positions, which would undo the portrait's hit shake.
+	var frame := Control.new()
+	frame.custom_minimum_size = PORTRAIT_SIZE
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_child(frame)
+	frame.add_child(portrait)
+	portrait.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	# A gold outline over the portrait while a buff (Shield, Bless) is active.
 	var buff_ring := Panel.new()

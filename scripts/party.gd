@@ -268,7 +268,7 @@ func _throw(m: Member, hand: int) -> void:
 	var result := CombatRules.resolve_attack(s, target.def)
 	target.take_hit(result)
 	if not result.hit:
-		_say("%s throws the %s and misses." % [m.def.display_name, def.display_name])
+		_say("%s's %s misses the %s." % [m.def.display_name, def.display_name, target.def.display_name], "miss")
 	elif target.hp <= 0:
 		_say("%s kills the %s with the %s!" % [m.def.display_name, target.def.display_name, def.display_name])
 	else:
@@ -533,7 +533,7 @@ func _melee(m: Member, hand: int) -> void:
 	var result := CombatRules.resolve_attack(effective_stats(m, hand), target.def)
 	target.take_hit(result)
 	if not result.hit:
-		_say("%s misses." % m.def.display_name)
+		_say("%s swings at the %s and misses." % [m.def.display_name, target.def.display_name], "miss")
 	elif target.hp <= 0:
 		_say("%s kills the %s!" % [m.def.display_name, target.def.display_name])
 	else:
@@ -556,7 +556,7 @@ func take_hit_from(monster: Node) -> void:
 		hp_changed.emit(m.slot)
 		_say("The %s hits %s for %d." % [monster.def.display_name, m.def.display_name, result.damage])
 	else:
-		_say("The %s misses %s." % [monster.def.display_name, m.def.display_name])
+		_say("The %s misses %s." % [monster.def.display_name, m.def.display_name], "miss")
 	hero_hit.emit(m.slot, result.damage)
 	if is_wiped():
 		wiped.emit()
@@ -578,5 +578,6 @@ func _reachable_from(monster_cell: Vector2i) -> Array:
 	return reachable if not reachable.is_empty() else living
 
 
-func _say(text: String) -> void:
-	get_tree().call_group("hud", "show_message", text)
+## Show a message on the HUD. tone "miss" styles it as a miss (see hud.gd).
+func _say(text: String, tone := "") -> void:
+	get_tree().call_group("hud", "show_message", text, false, tone)
