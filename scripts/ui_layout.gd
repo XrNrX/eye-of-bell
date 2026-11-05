@@ -13,7 +13,7 @@ extends RefCounted
 ##   +-----------------------+--------+--------------+
 ##
 ## TWO PIXEL SIZES. The dungeon is rendered small (VIEW_SOURCE, 208x130, the same aspect as
-## the old 320x200 screen) and shown at VIEW_SCALE = 2, so its pixels are chunky. The UI is
+## the old 320x200 screen); it is now rendered at 416x260 and shown at VIEW_SCALE = 1, so 3D pixels are screen pixels. The UI is
 ## drawn at UI = 2 (art at twice the old size) on the native 640x360 grid, so its pixels match.
 ## 320x200 at 2x would not fit under a 360-pixel-tall screen, hence 208x130.
 ##
@@ -27,8 +27,8 @@ extends RefCounted
 const SCREEN := Vector2(640, 360)
 const UI := 2                           # Pixel size of the UI art, relative to the old 320x200 art.
 
-const VIEW_SCALE := 2                   # The 3D view is rendered small and shown this many times larger.
-const VIEW_SOURCE := Vector2(208, 130)  # The SubViewport's size.
+const VIEW_SCALE := 1                   # The 3D view is rendered at the size it is shown (1x). It used to be rendered at half size and enlarged 2x.
+const VIEW_SOURCE := Vector2(416, 260)  # The SubViewport's size.
 
 const VIEW := Rect2(8, 8, 416, 260)     # Where the 3D view appears (VIEW_SOURCE * VIEW_SCALE).
 const LOG := Rect2(8, 276, 296, 76)     # The message log.

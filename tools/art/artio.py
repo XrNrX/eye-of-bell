@@ -41,6 +41,15 @@ def is_protected(rel_path, root=None):
     return str(rel_path).replace("\\", "/") in imported_paths()
 
 
+def world_scale():
+    """How many times larger the 3D art (wall, floor, ceiling and door tiles, monster frames) is
+    drawn than its logical grid: 2 now (tiles 128x128, monsters 96x128 / 96x96). Set with
+    --world-scale on build_all.py or a generator, or the ART_WORLD_SCALE environment variable.
+    Separate from the UI `scale` (the HUD's 2x logical pixels). Enlargement is nearest-neighbour:
+    the procedural art keeps its look and gains resolution, which PixelLab art then fills with detail."""
+    return max(1, int(os.environ.get("ART_WORLD_SCALE", "2")))
+
+
 def save_png(img, rel_path, check=True, root=None, scale=1):
     """Save an image under res://art/<rel_path>, creating folders as needed. Raises if
     any opaque pixel is off-palette (pass check=False only for deliberate exceptions).
@@ -61,7 +70,7 @@ def save_png(img, rel_path, check=True, root=None, scale=1):
     return dest
 
 
-def save_frames(images, order, animations, name, out_dir=None):
+def save_frames(images, order, animations, name, out_dir=None, scale=None):
     """Save an animation set: one PNG per frame, a single-row sprite sheet and a JSON
     file with the frame rectangles and animation groups.
 
@@ -70,6 +79,9 @@ def save_frames(images, order, animations, name, out_dir=None):
     animations: {"idle": ["idle_0", ...], ...}
     Goes to res://art/monsters/<name>/ unless out_dir is given. Returns the files written."""
     root, sub = (Path(out_dir), "") if out_dir else (None, f"monsters/{name}/")
+    scale = world_scale() if scale is None else scale
+    if scale != 1:
+        images = {k: v.resize((v.width * scale, v.height * scale), Image.NEAREST) for k, v in images.items()}
     fw, fh = images[order[0]].size
     sheet = Image.new("RGBA", (fw * len(order), fh), (0, 0, 0, 0))
     rects, written = {}, []

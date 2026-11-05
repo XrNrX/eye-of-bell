@@ -13,6 +13,9 @@ To add one, drop a gen_<name>.py with build() into this folder.
 Options:  --only NAME   run just the generator with that name (e.g. --only tiles)
           --overwrite-imported   also regenerate art that tools/art/import_pixellab.py replaced
                         (normally left alone, so a rebuild never undoes an import)
+          --world-scale N   scale for the 3D art (default 2): the wall, floor, ceiling and door tiles
+                        become 128x128 and the monster frames 96x128 / 96x96. Nearest-neighbour, so the
+                        procedural look is unchanged; the game's sprite pixel_size is halved to match.
           --scale N     pixel-size scale for the UI art (default 2). Generators whose build()
                         takes a `scale` argument (the frame, arrows, portraits, UI icons and
                         inventory item icons) are drawn on their small logical grid and
@@ -37,9 +40,11 @@ def main():
     ap = argparse.ArgumentParser(description="Regenerate all art.")
     ap.add_argument("--only", help="run only the step with this name")
     ap.add_argument("--scale", type=int, default=2, help="pixel-size scale for the UI art (default 2)")
+    ap.add_argument("--world-scale", type=int, default=2, help="scale for the 3D art: tiles and monster frames (default 2: 128x128 tiles, 96x128 monsters)")
     ap.add_argument("--overwrite-imported", action="store_true",
                     help="regenerate art that import_pixellab.py replaced (normally kept; see tools/art/imported.json)")
     args = ap.parse_args()
+    os.environ["ART_WORLD_SCALE"] = str(args.world_scale)
     if args.overwrite_imported:
         os.environ["ART_OVERWRITE_IMPORTED"] = "1"
 

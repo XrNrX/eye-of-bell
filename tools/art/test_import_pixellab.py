@@ -90,11 +90,11 @@ with tempfile.TemporaryDirectory() as t:
 
     # ---- the catalogue comes from the folders
     cat = imp.build_catalog(art)
-    check("catalogue reads sizes from the art folders (wall 64x64, dagger 48x48, hud 24x24, floor 12x12)",
-          cat["tiles/wall"].size == (64, 64) and cat["items/dagger"].size == (48, 48) and cat["items/dagger_hud"].size == (24, 24) and cat["items/dagger_floor"].size == (12, 12))
+    check("catalogue reads sizes from the art folders (wall 128x128, dagger 48x48, hud 24x24, floor 12x12)",
+          cat["tiles/wall"].size == (128, 128) and cat["items/dagger"].size == (48, 48) and cat["items/dagger_hud"].size == (24, 24) and cat["items/dagger_floor"].size == (12, 12))
     check("UI art is flagged (items, portraits, ui), 3D art is not (tiles, floor icons, sprites)",
           cat["items/dagger"].ui and cat["portraits/fighter/portrait"].ui and cat["ui/quickslot"].ui and not cat["tiles/wall"].ui and not cat["items/dagger_floor"].ui and not cat["sprites/key"].ui)
-    check("monster frames know their frame size and the sheet its kind", cat["monsters/skeleton/idle_0"].size == (48, 64) and cat["monsters/skeleton/skeleton_sheet"].kind == "monster_sheet" and cat["sprites/torch"].kind == "sprite_sheet")
+    check("monster frames know their frame size and the sheet its kind", cat["monsters/skeleton/idle_0"].size == (96, 128) and cat["monsters/skeleton/skeleton_sheet"].kind == "monster_sheet" and cat["sprites/torch"].kind == "sprite_sheet")
 
     # ---- palette snapping
     snapped = imp.snap(noisy((16, 16)))
@@ -142,7 +142,7 @@ with tempfile.TemporaryDirectory() as t:
     check("map.json can name anything", m("my_export_17.png", {"my_export_17.png": "tiles/wall"}) == ("ok", "tiles/wall"))
 
     # ---- a full import: single images
-    noisy((128, 128), 2).save(inbox / "wall.png")
+    noisy((256, 256), 2).save(inbox / "wall.png")
     noisy((24, 24), 3).save(inbox / "dagger.png")
     noisy((64, 64), 4).save(inbox / "fighter_portrait.png")
     noisy((12, 12), 5).save(inbox / "dagger_floor.png")
@@ -153,7 +153,7 @@ with tempfile.TemporaryDirectory() as t:
     check("...but reports what it would do", "Would import" in out and "tiles/wall" in out and "banana.png" in out)
     code, out = run(tmp)
     wall = load(art / "tiles/wall.png")
-    check("wall: 128x128 export -> 64x64, palette colours only", wall.size == (64, 64) and all_in_palette(wall))
+    check("wall: 256x256 export -> 128x128, palette colours only", wall.size == (128, 128) and all_in_palette(wall))
     dag = load(art / "items/dagger.png")
     check("dagger: 24x24 export -> 48x48 (2x UI scale), palette colours only", dag.size == (48, 48) and all_in_palette(dag))
     check("dagger_floor stays 12x12 (3D art is not scaled)", load(art / "items/dagger_floor.png").size == (12, 12))
@@ -199,12 +199,12 @@ with tempfile.TemporaryDirectory() as t:
     frames = [noisy((64, 64), 20 + i) for i in range(len(order))]
     sheet_of(frames).save(inbox / "skeleton_sheet.png")
     code, out = run(tmp)
-    check("a 7-frame sheet of 64x64 frames is sliced and resized to 48x64 frames", load(art / "monsters/skeleton/skeleton_sheet.png").size == (48 * 7, 64) and "frame" in out)
-    check("every frame file got the old name and size", all(load(art / f"monsters/skeleton/{n}.png").size == (48, 64) for n in order))
+    check("a 7-frame sheet of 64x64 frames is sliced and resized to 96x128 frames", load(art / "monsters/skeleton/skeleton_sheet.png").size == (96 * 7, 128) and "frame" in out)
+    check("every frame file got the old name and size", all(load(art / f"monsters/skeleton/{n}.png").size == (96, 128) for n in order))
     check("the frames and sheet are palette-only", all_in_palette(load(art / "monsters/skeleton/skeleton_sheet.png")))
     sheet = load(art / "monsters/skeleton/skeleton_sheet.png")
     check("the sheet is the frames side by side, in the old order",
-          all(sheet.crop((i * 48, 0, (i + 1) * 48, 64)).tobytes() == load(art / f"monsters/skeleton/{n}.png").tobytes() for i, n in enumerate(order)))
+          all(sheet.crop((i * 96, 0, (i + 1) * 96, 128)).tobytes() == load(art / f"monsters/skeleton/{n}.png").tobytes() for i, n in enumerate(order)))
     check("the json keeps the same frame names and layout", json.loads((art / "monsters/skeleton/skeleton_sheet.json").read_text())["frames"] == skel_json["frames"])
     check("same frame count: no mismatch, the .tres is untouched", "mismatches" not in out and (tmp / "data/monsters/skeleton.tres").read_text() == old_tres)
     check("the old frame is backed up", (old / "monsters/skeleton/idle_1.png").read_bytes() == old_idle)
@@ -212,14 +212,14 @@ with tempfile.TemporaryDirectory() as t:
     # ---- wrong frame count without a layout
     shutil.rmtree(old); old.mkdir()
     artio_files = json.loads((tmp / "imported.json").read_text()); artio_files["files"] = {}; (tmp / "imported.json").write_text(json.dumps(artio_files))
-    sheet_of([noisy((48, 64), 40 + i) for i in range(9)]).save(inbox / "skeleton_sheet.png")
+    sheet_of([noisy((96, 128), 40 + i) for i in range(9)]).save(inbox / "skeleton_sheet.png")
     code, out = run(tmp, "--frames", "skeleton=9")
     check("9 frames for 7: reported as a mismatch, extras dropped, still imported", "mismatches (1)" in out and "9 frame" in out and "extra 2 dropped" in out and code == 0)
-    check("the sheet still has the game's 7 frames", load(art / "monsters/skeleton/skeleton_sheet.png").size == (48 * 7, 64))
-    sheet_of([noisy((48, 64), 60 + i) for i in range(5)]).save(inbox / "skeleton_sheet.png")
+    check("the sheet still has the game's 7 frames", load(art / "monsters/skeleton/skeleton_sheet.png").size == (96 * 7, 128))
+    sheet_of([noisy((96, 128), 60 + i) for i in range(5)]).save(inbox / "skeleton_sheet.png")
     code, out = run(tmp, "--frames", "skeleton=5")
-    check("5 frames for 7: mismatch, the last 2 keep the old frames", "2 kept from the old art" in out and load(art / "monsters/skeleton/skeleton_sheet.png").size == (48 * 7, 64))
-    sheet_of([noisy((48, 64), 70 + i) for i in range(7)]).save(inbox / "skeleton_sheet.png")
+    check("5 frames for 7: mismatch, the last 2 keep the old frames", "2 kept from the old art" in out and load(art / "monsters/skeleton/skeleton_sheet.png").size == (96 * 7, 128))
+    sheet_of([noisy((96, 128), 70 + i) for i in range(7)]).save(inbox / "skeleton_sheet.png")
     (tmp / "inbox" / "skeleton_sheet.png").write_bytes((tmp / "inbox" / "skeleton_sheet.png").read_bytes())
     # a sheet whose width does not divide
     Image.new("RGBA", (101, 64), (255, 0, 0, 255)).save(inbox / "skeleton_sheet.png")
@@ -228,15 +228,15 @@ with tempfile.TemporaryDirectory() as t:
     (inbox / "skeleton_sheet.png").unlink()
 
     # ---- extra frames with a layout file: the .tres follows
-    sheet_of([noisy((48, 64), 80 + i) for i in range(10)]).save(inbox / "skeleton_sheet.png")
+    sheet_of([noisy((96, 128), 80 + i) for i in range(10)]).save(inbox / "skeleton_sheet.png")
     (inbox / "skeleton_sheet.layout.json").write_text(json.dumps({"idle": 4, "attack": 4, "hurt": 2}))
     code, out = run(tmp)
     j = json.loads((art / "monsters/skeleton/skeleton_sheet.json").read_text())
     check("a layout file renames the frames idle_0..3, attack_0..3, hurt_0..1", list(j["frames"]) == ["idle_0", "idle_1", "idle_2", "idle_3", "attack_0", "attack_1", "attack_2", "attack_3", "hurt_0", "hurt_1"])
-    check("the sheet is 10 frames wide", load(art / "monsters/skeleton/skeleton_sheet.png").size == (480, 64))
+    check("the sheet is 10 frames wide", load(art / "monsters/skeleton/skeleton_sheet.png").size == (960, 128))
     tres = (tmp / "data/monsters/skeleton.tres").read_text()
     check("the monster definition now says hframes = 10 and the new frame lists", "hframes = 10" in tres and "idle_frames = PackedInt32Array(0, 1, 2, 3)" in tres and "attack_frames = PackedInt32Array(4, 5, 6, 7)" in tres and "hurt_frames = PackedInt32Array(8, 9)" in tres)
-    check("other settings in the .tres are untouched (hp, fps, pixel size)", "max_hp = 12" in tres and "idle_fps = 2.0" in tres and "pixel_size = 0.028" in tres)
+    check("other settings in the .tres are untouched (hp, fps, pixel size)", "max_hp = 12" in tres and "idle_fps = 2.0" in tres and "pixel_size = 0.014" in tres)
     check("the old frames that no longer exist were removed (attack_2 yes, hurt_0_flash gone), the originals backed up", not (art / "monsters/skeleton/hurt_0_flash.png").exists() and (old / "monsters/skeleton/hurt_0_flash.png").exists())
     check("the .tres is backed up too, and the report says what was updated", (old / "data/monsters/skeleton.tres").read_text() == old_tres and "data/monsters/skeleton.tres" in out)
     check("--restore monsters/skeleton brings the .tres back", run(tmp, "--restore", "monsters/skeleton")[0] == 0 and (tmp / "data/monsters/skeleton.tres").read_text() == old_tres)
@@ -251,15 +251,15 @@ with tempfile.TemporaryDirectory() as t:
     art, inbox, old = tmp / "art", tmp / "inbox", tmp / "old"
     check("(fresh world) the monster has its original 7 frames", len(json.loads((art / "monsters/skeleton/skeleton_sheet.json").read_text())["frames"]) == 7)
     noisy((60, 80), 90).save(inbox / "skeleton_idle_0.png")
-    noisy((48, 64), 91).save(inbox / "skeleton_attack_1.png")
-    noisy((48, 64), 92).save(inbox / "skeleton_dancing_0.png")
+    noisy((96, 128), 91).save(inbox / "skeleton_attack_1.png")
+    noisy((96, 128), 92).save(inbox / "skeleton_dancing_0.png")
     code, out = run(tmp)
-    check("individual frames replace just those frames and the sheet is rebuilt from all 7", "2 of 7 frame" in out and load(art / "monsters/skeleton/skeleton_sheet.png").size == (336, 64))
+    check("individual frames replace just those frames and the sheet is rebuilt from all 7", "2 of 7 frame" in out and load(art / "monsters/skeleton/skeleton_sheet.png").size == (672, 128))
     check("a frame name the monster doesn't have is reported", "dancing_0" in out)
     sheet = load(art / "monsters/skeleton/skeleton_sheet.png")
     check("the replaced frames are in the sheet at the right places (idle_0 first, attack_1 fourth)",
-          sheet.crop((0, 0, 48, 64)).tobytes() == load(art / "monsters/skeleton/idle_0.png").tobytes() and sheet.crop((144, 0, 192, 64)).tobytes() == load(art / "monsters/skeleton/attack_1.png").tobytes())
-    check("a 60x80 export is not a whole-number factor of 48x64: reported as a warning", "WARNING" in out and "not a whole-number factor" in out)
+          sheet.crop((0, 0, 96, 128)).tobytes() == load(art / "monsters/skeleton/idle_0.png").tobytes() and sheet.crop((288, 0, 384, 128)).tobytes() == load(art / "monsters/skeleton/attack_1.png").tobytes())
+    check("a 60x80 export is not a whole-number factor of 96x128: reported as a warning", "WARNING" in out and "not a whole-number factor" in out)
 
     # ---- sprite sheets: the torch may change its frame count, the lever may not
     torch_frames = [noisy((16, 32), 100 + i) for i in range(8)]

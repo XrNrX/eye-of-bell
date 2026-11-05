@@ -19,6 +19,7 @@ How it works
 - Glossy highlight, a half-dissolved object floating inside, eyes, then a 1px outline.
 """
 import argparse
+import os
 import math
 from collections import deque
 
@@ -335,9 +336,11 @@ def main():
     ap.add_argument("--lumpiness", type=float, default=0.12, help="How lumpy the outline is (0-0.3).")
     ap.add_argument("--canvas", type=int, default=48, help="Frame size in pixels (use 64+ for a boss).")
     ap.add_argument("--name", default="slime", help="Output folder and sheet name.")
+    ap.add_argument("--world-scale", type=int, default=2, help="Enlarge the frames this many times (default 2: 96x128 / 96x96).")
     ap.add_argument("--out", help="Output folder (default: art/monsters/<name>).")
     ap.add_argument("--preview", help="Also write a 6x enlarged preview PNG here.")
     args = ap.parse_args()
+    os.environ["ART_WORLD_SCALE"] = str(args.world_scale)
     options = dict(seed=args.seed, colour=args.colour, size=args.size, contents=args.contents,
                    lumpiness=args.lumpiness, canvas=args.canvas)
     written = build(args.name, args.out, **options)

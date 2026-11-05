@@ -20,4 +20,4 @@ idle_frames = PackedInt32Array(0, 1, 2, 1)
 attack_frames = PackedInt32Array(3, 4, 5)
 hurt_frames = PackedInt32Array(6, 7)
 idle_fps = 3.0
-pixel_size = 0.04
+pixel_size = 0.02

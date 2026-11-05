@@ -9,7 +9,7 @@ import math
 
 from PIL import Image
 
-from artio import save_png
+from artio import save_png, world_scale
 from dither import dither_ramp
 from lighting import lit_values
 from noise import hash01, remap, value_noise, white_noise
@@ -309,5 +309,5 @@ def build():
     written = []
     for name, make in (("wall", wall), ("floor", floor), ("ceiling", ceiling), ("door", door),
                        ("door_locked", locked_door), ("wall_cracked", wall_cracked), ("portcullis", portcullis), ("plate", plate), ("stairs", stairs)):
-        written.append(save_png(to_image(make()), f"tiles/{name}.png"))
+        written.append(save_png(to_image(make()), f"tiles/{name}.png", scale=world_scale()))
     return written

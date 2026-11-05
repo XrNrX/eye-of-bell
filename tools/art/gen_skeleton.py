@@ -20,6 +20,7 @@ How it works
 - Only palette.json colours are used; save_png refuses anything else.
 """
 import argparse
+import os
 import json
 import math
 import random
@@ -372,9 +373,11 @@ def main():
     ap.add_argument("--helmet", action="store_true", help="Add an iron helmet.")
     ap.add_argument("--damage", type=float, default=0.04, help="Fraction of bone pixels chipped (0-0.2).")
     ap.add_argument("--name", default="skeleton", help="Output folder and sheet name.")
+    ap.add_argument("--world-scale", type=int, default=2, help="Enlarge the frames this many times (default 2: 96x128 / 96x96).")
     ap.add_argument("--out", help="Output folder (default: art/monsters/<name>).")
     ap.add_argument("--preview", help="Also write a 6x enlarged preview PNG here.")
     args = ap.parse_args()
+    os.environ["ART_WORLD_SCALE"] = str(args.world_scale)
     options = {"seed": args.seed, "bone": args.bone, "weapon": args.weapon,
                "helmet": args.helmet, "damage": args.damage}
     written = build(args.name, args.out, **options)

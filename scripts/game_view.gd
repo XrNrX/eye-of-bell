@@ -1,13 +1,13 @@
 extends SubViewportContainer
-## The 3D dungeon view: a small SubViewport (ui_layout.VIEW_SOURCE, 208x130) shown at 2x in the
-## top-left of the screen with nearest-neighbour filtering, so the dungeon keeps a chunky pixel
-## look however the window is scaled. The container's own `stretch_shrink = 2` does the
-## enlarging: it renders the SubViewport at half the container's size.
+## The 3D dungeon view: a SubViewport (ui_layout.VIEW_SOURCE, 416x260) shown 1:1 in the top-left of
+## the screen with nearest-neighbour filtering, so the dungeon stays crisp however the window is
+## scaled. (It used to be rendered at 208x130 and enlarged 2x by `stretch_shrink = 2`; with
+## `stretch_shrink = 1` its pixels are the screen pixels.)
 ##
 ## World clicks (picking up and putting down floor items) arrive here as ordinary GUI events on
 ## the container, in screen coordinates, and are passed on to the player. Going through the GUI
 ## (rather than forwarding raw input into the SubViewport) keeps the mouse position in the
-## 640x360 space the rest of the HUD uses: the view's own pixel is the screen pixel / 2.
+## 640x360 space the rest of the HUD uses: the view's own pixel is the screen pixel.
 ##
 ## Anything drawn above this (the frame, the log, the arrows, the party) sits on a higher canvas
 ## layer and takes its own clicks first, so only clicks that land on the picture reach here.
