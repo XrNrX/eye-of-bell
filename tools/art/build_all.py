@@ -11,9 +11,14 @@ lever), ui (hand icon), items (item icons), skeleton, slime, portraits (party fa
 To add one, drop a gen_<name>.py with build() into this folder.
 
 Options:  --only NAME   run just the generator with that name (e.g. --only tiles)
+          --scale N     pixel-size scale for the UI art (default 2). Generators whose build()
+                        takes a `scale` argument (the frame, arrows, portraits, UI icons and
+                        inventory item icons) are drawn on their small logical grid and
+                        enlarged N times; the rest (3D textures and sprites) ignore it.
 """
 import argparse
 import importlib
+import inspect
 import sys
 import time
 from pathlib import Path
@@ -28,6 +33,7 @@ from artio import patch_imports  # noqa: E402
 def main():
     ap = argparse.ArgumentParser(description="Regenerate all art.")
     ap.add_argument("--only", help="run only the step with this name")
+    ap.add_argument("--scale", type=int, default=2, help="pixel-size scale for the UI art (default 2)")
     args = ap.parse_args()
 
     failures = []
@@ -39,7 +45,9 @@ def main():
             continue
         print(f"{name}")
         try:
-            written = importlib.import_module(path.stem).build()
+            build = importlib.import_module(path.stem).build
+            takes_scale = "scale" in inspect.signature(build).parameters
+            written = build(scale=args.scale) if takes_scale else build()
             for f in written:
                 print(f"    wrote {Path(f).relative_to(PROJECT_ROOT)}")
         except Exception as e:  # Keep going so one bad generator doesn't hide the rest.

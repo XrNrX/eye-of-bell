@@ -17,7 +17,7 @@ extends PanelContainer
 const CombatRules := preload("res://scripts/combat_rules.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
 
-const WIDTH := 72.0
+const WIDTH := 150.0
 const BG := Color(0.137, 0.118, 0.169, 0.95)     # Palette stone_900.
 const EDGE := Color(0.275, 0.247, 0.31)           # Palette stone_700.
 const TEXT := Color(0.92, 0.89, 0.82)
@@ -43,21 +43,21 @@ func _ready() -> void:
 	var box := StyleBoxFlat.new()
 	box.bg_color = BG
 	box.border_color = EDGE
-	box.set_border_width_all(1)
-	box.set_content_margin_all(4)
+	box.set_border_width_all(2)
+	box.set_content_margin_all(8)
 	add_theme_stylebox_override("panel", box)
 
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 1)
+	col.add_theme_constant_override("separation", 3)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(col)
 
 	var head := HBoxContainer.new()
-	head.add_theme_constant_override("separation", 4)
+	head.add_theme_constant_override("separation", 8)
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(head)
 	portrait = TextureRect.new()
-	portrait.custom_minimum_size = Vector2(24, 24)
+	portrait.custom_minimum_size = Vector2(48, 48)
 	portrait.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait.stretch_mode = TextureRect.STRETCH_SCALE
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -85,7 +85,7 @@ func _ready() -> void:
 		var l := _label("", TEXT)
 		l.clip_text = true
 		l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
-		l.custom_minimum_size.x = WIDTH - 8
+		l.custom_minimum_size.x = WIDTH - 16
 		col.add_child(l)
 		gear_labels.append(l)
 
@@ -111,10 +111,10 @@ func _heading(text: String) -> Label:
 ## One stat row: "Attack   4 +1". The delta label is separate so it takes the colour too.
 func _stat_row(parent: Control, key: String, text: String) -> Control:
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 2)
+	row.add_theme_constant_override("separation", 4)
 	row.mouse_filter = Control.MOUSE_FILTER_PASS
 	var n := _label(text, MUTED)
-	n.custom_minimum_size.x = 30
+	n.custom_minimum_size.x = 64
 	var v := _label("", TEXT)
 	var d := _label("", TEXT)
 	for l in [n, v, d]:

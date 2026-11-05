@@ -1,14 +1,20 @@
 """The stone UI frame and the on-screen movement arrows, written to res://art/ui/.
 
-    frame.png            320x200, the whole screen: stone masonry with the windows cut into it.
-                         The 3D view window is TRANSPARENT (the game shows through); the log,
-                         arrow and party windows are dark recessed panels.
-    arrow_<dir>.png      16x16 stone buttons: up, down, left, right (strafe) and turn_left,
-    arrow_<dir>_pressed.png   turn_right; each with a pressed version.
+    frame.png            the whole screen (320x180 logical pixels x scale = 640x360 at scale 2):
+                         stone masonry with the windows cut into it. The 3D view window is
+                         TRANSPARENT (the game shows through); the log, arrow and party windows
+                         are dark recessed panels.
+    arrow_<dir>.png      stone buttons (16x16 logical, 32x32 at scale 2): up, down, left, right
+    arrow_<dir>_pressed.png   (strafe) and turn_left, turn_right; each with a pressed version.
 
-LAYOUT CONTRACT. The rectangles below must match scripts/ui_layout.gd exactly (the game
-positions the 3D camera, the log, the arrows and the party panels from that file). The view
-window being transparent exactly where ui_layout.VIEW says is checked by a test.
+SCALE. The art is drawn once on a small logical grid, then enlarged by the whole number
+`scale` (nearest neighbour), so every logical pixel becomes a scale x scale block. At scale 2
+that is the same pixel size as the 3D view, which is rendered small and shown at 2x. Run
+`python tools/art/build_all.py --only frame --scale 2` (2 is the default).
+
+LAYOUT CONTRACT. The rectangles below (in logical pixels; the game's are these times 2) must
+match scripts/ui_layout.gd exactly. The view window being transparent exactly where
+ui_layout.VIEW says is checked by a test.
 
 The masonry uses the same recipe as the wall tile (tools/art/gen_tiles.py): a brick layout,
 a height map lit from the top-left, noise tints, dithered onto the stone ramp. Windows are
@@ -22,13 +28,13 @@ from lighting import lit_values
 from noise import hash01, value_noise, white_noise
 from palette import PAL
 
-W, H = 320, 200
+W, H = 320, 180               # Logical size; the screen is this times the scale.
 
-# Keep in sync with scripts/ui_layout.gd. (x, y, w, h)
-VIEW = (8, 8, 176, 112)       # The 3D view: transparent.
-ARROWS = (8, 128, 56, 64)     # The movement arrows' well.
-LOG = (68, 128, 116, 64)      # The message log's well.
-PARTY = (192, 8, 120, 184)    # The party panels' well.
+# Keep in sync with scripts/ui_layout.gd (which has them at 2x). (x, y, w, h), logical pixels.
+VIEW = (4, 4, 208, 130)       # The 3D view: transparent.
+LOG = (4, 138, 148, 38)       # The message log's well.
+ARROWS = (156, 138, 56, 38)   # The movement arrows' well.
+PARTY = (216, 4, 100, 172)    # The party panels' well.
 
 STONE = PAL.ramp("stone")     # stone_900 ... stone_100, dark to light
 INK = PAL["ink"]
@@ -151,8 +157,8 @@ def frame():
     recess(img, VIEW, None)
     outer_bevel(img)
     # Studs on the corners and the T-junctions of the dividers.
-    for cx, cy in ((4, 4), (W - 5, 4), (4, H - 5), (W - 5, H - 5), (188, 4), (188, H - 5),
-                   (4, 124), (188, 124), (66, 124), (66, H - 5)):
+    for cx, cy in ((2, 2), (W - 3, 2), (2, H - 3), (W - 3, H - 3), (214, 2), (214, H - 3),
+                   (214, 136), (154, 136), (154, H - 3)):
         rivet(img, cx, cy)
     return img
 
@@ -215,9 +221,9 @@ def arrow_button(kind, pressed):
 ARROWS_ALL = ("up", "down", "left", "right", "turn_left", "turn_right")
 
 
-def build():
-    written = [save_png(frame(), "ui/frame.png")]
+def build(scale=2):
+    written = [save_png(frame(), "ui/frame.png", scale=scale)]
     for kind in ARROWS_ALL:
-        written.append(save_png(arrow_button(kind, False), f"ui/arrow_{kind}.png"))
-        written.append(save_png(arrow_button(kind, True), f"ui/arrow_{kind}_pressed.png"))
+        written.append(save_png(arrow_button(kind, False), f"ui/arrow_{kind}.png", scale=scale))
+        written.append(save_png(arrow_button(kind, True), f"ui/arrow_{kind}_pressed.png", scale=scale))
     return written

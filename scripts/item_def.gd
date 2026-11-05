@@ -19,8 +19,9 @@ enum Magic { NONE, ARCANE, DIVINE }
 
 @export var display_name := "Item"
 @export var type: Type = Type.KEY
-@export var icon: Texture2D          # Inventory slots and the cursor.
-@export var floor_icon: Texture2D    # Smaller version drawn on the floor; falls back to icon.
+@export var icon: Texture2D          # Inventory slots and the cursor (UI pixel size: art drawn at 2x).
+@export var hud_icon: Texture2D      # Small version for the party panel's hand and quick slots (also 2x); falls back to icon.
+@export var floor_icon: Texture2D    # Sprite in the 3D world (NOT enlarged: that view is shown at 2x); falls back to icon.
 @export var icon_pixel_size := 0.03  # World units per pixel of the floor sprite.
 @export var max_stack := 1          # How many identical items share one backpack or quick slot (1 = never stacks).
 
@@ -47,6 +48,11 @@ enum Magic { NONE, ARCANE, DIVINE }
 ## A backpack slot takes anything, so it has no such check.
 static func allowed_in_hand(item_type: Type) -> bool:
 	return item_type in [Type.WEAPON, Type.CONSUMABLE, Type.FOCUS]
+
+
+## The icon for the party panel's hand and quick slots.
+func hud_texture() -> Texture2D:
+	return hud_icon if hud_icon else icon
 
 
 func can_throw() -> bool:

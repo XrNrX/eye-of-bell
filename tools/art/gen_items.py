@@ -1,7 +1,8 @@
 """Item icons, written to res://art/items/ using only palette colours:
 
-    <name>.png        24x24 inventory / cursor icon
-    <name>_floor.png  12x12 version drawn on the floor at the feet of the view
+    <name>.png        24x24 inventory / cursor icon (x scale)
+    <name>_hud.png    12x12 hand / quick slot icon (x scale)
+    <name>_floor.png  12x12 version drawn on the floor at the feet of the view (3D, not scaled)
 
 Items: short_sword, mace, leather_armour, healing_potion, scroll, dagger, darts,
 spellbook, holy_symbol. The floor versions of the dagger and darts double as the
@@ -216,10 +217,19 @@ def render(parts, size):
     return add_outline(img, PAL["ink"])
 
 
-def build():
+def build(scale=2):
+    """Per item: <name>.png (24x24 logical: inventory slots and the cursor), <name>_hud.png
+    (12x12 logical: hand and quick slots on the party panel) -- both enlarged `scale` times to
+    match the UI's pixel size -- and <name>_floor.png (12x12, NOT enlarged: it is a sprite in
+    the 3D world, which is rendered small and shown at 2x already)."""
     written = []
     for name, make in ITEMS.items():
         parts = make()
-        written.append(save_png(render(parts, ICON), f"items/{name}.png"))
+        written.append(save_png(render(parts, ICON), f"items/{name}.png", scale=scale))
+        written.append(save_png(render(parts, FLOOR), f"items/{name}_hud.png", scale=scale))
         written.append(save_png(render(parts, FLOOR), f"items/{name}_floor.png"))
+    # The key's sprite lives in gen_sprites (it is also the 3D floor sprite); its inventory
+    # icon is that same drawing, enlarged.
+    from gen_sprites import key_sprite
+    written.append(save_png(key_sprite(), "items/key.png", scale=scale))
     return written

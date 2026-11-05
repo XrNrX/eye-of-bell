@@ -24,7 +24,10 @@ const FRAME_FILLED := preload("res://art/ui/quickslot.png")
 const FRAME_EMPTY := preload("res://art/ui/quickslot_empty.png")
 const SWEEP_TEXTURE := preload("res://art/ui/quickslot_sweep.png")
 
-const SLOT_SIZE := Vector2(14, 14)   # The frame art; its 12x12 inside holds a floor icon.
+const UiLayout := preload("res://scripts/ui_layout.gd")
+
+const SLOT_SIZE := Vector2(28, 28)   # The frame art (14x14 logical, drawn at 2x); its 24x24 inside holds an item's hud icon.
+const BORDER := 2.0                  # The frame's border, in pixels.
 const SWEEP_TINT := Color(1, 1, 1, 0.65)
 
 var party: Node
@@ -52,7 +55,7 @@ func _ready() -> void:
 
 	frame = _make_rect(Vector2.ZERO, SLOT_SIZE)
 	add_child(frame)
-	icon = _make_rect(Vector2(1, 1), SLOT_SIZE - Vector2(2, 2))
+	icon = _make_rect(Vector2(BORDER, BORDER), SLOT_SIZE - Vector2(BORDER, BORDER) * 2.0)
 	add_child(icon)
 	count_label = StackCount.new()
 	add_child(count_label)
@@ -106,11 +109,10 @@ func refresh() -> void:
 	icon.texture = null
 	count_label.set_count(item.count if item else 0)
 	if item:
-		# The small floor icon fits the frame exactly; anything else is scaled to fit.
 		var def: Resource = item.def
-		icon.texture = def.floor_icon if def.floor_icon else def.icon
+		icon.texture = def.hud_texture()  # 24x24 fits inside the frame exactly; anything else is scaled to fit.
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED \
-				if icon.texture.get_size() == Vector2(12, 12) else TextureRect.STRETCH_SCALE
+				if icon.texture.get_size() == icon.size else TextureRect.STRETCH_SCALE
 	_update_hint()
 
 

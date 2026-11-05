@@ -7,7 +7,6 @@ extends Node3D
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
-const UiLayout := preload("res://scripts/ui_layout.gd")
 
 const MOVE_TIME := 0.2  # Seconds per step or turn.
 
@@ -58,10 +57,10 @@ func _find_singletons() -> void:
 ## click actually landed on the item's sprite doesn't matter, only that it's there;
 ## see the summary for why (headless-testable determinism over pixel-precise picking).
 ## Shift+click (empty-handed) sends the item straight to the party instead: see Party.stow.
-## Only clicks inside the 3D view window count: the stone frame around it takes no clicks.
-func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT 			and UiLayout.VIEW.has_point(event.position):
-		_click_item(event.shift_pressed)
+## A left click on the 3D view (game_view.gd passes it on; the frame and panels never reach
+## it). Shift+click sends a floor item to the party instead of the cursor.
+func world_click(shift := false) -> void:
+	_click_item(shift)
 
 
 func _click_item(shift := false) -> void:

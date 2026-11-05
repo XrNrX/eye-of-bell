@@ -10,8 +10,8 @@ extends CanvasLayer
 
 const UiLayout := preload("res://scripts/ui_layout.gd")
 
-const BUTTON := 16.0
-const GAP := 2.0
+const BUTTON := 32.0  # The art is 16x16 logical, drawn at 2x.
+const GAP := 4.0
 # [command, art name] in reading order.
 const LAYOUT := [
 	["turn_left", "turn_left"], ["forward", "up"], ["turn_right", "turn_right"],

@@ -22,8 +22,8 @@ const NEWEST := Color("e6dcc0")    # Palette bone_300.
 const RECENT := Color("c3bcc0")    # Palette stone_100.
 const OLD := Color("968e9a")       # Palette stone_300.
 const STATUS := Color("ffe38a")    # Palette torch_300.
-const PADDING := Vector2(4, 3)
-const STATUS_HEIGHT := 10.0
+const PADDING := Vector2(8, 6)
+const STATUS_HEIGHT := 12.0
 
 var feel_cfg: Resource = FeelConfigScript.get_config()  # data/combat_feel.tres
 @onready var log_text: RichTextLabel = %Log

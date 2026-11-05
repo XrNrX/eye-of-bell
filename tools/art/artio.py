@@ -1,6 +1,7 @@
 """Saving art into the Godot project (res://art/...) and keeping imports crisp.
 
     save_png(img, "tiles/wall.png")        # -> <project>/art/tiles/wall.png
+    save_png(img, "ui/frame.png", scale=2) # enlarged 2x first (each pixel becomes a 2x2 block)
     save_frames(images, order, animations, "slime")   # frames + sheet + JSON
 """
 import json
@@ -16,10 +17,15 @@ from palette import ART_DIR, PAL
 CRISP = {"mipmaps/generate": "false", "detect_3d/compress_to": "0", "compress/mode": "0"}
 
 
-def save_png(img, rel_path, check=True, root=None):
+def save_png(img, rel_path, check=True, root=None, scale=1):
     """Save an image under res://art/<rel_path>, creating folders as needed. Raises if
     any opaque pixel is off-palette (pass check=False only for deliberate exceptions).
-    `root` overrides the art folder (used by tests)."""
+    `root` overrides the art folder (used by tests). `scale` enlarges the image by that
+    whole number first, nearest-neighbour, so the art is drawn once on a small logical grid
+    and every logical pixel becomes a scale x scale block (UI art uses 2: the same pixel
+    size as the 3D view, which is rendered small and shown at 2x)."""
+    if scale != 1:
+        img = img.resize((img.width * scale, img.height * scale), Image.NEAREST)
     dest = (root or ART_DIR) / rel_path
     if check:
         PAL.check(img, str(rel_path))

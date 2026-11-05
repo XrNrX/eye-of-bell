@@ -12,7 +12,7 @@ const EDGE := Color(0.941, 0.722, 0.227)      # Palette torch_500, like the mana
 const TEXT := Color(0.92, 0.89, 0.82)
 const TEXT_OFF := Color(0.415, 0.384, 0.447)  # Palette stone_500.
 const ROW_HOVER := Color(0.275, 0.247, 0.31)  # Palette stone_700.
-const WIDTH := 72.0
+const WIDTH := 150.0
 
 var party: Node
 var caster: int
@@ -25,8 +25,8 @@ func setup(a_party: Node, a_caster: int, spells: Array) -> void:
 	var box := StyleBoxFlat.new()
 	box.bg_color = BG
 	box.border_color = EDGE
-	box.set_border_width_all(1)
-	box.set_content_margin_all(2)
+	box.set_border_width_all(2)
+	box.set_content_margin_all(4)
 	add_theme_stylebox_override("panel", box)
 	custom_minimum_size.x = WIDTH
 	mouse_filter = Control.MOUSE_FILTER_STOP  # A click on the frame shouldn't fall through.
@@ -58,8 +58,8 @@ func setup(a_party: Node, a_caster: int, spells: Array) -> void:
 func _flat(colour: Color) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = colour
-	s.set_content_margin_all(1)
-	s.content_margin_left = 2
+	s.set_content_margin_all(3)
+	s.content_margin_left = 6
 	return s
 
 

@@ -1,4 +1,5 @@
-"""Procedural party portraits (32x32, front-facing bust), palette-bound.
+"""Procedural party portraits (drawn on a 32x32 grid, enlarged by --scale: 64x64 at the default 2;
+front-facing bust), palette-bound.
 
     python tools/art/gen_portraits.py                              # all 4 classes, default seeds
     python tools/art/gen_portraits.py --class fighter --seed 7      # reroll one face
@@ -235,22 +236,22 @@ def dead_variant(img: Image.Image) -> Image.Image:
     return out
 
 
-def build(name: str = None, out_dir: str = None, cls: str = "fighter", seed: int = None):
+def build(name: str = None, out_dir: str = None, cls: str = "fighter", seed: int = None, scale=2):
     """Generate one character's three portraits, or (name=None) all four classes at
     their default seeds. Returns the files written."""
     if name is None:
         written = []
         for c, s in DEFAULT_SEEDS.items():
-            written += build(c, out_dir, c, s)
+            written += build(c, out_dir, c, s, scale)
         return written
 
     seed = DEFAULT_SEEDS.get(cls, 1) if seed is None else seed
     living = render(cls, seed)
     root, sub = (Path(out_dir), "") if out_dir else (None, f"portraits/{name}/")
     written = [
-        save_png(living, f"{sub}portrait.png", root=root),
-        save_png(hurt_variant(living), f"{sub}portrait_hurt.png", root=root),
-        save_png(dead_variant(living), f"{sub}portrait_dead.png", root=root),
+        save_png(living, f"{sub}portrait.png", root=root, scale=scale),
+        save_png(hurt_variant(living), f"{sub}portrait_hurt.png", root=root, scale=scale),
+        save_png(dead_variant(living), f"{sub}portrait_dead.png", root=root, scale=scale),
     ]
     return written
 
@@ -262,10 +263,11 @@ def main():
     ap.add_argument("--seed", type=int, help="Face shape + skin tone. Omit for the class default.")
     ap.add_argument("--name", help="Output folder name (default: the class name).")
     ap.add_argument("--out", help="Output folder (default: art/portraits/<name>).")
+    ap.add_argument("--scale", type=int, default=2, help="Enlarge by this whole number (default 2: the UI pixel size).")
     ap.add_argument("--preview", help="Also write a 6x enlarged preview PNG of all three variants here.")
     args = ap.parse_args()
     name = args.name or args.cls
-    written = build(name, args.out, args.cls, args.seed)
+    written = build(name, args.out, args.cls, args.seed, args.scale)
     print(f"Wrote {len(written)} files, e.g. {written[0]}")
 
     if args.preview:

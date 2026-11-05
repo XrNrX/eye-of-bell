@@ -1,8 +1,9 @@
 extends Node3D
 ## The main menu and the game's startup scene: a torch-lit corridor rendered with the
 ## game's own level builder (scripts/dungeon_builder.gd, set to build the architecture
-## only), its textures and its torch light, at the game's 320x200 -- with the title and
-## the buttons drawn over it.
+## only), its textures and its torch light, rendered in a 320x180 SubViewport shown at 2x
+## (the same chunky pixels as the in-game 3D view) -- with the title and the buttons drawn
+## over it at the native 640x360.
 ##
 ##   NEW GAME   starts a fresh run
 ##   LOAD GAME  loads the save (greyed out when there isn't one)
@@ -12,7 +13,7 @@ extends Node3D
 ## Also reached from Game over's "Quit to Menu" (see end_screen.gd).
 ##
 ## The look: Press Start 2P (a free pixel font under the SIL Open Font License, see
-## art/fonts/OFL.txt) in sizes that are multiples of 8, so every pixel lands on the grid;
+## art/fonts/OFL.txt) in sizes that are multiples of 8 (title 32, text 16), so every pixel lands on the grid;
 ## its import settings turn anti-aliasing and hinting off, so keep them off. The title has
 ## a palette-coloured drop shadow. All colours are the game's palette.
 
@@ -35,8 +36,8 @@ const TORCH_700 := Color("c78a1e")
 const TORCH_500 := Color("f0b83a")
 const TORCH_300 := Color("ffe38a")
 
-const TITLE_SIZE := 16        # Two native pixels per font pixel: chunky.
-const TEXT_SIZE := 8          # One.
+const TITLE_SIZE := 32        # Four native pixels per font pixel: chunky.
+const TEXT_SIZE := 16         # Two (the same pixel size as the 2x dungeon view).
 const VIEW_CELL := Vector2i(1, 7)  # Camera starts in this cell of the level, facing east...
 const VIEW_FACING_DEG := -90.0     # ...down the long south corridor (torches on the right wall).
 const SWAY := 0.035           # How far the camera drifts, in world units, so the view is alive.
@@ -151,10 +152,10 @@ func _style_title() -> void:
 	title.add_theme_font_size_override("font_size", TITLE_SIZE)
 	title.add_theme_color_override("font_color", TORCH_300)
 	title.add_theme_color_override("font_shadow_color", RUST_700)
-	title.add_theme_constant_override("shadow_offset_x", 2)
-	title.add_theme_constant_override("shadow_offset_y", 2)
+	title.add_theme_constant_override("shadow_offset_x", 4)
+	title.add_theme_constant_override("shadow_offset_y", 4)
 	title.add_theme_color_override("font_outline_color", INK)
-	title.add_theme_constant_override("outline_size", 2)
+	title.add_theme_constant_override("outline_size", 4)
 
 
 func _make_theme() -> Theme:
@@ -193,11 +194,11 @@ func _slab(fill: Color, edge: Color) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
 	s.bg_color = fill
 	s.border_color = edge
-	s.set_border_width_all(1)
-	s.content_margin_left = 6
-	s.content_margin_right = 6
-	s.content_margin_top = 4
-	s.content_margin_bottom = 4
+	s.set_border_width_all(2)
+	s.content_margin_left = 12
+	s.content_margin_right = 12
+	s.content_margin_top = 8
+	s.content_margin_bottom = 8
 	return s
 
 

@@ -19,10 +19,23 @@ const UiLayout := preload("res://scripts/ui_layout.gd")
 const FeelConfigScript := preload("res://scripts/combat_feel_config.gd")
 const StackCount := preload("res://scripts/stack_count.gd")
 
-const PORTRAIT_SIZE := Vector2(32, 32)   # The portrait art's own size: crisp, no scaling.
-const HAND_SIZE := Vector2(16, 16)
-const BAR_WIDTH := 24.0
-const PANEL_SIZE := Vector2(58, 90)      # Two across, two down fill the party window (ui_layout.gd).
+# Sizes are in 640x360 pixels. The art is drawn at 2x (see ui_layout.gd), so each of these is the
+# art's own size: portraits 64x64, hand buttons 32x32.
+const PORTRAIT_SIZE := Vector2(64, 64)
+const HAND_SIZE := Vector2(32, 32)
+const PANEL_SIZE := Vector2(98, 170)     # Two across, two down fill the party window (ui_layout.gd).
+# Content margins (left, top, right, bottom). Everything in a panel sits on EVEN pixel
+# coordinates, so the 2x2 blocks of the art line up with the frame's (a block starting on an
+# odd pixel would straddle two of the frame's blocks). The inner width of 88 centres the 64-wide
+# portrait, the 56-wide quick slots and the 68-wide hands on even x; every row height and gap is even.
+const MARGIN_LEFT := 6
+const MARGIN_TOP := 4
+const MARGIN_RIGHT := 4
+const MARGIN_BOTTOM := 4
+const ROW_GAP := 2                       # Between the rows inside a panel.
+const HP_HEIGHT := 6
+const MANA_HEIGHT := 4
+const COOL_HEIGHT := 4
 
 const HAND_READY := Color(1, 1, 1)
 const HAND_COOLING := Color(0.35, 0.33, 0.38)
@@ -53,7 +66,7 @@ var catcher: Control   # Full-screen, under the panels: a click on it cancels.
 # Formation drag: press on a portrait/name, move past DRAG_THRESHOLD, release over another
 # panel. The release position picks the target (not Godot's control routing, which sends
 # a release to the control that got the press).
-const DRAG_THRESHOLD := 3.0       # Pixels (in the 320x200 view) before a press becomes a drag.
+const DRAG_THRESHOLD := 4.0       # Pixels (in the 640x360 space) before a press becomes a drag.
 const DRAG_GHOST := Color(1, 1, 1, 0.55)
 const DROP_EDGE := Color(0.941, 0.722, 0.227)  # Palette torch_500, like the mana bar.
 var press_slot := -1               # Position pressed on, -1 if none.
@@ -124,7 +137,7 @@ func _show_hand(m, i: int, hand: TextureButton) -> void:
 	var stack = m.hands[i]
 	var tex: Texture2D = m.def.hand_icon
 	if stack:
-		tex = stack.def.floor_icon if stack.def.floor_icon else stack.def.icon
+		tex = stack.def.hud_texture()
 	if hand.texture_normal != tex:
 		hand.texture_normal = tex
 	hand.get_child(0).set_count(stack.count if stack else 0)
@@ -255,7 +268,7 @@ func _on_hero_hit(slot: int, damage: int) -> void:
 	var p: Dictionary = panels[slot]
 	var label := Label.new()
 	label.text = str(damage) if damage > 0 else "Miss"
-	label.add_theme_font_size_override("font_size", 12)
+	label.add_theme_font_size_override("font_size", 16)
 	label.add_theme_color_override("font_color", HIT_COLOUR if damage > 0 else MISS_COLOUR)
 	label.add_theme_color_override("font_outline_color", HP_BACK)
 	label.add_theme_constant_override("outline_size", 3)
@@ -354,7 +367,7 @@ func _highlight(slot: int, on: bool) -> void:
 		return
 	var box: StyleBoxFlat = panels[slot].box
 	box.border_color = DROP_EDGE if on else PANEL_EDGE
-	box.set_border_width_all(2 if on else 1)
+	box.set_border_width_all(4 if on else 2)  # (2 px is the panel border: whole 2x2 blocks)
 
 
 ## Dropping on another panel swaps; anywhere else (including its own panel) cancels.
@@ -422,15 +435,18 @@ func _make_panel(m) -> Dictionary:
 	var box := StyleBoxFlat.new()
 	box.bg_color = PANEL_BG
 	box.border_color = PANEL_EDGE
-	box.set_border_width_all(1)
-	box.set_content_margin_all(3)
+	box.set_border_width_all(2)
+	box.content_margin_left = MARGIN_LEFT
+	box.content_margin_top = MARGIN_TOP
+	box.content_margin_right = MARGIN_RIGHT
+	box.content_margin_bottom = MARGIN_BOTTOM
 	root.add_theme_stylebox_override("panel", box)
 	root.custom_minimum_size = PANEL_SIZE
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panels_grid.add_child(root)
 
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 0)
+	col.add_theme_constant_override("separation", ROW_GAP)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(col)
 
@@ -469,7 +485,7 @@ func _make_panel(m) -> Dictionary:
 	var ring := StyleBoxFlat.new()
 	ring.draw_center = false
 	ring.border_color = BUFF_EDGE
-	ring.set_border_width_all(1)
+	ring.set_border_width_all(2)
 	buff_ring.add_theme_stylebox_override("panel", ring)
 	buff_ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	buff_ring.visible = false
@@ -503,18 +519,19 @@ func _make_panel(m) -> Dictionary:
 				get_tree().call_group("inventory", "show_screen", pos, true))
 	col.add_child(name_label)
 
-	var hp_bar := _bar(HP_FILL, Vector2(BAR_WIDTH, 3), m.def.max_hp)
+	var hp_bar := _bar(HP_FILL, Vector2(0, HP_HEIGHT), m.def.max_hp)
 	col.add_child(hp_bar)
 
 	# Mana, for casters. Every panel keeps the row (invisible without mana) so the
 	# hand buttons line up across a row of panels.
-	var mana_bar := _bar(MANA_FILL, Vector2(BAR_WIDTH, 2), maxi(1, m.def.max_mana))
+	var mana_bar := _bar(MANA_FILL, Vector2(0, MANA_HEIGHT), maxi(1, m.def.max_mana))
 	mana_bar.modulate.a = 1.0 if m.def.max_mana > 0 else 0.0
 	col.add_child(mana_bar)
 
 	# Two hands (left/right), each acting with the item it holds.
 	var hands_row := HBoxContainer.new()
-	hands_row.add_theme_constant_override("separation", 2)
+	hands_row.add_theme_constant_override("separation", 4)
+	hands_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	hands_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(hands_row)
 	var hands := []
@@ -523,7 +540,7 @@ func _make_panel(m) -> Dictionary:
 		hands_row.add_child(hand)
 		hands.append(hand)
 
-	var cool_bar := _bar(COOL_FILL, Vector2(BAR_WIDTH, 2), 100)
+	var cool_bar := _bar(COOL_FILL, Vector2(0, COOL_HEIGHT), 100)
 	col.add_child(cool_bar)
 
 	return {"root": root, "box": box, "name_label": name_label, "portrait": portrait, "buff_ring": buff_ring, "hands": hands,

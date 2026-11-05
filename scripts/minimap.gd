@@ -3,7 +3,7 @@ extends Control
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 
-const CELL_PX := 6  # Size of one map cell on screen, in internal-resolution pixels.
+const CELL_PX := 12  # Size of one map cell on screen, in internal-resolution pixels.
 const WALL_COLOR := Color(0.7, 0.7, 0.7)
 const FLOOR_COLOR := Color(0.12, 0.12, 0.12)
 const DOOR_COLOR := Color(0.6, 0.4, 0.2)

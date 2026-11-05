@@ -25,8 +25,8 @@ const StackCount := preload("res://scripts/stack_count.gd")
 
 enum Kind { HAND, ARMOUR, BACKPACK, CHARACTER }
 
-const ITEM_SLOT := Vector2(24, 24)      # Holds a 24x24 item icon at its native size.
-const PORTRAIT_SLOT := Vector2(16, 16)  # A 32x32 portrait scaled to exactly half.
+const ITEM_SLOT := Vector2(48, 48)      # Holds a 48x48 item icon (24x24 logical, drawn at 2x) at its native size.
+const PORTRAIT_SLOT := Vector2(32, 32)  # A 64x64 portrait scaled to exactly half.
 const EMPTY_BG := Color(0.137, 0.118, 0.169, 0.6)  # Palette stone_900, translucent.
 const FILLED_BG := Color(0.275, 0.247, 0.31)        # Palette stone_700.
 const EDGE := Color(0.588, 0.557, 0.604)            # Palette stone_300.
@@ -134,7 +134,7 @@ func refresh() -> void:
 	var box := StyleBoxFlat.new()
 	box.bg_color = FILLED_BG if filled else EMPTY_BG
 	box.border_color = EDGE
-	box.set_border_width_all(1)
+	box.set_border_width_all(2)
 	add_theme_stylebox_override("panel", box)
 
 

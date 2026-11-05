@@ -13,8 +13,8 @@ The frames use the same stone colours as the HUD's portrait panels (a stone_700
 border on stone_900), with the toolkit's top-left light: a lit top/left edge and a
 shaded bottom/right edge.
 
-digits.png (50x7): the stack-count font, digits 0-9 in 5x7 cells (a 3x5 glyph plus a
-1px ink outline), light stone on ink so it reads over any icon. Drawn by
+digits.png (50x7 logical, 100x14 at scale 2): the stack-count font, digits 0-9 in 5x7
+cells (a 3x5 glyph plus a 1px ink outline), light stone on ink so it reads over any icon. Drawn by
 scripts/stack_count.gd, one cell per digit, cells overlapping by their outline.
 """
 import math
@@ -162,12 +162,14 @@ def digit_sheet():
     return sheet
 
 
-def build():
+def build(scale=2):
+    """Everything here is drawn on its small logical grid and enlarged `scale` times (see
+    artio.save_png), so each logical pixel is a scale x scale block, matching the 3D view."""
     return [
-        save_png(hand_sword(), "ui/hand_sword.png"),
-        save_png(hand_sword_small(), "ui/hand_sword_small.png"),
-        save_png(quickslot_frame(True), "ui/quickslot.png"),
-        save_png(quickslot_frame(False), "ui/quickslot_empty.png"),
-        save_png(quickslot_sweep(), "ui/quickslot_sweep.png"),
-        save_png(digit_sheet(), "ui/digits.png"),
+        save_png(hand_sword(), "ui/hand_sword.png", scale=scale),
+        save_png(hand_sword_small(), "ui/hand_sword_small.png", scale=scale),
+        save_png(quickslot_frame(True), "ui/quickslot.png", scale=scale),
+        save_png(quickslot_frame(False), "ui/quickslot_empty.png", scale=scale),
+        save_png(quickslot_sweep(), "ui/quickslot_sweep.png", scale=scale),
+        save_png(digit_sheet(), "ui/digits.png", scale=scale),
     ]

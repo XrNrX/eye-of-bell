@@ -6,8 +6,9 @@ extends Control
 ## cells overlapping by that outline so the digits sit close together.
 
 const DIGITS := preload("res://art/ui/digits.png")
-const CELL := Vector2i(5, 7)
-const ADVANCE := 4  # Cells overlap by their outline column.
+# The sheet holds ten digits side by side. At scale u (1 on the logical grid, 2 in the game) each
+# cell is 5u x 7u and the cells overlap by their outline column (4u apart); u comes from the
+# sheet's height, so regenerating the art at another scale just works.
 
 var count := 0
 
@@ -37,10 +38,13 @@ func _draw() -> void:
 	if count < 2:
 		return
 	var text := str(count)
-	var width := ADVANCE * (text.length() - 1) + CELL.x
-	var origin := Vector2(size.x - width, size.y - CELL.y)  # Flush with the corner; stays inside the control.
+	var u: int = DIGITS.get_height() / 7
+	var cell := Vector2i(5 * u, 7 * u)
+	var advance := 4 * u
+	var width := advance * (text.length() - 1) + cell.x
+	var origin := Vector2(size.x - width, size.y - cell.y)  # Flush with the corner; stays inside the control.
 	for i in text.length():
 		var d := text.unicode_at(i) - 48
 		draw_texture_rect_region(DIGITS,
-				Rect2(origin + Vector2(i * ADVANCE, 0), Vector2(CELL)),
-				Rect2(Vector2(d * CELL.x, 0), Vector2(CELL)))
+				Rect2(origin + Vector2(i * advance, 0), Vector2(cell)),
+				Rect2(Vector2(d * cell.x, 0), Vector2(cell)))
