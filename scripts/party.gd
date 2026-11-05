@@ -406,10 +406,15 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 				return false
 			var damage := CombatRules.roll_damage(spell.damage_min, spell.damage_max)
 			monster.take_hit({"hit": true, "damage": damage, "chance": 100})
+			var caught := 0
+			if spell.splash_radius > 0:
+				caught = _splash(monster, spell.splash_radius, maxi(1, ceili(damage * spell.splash_percent / 100.0)))
 			_fx(spell.effect, monster.cell)
 			text = "%s casts %s: it hits the %s for %d!" % [who, spell.display_name, monster.def.display_name, damage]
 			if monster.hp <= 0:
 				text += " It dies!"
+			if caught > 0:
+				text += " %d more %s caught in the blast." % [caught, "is" if caught == 1 else "are"]
 		SpellDef.Target.HERO:
 			var t := member(target_slot)
 			if t == null or not t.is_alive():
@@ -723,6 +728,21 @@ func _read_scroll(m: Member, def: Resource) -> Dictionary:
 	return {"used": true, "message": text, "close": true}
 
 
+## A blast's splash: every other living monster within `radius` tiles (the 8 around, for 1) of
+## the target takes `damage` (already worked out: no roll, no hit chance). Returns how many were hit.
+## Walls and closed doors hold no monsters, so nothing passes through them; the party is never hurt.
+func _splash(target: Node, radius: int, damage: int) -> int:
+	var count := 0
+	for other in DungeonMap.occupied.values().duplicate():
+		if other == target or not is_instance_valid(other) or other.dying:
+			continue
+		var d: Vector2i = (other.cell - target.cell).abs()
+		if maxi(d.x, d.y) <= radius:
+			other.take_hit({"hit": true, "damage": damage, "chance": 100})
+			count += 1
+	return count
+
+
 func _first_monster_ahead() -> Node:
 	var dir: Vector2i = player.DIRS[player.facing]
 	for i in range(1, MISSILE_RANGE + 1):
@@ -814,6 +834,8 @@ func _fx(effect: String, at := Vector2i(-1, -1)) -> void:
 		return
 	if effect == "missile":
 		get_tree().call_group("spell_effects", "missile", player.cell, at)
+	elif effect == "fireball":
+		get_tree().call_group("spell_effects", "fireball", player.cell, at)
 	else:
 		get_tree().call_group("spell_effects", "party_glow", effect)
 

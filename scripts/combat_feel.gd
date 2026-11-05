@@ -75,6 +75,17 @@ func shake(damage: int) -> void:
 	shake_left = shake_total
 
 
+## Shake the 3D view by a given strength (camera offset in world units) for `seconds`; used by
+## spells (the Fireball blast). Respects the same on/off switch as the hit shake.
+func shake_by(strength: float, seconds: float) -> void:
+	if not feel_cfg.screen_shake_enabled or strength <= 0.0:
+		return
+	var running := shake_strength * (shake_left / maxf(shake_total, 0.001))
+	shake_strength = maxf(running, strength)
+	shake_total = seconds
+	shake_left = seconds
+
+
 func _process(delta: float) -> void:
 	if camera == null:
 		return

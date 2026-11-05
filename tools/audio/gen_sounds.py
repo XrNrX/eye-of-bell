@@ -248,6 +248,21 @@ def zap():
     return finish(mix(decay(lowpass(osc(glide(1800, 250, 0.35), 0.38, "saw"), 3000), 0.15), gain(decay(highpass(noise(0.3, 23), 3000), 0.1), 0.3)), 0.6)
 
 
+def fireball():
+    """A rising rush of flame: breathy noise swelling up, with a low saw growl underneath."""
+    rush = swell(bandpass(noise(0.55, 61), 300, 2200), 0.3, 0.2)
+    growl = swell(lowpass(osc(glide(90, 200, 0.5, 0.6), 0.55, "saw"), 700), 0.25, 0.25)
+    return finish(mix(rush, gain(growl, 0.6)), 0.6)
+
+
+def explosion():
+    """A boom: a sine dropping into the floor, a rumble of low noise, a crackle of embers."""
+    boom = decay(osc(glide(150, 36, 0.35), 0.9), 0.3)
+    rumble = decay(lowpass(noise(0.9, 41), 700), 0.28)
+    crackle = decay(highpass(noise(0.7, 42), 2500), 0.09)
+    return finish(mix(boom, gain(rumble, 0.9), gain(crackle, 0.3)), 0.85)
+
+
 def chord_tone(freq, sec, tau):
     return mix(decay(osc(freq, sec), tau), gain(decay(osc(freq * 2, sec), tau * 0.6), 0.3))
 
@@ -304,7 +319,7 @@ SOUNDS = {
     "swing": (swing, None), "whiff": (whiff, None), "hit": (hit, None), "throw": (throw, None),
     "monster_attack": (monster_attack, None), "monster_hurt": (monster_hurt, None), "monster_die": (monster_die, None),
     "hero_hurt": (hero_hurt, None), "hero_die": (hero_die, None),
-    "potion": (potion, None), "zap": (zap, None), "heal": (heal, None), "shield": (shield, None), "bless": (bless, None),
+    "potion": (potion, None), "zap": (zap, None), "heal": (heal, None), "shield": (shield, None), "bless": (bless, None), "fireball": (fireball, None), "explosion": (explosion, None),
     "ui_click": (ui_click, None), "ui_swap": (ui_swap, None), "save": (save, None), "load": (load, None),
     "level_complete": (level_complete, None), "game_over": (game_over, None),
 }

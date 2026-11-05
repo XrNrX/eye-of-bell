@@ -19,6 +19,7 @@ const PALETTE_EDGE := Color("968e9a")   # stone_300
 
 var orb: ImageTexture
 var live := 0  # Effects playing right now (tests read this).
+var flickers := []  # [{light, base, seed}]: lights that flutter (the fireball), moved every frame.
 
 
 func _ready() -> void:
@@ -27,6 +28,16 @@ func _ready() -> void:
 	var env_node := get_parent().get_node_or_null("WorldEnvironment")
 	if env_node:
 		Config.apply_environment(env_node.environment, Settings.fog)
+
+
+func _process(_delta: float) -> void:
+	var t := Time.get_ticks_msec() / 1000.0
+	for f in flickers.duplicate():
+		if not is_instance_valid(f.light):
+			flickers.erase(f)
+			continue
+		var wobble := sin(t * 31.0 + f.seed) * 0.6 + sin(t * 53.0 + f.seed * 2.0) * 0.4
+		f.light.light_energy = f.base * (1.0 + wobble * f.amount)
 
 
 ## A 7x7 round bolt in three palette greys; the config tints it light blue (and over-brightens it).
@@ -86,6 +97,104 @@ func missile(from_cell: Vector2i, to_cell: Vector2i) -> void:
 	tween.tween_callback(func():
 		impact(to_cell)
 		bolt.queue_free()
+		live -= 1)
+
+
+## A fireball flies from the party's tile to `to_cell`: a big orange orb with a flickering light and
+## a trail of embers, then it explodes there (see explosion).
+func fireball(from_cell: Vector2i, to_cell: Vector2i) -> void:
+	var c := Config.get_config()
+	live += 1
+	var forward := Vector3(to_cell.x - from_cell.x, 0, to_cell.y - from_cell.y).normalized()
+	var start := _cell_pos(from_cell, c.bolt_height) + forward * 0.7
+	var end := _cell_pos(to_cell, c.bolt_height)
+	var ball := Node3D.new()
+	ball.position = start
+	add_child(ball)
+	var sprite := Sprite3D.new()
+	sprite.texture = orb
+	sprite.pixel_size = c.fire_size
+	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sprite.shaded = false
+	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	sprite.modulate = c.fire_color
+	ball.add_child(sprite)
+	var light := OmniLight3D.new()
+	light.light_color = c.fire_light_color
+	light.light_energy = c.fire_light_energy
+	light.omni_range = c.fire_light_range
+	ball.add_child(light)
+	flickers.append({"light": light, "base": c.fire_light_energy, "seed": randf() * 10.0, "amount": c.fire_flicker})
+	if c.ember_amount > 0:
+		var embers := _particles(c.ember_amount, c.ember_seconds, c.ember_size, c.ember_color)
+		embers.one_shot = false
+		embers.explosiveness = 0.0
+		embers.direction = Vector3.UP
+		embers.spread = 60.0
+		embers.initial_velocity_min = c.ember_rise * 0.3
+		embers.initial_velocity_max = c.ember_rise
+		embers.gravity = Vector3.ZERO
+		embers.local_coords = false  # They stay where they were shed.
+		ball.add_child(embers)
+		embers.emitting = true
+	var tiles := maxf(1.0, (to_cell - from_cell).length())
+	var tween := ball.create_tween()
+	tween.tween_property(ball, "position", end, tiles * c.fire_seconds_per_tile)
+	tween.tween_callback(func():
+		explosion(to_cell)
+		ball.queue_free()
+		live -= 1)
+
+
+## The fireball bursts: a flash that lights the whole area and fades over about half a second, a
+## swelling orange orb, a spray of embers, a boom and a screen shake.
+func explosion(cell: Vector2i) -> void:
+	var c := Config.get_config()
+	live += 1
+	var at := _cell_pos(cell, c.bolt_height)
+	get_tree().call_group("audio", "play", "explosion")
+	get_tree().call_group("combat_feel", "shake_by", c.blast_shake_strength, c.blast_shake_seconds)
+	var flash := OmniLight3D.new()
+	flash.position = at
+	flash.light_color = c.blast_light_color
+	flash.light_energy = c.blast_light_energy
+	flash.omni_range = c.blast_light_range
+	add_child(flash)
+	var tween := flash.create_tween()
+	tween.tween_property(flash, "light_energy", 0.0, c.blast_seconds).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_callback(func():
+		flash.queue_free())
+	var blast := Sprite3D.new()
+	blast.texture = orb
+	blast.position = at
+	blast.pixel_size = c.fire_size
+	blast.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	blast.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	blast.shaded = false
+	blast.alpha_cut = SpriteBase3D.ALPHA_CUT_DISABLED
+	blast.modulate = c.blast_orb_color
+	add_child(blast)
+	var swell := blast.create_tween().set_parallel(true)
+	swell.tween_property(blast, "scale", Vector3.ONE * c.blast_orb_scale, c.blast_seconds * 0.6).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+	swell.tween_property(blast, "modulate:a", 0.0, c.blast_seconds * 0.8)
+	swell.chain().tween_callback(func():
+		blast.queue_free())
+	if c.blast_sparks > 0:
+		var sparks := _particles(c.blast_sparks, c.blast_spark_seconds, c.blast_spark_size, c.blast_spark_color)
+		sparks.position = at
+		sparks.one_shot = true
+		sparks.explosiveness = 1.0
+		sparks.direction = Vector3.UP
+		sparks.spread = 180.0
+		sparks.initial_velocity_min = c.blast_spark_speed * 0.3
+		sparks.initial_velocity_max = c.blast_spark_speed
+		sparks.gravity = Vector3(0, -4.0, 0)
+		add_child(sparks)
+		sparks.emitting = true
+		get_tree().create_timer(c.blast_spark_seconds + 0.2).timeout.connect(func():
+			sparks.queue_free())
+	get_tree().create_timer(maxf(c.blast_seconds, c.blast_spark_seconds) + 0.25).timeout.connect(func():
 		live -= 1)
 
 

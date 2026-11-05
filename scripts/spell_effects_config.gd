@@ -85,6 +85,35 @@ func glow(kind: String) -> Dictionary:
 @export var mote_distance := 1.3     # How far ahead of the party the specks drift (they fill the view).
 @export var mote_spread := 0.7       # Radius of the cloud they start in.
 
+@export_group("Fireball projectile")
+@export var fire_color := Color(3.0, 0.75, 0.1)          # The orb's tint: orange, HDR so it blooms.
+@export var fire_light_color := Color(1.0, 0.5, 0.12)
+@export var fire_light_energy := 4.0
+@export var fire_light_range := 6.0
+@export var fire_flicker := 0.35                         # How far the light flutters (fraction of its energy).
+@export var fire_size := 0.06                            # World units per pixel (7x7): about twice the missile.
+@export var fire_seconds_per_tile := 0.075               # Slower and heavier than the missile.
+@export var ember_amount := 28                           # Embers it sheds on the way.
+@export var ember_color := Color(2.6, 0.7, 0.1)
+@export var ember_size := 0.04
+@export var ember_seconds := 0.55
+@export var ember_rise := 0.5                            # Embers drift upward at this speed.
+
+@export_group("Fireball explosion")
+@export var blast_light_color := Color(1.0, 0.55, 0.15)
+@export var blast_light_energy := 14.0                   # A big flash that lights the whole area...
+@export var blast_light_range := 18.0
+@export var blast_seconds := 0.5                         # ...and fades over about half a second.
+@export var blast_orb_color := Color(3.0, 0.8, 0.1)
+@export var blast_orb_scale := 5.5                       # The fireball swells to this many times the projectile.
+@export var blast_sparks := 40
+@export var blast_spark_color := Color(3.0, 0.9, 0.15)
+@export var blast_spark_size := 0.06
+@export var blast_spark_speed := 4.0
+@export var blast_spark_seconds := 0.7
+@export var blast_shake_strength := 0.12                 # Screen shake (camera offset, world units; a heavy hit is 0.05).
+@export var blast_shake_seconds := 0.45
+
 @export_group("Heal glow")
 @export var heal_color := Color(1.0, 0.85, 0.45)        # The light's colour.
 @export var heal_light_energy := 2.4

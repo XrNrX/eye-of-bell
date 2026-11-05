@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/spell_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+sound = "fireball"
+effect = "fireball"
+display_name = "Fireball"
+mana_cost = 6
+target = 0
+damage_min = 5
+damage_max = 11
+splash_radius = 1
+splash_percent = 50
