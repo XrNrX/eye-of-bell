@@ -45,6 +45,10 @@ const PLATE_DOWN_Y := -0.03  # ...and when pressed (sunk below the floor line).
 const LEVER_PIXEL_SIZE := 0.05
 const LEVER_HEIGHT := 1.0
 
+## False builds just the architecture, torches, plates and levers: no items, no monsters. The
+## main menu uses this to show the level as a backdrop (see main_menu.gd).
+@export var populate := true
+
 var doors := {}       # Vector2i cell -> door MeshInstance3D
 var door_want := {}   # Vector2i cell -> true if the door is currently told to be open
 var door_tweens := {} # Vector2i cell -> the Tween moving it
@@ -104,10 +108,11 @@ func _ready() -> void:
 
 	for torch in DungeonMap.TORCHES:
 		_add_torch(Vector2i(torch.x, torch.y), torch.z)
-	for entry in DungeonMap.ITEMS:
-		place_item(entry.cell, ItemStack.of(load(entry.def), entry.get("count", 1)))
-	for entry in DungeonMap.MONSTERS:
-		spawn_monster(load(entry.def), entry.cell)
+	if populate:
+		for entry in DungeonMap.ITEMS:
+			place_item(entry.cell, ItemStack.of(load(entry.def), entry.get("count", 1)))
+		for entry in DungeonMap.MONSTERS:
+			spawn_monster(load(entry.def), entry.cell)
 	for plate in DungeonMap.PLATES:
 		_add_plate(plate.cell)
 	for lever in DungeonMap.LEVERS:

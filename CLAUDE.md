@@ -22,7 +22,7 @@ Godot lives outside the repo; the install folder itself is named `.exe`:
 
 ```bash
 G="C:/Users/bucki/Desktop/Godot_v4.7.2-stable_win64.exe/Godot_v4.7.2-stable_win64.exe"
-"$G" --path .                      # run the game (main scene: scenes/main.tscn)
+"$G" --path .                      # run the game (startup scene: scenes/main_menu.tscn; the game itself is scenes/main.tscn)
 "$G" --headless --path . --import  # (re)import assets; run after adding/changing PNGs
 "$G" --headless --path . -s some_test.gd   # run a SceneTree script (see Testing)
 ```
@@ -56,7 +56,7 @@ Nothing is checked in for the game itself. The working approach has been throwaw
 
 **Scene tree** (`scenes/main.tscn`): `Dungeon` (builder; creates all meshes/sprites/lights in code), `Player` (with `Camera3D` and a torch light), `Party`, plus self-contained overlays `DebugOverlay` (Tab), `Hud`, `PartyHud`, `LevelComplete`, `GameOver`.
 
-**Other top-level scenes:** `scenes/main_menu.tscn` (a minimal title + New Game button) is reached via `get_tree().change_scene_to_file()` from Game over's "Quit to Menu" button, not as a child of `main.tscn`.
+**Other top-level scenes:** `scenes/main_menu.tscn` is the **startup scene** (`run/main_scene`; F5 in the editor opens the menu, press New Game or run `main.tscn` directly with F6) and is also reached from Game over's "Quit to Menu" via `get_tree().change_scene_to_file()`, not as a child of `main.tscn`. It is a `Node3D`: its background is the game's own level -- the same `dungeon_builder.gd` with `populate = false` (architecture, torches and lever only, no items or monsters), the same textures, a camera at cell (1,7) looking east down the long south corridor with a flickering camera torch and a slow drift, rendered in the main 320x200 viewport -- with the UI on a `CanvasLayer` over it. Buttons: New Game, Load Game (greyed out without a save; `SaveGame.load_game`), Options, Quit. **Options is volume only** (`settings.gd`: master bus, 0-100% in 10% steps via -/+ buttons or the arrow keys, saved to `user://settings.cfg`, a short generated blip so the level can be heard; the game has no other audio yet). The menu applies the saved volume at startup, so launching `main.tscn` directly runs at full volume. The font is **Press Start 2P** (SIL OFL, `art/fonts/`, licence in `OFL.txt`; keep it with the font): use sizes that are multiples of 8 (title 16, text 8) and keep its `.import` settings `antialiasing=0`, `hinting=0`, `subpixel_positioning=0` or the pixels blur. The title's drop shadow is `rust_700` at 2,2 with a 2px `ink` outline; every UI colour is a palette colour (hard-coded as palette-named consts in `main_menu.gd`, as in the HUD).
 
 **Decoupling is by node groups.** The player never holds references to the world; it calls `get_tree().call_group(...)`:
 - `"dungeon"` (builder): `open_door`, `pull_lever`, `refresh` via `call_group`; `item_at`/`take_item`/`place_item` need a return value, so callers fetch the node directly instead (`get_tree().get_first_node_in_group("dungeon")`)
