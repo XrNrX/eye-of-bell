@@ -2,19 +2,31 @@ extends Node
 ## The party: up to four heroes in slots 0-3 (0 and 1 are the front row). Owns their
 ## HP and attack cooldowns and resolves fights with CombatRules.
 ## Other scripts talk to it through the "party" group:
-##   attack(slot)            a hero swings at the tile in front of the player
+##   act(slot, hand)         a hero acts with what's in that hand (party HUD hand buttons):
+##                           swing, throw, or "can't reach"; see action_for()
+##   cast(slot, hand, spell, target)  cast a spell from the FOCUS in that hand
+##   attack(slot)            a hero swings with their first weapon (older API, tests)
 ##   take_hit_from(monster)  a monster next to the party attacks it
-## The party HUD listens to its signals. The inventory screen calls use_item() when a
-## consumable is right-clicked.
+## The party HUD listens to its signals and polls cooldowns, mana and buffs. The
+## inventory screen calls use_item() when a consumable is right-clicked.
+##
+## One action cooldown per hero is shared by swinging, throwing and casting. Mana
+## regenerates all the time; Shield/Bless are timed buffs counted in effective_stats(),
+## which both sides of a fight read.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const CombatRules := preload("res://scripts/combat_rules.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
 const ItemStack := preload("res://scripts/item_stack.gd")
+const SpellDef := preload("res://scripts/spell_def.gd")
 
 const MISSILE_RANGE := 4  # How many tiles down the corridor ahead a scroll's missile reaches.
 const QUICK_SLOTS := 2        # Quick slots per member (see use_quick), shown under their portrait.
 const QUICK_COOLDOWN := 1.0   # Seconds a quick slot is unusable after an item is used from it.
+const MANA_REGEN_TIME := 2.5  # Seconds per point of mana regained (always; there's no resting yet).
+
+## What clicking a hand does (see action_for).
+enum Act { NOTHING, MELEE, THROW, SPELLS, CANT_REACH }
 
 signal hp_changed(slot: int)
 signal quick_changed(slot: int)  # A member's quick slots changed (contents or cooldown started).
@@ -38,8 +50,9 @@ class Member:
 	var hp: int
 	var cooldown_left := 0.0
 
-	# Inventory: an ItemStack or null per slot (hands and armour only ever hold one). A weapon in a hand changes the member's
-	# attack and damage (see Party.effective_stats); armour is still data only.
+	# Inventory: an ItemStack or null per slot. Hands and armour hold one item, except
+	# that a hand may hold a stack of a throwable (darts). A weapon in a hand changes the
+	# member's attack and damage (see Party.effective_stats); armour is still data only.
 	var hands: Array = [null, null]
 	var armour: RefCounted = null
 	var backpack: Array = []
@@ -50,6 +63,11 @@ class Member:
 	# Party._process.
 	var quick: Array = [null, null]
 	var quick_cooldown: Array = [0.0, 0.0]
+
+	# Magic: mana (float, regenerating; spells need whole points) and active buffs,
+	# each {"spell": SpellDef, "left": seconds}.
+	var mana := 0.0
+	var buffs: Array = []
 
 	func is_alive() -> bool:
 		return hp > 0
@@ -78,7 +96,14 @@ func _ready() -> void:
 		m.def = hero_defs[i]
 		m.slot = i
 		m.hp = m.def.max_hp
+		m.mana = m.def.max_mana
 		m.backpack.resize(BACKPACK_SIZE)
+		# Starting kit: what each hero holds when a run begins.
+		for h in mini(HAND_SLOTS, m.def.start_hands.size()):
+			var item: Resource = m.def.start_hands[h]
+			if item != null:
+				var n: int = m.def.start_hand_counts[h] if h < m.def.start_hand_counts.size() else 1
+				m.hands[h] = ItemStack.of(item, maxi(1, n))
 		members.append(m)
 
 
@@ -87,6 +112,11 @@ func _process(delta: float) -> void:
 		m.cooldown_left = maxf(0.0, m.cooldown_left - delta)
 		for i in QUICK_SLOTS:
 			m.quick_cooldown[i] = maxf(0.0, m.quick_cooldown[i] - delta)
+		if m.is_alive():
+			m.mana = minf(m.def.max_mana, m.mana + delta / MANA_REGEN_TIME)
+		for b in m.buffs:
+			b.left -= delta
+		m.buffs = m.buffs.filter(func(b): return b.left > 0.0)
 
 
 func member(slot: int) -> Member:
@@ -114,20 +144,225 @@ func equipped_weapon(m: Member) -> Resource:
 	return null
 
 
-## The member's stats with their weapon applied: it adds its attack bonus and
-## replaces their bare-handed damage range.
-func effective_stats(m: Member) -> Stats:
+## The member's stats with their weapon and buffs applied. The weapon adds its attack
+## bonus and replaces their bare-handed damage range: by default their first weapon
+## (equipped_weapon), or with `hand` the melee weapon in that hand (bare hands if it
+## holds none). Buffs (Shield, Bless) add attack and defence.
+func effective_stats(m: Member, hand := -1) -> Stats:
 	var s := Stats.new()
 	s.attack = m.def.attack
 	s.defence = m.def.defence
 	s.damage_min = m.def.damage_min
 	s.damage_max = m.def.damage_max
-	var weapon := equipped_weapon(m)
+	var weapon: Resource = equipped_weapon(m) if hand < 0 else _melee_weapon_in(m, hand)
 	if weapon:
 		s.attack += weapon.attack_bonus
 		s.damage_min = weapon.damage_min
 		s.damage_max = weapon.damage_max
+	for b in m.buffs:
+		s.attack += b.spell.buff_attack
+		s.defence += b.spell.buff_defence
 	return s
+
+
+func _melee_weapon_in(m: Member, hand: int) -> Resource:
+	var stack = m.hands[hand]
+	if stack != null and stack.def.type == ItemDef.Type.WEAPON and stack.def.melee and stack.def.damage_max > 0:
+		return stack.def
+	return null
+
+
+func _start_cooldown(m: Member) -> void:
+	var duration := CombatRules.hero_cooldown(m.def.speed)
+	m.cooldown_left = duration
+	cooldown_started.emit(m.slot, duration)
+
+
+# --------------------------------------------------------------------------
+# Hands: what clicking a hand button does
+# --------------------------------------------------------------------------
+
+## What clicking this hand would do right now. A melee weapon or an empty hand
+## swings if the hero can melee (front row, or the hero in front is dead) and
+## otherwise "can't reach". A throwable is thrown if it can't melee (darts) or the
+## hero can't reach (the back row throws a dagger, the front row stabs with it). A
+## FOCUS opens its spell list. Anything else (a potion) does nothing.
+func action_for(slot: int, hand: int) -> int:
+	var m := member(slot)
+	if m == null or not m.is_alive() or hand < 0 or hand >= HAND_SLOTS:
+		return Act.NOTHING
+	var stack = m.hands[hand]
+	if stack == null:
+		return Act.MELEE if can_melee(slot) else Act.CANT_REACH
+	var def: Resource = stack.def
+	if def.type == ItemDef.Type.FOCUS:
+		return Act.SPELLS
+	if def.type != ItemDef.Type.WEAPON:
+		return Act.NOTHING
+	if def.can_throw() and (not def.melee or not can_melee(slot)):
+		return Act.THROW
+	if def.melee:
+		return Act.MELEE if can_melee(slot) else Act.CANT_REACH
+	return Act.NOTHING
+
+
+## A hero acts with the item in one hand: swing or throw (each starts the shared
+## action cooldown), or say they can't reach (no cooldown). SPELLS does nothing
+## here: the party HUD opens the spell list and calls cast().
+func act(slot: int, hand: int) -> void:
+	var m := member(slot)
+	if m == null or not m.is_alive() or m.cooldown_left > 0.0:
+		return
+	match action_for(slot, hand):
+		Act.MELEE:
+			_melee(m, hand)
+		Act.THROW:
+			_throw(m, hand)
+		Act.CANT_REACH:
+			_say("%s can't reach." % m.def.display_name)
+
+
+## Throw one item from this hand straight ahead (see the blueprint): it hits the first
+## monster within MISSILE_RANGE with a normal hit roll and lands on that monster's
+## tile, hit or miss; with no monster it lands on the last open tile. A wall or closed
+## door right in front means there's nowhere to throw: refused, no cooldown.
+func _throw(m: Member, hand: int) -> void:
+	var stack = m.hands[hand]
+	var def: Resource = stack.def
+	var dir: Vector2i = player.DIRS[player.facing]
+	if DungeonMap.is_blocked(player.cell + dir):
+		_say("There's no room to throw.")
+		return
+	var land: Vector2i = player.cell
+	var target = null
+	for i in range(1, MISSILE_RANGE + 1):
+		var cell: Vector2i = player.cell + dir * i
+		if DungeonMap.is_blocked(cell):
+			break
+		land = cell
+		var monster = DungeonMap.occupied.get(cell)
+		if monster != null and is_instance_valid(monster) and not monster.dying:
+			target = monster
+			break
+	_start_cooldown(m)
+	var piece: RefCounted = stack.take_one()
+	if stack.count <= 0:
+		m.hands[hand] = null
+	var dungeon = get_tree().get_first_node_in_group("dungeon")
+	if dungeon:
+		dungeon.place_item(land, piece)
+		dungeon.show_throw(player.cell, land, def)
+	if target == null:
+		_say("%s throws the %s." % [m.def.display_name, def.display_name])
+		return
+	var s := Stats.new()  # The thrower's attack (with buffs) plus the item's bonus.
+	s.attack = m.def.attack + def.attack_bonus
+	for buff in m.buffs:
+		s.attack += buff.spell.buff_attack
+	s.damage_min = def.throw_damage_min
+	s.damage_max = def.throw_damage_max
+	var result := CombatRules.resolve_attack(s, target.def)
+	target.take_hit(result)
+	if not result.hit:
+		_say("%s throws the %s and misses." % [m.def.display_name, def.display_name])
+	elif target.hp <= 0:
+		_say("%s kills the %s with the %s!" % [m.def.display_name, target.def.display_name, def.display_name])
+	else:
+		_say("%s hits the %s with the %s for %d." % [m.def.display_name, target.def.display_name, def.display_name, result.damage])
+
+
+# --------------------------------------------------------------------------
+# Spells
+# --------------------------------------------------------------------------
+
+## Why this hero can't cast from the item in this hand, or "" if they can: it must
+## be a FOCUS whose magic matches theirs (a Mage reads a spellbook, a Cleric uses a
+## holy symbol).
+func cast_refusal(slot: int, hand: int) -> String:
+	var m := member(slot)
+	if m == null or not m.is_alive():
+		return ""
+	var stack = m.hands[hand]
+	if stack == null or stack.def.type != ItemDef.Type.FOCUS:
+		return "Nothing to cast from."
+	if m.def.max_mana <= 0 or m.def.magic != stack.def.magic:
+		return "The %s can't make sense of the %s." % [m.def.display_name, stack.def.display_name]
+	return ""
+
+
+## The spells the FOCUS in this hand offers this hero (empty if they can't use it).
+func spells_in(slot: int, hand: int) -> Array:
+	if cast_refusal(slot, hand) != "":
+		return []
+	return member(slot).hands[hand].def.spells
+
+
+func can_afford(slot: int, spell: Resource) -> bool:
+	var m := member(slot)
+	return m != null and int(m.mana) >= spell.mana_cost
+
+
+## Cast a spell from the FOCUS in a hand. target_slot is the hero for HERO spells
+## (Shield, Heal). A spell that can't take effect (nothing ahead, Heal at full health,
+## a dead target) costs nothing and starts no cooldown, like potions and scrolls.
+## Otherwise it spends the mana and starts the caster's action cooldown. Returns
+## whether it was cast.
+func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
+	var m := member(slot)
+	if m == null or not m.is_alive() or m.cooldown_left > 0.0:
+		return false
+	if not (spell in spells_in(slot, hand)):
+		return false
+	if not can_afford(slot, spell):
+		_say("Not enough mana.")
+		return false
+	var who: String = m.def.display_name
+	var text := ""
+	match spell.target:
+		SpellDef.Target.AHEAD:
+			var monster = _first_monster_ahead()
+			if monster == null:
+				_say("There is nothing to target.")
+				return false
+			var damage := CombatRules.roll_damage(spell.damage_min, spell.damage_max)
+			monster.take_hit({"hit": true, "damage": damage, "chance": 100})
+			text = "%s casts %s: it hits the %s for %d!" % [who, spell.display_name, monster.def.display_name, damage]
+			if monster.hp <= 0:
+				text += " It dies!"
+		SpellDef.Target.HERO:
+			var t := member(target_slot)
+			if t == null or not t.is_alive():
+				_say("%s is beyond help." % t.def.display_name if t else "No one to target.")
+				return false
+			if spell.heal_max > 0:
+				if t.hp >= t.def.max_hp:
+					_say("%s is already healthy." % t.def.display_name)
+					return false
+				var healed := mini(CombatRules.roll_damage(spell.heal_min, spell.heal_max), t.def.max_hp - t.hp)
+				t.hp += healed
+				hp_changed.emit(t.slot)
+				text = "%s casts %s on %s (+%d HP)." % [who, spell.display_name, t.def.display_name, healed]
+			if spell.duration > 0.0:
+				_add_buff(t, spell)
+				text = "%s casts %s on %s." % [who, spell.display_name, t.def.display_name]
+		SpellDef.Target.PARTY:
+			for other in members:
+				if other.is_alive():
+					_add_buff(other, spell)
+			text = "%s casts %s." % [who, spell.display_name]
+	m.mana -= spell.mana_cost
+	_start_cooldown(m)
+	_say(text)
+	return true
+
+
+## Start a buff, or refresh it if it's already running (buffs don't stack).
+func _add_buff(m: Member, spell: Resource) -> void:
+	for b in m.buffs:
+		if b.spell == spell:
+			b.left = spell.duration
+			return
+	m.buffs.append({"spell": spell, "left": spell.duration})
 
 
 ## Remove and return a key from the first member whose backpack holds one, or null
@@ -274,21 +509,24 @@ func _first_monster_ahead() -> Node:
 	return null
 
 
-## A hero attacks the tile in front of the player. Swinging at an empty tile still
-## uses the cooldown (as in Eye of the Beholder).
+## A hero attacks the tile in front of the player with their first weapon. Swinging
+## at an empty tile still uses the cooldown (as in Eye of the Beholder). The HUD's hand
+## buttons use act() instead, which swings with that hand's weapon.
 func attack(slot: int) -> void:
 	var m := member(slot)
 	if m == null or not m.is_alive() or m.cooldown_left > 0.0 or not can_melee(slot):
 		return
-	var duration := CombatRules.hero_cooldown(m.def.speed)
-	m.cooldown_left = duration
-	cooldown_started.emit(slot, duration)
+	_melee(m, -1)
 
+
+## Swing at the tile in front; hand -1 means "first weapon" (see effective_stats).
+func _melee(m: Member, hand: int) -> void:
+	_start_cooldown(m)
 	var front: Vector2i = player.cell + player.DIRS[player.facing]
 	var target = DungeonMap.occupied.get(front)
 	if target == null or not is_instance_valid(target) or target.dying:
 		return
-	var result := CombatRules.resolve_attack(effective_stats(m), target.def)
+	var result := CombatRules.resolve_attack(effective_stats(m, hand), target.def)
 	target.take_hit(result)
 	if not result.hit:
 		_say("%s misses." % m.def.display_name)
@@ -305,9 +543,12 @@ func take_hit_from(monster: Node) -> void:
 	if targets.is_empty():
 		return
 	var m: Member = targets[CombatRules.rng().randi_range(0, targets.size() - 1)]
-	var result := CombatRules.resolve_attack(monster.def, m.def)
+	# The hero's effective stats, so Shield (and later armour) counts.
+	var result := CombatRules.resolve_attack(monster.def, effective_stats(m))
 	if result.hit:
 		m.hp = maxi(0, m.hp - result.damage)
+		if m.hp == 0:
+			m.buffs.clear()
 		hp_changed.emit(m.slot)
 		_say("The %s hits %s for %d." % [monster.def.display_name, m.def.display_name, result.damage])
 	else:

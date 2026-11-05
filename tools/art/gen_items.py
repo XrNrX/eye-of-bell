@@ -3,7 +3,9 @@
     <name>.png        24x24 inventory / cursor icon
     <name>_floor.png  12x12 version drawn on the floor at the feet of the view
 
-Items: short_sword, mace, leather_armour, healing_potion, scroll.
+Items: short_sword, mace, leather_armour, healing_potion, scroll, dagger, darts,
+spellbook, holy_symbol. The floor versions of the dagger and darts double as the
+sprite that flies down the corridor when one is thrown.
 
 How it works
 - Each item is a list of parts. A part is a shape plus a colour ramp. Shapes are
@@ -144,12 +146,57 @@ def scroll():
     ]
 
 
+def dagger():
+    return [
+        (seg((10, 14), (18.5, 5.5), 2.8), STEEL),                 # Short blade...
+        (seg((18.5, 5.5), (20.5, 3.5), 1.6), STEEL),              # ...to a point.
+        (seg((7, 13), (11, 17), 2.4), IRON),                      # Small crossguard.
+        (seg((8.6, 15.4), (5.2, 18.8), 2.4), LEATHER),            # Wrapped grip.
+        (disc(4.6, 19.4, 1.5), IRON),                             # Pommel.
+    ]
+
+
+def darts():
+    """A bundle of three darts, fanned."""
+    parts = []
+    for (x0, y0), (x1, y1) in (((5, 18), (17, 6)), ((7, 20), (20, 9)), ((4, 15), (14, 4))):
+        parts.append((seg((x0, y0), (x0 + (x1 - x0) * 0.35, y0 + (y1 - y0) * 0.35), 2.6), LIQUID))  # Fletching.
+        parts.append((seg((x0, y0), (x1, y1), 1.4), WOOD))                                         # Shaft.
+        parts.append((seg((x1 - (x1 - x0) * 0.15, y1 - (y1 - y0) * 0.15), (x1, y1), 2.0), STEEL))  # Tip.
+    return parts
+
+
+def spellbook():
+    return [
+        (rect(4.5, 4, 19.5, 20), PARCHMENT),                      # Page edges, under the cover.
+        (rect(4, 3, 18, 19.5), LEATHER),                          # Cover.
+        (rect(4, 3, 6.5, 19.5), DARK),                            # Spine.
+        (disc(12, 11, 3.6), GOLD),                                # Gold seal on the cover...
+        (disc(12, 11, 1.6), LIQUID),                              # ...with a rust gem.
+        (rect(16, 9.5, 20, 12.5), GOLD),                          # Clasp.
+    ]
+
+
+def holy_symbol():
+    return [
+        (seg((12, 2.5), (12, 6.5), 1.2), IRON),                   # Loop for the chain.
+        (seg((12, 6), (12, 21.5), 3.6), GOLD),                    # Upright of the cross.
+        (seg((5.5, 11.5), (18.5, 11.5), 3.6), GOLD),              # Arms.
+        (disc(12, 11.5, 2.6), GOLD),
+        (disc(12, 11.5, 1.3), PARCHMENT),                         # A pale stone in the middle.
+    ]
+
+
 ITEMS = {
     "short_sword": short_sword,
     "mace": mace,
     "leather_armour": leather_armour,
     "healing_potion": healing_potion,
     "scroll": scroll,
+    "dagger": dagger,
+    "darts": darts,
+    "spellbook": spellbook,
+    "holy_symbol": holy_symbol,
 }
 
 

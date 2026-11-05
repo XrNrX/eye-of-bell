@@ -18,6 +18,8 @@ const DOOR_TEXTURE := "res://art/tiles/door.png"
 const DOOR_LOCKED_TEXTURE := "res://art/tiles/door_locked.png"
 const ITEM_HEIGHT := 0.22  # Low, near the floor -- "at the feet" of the view, not hip-height.
 const ITEM_BOB := 0.05
+const THROW_HEIGHT := 0.6          # A thrown item flies at about hand height...
+const THROW_TIME_PER_TILE := 0.08  # ...this fast.
 const TORCH_SHEET := "res://art/sprites/torch.png"  # 4 frames of 16x32, side by side.
 const WALL_COLOR := Color(0.45, 0.40, 0.35)
 const FLOOR_COLOR := Color(0.28, 0.25, 0.22)
@@ -46,7 +48,7 @@ const LEVER_HEIGHT := 1.0
 var doors := {}       # Vector2i cell -> door MeshInstance3D
 var door_want := {}   # Vector2i cell -> true if the door is currently told to be open
 var door_tweens := {} # Vector2i cell -> the Tween moving it
-var items := {}        # Vector2i cell -> {"sprite": Sprite3D, "def": ItemDef} on the floor
+var items := {}        # Vector2i cell -> {"sprite": Sprite3D, "pile": Array of ItemStack, top last} on the floor
 var plates := {}      # Vector2i cell -> pressure plate MeshInstance3D
 var levers := {}      # Vector3i (x, z, side) -> lever Sprite3D
 var lever_on := {}    # Vector3i (x, z, side) -> true if switched on
@@ -103,7 +105,7 @@ func _ready() -> void:
 	for torch in DungeonMap.TORCHES:
 		_add_torch(Vector2i(torch.x, torch.y), torch.z)
 	for entry in DungeonMap.ITEMS:
-		place_item(entry.cell, load(entry.def))
+		place_item(entry.cell, ItemStack.of(load(entry.def), entry.get("count", 1)))
 	for entry in DungeonMap.MONSTERS:
 		var monster := MonsterScript.new()
 		monster.setup(load(entry.def), entry.cell)
@@ -186,42 +188,84 @@ func _face_yaw(side: int) -> float:
 	return atan2(float(SIDE_DIRS[side].x) * -1.0, float(SIDE_DIRS[side].y) * -1.0)
 
 
-## The item lying on this floor cell, or null if there isn't one. Called directly
+## The top item stack lying on this floor cell, or null if there isn't one. A tile
+## holds a pile (several stacks); only the top one can be picked up. Called directly
 ## by the player (get_tree().get_first_node_in_group("dungeon")), not via call_group,
 ## since it needs to return a value.
 func item_at(cell: Vector2i) -> RefCounted:
-	return items[cell].stack if items.has(cell) else null
+	return items[cell].pile.back() if items.has(cell) else null
 
 
-## Remove and return the item stack on this cell (null if there wasn't one).
+## Every stack in the pile on this cell, bottom first (empty if none).
+func pile_at(cell: Vector2i) -> Array:
+	return items[cell].pile.duplicate() if items.has(cell) else []
+
+
+## Remove and return the top item stack on this cell (null if there wasn't one).
 func take_item(cell: Vector2i) -> RefCounted:
 	if not items.has(cell):
 		return null
-	var stack: RefCounted = items[cell].stack
-	items[cell].sprite.queue_free()
-	items.erase(cell)
+	var entry: Dictionary = items[cell]
+	var stack: RefCounted = entry.pile.pop_back()
+	if entry.pile.is_empty():
+		entry.sprite.queue_free()
+		items.erase(cell)
+	else:
+		_show_top(entry)
 	return stack
 
 
-## Put an item on a floor cell: a small sprite that bobs gently near the ground.
-## Used both for the level's starting items and for one dropped back from the cursor.
+## Put an item on a floor cell, on top of whatever is there (merging into the top
+## stack if it's the same stackable item). The pile is one small sprite that bobs
+## gently near the ground, showing the top item. Used for the level's starting items,
+## items dropped from the cursor, and thrown weapons landing.
 func place_item(cell: Vector2i, item) -> void:
 	var stack: RefCounted = ItemStack.wrap(item)  # An ItemDef (one) or a whole stack.
-	var def: Resource = stack.def
+	if items.has(cell):
+		var entry: Dictionary = items[cell]
+		entry.pile.back().merge_from(stack)
+		if stack.count > 0:
+			entry.pile.append(stack)
+		_show_top(entry)
+		return
 	var sprite := Sprite3D.new()
-	sprite.texture = def.floor_icon if def.floor_icon else def.icon  # The small floor version.
-	sprite.pixel_size = def.icon_pixel_size
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	sprite.shaded = false
 	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
 	sprite.position = DungeonMap.cell_to_world(cell) + Vector3(0, ITEM_HEIGHT, 0)
 	add_child(sprite)
-	items[cell] = {"sprite": sprite, "stack": stack}
+	var new_entry := {"sprite": sprite, "pile": [stack]}
+	items[cell] = new_entry
+	_show_top(new_entry)
 	# Bob up and down forever (the tween is owned by the sprite, so it dies with it).
 	var bob := sprite.create_tween().set_loops()
 	bob.tween_property(sprite, "position:y", ITEM_HEIGHT + ITEM_BOB, 0.9).set_trans(Tween.TRANS_SINE)
 	bob.tween_property(sprite, "position:y", ITEM_HEIGHT - ITEM_BOB, 0.9).set_trans(Tween.TRANS_SINE)
+
+
+func _show_top(entry: Dictionary) -> void:
+	var def: Resource = entry.pile.back().def
+	entry.sprite.texture = def.floor_icon if def.floor_icon else def.icon  # The small floor version.
+	entry.sprite.pixel_size = def.icon_pixel_size
+
+
+## Show a thrown item flying from the party's tile to where it lands (for show only:
+## Party has already resolved the hit and placed the item). Also called via the group.
+func show_throw(from_cell: Vector2i, to_cell: Vector2i, def: Resource) -> void:
+	var sprite := Sprite3D.new()
+	sprite.texture = def.floor_icon if def.floor_icon else def.icon
+	sprite.pixel_size = def.icon_pixel_size
+	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sprite.shaded = false
+	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	sprite.position = DungeonMap.cell_to_world(from_cell) + Vector3(0, THROW_HEIGHT, 0)
+	add_child(sprite)
+	var tiles := maxf(1.0, (to_cell - from_cell).length())
+	var t := sprite.create_tween()
+	t.tween_property(sprite, "position", DungeonMap.cell_to_world(to_cell) + Vector3(0, ITEM_HEIGHT, 0), THROW_TIME_PER_TILE * tiles)
+	t.tween_callback(sprite.queue_free)
 
 
 ## Open an ordinary door (F). Called by the player via the "dungeon" group.

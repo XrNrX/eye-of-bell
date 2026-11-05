@@ -13,7 +13,8 @@ extends Panel
 ## small count in the corner. Clicking picks up the whole stack; putting a stack on a
 ## matching one merges them (the overflow stays on the cursor); right-clicking a stack
 ## of 2+ splits one off onto the cursor (shift+right-click uses one; a single item is used).
-## Hands and armour hold a single item, so a stack can't go there.
+## Hands and armour hold a single item, so a stack can't go there -- except a hand
+## takes a stack of a throwable (darts).
 ##
 ## Acts on the mouse PRESS. Godot routes the release to whichever control got the
 ## press, wherever the pointer has moved since, so the press is the only event that
@@ -98,9 +99,15 @@ func refusal(stack: RefCounted) -> String:
 		Kind.ARMOUR: allowed = ItemDef.allowed_in_armour(stack.def.type)
 	if not allowed:
 		return "The %s doesn't go there." % stack.def.display_name
-	if kind != Kind.BACKPACK and stack.count > 1:
+	if stack.count > 1 and not holds_stacks(stack.def):
 		return "Only one at a time goes there."
 	return ""
+
+
+## Backpack cells hold stacks; a hand holds a stack only of a throwable (darts), so
+## the hero can throw them one after another.
+func holds_stacks(def: Resource) -> bool:
+	return kind == Kind.BACKPACK or (kind == Kind.HAND and def.can_throw())
 
 
 func refresh() -> void:
@@ -199,7 +206,7 @@ func _click_slot() -> void:
 		if why != "":
 			screen.say(why)
 			return
-		if kind == Kind.BACKPACK and here != null and here.can_stack_with(held) and here.room() > 0:
+		if holds_stacks(held.def) and here != null and here.can_stack_with(held) and here.room() > 0:
 			here.merge_from(held)  # Whatever doesn't fit stays on the cursor.
 			if held.count <= 0:
 				cursor.release()

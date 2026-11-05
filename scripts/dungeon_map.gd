@@ -67,6 +67,8 @@ const ITEMS := [
 	{"cell": Vector2i(6, 3), "def": "res://data/items/mace.tres"},
 	{"cell": Vector2i(7, 5), "def": "res://data/items/scroll.tres"},
 	{"cell": Vector2i(2, 9), "def": "res://data/items/healing_potion.tres"},  # In the locked room.
+	{"cell": Vector2i(6, 1), "def": "res://data/items/dagger.tres"},
+	{"cell": Vector2i(1, 3), "def": "res://data/items/darts.tres", "count": 4},  # Optional "count": a stack.
 ]
 
 # Monsters: the floor cell they start on and their definition resource (see

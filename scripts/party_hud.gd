@@ -1,13 +1,20 @@
 extends CanvasLayer
-## Party HUD: a 2x2 grid of hero panels (portrait, two quick slots, HP bar, two hand
-## slots), floating damage numbers when a hero is hit, and a red screen flash. Click a
-## hand to attack (keys 1-8 are the quick slots now); both hands in a panel trigger the same attack and cooldown --
-## there's only one weapon per hero so far, but the UI has room for dual-wielding
-## or an off-hand item later. Click a portrait to open that hero's inventory screen
-## (group "inventory"). Talks to the party only through its signals and group.
+## Party HUD: a 2x2 grid of hero panels (portrait, two quick slots, name, HP bar, mana
+## bar, two hand buttons, cooldown bar), floating damage numbers when a hero is hit,
+## and a red screen flash. Talks to the party through its signals, group and polling.
+##
+## Each hand button shows the item in that hand (an empty hand shows the fist) and
+## acts with it (Party.act): swing, throw, or -- for a spellbook or holy symbol --
+## open the spell pop-up (spell_menu.gd). Picking a spell that needs a hero (Shield,
+## Heal) enters target mode: the next portrait click casts it. Right-click, Esc or a
+## click anywhere else cancels the pop-up or target mode. Otherwise a portrait click
+## opens that hero's inventory (group "inventory"). The game keeps running throughout.
 
 const CombatRules := preload("res://scripts/combat_rules.gd")
 const QuickSlot := preload("res://scripts/quick_slot.gd")
+const SpellMenu := preload("res://scripts/spell_menu.gd")
+const SpellDef := preload("res://scripts/spell_def.gd")
+const StackCount := preload("res://scripts/stack_count.gd")
 
 const PORTRAIT_SIZE := Vector2(24, 24)
 const HAND_SIZE := Vector2(12, 12)
@@ -22,13 +29,21 @@ const HP_BACK := Color(0.078, 0.063, 0.102)          # Palette ink.
 const COOL_FILL := Color(0.588, 0.557, 0.604)        # Palette stone_300.
 const HIT_COLOUR := Color(0.85, 0.51, 0.26)          # Palette rust_300.
 const MISS_COLOUR := Color(0.76, 0.74, 0.75)         # Palette stone_100.
+const MANA_FILL := Color(0.941, 0.722, 0.227)        # Palette torch_500 (the palette has no blue).
+const BUFF_EDGE := MANA_FILL                         # Outline on a buffed hero's portrait.
 const HURT_FLASH_TIME := 0.3  # How long the portrait shows its red-tinted variant.
 
 @onready var flash: ColorRect = %Flash
 @onready var panels_grid: GridContainer = %Panels
 
 var party: Node
-var panels := {}  # slot -> {portrait, hand_a, hand_b, cool_bar, hp_bar, root}
+var panels := {}  # slot -> {root, portrait, buff_ring, quick, hp_bar, mana_bar, hands, cool_bar}
+
+# Casting state: the open pop-up, and the spell waiting for a target hero.
+var menu: Control
+var menu_owner := {}   # {"caster", "hand"} for the open pop-up.
+var pending := {}      # {"caster", "hand", "spell"} in target mode.
+var catcher: Control   # Full-screen, under the panels: a click on it cancels.
 
 
 func _ready() -> void:
@@ -41,6 +56,17 @@ func _ready() -> void:
 	party.hp_changed.connect(_update_hp)
 	party.hero_hit.connect(_on_hero_hit)
 
+	catcher = Control.new()
+	catcher.set_anchors_preset(Control.PRESET_FULL_RECT)
+	catcher.mouse_filter = Control.MOUSE_FILTER_STOP
+	catcher.visible = false
+	catcher.gui_input.connect(func(e):
+		if e is InputEventMouseButton and e.pressed:
+			catcher.accept_event()
+			cancel_casting())
+	add_child(catcher)
+	move_child(catcher, panels_grid.get_index())  # Under the panels, so portraits still get clicks.
+
 
 func _process(_delta: float) -> void:
 	if party == null:
@@ -48,11 +74,126 @@ func _process(_delta: float) -> void:
 	for m in party.members:
 		var p: Dictionary = panels[m.slot]
 		var cooling: bool = m.cooldown_left > 0.0 or not m.is_alive()
-		for hand in [p.hand_a, p.hand_b]:
+		for i in p.hands.size():
+			var hand: TextureButton = p.hands[i]
 			hand.disabled = cooling
 			hand.modulate = HAND_COOLING if cooling else HAND_READY
+			_show_hand(m, i, hand)
 		var total := CombatRules.hero_cooldown(m.def.speed)
 		p.cool_bar.value = (m.cooldown_left / total) * 100.0 if m.is_alive() else 0.0
+		p.mana_bar.value = m.mana
+		p.buff_ring.visible = not m.buffs.is_empty()
+	# Close the pop-up / target mode if the caster died or the item left their hand.
+	for state in [menu_owner, pending]:
+		if not state.is_empty() and party.action_for(state.caster, state.hand) != party.Act.SPELLS:
+			cancel_casting()
+
+
+## Draw what's in a hand: the item's small icon (with a count for a stack of darts),
+## or the fist when it's empty.
+func _show_hand(m, i: int, hand: TextureButton) -> void:
+	var stack = m.hands[i]
+	var tex: Texture2D = m.def.hand_icon
+	if stack:
+		tex = stack.def.floor_icon if stack.def.floor_icon else stack.def.icon
+	if hand.texture_normal != tex:
+		hand.texture_normal = tex
+	hand.get_child(0).set_count(stack.count if stack else 0)
+	match party.action_for(m.slot, i):
+		party.Act.MELEE: hand.tooltip_text = "Attack"
+		party.Act.THROW: hand.tooltip_text = "Throw"
+		party.Act.SPELLS: hand.tooltip_text = "Cast"
+		party.Act.CANT_REACH: hand.tooltip_text = "Can't reach"
+		_: hand.tooltip_text = ""
+
+
+# --------------------------------------------------------------------------
+# Hands and casting
+# --------------------------------------------------------------------------
+
+func _on_hand(slot: int, hand: int) -> void:
+	if party.action_for(slot, hand) != party.Act.SPELLS:
+		cancel_casting()
+		party.act(slot, hand)
+		return
+	cancel_casting()
+	if party.member(slot).cooldown_left > 0.0:
+		return
+	var why: String = party.cast_refusal(slot, hand)
+	if why != "":
+		get_tree().call_group("hud", "show_message", why)
+		return
+	_open_menu(slot, hand)
+
+
+func _open_menu(slot: int, hand: int) -> void:
+	menu = SpellMenu.new()
+	menu.setup(party, slot, party.spells_in(slot, hand))
+	menu.chosen.connect(_on_spell_chosen)
+	add_child(menu)
+	menu.size = menu.get_combined_minimum_size()
+	# Left of the whole party grid (so it never covers a panel), level with the
+	# caster's hands, kept inside the 320x200 view.
+	var r: Rect2 = panels[slot].root.get_global_rect()
+	var view: Vector2 = get_viewport().get_visible_rect().size
+	menu.position = Vector2(panels_grid.get_global_rect().position.x - menu.size.x - 2,
+			clampf(r.position.y + 30, 2, view.y - menu.size.y - 2))
+	menu_owner = {"caster": slot, "hand": hand}
+	catcher.visible = true
+
+
+func _on_spell_chosen(spell: Resource) -> void:
+	var from := menu_owner
+	_close_menu()
+	if spell.target == SpellDef.Target.HERO:
+		pending = {"caster": from.caster, "hand": from.hand, "spell": spell}
+		catcher.visible = true
+		get_tree().call_group("hud", "show_message", "%s whom?" % spell.display_name, true)
+		return
+	catcher.visible = false
+	party.cast(from.caster, from.hand, spell)
+
+
+## A portrait was clicked: in target mode it picks the spell's target, otherwise it
+## opens that hero's inventory.
+func _on_portrait(slot: int) -> void:
+	if pending.is_empty():
+		get_tree().call_group("inventory", "show_screen", slot)
+		return
+	var p := pending
+	_end_target_mode()
+	party.cast(p.caster, p.hand, p.spell, slot)
+
+
+## Close the pop-up and leave target mode, casting nothing.
+func cancel_casting() -> void:
+	_close_menu()
+	_end_target_mode()
+
+
+func _close_menu() -> void:
+	if menu:
+		menu.queue_free()
+		menu = null
+	menu_owner = {}
+	catcher.visible = not pending.is_empty()
+
+
+func _end_target_mode() -> void:
+	if not pending.is_empty():
+		get_tree().call_group("hud", "clear_message", "%s whom?" % pending.spell.display_name)
+	pending = {}
+	catcher.visible = menu != null
+
+
+func _input(event: InputEvent) -> void:
+	if menu == null and pending.is_empty():
+		return
+	var cancel: bool = (event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE) \
+			or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT)
+	if cancel:
+		cancel_casting()
+		get_viewport().set_input_as_handled()
 
 
 func _update_hp(slot: int) -> void:
@@ -120,8 +261,20 @@ func _make_panel(m) -> Dictionary:
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	portrait.focus_mode = Control.FOCUS_NONE
 	portrait.tooltip_text = "Inventory"
-	portrait.pressed.connect(func(): get_tree().call_group("inventory", "show_screen", m.slot))
+	portrait.pressed.connect(_on_portrait.bind(m.slot))
 	col.add_child(portrait)
+
+	# A gold outline over the portrait while a buff (Shield, Bless) is active.
+	var buff_ring := Panel.new()
+	var ring := StyleBoxFlat.new()
+	ring.draw_center = false
+	ring.border_color = BUFF_EDGE
+	ring.set_border_width_all(1)
+	buff_ring.add_theme_stylebox_override("panel", ring)
+	buff_ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	buff_ring.visible = false
+	portrait.add_child(buff_ring)
+	portrait.resized.connect(func(): buff_ring.size = portrait.size)
 
 	# Two quick slots under the portrait (consumables; see quick_slot.gd).
 	var quick_row := HBoxContainer.new()
@@ -141,24 +294,31 @@ func _make_panel(m) -> Dictionary:
 	var hp_bar := _bar(HP_FILL, Vector2(BAR_WIDTH, 3), m.def.max_hp)
 	col.add_child(hp_bar)
 
-	# Two weapon-hand slots (left/right), both attacking with this hero.
+	# Mana, for casters. Every panel keeps the row (invisible without mana) so the
+	# hand buttons line up across a row of panels.
+	var mana_bar := _bar(MANA_FILL, Vector2(BAR_WIDTH, 2), maxi(1, m.def.max_mana))
+	mana_bar.modulate.a = 1.0 if m.def.max_mana > 0 else 0.0
+	col.add_child(mana_bar)
+
+	# Two hands (left/right), each acting with the item it holds.
 	var hands_row := HBoxContainer.new()
 	hands_row.add_theme_constant_override("separation", 2)
 	hands_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(hands_row)
-	var hand_a := _make_hand(m)
-	var hand_b := _make_hand(m)
-	hands_row.add_child(hand_a)
-	hands_row.add_child(hand_b)
+	var hands := []
+	for i in party.HAND_SLOTS:
+		var hand := _make_hand(m, i)
+		hands_row.add_child(hand)
+		hands.append(hand)
 
 	var cool_bar := _bar(COOL_FILL, Vector2(BAR_WIDTH, 2), 100)
 	col.add_child(cool_bar)
 
-	return {"root": root, "portrait": portrait, "hand_a": hand_a, "hand_b": hand_b,
-		"cool_bar": cool_bar, "hp_bar": hp_bar, "quick": quick_slots}
+	return {"root": root, "portrait": portrait, "buff_ring": buff_ring, "hands": hands,
+		"cool_bar": cool_bar, "hp_bar": hp_bar, "mana_bar": mana_bar, "quick": quick_slots}
 
 
-func _make_hand(m) -> TextureButton:
+func _make_hand(m, i: int) -> TextureButton:
 	var hand := TextureButton.new()
 	hand.texture_normal = m.def.hand_icon
 	hand.custom_minimum_size = HAND_SIZE
@@ -166,8 +326,8 @@ func _make_hand(m) -> TextureButton:
 	hand.stretch_mode = TextureButton.STRETCH_KEEP_CENTERED
 	hand.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	hand.focus_mode = Control.FOCUS_NONE  # Space/Enter shouldn't trigger it.
-	hand.tooltip_text = "Attack"
-	hand.pressed.connect(func(): party.attack(m.slot))
+	hand.pressed.connect(_on_hand.bind(m.slot, i))
+	hand.add_child(StackCount.new())  # How many darts are left (child 0; see _show_hand).
 	return hand
 
 

@@ -67,9 +67,7 @@ func _click_item() -> void:
 	var front := cell + DIRS[facing]
 	if DungeonMap.is_blocked(front) or DungeonMap.is_occupied(front):
 		return
-	if cursor.is_holding():
-		if dungeon.item_at(front) != null:
-			return  # Something's already there; no stacking two items on one tile.
+	if cursor.is_holding():  # Goes on top of anything already there (a tile holds a pile).
 		var stack: RefCounted = cursor.release()
 		dungeon.place_item(front, stack)
 		_say("You put down the %s." % stack.label())

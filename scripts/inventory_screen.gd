@@ -136,11 +136,11 @@ func _front_cell() -> Vector2i:
 	return player.cell + player.DIRS[player.facing]
 
 
-## True if the tile in front of the party could currently take a dropped item.
+## True if the tile in front of the party could currently take a dropped item (an
+## item already there is fine: the tile holds a pile).
 func can_drop_on_floor() -> bool:
 	var front := _front_cell()
-	return not (DungeonMap.is_blocked(front) or DungeonMap.is_occupied(front)
-		or dungeon.item_at(front) != null)
+	return not (DungeonMap.is_blocked(front) or DungeonMap.is_occupied(front))
 
 
 func drop_on_floor(item) -> void:

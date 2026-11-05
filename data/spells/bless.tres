@@ -1,0 +1,11 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/spell_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Bless"
+mana_cost = 5
+target = 2
+buff_attack = 2
+duration = 20.0

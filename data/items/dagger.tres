@@ -1,0 +1,17 @@
+[gd_resource type="Resource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/item_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/items/dagger.png" id="2_icon"]
+[ext_resource type="Texture2D" path="res://art/items/dagger_floor.png" id="3_floor"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Dagger"
+type = 0
+icon = ExtResource("2_icon")
+floor_icon = ExtResource("3_floor")
+icon_pixel_size = 0.04
+damage_min = 1
+damage_max = 4
+throw_damage_min = 1
+throw_damage_max = 4

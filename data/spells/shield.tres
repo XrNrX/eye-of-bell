@@ -1,0 +1,11 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/spell_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Shield"
+mana_cost = 4
+target = 1
+buff_defence = 3
+duration = 20.0

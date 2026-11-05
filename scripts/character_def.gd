@@ -9,7 +9,11 @@ extends Resource
 @export var speed := 2        # Shortens the attack cooldown.
 @export var damage_min := 1
 @export var damage_max := 6
-@export var hand_icon: Texture2D  # The weapon-hand buttons on the party HUD.
+@export var hand_icon: Texture2D  # An empty hand's button on the party HUD.
+@export var max_mana := 0         # 0: no mana bar, no spells.
+@export var magic := 0            # ItemDef.Magic: which FOCUS items this hero can cast from.
+@export var start_hands: Array[Resource] = []  # ItemDef per hand (null for empty), at the start of a run.
+@export var start_hand_counts: Array[int] = []  # Stack size per hand (missing or 0 means 1), e.g. 6 darts.
 
 @export_group("Portrait")
 @export var portrait: Texture2D        # Shown while alive.
