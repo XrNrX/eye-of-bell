@@ -1,5 +1,13 @@
 {
   "files": {
+    "decals/hidden_button.png": {
+      "imported": "2026-11-05 21:30:13",
+      "source": "hidden_button.png"
+    },
+    "decals/rune_panel.png": {
+      "imported": "2026-11-05 21:30:13",
+      "source": "rune_panel.png"
+    },
     "monsters/skeleton/attack_0.png": {
       "imported": "2026-11-05 18:32:37",
       "source": "attack_0.png"
@@ -248,6 +256,14 @@
       "imported": "2026-11-05 19:37:33",
       "source": "portrait.png (derived)"
     },
+    "sprites/lever.png": {
+      "imported": "2026-11-05 21:30:13",
+      "source": "lever.png"
+    },
+    "sprites/torch.png": {
+      "imported": "2026-11-05 21:30:13",
+      "source": "torch.png"
+    },
     "tiles/ceiling.png": {
       "imported": "2026-11-05 21:07:12",
       "source": "ceiling.png"
@@ -255,6 +271,10 @@
     "tiles/floor.png": {
       "imported": "2026-11-05 21:07:12",
       "source": "floor.png"
+    },
+    "tiles/portcullis.png": {
+      "imported": "2026-11-05 21:30:13",
+      "source": "portcullis.png"
     },
     "tiles/wall.png": {
       "imported": "2026-11-05 21:07:12",
@@ -267,6 +287,10 @@
     "tiles/wall_3.png": {
       "imported": "2026-11-05 21:07:13",
       "source": "wall_3.png"
+    },
+    "tiles/wall_cracked.png": {
+      "imported": "2026-11-05 21:30:13",
+      "source": "wall_cracked.png"
     }
   }
 }
