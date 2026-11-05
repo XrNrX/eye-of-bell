@@ -82,6 +82,10 @@ def all_in_palette(img):
 
 
 real_wall = (ART_DIR / "tiles/wall.png").read_bytes()
+# The real manifest and back-up folder may exist (real imports have been made): note them, and check afterwards they are unchanged.
+_MANIFEST = Path(__file__).resolve().parent / "imported.json"
+real_manifest_before = _MANIFEST.read_bytes() if _MANIFEST.exists() else None
+real_old_before = sorted(str(q) for q in imp.DEFAULT_OLD.rglob("*")) if imp.DEFAULT_OLD.exists() else None
 
 with tempfile.TemporaryDirectory() as t:
     tmp = make_world(Path(t))
@@ -185,7 +189,7 @@ with tempfile.TemporaryDirectory() as t:
         check("a tests' root override is never protected", not artio.is_protected("tiles/wall.png", root=tmp / "x"))
     finally:
         artio.IMPORTED_MANIFEST = real_manifest
-    check("the real art folder, back-ups and manifest were never touched by this test", (ART_DIR / "tiles/wall.png").read_bytes() == real_wall and not imp.DEFAULT_OLD.exists() and not real_manifest.exists())
+    check("the real art folder, back-ups and manifest were never touched by this test", (ART_DIR / "tiles/wall.png").read_bytes() == real_wall and (_MANIFEST.read_bytes() if _MANIFEST.exists() else None) == real_manifest_before and (sorted(str(q) for q in imp.DEFAULT_OLD.rglob("*")) if imp.DEFAULT_OLD.exists() else None) == real_old_before)
 
     # ---- restoring
     code, out = run(tmp, "--restore", "tiles/wall")
