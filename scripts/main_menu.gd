@@ -63,6 +63,7 @@ const VOLUME_STEP := 0.1
 ## row that has the keyboard focus (or the one last used).
 var rows := {}
 var current_kind := "master"
+var display_button: Button  # "SCREEN: FULLSCREEN" / "SCREEN: WINDOWED", built in _build_display_button.
 
 var time := 0.0
 var base_position: Vector3
@@ -81,6 +82,7 @@ func _ready() -> void:
 	camera.rotation_degrees.y = VIEW_FACING_DEG
 
 	_build_volume_rows()
+	_build_display_button()
 	new_game_button.pressed.connect(_on_new_game_pressed)
 	load_button.pressed.connect(_on_load_pressed)
 	options_button.pressed.connect(_show_options.bind(true))
@@ -89,6 +91,7 @@ func _ready() -> void:
 
 	load_button.disabled = not SaveGame.has_save()  # Nothing to load yet: greyed out.
 	_refresh_volume()
+	_refresh_display()
 	for b in [new_game_button, load_button, options_button, quit_button, back_button]:
 		b.pressed.connect(_click)  # (Load is also greyed out when there is no save: no click then.)
 	new_game_button.grab_focus()  # So Enter / Space and the arrow keys work straight away.
@@ -130,6 +133,28 @@ func _show_options(open: bool) -> void:
 	menu_box.visible = not open
 	options_box.visible = open
 	(back_button if open else options_button).grab_focus()  # (+ and - may be greyed out; the keys work anyway)
+
+
+## The Fullscreen / Windowed switch: a copy of the Back button above it. The game's display_manager.gd
+## (an autoload) does the work; Alt+Enter changes it too, so the button listens for that.
+func _build_display_button() -> void:
+	display_button = back_button.duplicate()
+	display_button.unique_name_in_owner = false
+	options_box.add_child(display_button)
+	options_box.move_child(display_button, back_button.get_index())
+	display_button.pressed.connect(func():
+		var dm := get_node_or_null("/root/DisplayManager")
+		if dm:
+			dm.toggle()
+		_refresh_display())
+	display_button.pressed.connect(_click)
+	var dm := get_node_or_null("/root/DisplayManager")
+	if dm:
+		dm.mode_changed.connect(func(_on): _refresh_display())
+
+
+func _refresh_display() -> void:
+	display_button.text = "SCREEN: FULLSCREEN" if Settings.fullscreen else "SCREEN: WINDOWED"
 
 
 ## Master comes from the scene; Music and Effects are copies of its label and row.

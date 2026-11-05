@@ -1,17 +1,19 @@
 extends RefCounted
-## Player settings that outlive a run, saved to user://settings.cfg: the three volumes of the
-## Options screen on the main menu. Use via preload:
+## Player settings that outlive a run, saved to user://settings.cfg: the three volumes and the
+## fullscreen / windowed choice of the Options screen on the main menu. Use via preload:
 ##     const Settings := preload("res://scripts/settings.gd")
 ##     Settings.apply()                # at startup: push the saved values into the engine
 ##     Settings.set_volume(0.7)        # master volume: change, apply and save
 ##     Settings.set_music_volume(0.5)  # the ambient loop
 ##     Settings.set_sfx_volume(0.8)    # sound effects
+##     Settings.set_fullscreen(false)  # remember the display mode (display_manager.gd applies it)
 ##
 ## Each is a fraction 0..1 of full (0 mutes). They are applied to the audio buses: Master, and
 ## Music and SFX, which are created here if the project doesn't define them (both send to
 ## Master, so the master volume scales everything). audio.gd plays on those buses.
 
 const SECTION := "audio"
+const DISPLAY_SECTION := "display"
 const MUSIC_BUS := "Music"
 const SFX_BUS := "SFX"
 
@@ -20,6 +22,7 @@ static var path := "user://settings.cfg"
 static var volume := 1.0        # Master.
 static var music_volume := 0.7  # The ambient loop starts a little below full: it is a bed, not a feature.
 static var sfx_volume := 1.0
+static var fullscreen := true   # Borderless fullscreen by default; false = a window.
 static var loaded := false
 
 
@@ -32,6 +35,7 @@ static func apply() -> void:
 			volume = clampf(float(cfg.get_value(SECTION, "volume", volume)), 0.0, 1.0)
 			music_volume = clampf(float(cfg.get_value(SECTION, "music_volume", music_volume)), 0.0, 1.0)
 			sfx_volume = clampf(float(cfg.get_value(SECTION, "sfx_volume", sfx_volume)), 0.0, 1.0)
+			fullscreen = bool(cfg.get_value(DISPLAY_SECTION, "fullscreen", fullscreen))
 	_push_to_engine()
 
 
@@ -50,6 +54,11 @@ static func set_sfx_volume(value: float) -> void:
 	_changed()
 
 
+static func set_fullscreen(value: bool) -> void:
+	fullscreen = value
+	_changed()
+
+
 static func _clean(value: float) -> float:
 	return clampf(snappedf(value, 0.05), 0.0, 1.0)
 
@@ -61,6 +70,7 @@ static func _changed() -> void:
 	cfg.set_value(SECTION, "volume", volume)
 	cfg.set_value(SECTION, "music_volume", music_volume)
 	cfg.set_value(SECTION, "sfx_volume", sfx_volume)
+	cfg.set_value(DISPLAY_SECTION, "fullscreen", fullscreen)
 	cfg.save(path)
 
 
