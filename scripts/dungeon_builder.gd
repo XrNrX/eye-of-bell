@@ -100,13 +100,9 @@ func _ready() -> void:
 	ceiling_mesh.size = Vector2(s, s)
 	ceiling_mesh.material = _make_material(CEILING_COLOR, CEILING_TEXTURE)
 
-	var door_mesh := BoxMesh.new()
-	door_mesh.size = Vector3(s, h, DOOR_THICKNESS)
-	door_mesh.material = _make_material(DOOR_COLOR, DOOR_TEXTURE)
-
-	var locked_mesh := BoxMesh.new()
-	locked_mesh.size = door_mesh.size
-	locked_mesh.material = _make_material(DOOR_COLOR, DOOR_LOCKED_TEXTURE)
+	# Doors show the whole picture on each face (a BoxMesh would show one cell of a 3x2 grid).
+	var door_mesh := _wall_box(Vector3(s, h, DOOR_THICKNESS), _make_material(DOOR_COLOR, DOOR_TEXTURE))
+	var locked_mesh := _wall_box(Vector3(s, h, DOOR_THICKNESS), _make_material(DOOR_COLOR, DOOR_LOCKED_TEXTURE))
 
 	# The portcullis: a single double-sided quad of transparent iron bars (alpha cut-out), so the
 	# gaps are really open and you can see through.

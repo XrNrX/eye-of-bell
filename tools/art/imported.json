@@ -8,6 +8,130 @@
       "imported": "2026-11-05 21:30:13",
       "source": "rune_panel.png"
     },
+    "items/dagger.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "dagger.png"
+    },
+    "items/dagger_floor.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "dagger_floor.png"
+    },
+    "items/dagger_hud.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "dagger_hud.png"
+    },
+    "items/darts.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "darts.png"
+    },
+    "items/darts_floor.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "darts_floor.png"
+    },
+    "items/darts_hud.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "darts_hud.png"
+    },
+    "items/healing_potion.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "healing_potion.png"
+    },
+    "items/healing_potion_floor.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "healing_potion_floor.png"
+    },
+    "items/healing_potion_hud.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "healing_potion_hud.png"
+    },
+    "items/holy_symbol.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "holy_symbol.png"
+    },
+    "items/holy_symbol_floor.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "holy_symbol_floor.png"
+    },
+    "items/holy_symbol_hud.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "holy_symbol_hud.png"
+    },
+    "items/key.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "key.png"
+    },
+    "items/leather_armour.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "leather_armour.png"
+    },
+    "items/leather_armour_floor.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "leather_armour_floor.png"
+    },
+    "items/leather_armour_hud.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "leather_armour_hud.png"
+    },
+    "items/mace.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "mace.png"
+    },
+    "items/mace_floor.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "mace_floor.png"
+    },
+    "items/mace_hud.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "mace_hud.png"
+    },
+    "items/scroll.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "scroll.png"
+    },
+    "items/scroll_floor.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "scroll_floor.png"
+    },
+    "items/scroll_hud.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "scroll_hud.png"
+    },
+    "items/short_sword.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "short_sword.png"
+    },
+    "items/short_sword_floor.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "short_sword_floor.png"
+    },
+    "items/short_sword_hud.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "short_sword_hud.png"
+    },
+    "items/spellbook.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "spellbook.png"
+    },
+    "items/spellbook_floor.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "spellbook_floor.png"
+    },
+    "items/spellbook_hud.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "spellbook_hud.png"
+    },
+    "items/war_hammer.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "war_hammer.png"
+    },
+    "items/war_hammer_floor.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "war_hammer_floor.png"
+    },
+    "items/war_hammer_hud.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "war_hammer_hud.png"
+    },
     "monsters/skeleton/attack_0.png": {
       "imported": "2026-11-05 18:32:37",
       "source": "attack_0.png"
@@ -256,6 +380,10 @@
       "imported": "2026-11-05 19:37:33",
       "source": "portrait.png (derived)"
     },
+    "sprites/key.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "key.png"
+    },
     "sprites/lever.png": {
       "imported": "2026-11-05 21:30:13",
       "source": "lever.png"
@@ -268,13 +396,29 @@
       "imported": "2026-11-05 21:07:12",
       "source": "ceiling.png"
     },
+    "tiles/door.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "door.png"
+    },
+    "tiles/door_locked.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "door_locked.png"
+    },
     "tiles/floor.png": {
       "imported": "2026-11-05 21:07:12",
       "source": "floor.png"
     },
+    "tiles/plate.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "plate.png"
+    },
     "tiles/portcullis.png": {
       "imported": "2026-11-05 21:30:13",
       "source": "portcullis.png"
+    },
+    "tiles/stairs.png": {
+      "imported": "2026-11-05 22:29:57",
+      "source": "stairs.png"
     },
     "tiles/wall.png": {
       "imported": "2026-11-05 21:07:12",

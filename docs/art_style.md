@@ -126,7 +126,7 @@ same size in the world):**
 
 **3D art that is not doubled yet** (same world size, so it simply keeps its old pixel density next to the new art):
 torch sheet 4 frames of 16x32 (64x32), lever sheet 2 frames of 16x16 (32x16), key floor sprite 16x16,
-item floor sprites 12x12 (`*_floor`, NOT enlarged), and the spell effect bolt (7x7).
+item floor sprites 48x48 (`*_floor`, the same drawing as the icon; `icon_pixel_size` 0.01 in each `.tres`), and the spell effect bolt (7x7).
 
 **UI art (drawn at 2x; make it the "logical" size and the importer doubles it):**
 
