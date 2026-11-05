@@ -107,14 +107,68 @@ func _ready() -> void:
 	for entry in DungeonMap.ITEMS:
 		place_item(entry.cell, ItemStack.of(load(entry.def), entry.get("count", 1)))
 	for entry in DungeonMap.MONSTERS:
-		var monster := MonsterScript.new()
-		monster.setup(load(entry.def), entry.cell)
-		add_child(monster)
+		spawn_monster(load(entry.def), entry.cell)
 	for plate in DungeonMap.PLATES:
 		_add_plate(plate.cell)
 	for lever in DungeonMap.LEVERS:
 		_add_lever(lever.cell, lever.side)
 	refresh()
+
+
+## Add a monster (a MonsterDef at a cell). hp and attack_cooldown override its starting
+## values (used when loading a save).
+func spawn_monster(def: Resource, cell: Vector2i, hp := -1, attack_cooldown := -1.0) -> Node:
+	var monster := MonsterScript.new()
+	monster.setup(def, cell)
+	add_child(monster)
+	if hp >= 0:
+		monster.hp = hp
+	if attack_cooldown >= 0.0:
+		monster.attack_cooldown = attack_cooldown
+	return monster
+
+
+## Remove every monster at once (used when loading a save).
+func clear_monsters() -> void:
+	for n in get_children():
+		if n.has_method("take_hit"):
+			n.free()  # Immediately, so its tile is released before new monsters claim tiles.
+
+
+## Put every door straight into the given open/closed state, with no animation (loading
+## a save). `open` is a set of cells whose doors are open.
+func restore_doors(open: Dictionary) -> void:
+	DungeonMap.open_doors.clear()
+	for cell in doors:
+		if door_tweens.has(cell):
+			door_tweens[cell].kill()
+			door_tweens.erase(cell)
+		var is_open := open.has(cell)
+		door_want[cell] = is_open
+		doors[cell].position.y = DungeonMap.WALL_HEIGHT / 2.0 + (DungeonMap.WALL_HEIGHT if is_open else 0.0)
+		if is_open:
+			DungeonMap.open_doors[cell] = true
+
+
+## Set every lever on or off (loading a save). `on` is a set of Vector3i (x, z, side).
+func restore_levers(on: Dictionary) -> void:
+	lever_on.clear()
+	for key in levers:
+		lever_on[key] = on.has(key)
+		levers[key].frame = 1 if on.has(key) else 0
+
+
+## Replace the whole pile on a cell (bottom first); an empty list clears the cell.
+func set_pile(cell: Vector2i, stacks: Array) -> void:
+	if items.has(cell):
+		items[cell].sprite.queue_free()
+		items.erase(cell)
+	if stacks.is_empty():
+		return
+	place_item(cell, stacks[0])
+	for i in range(1, stacks.size()):
+		items[cell].pile.append(stacks[i])  # Straight on: no merging, the pile is as it was saved.
+	_show_top(items[cell])
 
 
 ## Re-evaluate every switch: sink/raise plates and open/close linked doors.

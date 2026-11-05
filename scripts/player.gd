@@ -56,12 +56,13 @@ func _find_singletons() -> void:
 ## already holding one) put it down there -- Eye-of-the-Beholder style. Whether the
 ## click actually landed on the item's sprite doesn't matter, only that it's there;
 ## see the summary for why (headless-testable determinism over pixel-precise picking).
+## Shift+click (empty-handed) sends the item straight to the party instead: see Party.stow.
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		_click_item()
+		_click_item(event.shift_pressed)
 
 
-func _click_item() -> void:
+func _click_item(shift := false) -> void:
 	if dungeon == null or cursor == null:
 		return
 	var front := cell + DIRS[facing]
@@ -75,9 +76,32 @@ func _click_item() -> void:
 		var stack: RefCounted = dungeon.item_at(front)
 		if stack == null:
 			return
+		if shift and party:
+			_stow(front, stack)
+			return
 		dungeon.take_item(front)
+		# A thrown item goes home to the hand or quick slot it was thrown from, if that
+		# slot is free (or holds the same stack); otherwise it comes onto the cursor.
+		var home: String = party.return_to_origin(stack) if party else ""
+		if home != "":
+			_say(home)
+			return
+		stack.origin = {}  # On the cursor it has no home any more.
 		cursor.hold(stack)
 		_say("You pick up the %s." % stack.label())
+
+
+## Shift+click: the party takes the item without it passing through the cursor. What
+## doesn't fit anywhere stays on the floor.
+func _stow(front: Vector2i, stack: RefCounted) -> void:
+	var message: String = party.stow(stack)
+	if stack.count <= 0:
+		dungeon.take_item(front)  # All of it went; remove the empty stack from the pile.
+	if message == "":
+		message = "There's no room for the %s." % stack.def.display_name.to_lower()
+	elif stack.count > 0:
+		message += " (Some won't fit.)"
+	_say(message)
 
 
 func _process(_delta: float) -> void:
@@ -130,6 +154,18 @@ func _try_move(dir: Vector2i) -> void:
 
 ## Tell the world which tile we're on, so pressure plates and switch doors react.
 ## Done when a step STARTS: we already count as standing on the new tile.
+## Put the party at a cell and facing at once (loading a save).
+func restore(new_cell: Vector2i, new_facing: int) -> void:
+	if tween and tween.is_running():
+		tween.kill()
+	cell = new_cell
+	facing = new_facing
+	yaw_degrees = facing * 90.0
+	rotation_degrees.y = yaw_degrees
+	position = DungeonMap.cell_to_world(cell)
+	_report_position()
+
+
 func _report_position() -> void:
 	DungeonMap.player_cell = cell
 	get_tree().call_group("dungeon", "refresh")

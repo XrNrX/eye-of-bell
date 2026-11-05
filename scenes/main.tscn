@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" path="res://scenes/cursor_item.tscn" id="14_cursor"]
 [ext_resource type="Script" path="res://scripts/combat_feel.gd" id="20_feel"]
+[ext_resource type="Script" path="res://scripts/save_manager.gd" id="21_save"]
 [ext_resource type="PackedScene" path="res://scenes/inventory_screen.tscn" id="15_inventory"]
 [ext_resource type="Script" path="res://scripts/party.gd" id="7_party"]
 [ext_resource type="Resource" path="res://data/party/fighter.tres" id="8_fighter"]
@@ -71,3 +72,6 @@ script = ExtResource("20_feel")
 [node name="CursorItem" parent="." instance=ExtResource("14_cursor")]
 
 [node name="InventoryScreen" parent="." instance=ExtResource("15_inventory")]
+
+[node name="SaveManager" type="Node" parent="."]
+script = ExtResource("21_save")

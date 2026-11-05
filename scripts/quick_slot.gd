@@ -11,6 +11,7 @@ extends Control
 ##   right click             pick the item back up onto the cursor (one, from a stack)
 ## Identical consumables stack (ItemDef.max_stack); the count shows in the corner.
 ## Using an item starts a short cooldown, drawn as a grey clock-wipe over the slot.
+## It takes consumables and throwables (daggers, darts); a thrown one is thrown by a click or its key.
 ## A dead character's slot is disabled: it can't be used or filled. Right-click still
 ## lifts its item out, so a consumable can't be stranded on a corpse.
 ##
@@ -161,23 +162,11 @@ func _left_click() -> void:
 	if not m.is_alive():
 		return  # Disabled.
 	var cursor = get_tree().get_first_node_in_group("cursor")
-	var here := _item()
 	if cursor and cursor.is_holding():
-		var held: RefCounted = cursor.held
-		if not party.quick_accepts(held):
-			_say("The %s can't go in a quick slot." % held.def.display_name)
-			return
-		if here != null and here.can_stack_with(held) and here.room() > 0:
-			party.merge_quick(member_slot, index, held)  # The overflow stays on the cursor.
-			if held.count <= 0:
-				cursor.release()
-			else:
-				cursor.refresh()
-			return
-		party.set_quick(member_slot, index, cursor.release())
-		if here != null:
-			cursor.hold(here)  # Swap: what was here is now on the cursor.
-	elif here != null:
+		var why: String = party.place_in_quick(member_slot, index, cursor)
+		if why != "":
+			_say(why)
+	elif _item() != null:
 		party.use_quick(member_slot, index)
 
 

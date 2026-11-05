@@ -90,9 +90,12 @@ func _process(_delta: float) -> void:
 	if party == null:
 		return
 	drag_just_ended = false
+	var cursor = get_tree().get_first_node_in_group("cursor")
+	var holding: bool = cursor != null and cursor.is_holding()
 	for m in party.members:
 		var p: Dictionary = panels[m.slot]
-		var cooling: bool = m.cooldown_left > 0.0 or not m.is_alive()
+		# A hand cooling down can still be clicked to put an item in it; a dead hero's can't.
+		var cooling: bool = (m.cooldown_left > 0.0 and not holding) or not m.is_alive()
 		for i in p.hands.size():
 			var hand: TextureButton = p.hands[i]
 			hand.disabled = cooling
@@ -131,6 +134,14 @@ func _show_hand(m, i: int, hand: TextureButton) -> void:
 # --------------------------------------------------------------------------
 
 func _on_hand(slot: int, hand: int) -> void:
+	# An item on the cursor: put it in this hand (top up, or swap) instead of acting.
+	var cursor = get_tree().get_first_node_in_group("cursor")
+	if cursor and cursor.is_holding():
+		cancel_casting()
+		var refused: String = party.place_in_hand(slot, hand, cursor)
+		if refused != "":
+			get_tree().call_group("hud", "show_message", refused)
+		return
 	if party.action_for(slot, hand) != party.Act.SPELLS:
 		cancel_casting()
 		party.act(slot, hand)

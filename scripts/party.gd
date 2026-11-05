@@ -5,6 +5,9 @@ extends Node
 ##   act(slot, hand)         a hero acts with what's in that hand (party HUD hand buttons):
 ##                           swing, throw, or "can't reach"; see action_for()
 ##   cast(slot, hand, spell, target)  cast a spell from the FOCUS in that hand
+##   place_in_hand / place_in_quick(slot, i, cursor)  click-with-an-item on the party panel
+##   return_to_origin(stack)  a thrown item picked up off the floor goes back to its slot
+##   stow(stack)              shift-click on a floor item: first free quick slot, else a backpack
 ##   attack(slot)            a hero swings with their first weapon (older API, tests)
 ##   take_hit_from(monster)  a monster next to the party attacks it
 ## The party HUD listens to its signals and polls cooldowns, mana and buffs. The
@@ -284,12 +287,23 @@ func act(slot: int, hand: int) -> void:
 ## tile, hit or miss; with no monster it lands on the last open tile. A wall or closed
 ## door right in front means there's nowhere to throw: refused, no cooldown.
 func _throw(m: Member, hand: int) -> void:
-	var stack = m.hands[hand]
+	_do_throw(m, {"where": "hand", "index": hand})
+
+
+## The item a throw would take from: {"where": "hand" or "quick", "index": n}.
+func _source_stack(m: Member, source: Dictionary):
+	return m.hands[source.index] if source.where == "hand" else m.quick[source.index]
+
+
+## Throw one item from a hand or quick slot. Returns whether it was thrown. The piece
+## that lands on the floor remembers where it came from (see return_to_origin).
+func _do_throw(m: Member, source: Dictionary) -> bool:
+	var stack = _source_stack(m, source)
 	var def: Resource = stack.def
 	var dir: Vector2i = player.DIRS[player.facing]
 	if DungeonMap.is_blocked(player.cell + dir):
 		_say("There's no room to throw.")
-		return
+		return false
 	var land: Vector2i = player.cell
 	var target = null
 	for i in range(1, MISSILE_RANGE + 1):
@@ -303,15 +317,21 @@ func _throw(m: Member, hand: int) -> void:
 			break
 	_start_cooldown(m)
 	var piece: RefCounted = stack.take_one()
+	piece.origin = {"hero": m.hero_index, "where": source.where, "index": source.index}
 	if stack.count <= 0:
-		m.hands[hand] = null
+		if source.where == "hand":
+			m.hands[source.index] = null
+		else:
+			m.quick[source.index] = null
+	if source.where == "quick":
+		quick_changed.emit(m.slot)
 	var dungeon = get_tree().get_first_node_in_group("dungeon")
 	if dungeon:
 		dungeon.place_item(land, piece)
 		dungeon.show_throw(player.cell, land, def)
 	if target == null:
 		_say("%s throws the %s." % [m.def.display_name, def.display_name])
-		return
+		return true
 	var s := Stats.new()  # The thrower's attack (with buffs) plus the item's bonus.
 	s.attack = m.def.attack + def.attack_bonus
 	for buff in m.buffs:
@@ -326,6 +346,7 @@ func _throw(m: Member, hand: int) -> void:
 		_say("%s kills the %s with the %s!" % [m.def.display_name, target.def.display_name, def.display_name])
 	else:
 		_say("%s hits the %s with the %s for %d." % [m.def.display_name, target.def.display_name, def.display_name, result.damage])
+	return true
 
 
 # --------------------------------------------------------------------------
@@ -455,15 +476,15 @@ func add_to_backpack(slot: int, stack: RefCounted) -> bool:
 	return true
 
 
-## Quick slots take consumables only (potions, scrolls, and later throwables).
+## Quick slots take consumables (potions, scrolls) and throwables (daggers, darts).
 func quick_accepts(item) -> bool:
 	var stack := ItemStack.wrap(item)
-	return stack != null and stack.def.type == ItemDef.Type.CONSUMABLE
+	return stack != null and (stack.def.type == ItemDef.Type.CONSUMABLE or stack.def.can_throw())
 
 
 ## Put an item stack (or an ItemDef, or null to empty it) in a quick slot, replacing
 ## what's there. Returns false, changing nothing, if the slot doesn't exist or the
-## item isn't a consumable.
+## item isn't something a quick slot takes (see quick_accepts).
 func set_quick(slot: int, index: int, item) -> bool:
 	var m := member(slot)
 	if m == null or index < 0 or index >= QUICK_SLOTS:
@@ -473,6 +494,139 @@ func set_quick(slot: int, index: int, item) -> bool:
 	m.quick[index] = ItemStack.wrap(item)
 	quick_changed.emit(slot)
 	return true
+
+
+## Click a quick slot while holding an item on the cursor: put it in (it must be
+## something quick slots take), top up a matching stack, or swap with what's there (the old
+## item goes onto the cursor). Returns "" on success, or why it wasn't done.
+func place_in_quick(slot: int, index: int, cursor: Node) -> String:
+	var m := member(slot)
+	if m == null or index < 0 or index >= QUICK_SLOTS:
+		return ""
+	if not m.is_alive():
+		return "%s is dead." % m.def.display_name
+	var held: RefCounted = cursor.held
+	if not quick_accepts(held):
+		return "The %s can't go in a quick slot." % held.def.display_name
+	var here = m.quick[index]
+	if here != null and here.can_stack_with(held) and here.room() > 0:
+		merge_quick(slot, index, held)  # The overflow stays on the cursor.
+		if held.count <= 0:
+			cursor.release()
+		else:
+			cursor.refresh()
+		return ""
+	set_quick(slot, index, cursor.release())
+	if here != null:
+		cursor.hold(here)
+	return ""
+
+
+## Why a hand can't take this stack, or "": the right kind of item, and one at a time
+## except a stack of a throwable (darts), so they can be thrown one after another.
+func hand_refusal(stack: RefCounted) -> String:
+	if not ItemDef.allowed_in_hand(stack.def.type):
+		return "The %s doesn't go there." % stack.def.display_name
+	if stack.count > 1 and not stack.def.can_throw():
+		return "Only one at a time goes there."
+	return ""
+
+
+## Click a hand while holding an item on the cursor: same rules as a quick slot
+## (place, top up a matching stack, or swap), for a hand. Returns "" or the reason.
+func place_in_hand(slot: int, hand: int, cursor: Node) -> String:
+	var m := member(slot)
+	if m == null or hand < 0 or hand >= HAND_SLOTS:
+		return ""
+	if not m.is_alive():
+		return "%s is dead." % m.def.display_name
+	var held: RefCounted = cursor.held
+	var why := hand_refusal(held)
+	if why != "":
+		return why
+	var here = m.hands[hand]
+	if here != null and here.can_stack_with(held) and here.room() > 0 and held.def.can_throw():
+		here.merge_from(held)
+		if held.count <= 0:
+			cursor.release()
+		else:
+			cursor.refresh()
+		return ""
+	m.hands[hand] = cursor.release()
+	if here != null:
+		cursor.hold(here)
+	return ""
+
+
+## A thrown item was picked up off the floor: send it home if it can go. It returns to
+## the slot (hand or quick) it was thrown from if that slot is empty, or holds the same
+## stack with room for all of it, and the hero is alive. Returns the message to show, or ""
+## if it can't go home (the caller puts it on the cursor instead).
+func return_to_origin(stack: RefCounted) -> String:
+	var o: Dictionary = stack.origin
+	if o.is_empty():
+		return ""
+	var m: Member = null
+	for candidate in members:
+		if candidate.hero_index == o.hero:
+			m = candidate
+	if m == null or not m.is_alive():
+		return ""
+	var slots: Array = m.hands if o.where == "hand" else m.quick
+	var here = slots[o.index]
+	if here == null:
+		slots[o.index] = stack
+	elif here.can_stack_with(stack) and here.room() >= stack.count:
+		here.merge_from(stack)
+	else:
+		return ""
+	stack.origin = {}
+	if o.where == "quick":
+		quick_changed.emit(m.slot)
+	return "%s takes back the %s." % [m.def.display_name, stack.def.display_name.to_lower()]
+
+
+## Shift-click on a floor item: send as much of the stack as fits to the first free
+## matching quick slot in party order (an empty one, or one holding the same item with
+## room), then to the first living hero's backpack with room. Moves items out of `stack`
+## (its count drops) and returns the message, or "" if nothing fit.
+func stow(stack: RefCounted) -> String:
+	var message := ""
+	var item_name: String = stack.def.display_name.to_lower()
+	if quick_accepts(stack):
+		for m in members:
+			if not m.is_alive():
+				continue
+			for i in QUICK_SLOTS:
+				if stack.count <= 0:
+					break
+				var here = m.quick[i]
+				var moved := 0
+				if here == null:
+					m.quick[i] = ItemStack.of(stack.def, stack.count)
+					moved = stack.count
+					stack.count = 0
+				elif here.can_stack_with(stack) and here.room() > 0:
+					moved = here.merge_from(stack)
+				if moved > 0:
+					quick_changed.emit(m.slot)
+					if message == "":
+						message = "%s readies the %s." % [m.def.display_name, item_name]
+	if stack.count > 0:
+		for m in members:
+			if not m.is_alive():
+				continue
+			var before: int = stack.count
+			var copy := ItemStack.of(stack.def, stack.count)
+			if add_to_backpack(m.slot, copy):
+				stack.count = 0
+			else:
+				stack.count = copy.count  # Whatever didn't fit (it may have topped up stacks).
+			if stack.count < before and message == "":
+				message = "%s stows the %s." % [m.def.display_name, item_name]
+			if stack.count <= 0:
+				break
+	return message
 
 
 ## Top up the stack in a quick slot from `stack` (same stackable item), moving as many
@@ -487,7 +641,8 @@ func merge_quick(slot: int, index: int, stack: RefCounted) -> int:
 	return moved
 
 
-## Use the item in a member's quick slot on that member, right now. A potion heals
+## Use the item in a member's quick slot, right now. A throwable is thrown at the monster
+## ahead (one from the stack; it uses the hero's action cooldown, not the slot's). A potion heals
 ## them; a scroll casts at the monster ahead (both via use_item). If it was used it
 ## is spent and the slot starts a cooldown; if it couldn't be (full health, nothing
 ## to target) nothing is spent and there is no cooldown. Nothing happens for an empty
@@ -501,6 +656,10 @@ func use_quick(slot: int, index: int) -> Dictionary:
 	var stack = m.quick[index]
 	if stack == null or not m.is_alive() or m.quick_cooldown[index] > 0.0:
 		return nothing
+	if stack.def.can_throw():
+		if m.cooldown_left > 0.0:
+			return nothing
+		return {"used": _do_throw(m, {"where": "quick", "index": index}), "message": "", "close": false}
 	var result := use_item(slot, stack.def)
 	if result.used:
 		stack.count -= 1  # Uses one item from the stack.

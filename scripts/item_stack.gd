@@ -9,6 +9,11 @@ extends RefCounted
 var def: Resource
 var count := 1
 
+## Only set on a thrown item lying on the floor: where it was thrown from, so picking
+## it up can send it home. {"hero": hero_index, "where": "hand" or "quick", "index": n},
+## or {} for "nowhere in particular". Cleared as soon as it is picked up.
+var origin := {}
+
 
 static func of(item_def: Resource, n := 1) -> RefCounted:
 	var s := new()
@@ -41,6 +46,8 @@ func merge_from(other: RefCounted) -> int:
 	var moved := mini(room(), other.count)
 	count += moved
 	other.count -= moved
+	if origin != other.origin:
+		origin = {}  # Pieces from different places: no single home any more.
 	return moved
 
 
