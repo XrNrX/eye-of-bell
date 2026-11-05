@@ -18,6 +18,8 @@ WHAT IT DOES TO EACH IMAGE
      factor is applied as is; anything else is resized with a warning.
   3. Colour: every pixel snapped to the nearest colour in palette.json. No dithering unless
      --dither (Floyd-Steinberg error diffusion).
+  A hero's living portrait also produces its hurt (red-tinted) and dead (grey with a faint curse
+  tint) portraits, unless those are supplied too or --no-variants is given.
   4. Name: written to the existing path, so the game needs no change.
   5. Back-up: the file it replaces is copied to tools/art/_old/ (same relative path) the first time
      only, so importing again never overwrites the procedural original. `--restore` undoes it.
@@ -284,7 +286,8 @@ def snap(img, dither=False):
 class Context:
     """Everything one run needs; the paths are parameters so tests can use a temporary tree."""
 
-    def __init__(self, art_dir, old_dir, manifest_path, data_dir, scale, dither, dry_run, frames):
+    def __init__(self, art_dir, old_dir, manifest_path, data_dir, scale, dither, dry_run, frames, derive_variants=True):
+        self.derive_variants = derive_variants
         self.art_dir, self.old_dir, self.manifest_path = Path(art_dir), Path(old_dir), Path(manifest_path)
         self.data_dir, self.scale, self.dither, self.dry_run, self.frames = Path(data_dir), scale, dither, dry_run, frames
         self.manifest = read_json(self.manifest_path) or {"files": {}}
@@ -542,6 +545,27 @@ def process_sprite_sheet(ctx, asset, path):
     ctx.used_files.append(path)
 
 
+def derive_portrait_variants(ctx, singles, catalog):
+    """A hero's hurt and dead portraits are not drawn, they are tinted from the living one: hurt is
+    the living portrait blended toward rust red (a brief flash when the hero is hit); dead is greyed
+    out with a faint curse-green tint. Done for every living portrait in this import whose hurt or
+    dead picture was not supplied too (those are used as given). Same tinting as the procedural
+    portraits (gen_portraits.py), so a PixelLab hero and a procedural one are treated alike."""
+    import gen_portraits as gp
+    for key, path in list(singles.items()):
+        parts = key.split("/")
+        if not (len(parts) == 3 and parts[0] == "portraits" and parts[2] == "portrait"):
+            continue
+        asset = catalog[key]
+        living = ctx.convert(Image.open(path), asset.size, asset.ui, key + " (for its variants)")
+        for suffix, make, what in (("portrait_hurt", gp.hurt_variant, "red-tinted"), ("portrait_dead", gp.cursed_dead_variant, "greyed with a faint curse tint")):
+            vkey = f"portraits/{parts[1]}/{suffix}"
+            if vkey in singles or vkey not in catalog:
+                continue
+            ctx.write_image(make(living), catalog[vkey].rel, f"{path.name} (derived)")
+            ctx.replaced.append(f"{vkey} ({what}, derived from the living portrait)")
+
+
 def process_image(ctx, asset, path):
     img = ctx.convert(Image.open(path), asset.size, asset.ui, asset.key)
     ctx.write_image(img, asset.rel, path.name)
@@ -593,6 +617,8 @@ def run(inbox, ctx, keep_inbox=False):
             (process_sprite_sheet if asset.kind == "sprite_sheet" else process_image)(ctx, asset, path)
         except Exception as e:  # Report and carry on with the rest.
             ctx.errors.append(f"{key}: {e}")
+    if ctx.derive_variants:
+        derive_portrait_variants(ctx, singles, catalog)
     for name, parts in monsters.items():
         try:
             process_monster(ctx, name, parts)
@@ -670,6 +696,7 @@ def main(argv=None):
     ap.add_argument("--scale", type=int, default=DEFAULT_SCALE, help="UI art pixel scale (default 2)")
     ap.add_argument("--dry-run", action="store_true", help="report what would happen; write and move nothing")
     ap.add_argument("--keep-inbox", action="store_true", help="leave processed files in the inbox")
+    ap.add_argument("--no-variants", action="store_true", help="do not derive a hero's hurt and dead portraits from the living one (they are tinted by default)")
     ap.add_argument("--frames", action="append", default=[], metavar="NAME=N", help="frames in a sheet, e.g. skeleton=9 or torch=8")
     ap.add_argument("--list", action="store_true", help="list every asset the game expects and exit")
     ap.add_argument("--restore", metavar="KEY", help="restore the procedural art for KEY (a path, a folder like monsters/skeleton, or 'all')")
@@ -685,7 +712,7 @@ def main(argv=None):
         if not n.isdigit():
             ap.error(f"--frames wants NAME=N, got {item!r}")
         frames[name.strip()] = int(n)
-    ctx = Context(args.art_dir, args.old_dir, args.manifest, args.data_dir, args.scale, args.dither, args.dry_run, frames)
+    ctx = Context(args.art_dir, args.old_dir, args.manifest, args.data_dir, args.scale, args.dither, args.dry_run, frames, derive_variants=not args.no_variants)
 
     if args.list:
         catalog = build_catalog(ctx.art_dir)

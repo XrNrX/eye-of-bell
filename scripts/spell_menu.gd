@@ -7,11 +7,11 @@ extends PanelContainer
 
 signal chosen(spell: Resource)
 
-const BG := Color(0.137, 0.118, 0.169, 0.95)  # Palette stone_900.
-const EDGE := Color(0.941, 0.722, 0.227)      # Palette torch_500, like the mana bar.
+const BG := Color(0.078, 0.075, 0.106, 0.95)  # Palette stone_900.
+const EDGE := Color(0.851, 0.604, 0.212)      # Palette torch_500, like the mana bar.
 const TEXT := Color(0.92, 0.89, 0.82)
-const TEXT_OFF := Color(0.415, 0.384, 0.447)  # Palette stone_500.
-const ROW_HOVER := Color(0.275, 0.247, 0.31)  # Palette stone_700.
+const TEXT_OFF := Color(0.314, 0.31, 0.369)  # Palette stone_500.
+const ROW_HOVER := Color(0.192, 0.188, 0.235)  # Palette stone_700.
 const WIDTH := 150.0
 
 var party: Node

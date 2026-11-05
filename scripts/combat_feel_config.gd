@@ -49,7 +49,7 @@ static func get_config() -> Resource:
 ## Misses (by heroes, monsters and thrown weapons) get their own look on the message line.
 @export var miss_message_enabled := true
 @export var miss_prefix := "Miss! "
-@export var miss_colour := Color(0.588, 0.557, 0.604)  # Palette stone_300: muted, a whiff.
+@export var miss_colour := Color(0.482, 0.478, 0.533)  # Palette stone_300: muted, a whiff.
 
 @export_group("Portrait shake")
 ## The portrait of the hero who was hit shakes sideways.

@@ -199,6 +199,54 @@
     "monsters/slime_acid/walk_3.png": {
       "imported": "2026-11-05 18:46:43",
       "source": "walk_0.png"
+    },
+    "portraits/cleric/portrait.png": {
+      "imported": "2026-11-05 19:37:32",
+      "source": "portrait.png"
+    },
+    "portraits/cleric/portrait_dead.png": {
+      "imported": "2026-11-05 19:37:33",
+      "source": "portrait.png (derived)"
+    },
+    "portraits/cleric/portrait_hurt.png": {
+      "imported": "2026-11-05 19:37:33",
+      "source": "portrait.png (derived)"
+    },
+    "portraits/fighter/portrait.png": {
+      "imported": "2026-11-05 19:37:32",
+      "source": "portrait.png"
+    },
+    "portraits/fighter/portrait_dead.png": {
+      "imported": "2026-11-05 19:37:33",
+      "source": "portrait.png (derived)"
+    },
+    "portraits/fighter/portrait_hurt.png": {
+      "imported": "2026-11-05 19:37:33",
+      "source": "portrait.png (derived)"
+    },
+    "portraits/mage/portrait.png": {
+      "imported": "2026-11-05 19:37:32",
+      "source": "portrait.png"
+    },
+    "portraits/mage/portrait_dead.png": {
+      "imported": "2026-11-05 19:37:33",
+      "source": "portrait.png (derived)"
+    },
+    "portraits/mage/portrait_hurt.png": {
+      "imported": "2026-11-05 19:37:33",
+      "source": "portrait.png (derived)"
+    },
+    "portraits/thief/portrait.png": {
+      "imported": "2026-11-05 19:37:33",
+      "source": "portrait.png"
+    },
+    "portraits/thief/portrait_dead.png": {
+      "imported": "2026-11-05 19:37:33",
+      "source": "portrait.png (derived)"
+    },
+    "portraits/thief/portrait_hurt.png": {
+      "imported": "2026-11-05 19:37:33",
+      "source": "portrait.png (derived)"
     }
   }
 }

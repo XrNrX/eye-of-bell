@@ -39,14 +39,14 @@ const COOL_HEIGHT := 4
 
 const HAND_READY := Color(1, 1, 1)
 const HAND_COOLING := Color(0.35, 0.33, 0.38)
-const PANEL_BG := Color(0.137, 0.118, 0.169, 0.88)  # Palette stone_900.
-const PANEL_EDGE := Color(0.275, 0.247, 0.31)        # Palette stone_700.
-const HP_FILL := Color(0.69, 0.35, 0.165)            # Palette rust_500.
-const HP_BACK := Color(0.078, 0.063, 0.102)          # Palette ink.
-const COOL_FILL := Color(0.588, 0.557, 0.604)        # Palette stone_300.
-const HIT_COLOUR := Color(0.85, 0.51, 0.26)          # Palette rust_300.
-const MISS_COLOUR := Color(0.76, 0.74, 0.75)         # Palette stone_100.
-const MANA_FILL := Color(0.941, 0.722, 0.227)        # Palette torch_500 (the palette has no blue).
+const PANEL_BG := Color(0.078, 0.075, 0.106, 0.88)  # Palette stone_900.
+const PANEL_EDGE := Color(0.192, 0.188, 0.235)        # Palette stone_700.
+const HP_FILL := Color(0.486, 0.267, 0.149)            # Palette rust_500.
+const HP_BACK := Color(0.043, 0.039, 0.063)          # Palette ink.
+const COOL_FILL := Color(0.482, 0.478, 0.533)        # Palette stone_300.
+const HIT_COLOUR := Color(0.659, 0.404, 0.227)          # Palette rust_300.
+const MISS_COLOUR := Color(0.667, 0.663, 0.706)         # Palette stone_100.
+const MANA_FILL := Color(0.851, 0.604, 0.212)        # Palette torch_500 (the palette has no blue).
 const BUFF_EDGE := MANA_FILL                         # Outline on a buffed hero's portrait.
 const HURT_FLASH_TIME := 0.3  # How long the portrait shows its red-tinted variant.
 
@@ -68,7 +68,7 @@ var catcher: Control   # Full-screen, under the panels: a click on it cancels.
 # a release to the control that got the press).
 const DRAG_THRESHOLD := 4.0       # Pixels (in the 640x360 space) before a press becomes a drag.
 const DRAG_GHOST := Color(1, 1, 1, 0.55)
-const DROP_EDGE := Color(0.941, 0.722, 0.227)  # Palette torch_500, like the mana bar.
+const DROP_EDGE := Color(0.851, 0.604, 0.212)  # Palette torch_500, like the mana bar.
 var press_slot := -1               # Position pressed on, -1 if none.
 var press_pos := Vector2.ZERO
 var dragging := false

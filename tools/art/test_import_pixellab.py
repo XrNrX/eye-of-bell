@@ -53,7 +53,7 @@ def make_world(tmp):
     art, data = tmp / "art", tmp / "data" / "monsters"
     for rel in ["tiles/wall.png", "items/dagger.png", "items/dagger_hud.png", "items/dagger_floor.png", "items/key.png",
                 "sprites/key.png", "sprites/torch.png", "sprites/torch_sheet.json", "sprites/lever.png", "sprites/lever_sheet.json",
-                "portraits/fighter/portrait.png", "portraits/fighter/portrait_hurt.png", "portraits/mage/portrait.png",
+                "portraits/fighter/portrait.png", "portraits/fighter/portrait_hurt.png", "portraits/fighter/portrait_dead.png", "portraits/mage/portrait.png",
                 "ui/quickslot.png"]:
         (art / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ART_DIR / rel, art / rel)
@@ -185,7 +185,12 @@ with tempfile.TemporaryDirectory() as t:
     check("portrait: 64x64 export kept at 64x64", load(art / "portraits/fighter/portrait.png").size == (64, 64))
     check("the existing file names are kept (nothing new in tiles/, items/)", sorted(p.name for p in (art / "tiles").iterdir()) == ["wall.png"])
     check("the procedural original is backed up to _old", (old / "tiles/wall.png").read_bytes() == original_wall)
-    check("the report lists replaced, unmatched and ambiguous files", "replaced (4)" in out and "banana.png" in out and "key.png" in out and "could be" in out)
+    hurt = load(art / "portraits/fighter/portrait_hurt.png"); dead = load(art / "portraits/fighter/portrait_dead.png")
+    check("importing a living portrait derives its hurt and dead pictures (tinted, not drawn)", hurt.size == (64, 64) and dead.size == (64, 64) and "derived from the living portrait" in out and all_in_palette(hurt) and all_in_palette(dead))
+    check("the derived hurt picture is the living one tinted toward red (warmer than it)", sum(p[0] - p[2] for p in hurt.getdata() if p[3]) > sum(p[0] - p[2] for p in load(art / "portraits/fighter/portrait.png").getdata() if p[3]))
+    check("the derived dead picture is greyed with at most a faint tint (most opaque pixels near grey)", sum(1 for p in dead.getdata() if p[3] and max(p[:3]) - min(p[:3]) <= 40) >= 0.8 * sum(1 for p in dead.getdata() if p[3]))
+    check("the derived pictures are in the manifest (protected from a rebuild)", "portraits/fighter/portrait_hurt.png" in json.loads((tmp / "imported.json").read_text())["files"])
+    check("the report lists replaced, unmatched and ambiguous files", "replaced (6)" in out and "banana.png" in out and "key.png" in out and "could be" in out)
     check("processed files moved to _done, unmatched ones stay", (inbox / "_done/wall.png").exists() and not (inbox / "wall.png").exists() and (inbox / "banana.png").exists() and (inbox / "key.png").exists())
     check("the imported files are listed in the manifest", {"tiles/wall.png", "items/dagger.png", "portraits/fighter/portrait.png", "items/dagger_floor.png"} <= set(json.loads((tmp / "imported.json").read_text())["files"]))
     check("exit status 0: unmatched files are reported, not an error", code == 0)

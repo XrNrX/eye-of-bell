@@ -135,7 +135,7 @@ item floor sprites 12x12 (`*_floor`, NOT enlarged), and the spell effect bolt (7
 | Item inventory icon (sword, mace, hammer, armour, potion, scroll...) | **24x24** | 48x48 (2x) | |
 | Item hand and quick-slot icon (`*_hud`) | **12x12** | 24x24 (2x) | |
 | Key (inventory) | **16x16** | 32x32 (2x) | |
-| Hero portraits (living, hurt, dead) | **32x32** each | 64x64 (2x) | Three stills per hero, not an animation. |
+| Hero portraits (living, hurt, dead) | **64x64** each (native: finer than the 2x UI pixels) | 64x64 | Three stills per hero, not an animation. Only the living one is generated: the importer tints hurt (red) and dead (grey with a faint curse tint) from it. Prompt for an **extreme close-up** whose head fills the whole 64x64 from top to bottom and edge to edge (hood, helmet or hat cropped by the frame): a bust leaves the face small in its panel. A grim flat mouth, lit from the left. |
 | Movement arrows (and pressed versions) | **16x16** | 32x32 (2x) | |
 | Hand button | **24x24** / small **16x16** | 48x48 / 32x32 (2x) | |
 | Quick slot (and empty, sweep) | **14x14** | 28x28 (2x) | |

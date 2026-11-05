@@ -236,6 +236,26 @@ def dead_variant(img: Image.Image) -> Image.Image:
     return out
 
 
+def cursed_dead_variant(img: Image.Image, amount: float = 0.62) -> Image.Image:
+    """The dead variant with a faint curse-green tint: greyed out as dead_variant does, then every
+    non-outline pixel is nudged toward the curse green (curse_500, or moss_500 in a palette without
+    the curse ramp) by `amount` and snapped back onto the palette, so lit areas pick up a sickly
+    cast while the darks and the outline stay dark. Whatever the palette, the result is palette-exact."""
+    grey = dead_variant(img)
+    tint = PAL["curse_500"] if "curse_500" in PAL.names else PAL["moss_500"]
+    ink = PAL["ink"]
+    out = grey.copy()
+    px = out.load()
+    for y in range(out.height):
+        for x in range(out.width):
+            r, g, b, a = px[x, y]
+            if a and (r, g, b) != ink:
+                lum = _luminance((r, g, b)) / 255.0
+                k = amount * lum  # Lit pixels take the tint, shadows hardly any: it reads as a cold glow.
+                px[x, y] = (round(r + (tint[0] - r) * k), round(g + (tint[1] - g) * k), round(b + (tint[2] - b) * k), 255)
+    return PAL.snap(out)
+
+
 def build(name: str = None, out_dir: str = None, cls: str = "fighter", seed: int = None, scale=2):
     """Generate one character's three portraits, or (name=None) all four classes at
     their default seeds. Returns the files written."""

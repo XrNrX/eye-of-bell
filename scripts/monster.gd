@@ -13,8 +13,8 @@ const AI_TICK := 0.8      # Seconds between actions at speed 1.0.
 const STEP_TIME := 0.3    # Seconds a step takes to animate.
 const WANDER_PAUSE := 0.3 # Chance a wandering monster just stands still this tick.
 const WIND_UP := 0.5      # Fraction of attack_interval it waits after reaching the party.
-const DAMAGE_COLOUR := Color(1.0, 0.89, 0.54)  # Palette torch_300.
-const MISS_COLOUR := Color(0.76, 0.74, 0.75)   # Palette stone_100.
+const DAMAGE_COLOUR := Color(0.961, 0.812, 0.502)  # Palette torch_300.
+const MISS_COLOUR := Color(0.667, 0.663, 0.706)   # Palette stone_100.
 
 ## Per sheet: for each frame, how many transparent rows lie below its lowest opaque pixel. A
 ## monster stands with that pixel on the floor, so art with empty space under the feet (or a

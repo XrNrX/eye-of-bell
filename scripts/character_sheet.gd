@@ -18,13 +18,13 @@ const CombatRules := preload("res://scripts/combat_rules.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
 
 const WIDTH := 150.0
-const BG := Color(0.137, 0.118, 0.169, 0.95)     # Palette stone_900.
-const EDGE := Color(0.275, 0.247, 0.31)           # Palette stone_700.
+const BG := Color(0.078, 0.075, 0.106, 0.95)     # Palette stone_900.
+const EDGE := Color(0.192, 0.188, 0.235)           # Palette stone_700.
 const TEXT := Color(0.92, 0.89, 0.82)
-const MUTED := Color(0.588, 0.557, 0.604)         # Palette stone_300.
+const MUTED := Color(0.482, 0.478, 0.533)         # Palette stone_300.
 const TITLE := Color(1, 0.85, 0.3)
-const BETTER := Color(0.639, 0.69, 0.29)          # Palette slime_300.
-const WORSE := Color(0.851, 0.514, 0.263)         # Palette rust_300.
+const BETTER := Color(0.525, 0.651, 0.447)          # Palette slime_300.
+const WORSE := Color(0.659, 0.404, 0.227)         # Palette rust_300.
 const FONT := 8
 
 var party: Node

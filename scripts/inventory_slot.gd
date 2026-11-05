@@ -27,9 +27,9 @@ enum Kind { HAND, ARMOUR, BACKPACK, CHARACTER }
 
 const ITEM_SLOT := Vector2(48, 48)      # Holds a 48x48 item icon (24x24 logical, drawn at 2x) at its native size.
 const PORTRAIT_SLOT := Vector2(32, 32)  # A 64x64 portrait scaled to exactly half.
-const EMPTY_BG := Color(0.137, 0.118, 0.169, 0.6)  # Palette stone_900, translucent.
-const FILLED_BG := Color(0.275, 0.247, 0.31)        # Palette stone_700.
-const EDGE := Color(0.588, 0.557, 0.604)            # Palette stone_300.
+const EMPTY_BG := Color(0.078, 0.075, 0.106, 0.6)  # Palette stone_900, translucent.
+const FILLED_BG := Color(0.192, 0.188, 0.235)        # Palette stone_700.
+const EDGE := Color(0.482, 0.478, 0.533)            # Palette stone_300.
 
 var screen: Node    # InventoryScreen: party/cursor access, refresh() and say().
 var member_slot: int

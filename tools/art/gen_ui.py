@@ -104,9 +104,10 @@ QUICK = 14
 
 
 def quickslot_frame(filled):
-    """A filled slot: stone_700 bevel (lit top-left, shaded bottom-right) around a
-    stone_900 inside. An empty slot: just a faint stone_800 outline with cut corners
-    and a see-through middle, so the panel shows through."""
+    """A filled slot: a stone bevel (lit top-left in stone_500, shaded bottom-right in stone_700)
+    around an ink inside, darker than the panel it sits on. An empty slot: a stone_700 outline with
+    cut corners and a see-through middle, so the panel shows through. (They were stone_900 / stone_800,
+    which became the panel's own colour when the palette was darkened: the slots vanished.)"""
     img = Image.new("RGBA", (QUICK, QUICK), (0, 0, 0, 0))
     px = img.load()
     last = QUICK - 1
@@ -115,23 +116,23 @@ def quickslot_frame(filled):
             edge_x, edge_y = x in (0, last), y in (0, last)
             if not (edge_x or edge_y):
                 if filled:
-                    px[x, y] = (*PAL["stone_900"], 255)
+                    px[x, y] = (*PAL["ink"], 255)
                 continue
             if filled:
                 if (x, y) == (0, 0):
                     colour = PAL["stone_500"]
                 elif (x, y) == (last, last):
-                    colour = PAL["stone_800"]
+                    colour = PAL["stone_700"]
                 elif edge_x and edge_y:
                     colour = PAL["stone_700"]
                 elif y == 0 or x == 0:
                     colour = PAL["stone_500"]   # Lit edges.
                 else:
-                    colour = PAL["stone_800"]   # Shaded edges.
+                    colour = PAL["stone_700"]   # Shaded edges.
             else:
                 if edge_x and edge_y:
                     continue                    # Cut corners.
-                colour = PAL["stone_800"]
+                colour = PAL["stone_700"]
             px[x, y] = (*colour, 255)
     return img
 
