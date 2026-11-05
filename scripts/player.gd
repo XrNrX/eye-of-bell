@@ -64,6 +64,9 @@ func world_click(shift := false) -> void:
 	if DungeonMap.is_portcullis(front) and not DungeonMap.open_doors.has(front):
 		_say("The portcullis won't budge.")  # Clicking the grate: it only answers to its switch.
 		return
+	if DungeonMap.is_destructible(front):
+		_say("The wall is cracked.")  # A hint: something heavy, or a blast, might break it.
+		return
 	_click_item(shift)
 
 
@@ -213,6 +216,9 @@ func _interact() -> void:
 		return
 
 	var front := cell + DIRS[facing]
+	if DungeonMap.is_destructible(front):
+		_say("The wall is cracked.")
+		return
 	if not DungeonMap.is_door(front) or DungeonMap.open_doors.has(front):
 		return
 	if DungeonMap.is_portcullis(front):

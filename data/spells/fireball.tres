@@ -11,5 +11,6 @@ mana_cost = 6
 target = 0
 damage_min = 5
 damage_max = 11
+breaks_walls = true
 splash_radius = 1
 splash_percent = 50

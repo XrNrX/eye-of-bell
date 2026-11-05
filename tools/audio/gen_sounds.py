@@ -175,6 +175,18 @@ def portcullis():
     return finish(swell(mix(grind, *clanks), 0.1, 0.35), 0.6)
 
 
+def rumble():
+    """A placeholder for a wall giving way: a deep rumble, a low boom, then stones clattering."""
+    low = decay(lowpass(noise(1.5, 81), 260), 0.7)
+    boom = decay(osc(glide(90, 32, 0.3), 1.2), 0.35)
+    stones = []
+    for i in range(14):
+        t = 0.12 + i * 0.075 + ((i * 37) % 7) * 0.01
+        f = 500 + (i * 211) % 1100
+        stones.append((decay(bandpass(noise(0.12, 90 + i), 400, 3200), 0.03), t))
+    return finish(mix(gain(low, 0.9), gain(boom, 0.8), *[(s, t) for s, t in stones]), 0.8)
+
+
 def door_close():
     return finish(thud(80, 38, 0.12, 0.38, 6, 0.6, 700), 0.7)
 
@@ -329,7 +341,7 @@ SOUNDS = {
     "swing": (swing, None), "whiff": (whiff, None), "hit": (hit, None), "throw": (throw, None),
     "monster_attack": (monster_attack, None), "monster_hurt": (monster_hurt, None), "monster_die": (monster_die, None),
     "hero_hurt": (hero_hurt, None), "hero_die": (hero_die, None),
-    "potion": (potion, None), "zap": (zap, None), "heal": (heal, None), "shield": (shield, None), "bless": (bless, None), "portcullis": (portcullis, None), "fireball": (fireball, None), "explosion": (explosion, None),
+    "potion": (potion, None), "zap": (zap, None), "heal": (heal, None), "shield": (shield, None), "bless": (bless, None), "rumble": (rumble, None), "portcullis": (portcullis, None), "fireball": (fireball, None), "explosion": (explosion, None),
     "ui_click": (ui_click, None), "ui_swap": (ui_swap, None), "save": (save, None), "load": (load, None),
     "level_complete": (level_complete, None), "game_over": (game_over, None),
 }

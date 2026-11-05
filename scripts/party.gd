@@ -23,6 +23,8 @@ const ItemDef := preload("res://scripts/item_def.gd")
 const ItemStack := preload("res://scripts/item_stack.gd")
 const SpellDef := preload("res://scripts/spell_def.gd")
 
+const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
+const NO_CELL := Vector2i(-1, -1)
 const MISSILE_RANGE := 4  # How many tiles down the corridor ahead a scroll's missile reaches.
 const QUICK_SLOTS := 2        # Quick slots per member (see use_quick), shown under their portrait.
 const QUICK_COOLDOWN := 1.0   # Seconds a quick slot is unusable after an item is used from it.
@@ -401,20 +403,35 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 	match spell.target:
 		SpellDef.Target.AHEAD:
 			var monster = _first_monster_ahead()
-			if monster == null:
+			var wall := NO_CELL
+			if monster == null and spell.breaks_walls:
+				wall = _cracked_wall_ahead()  # A blast can also be aimed at a cracked wall.
+			if monster == null and wall == NO_CELL:
 				_say("There is nothing to target.")
 				return false
-			var damage := CombatRules.roll_damage(spell.damage_min, spell.damage_max)
-			monster.take_hit({"hit": true, "damage": damage, "chance": 100})
-			var caught := 0
-			if spell.splash_radius > 0:
-				caught = _splash(monster, spell.splash_radius, maxi(1, ceili(damage * spell.splash_percent / 100.0)))
-			_fx(spell.effect, monster.cell)
-			text = "%s casts %s: it hits the %s for %d!" % [who, spell.display_name, monster.def.display_name, damage]
-			if monster.hp <= 0:
-				text += " It dies!"
-			if caught > 0:
-				text += " %d more %s caught in the blast." % [caught, "is" if caught == 1 else "are"]
+			if monster == null:
+				var dir: Vector2i = player.DIRS[player.facing]
+				var burst_at: Vector2i = wall - dir if wall - dir != player.cell else wall
+				_fx(spell.effect, burst_at)
+				_break_wall(wall, player.cell, burst_at)
+				text = "%s casts %s: the cracked wall explodes!" % [who, spell.display_name]
+			else:
+				var damage := CombatRules.roll_damage(spell.damage_min, spell.damage_max)
+				monster.take_hit({"hit": true, "damage": damage, "chance": 100})
+				var caught := 0
+				if spell.splash_radius > 0:
+					caught = _splash(monster, spell.splash_radius, maxi(1, ceili(damage * spell.splash_percent / 100.0)))
+				var opened := 0
+				if spell.breaks_walls:  # The shockwave cracks open any cracked wall beside the target.
+					opened = _break_walls_near(monster.cell, maxi(1, spell.splash_radius))
+				_fx(spell.effect, monster.cell)
+				text = "%s casts %s: it hits the %s for %d!" % [who, spell.display_name, monster.def.display_name, damage]
+				if monster.hp <= 0:
+					text += " It dies!"
+				if caught > 0:
+					text += " %d more %s caught in the blast." % [caught, "is" if caught == 1 else "are"]
+				if opened > 0:
+					text += " The blast breaks open the wall!"
 		SpellDef.Target.HERO:
 			var t := member(target_slot)
 			if t == null or not t.is_alive():
@@ -743,6 +760,38 @@ func _splash(target: Node, radius: int, damage: int) -> int:
 	return count
 
 
+## The cracked wall straight ahead if nothing else (a wall, a door, a portcullis) is in the way
+## within missile range, else NO_CELL.
+func _cracked_wall_ahead() -> Vector2i:
+	var dir: Vector2i = player.DIRS[player.facing]
+	for i in range(1, MISSILE_RANGE + 1):
+		var c: Vector2i = player.cell + dir * i
+		if DungeonMap.is_blocked(c):
+			return c if DungeonMap.is_destructible(c) else NO_CELL
+	return NO_CELL
+
+
+## Break a cracked wall, timed to land with a projectile that flies from `from` to `at`.
+func _break_wall(wall: Vector2i, from: Vector2i, at: Vector2i) -> void:
+	var dungeon := get_tree().get_first_node_in_group("dungeon")
+	if dungeon == null:
+		return
+	var tiles := maxf(1.0, (at - from).length())
+	dungeon.break_wall(wall, true, tiles * SpellEffectsConfig.get_config().fire_seconds_per_tile)
+
+
+## Break every cracked wall within `radius` tiles of a blast. Returns how many.
+func _break_walls_near(centre: Vector2i, radius: int) -> int:
+	var count := 0
+	for dz in range(-radius, radius + 1):
+		for dx in range(-radius, radius + 1):
+			var c := centre + Vector2i(dx, dz)
+			if DungeonMap.is_destructible(c):
+				_break_wall(c, player.cell, centre)
+				count += 1
+	return count
+
+
 func _first_monster_ahead() -> Node:
 	var dir: Vector2i = player.DIRS[player.facing]
 	for i in range(1, MISSILE_RANGE + 1):
@@ -765,6 +814,21 @@ func attack(slot: int) -> void:
 	_melee(m, -1)
 
 
+## A swing that hit no monster: if the tile in front is a cracked wall, a heavy weapon (the war
+## hammer) breaks it; anything else just rings off it.
+func _swing_at_wall(m: Member, hand: int, front: Vector2i) -> void:
+	if not DungeonMap.is_destructible(front):
+		return
+	var weapon: Resource = equipped_weapon(m) if hand < 0 else _melee_weapon_in(m, hand)
+	if weapon != null and weapon.breaks_walls:
+		var dungeon := get_tree().get_first_node_in_group("dungeon")
+		if dungeon != null and dungeon.break_wall(front):
+			_say("%s smashes the cracked wall with the %s: it crumbles!" % [m.def.display_name, weapon.display_name])
+			_cue("hit")
+	else:
+		_say("%s strikes the cracked wall. It shudders but holds: it needs something heavier." % m.def.display_name)
+
+
 ## Swing at the tile in front; hand -1 means "first weapon" (see effective_stats).
 func _melee(m: Member, hand: int) -> void:
 	_start_cooldown(m)
@@ -772,6 +836,7 @@ func _melee(m: Member, hand: int) -> void:
 	var front: Vector2i = player.cell + player.DIRS[player.facing]
 	var target = DungeonMap.occupied.get(front)
 	if target == null or not is_instance_valid(target) or target.dying:
+		_swing_at_wall(m, hand, front)
 		return
 	var result := CombatRules.resolve_attack(effective_stats(m, hand), target.def)
 	target.take_hit(result)

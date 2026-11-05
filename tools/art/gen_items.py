@@ -108,6 +108,19 @@ def mace():
     ]
 
 
+def war_hammer():
+    """A long handle and a heavy square steel head with a blunt face and a spiked peen: the
+    heavy weapon that can break a cracked wall."""
+    return [
+        (seg((4.6, 19.6), (14.2, 10.0), 2.8), WOOD),              # Haft.
+        (seg((11.0, 6.0), (18.0, 13.0), 6.4), IRON),              # Head.
+        (seg((11.2, 6.2), (8.6, 3.6), 2.0), STEEL),               # Peen spike.
+        (disc(18.0, 13.0, 2.6), STEEL),                           # Striking face.
+        (seg((12.6, 7.6), (16.4, 11.4), 1.6), STEEL),             # A bright edge along the head.
+        (seg((12.2, 12.0), (14.6, 9.6), 3.6), GOLD),              # Collar binding head to haft.
+    ]
+
+
 def leather_armour():
     return [
         (rect(3.5, 5.5, 8.5, 12), LEATHER),                       # Left sleeve.
@@ -191,6 +204,7 @@ def holy_symbol():
 ITEMS = {
     "short_sword": short_sword,
     "mace": mace,
+    "war_hammer": war_hammer,
     "leather_armour": leather_armour,
     "healing_potion": healing_potion,
     "scroll": scroll,

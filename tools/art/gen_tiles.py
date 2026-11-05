@@ -1,5 +1,6 @@
 """Dungeon tiles (64x64, all seamless): wall, floor, ceiling, door, locked door,
-portcullis (transparent iron bars), pressure plate and stairs. Written to res://art/tiles/ using only palette colours.
+cracked wall (the tell for a breakable wall), portcullis (transparent iron bars),
+pressure plate and stairs. Written to res://art/tiles/ using only palette colours.
 
 Most of them follow one recipe:
     height map -> top-left lighting -> add tint / grain / cracks -> dither onto a palette ramp
@@ -108,6 +109,54 @@ def stone_blocks(bw, bh, offset_rows, seed, ramp, base, tint=0.12, grain=0.2,
 
 def wall():
     return stone_blocks(16, 8, True, 1, STONE[:5], base=0.5, tint=0.14, grain=0.08, moss_amount=0.28)
+
+
+def wall_cracked():
+    """The plain wall with a big jagged crack and two short branches on every face. Godot's box
+    mesh shows each face as one cell of a 3x2 grid over the texture (21x32 pixels of it, the same
+    scale the ordinary wall is seen at), so a crack is drawn centred in each of those six cells:
+    whichever side the player comes from, they see one. The crack has a glowing core, as if
+    torchlight were leaking through from behind, between dark edges: in the game's dim lighting a
+    dark line alone disappears, a bright one cannot be missed. This is how the player knows the
+    wall can be broken."""
+    img = to_image(wall()).copy()
+    px = img.load()
+    ink, shade, light = PAL["ink"], PAL["stone_900"], PAL["stone_100"]
+    glow, glow_dim = PAL["torch_500"], PAL["torch_700"]
+
+    def put(x, y, c):
+        if 0 <= x < SIZE and 0 <= y < SIZE:
+            px[x, y] = (*c, 255)
+
+    def crack(x0, y0, w, h, seed):
+        x, path = x0 + w / 2.0 - 1, []
+        for y in range(h):
+            x = min(x0 + w / 2.0 + 2, max(x0 + w / 2.0 - 4, x + (hash01(seed, y, 0) - 0.5) * 3.2))
+            path.append(int(x))
+        for dy, cx in enumerate(path):
+            prev = path[dy - 1] if dy else cx
+            for fx in range(min(prev, cx), max(prev, cx) + 1):
+                put(fx - 2, y0 + dy, light)      # Lit chipped edge.
+                put(fx - 1, y0 + dy, ink)
+                put(fx, y0 + dy, glow)           # The glowing core, two pixels wide.
+                put(fx + 1, y0 + dy, glow)
+                put(fx + 2, y0 + dy, ink)
+                put(fx + 3, y0 + dy, shade)
+        for by0, step in ((h * 0.3, -1), (h * 0.65, 1)):  # Short branches, thinner and dimmer.
+            iy = int(by0)
+            bx, by = path[iy], iy
+            for t in range(6):
+                bx += step
+                by += 1 if t % 2 else 0
+                if x0 <= bx < x0 + w and by < h:
+                    put(bx, y0 + by - 1, ink)
+                    put(bx, y0 + by, glow_dim)
+                    put(bx, y0 + by + 1, ink)
+
+    for col in range(3):
+        for row in range(2):
+            crack(round(SIZE / 3 * col), 32 * row, 21, 32, 9 + col + 3 * row)
+    return img
 
 
 def floor():
@@ -259,6 +308,6 @@ def stairs():
 def build():
     written = []
     for name, make in (("wall", wall), ("floor", floor), ("ceiling", ceiling), ("door", door),
-                       ("door_locked", locked_door), ("portcullis", portcullis), ("plate", plate), ("stairs", stairs)):
+                       ("door_locked", locked_door), ("wall_cracked", wall_cracked), ("portcullis", portcullis), ("plate", plate), ("stairs", stairs)):
         written.append(save_png(to_image(make()), f"tiles/{name}.png"))
     return written

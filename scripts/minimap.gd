@@ -65,7 +65,9 @@ func _draw() -> void:
 
 ## Floor is left to the dark background (alpha 0 = nothing drawn).
 func _cell_color(c: Vector2i) -> Color:
-	if DungeonMap.MAP[c.y][c.x] == 1:
+	if DungeonMap.is_destructible(c):
+		return _a(STONE_300)  # The crack shows on the map too.
+	if DungeonMap.is_wall(c):
 		return _a(STONE_700)
 	if DungeonMap.is_stairs(c):
 		return _a(TORCH_500)

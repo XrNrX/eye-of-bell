@@ -39,6 +39,9 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export var throw_damage_max := 0
 @export var melee := true            # False for thrown-only weapons (darts).
 
+@export_group("Breaking")
+@export var breaks_walls := false     # A heavy weapon: one swing at a cracked wall breaks it (the war hammer).
+
 @export_group("Magic")
 @export var magic: Magic = Magic.NONE  # A FOCUS: which kind of caster can use it.
 @export var spells: Array[Resource] = []  # SpellDef, in the order the pop-up lists them.

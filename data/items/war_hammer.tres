@@ -1,0 +1,23 @@
+[gd_resource type="Resource" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/item_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/items/war_hammer.png" id="2_icon"]
+[ext_resource type="Texture2D" path="res://art/items/war_hammer_floor.png" id="3_floor"]
+[ext_resource type="Texture2D" path="res://art/items/war_hammer_hud.png" id="90_hud"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "War Hammer"
+type = 0
+icon = ExtResource("2_icon")
+floor_icon = ExtResource("3_floor")
+hud_icon = ExtResource("90_hud")
+icon_pixel_size = 0.04
+attack_bonus = -1
+damage_min = 5
+damage_max = 12
+defence_bonus = 0
+heal_amount = 0
+spell_damage_min = 0
+spell_damage_max = 0
+breaks_walls = true

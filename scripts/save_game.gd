@@ -110,6 +110,9 @@ static func serialize(tree: SceneTree) -> Dictionary:
 	var piles := []
 	for cell in dungeon.items:
 		piles.append({"cell": cell_to_data(cell), "pile": dungeon.items[cell].pile.map(stack_to_data)})
+	var broken := []
+	for cell in DungeonMap.broken_walls:
+		broken.append(cell_to_data(cell))
 	var open_doors := []
 	for cell in DungeonMap.open_doors:
 		open_doors.append(cell_to_data(cell))
@@ -131,7 +134,7 @@ static func serialize(tree: SceneTree) -> Dictionary:
 		"party": {"formation": party.formation.duplicate(), "heroes": heroes},
 		"player": {"cell": cell_to_data(player.cell), "facing": player.facing},
 		"dungeon": {"items": piles, "open_doors": open_doors, "unlocked_doors": unlocked,
-				"levers": levers, "monsters": monsters},
+				"levers": levers, "monsters": monsters, "broken_walls": broken},
 		"cursor": stack_to_data(cursor.held) if cursor else null,
 	}
 
@@ -222,6 +225,10 @@ static func apply(tree: SceneTree, data: Dictionary) -> String:
 	var open := {}
 	for c in d.open_doors:
 		open[data_to_cell(c)] = true
+	var broken_cells := []
+	for c in d.get("broken_walls", []):  # (An older save has none.)
+		broken_cells.append(data_to_cell(c))
+	dungeon.restore_broken_walls(broken_cells)
 	dungeon.restore_doors(open)
 	var on := {}
 	for l in d.levers:

@@ -4,7 +4,9 @@ extends RefCounted
 ## 1 = wall, 0 = floor, 2 = door (starts closed), 3 = locked door (needs a key),
 ## 4 = stairs down (stepping on any of them completes the level),
 ## 5 = portcullis (an iron grate: a door you can see through, never opened by hand; give it
-## an ID in DOOR_IDS and only its linked lever or plate raises it).
+## an ID in DOOR_IDS and only its linked lever or plate raises it),
+## 6 = cracked wall (looks like a wall with an obvious crack; solid until a Fireball or a heavy
+## weapon like the war hammer breaks it, after which it is walkable floor with rubble).
 ## Row index is Z (north at top), column index is X.
 
 const TILE_SIZE := 2.0   # World units per grid tile.
@@ -35,14 +37,19 @@ const WALL_HEIGHT := 2.0
 ## drew a feature the game has no tile for, it became: archway = open floor, portcullis = a door
 ## driven by a lever or plate (DOOR_IDS), up stairs = the landing the player starts on.
 ## Numbers in the comments are the room numbers on that map.
+## The level is traced from a hand-drawn map (the 23x23 grid of map.png, shifted two rows down and one
+## column right so there is a wall border and room for two closets north of room 7). Where the map
+## drew a feature the game has no tile for, it became: archway = open floor, portcullis = a door
+## driven by a lever or plate (DOOR_IDS), up stairs = the landing the player starts on.
+## Numbers in the comments are the room numbers on that map.
 const MAP := [
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 0
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1],  # 1
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 3, 1],  # 2
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1],  # 3
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1],  # 4
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 0, 0, 0, 1],  # 5
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 5, 1],  # 6
+	[1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1],  # 3
+	[1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1],  # 4
+	[1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 0, 0, 0, 1],  # 5
+	[1, 1, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 5, 1],  # 6
 	[1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],  # 7
 	[1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],  # 8
 	[1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1],  # 9
@@ -149,6 +156,11 @@ const ITEMS := [
 	{"cell": Vector2i(7, 18), "def": "res://data/items/healing_potion.tres", "count": 2},
 	{"cell": Vector2i(8, 15), "def": "res://data/items/leather_armour.tres"},
 	{"cell": Vector2i(20, 19), "def": "res://data/items/healing_potion.tres"},  # The corridor to the far stairs.
+	{"cell": Vector2i(12, 10), "def": "res://data/items/war_hammer.tres"},  # Room 3, by the mace: the heavy weapon that breaks a cracked wall.
+	{"cell": Vector2i(2, 3), "def": "res://data/items/healing_potion.tres", "count": 3},  # The secret closet behind the cracked wall.
+	{"cell": Vector2i(2, 4), "def": "res://data/items/scroll.tres"},
+	{"cell": Vector2i(2, 5), "def": "res://data/items/darts.tres", "count": 8},
+	{"cell": Vector2i(2, 3), "def": "res://data/items/leather_armour.tres"},
 ]
 
 # Monsters: the floor cell they start on and their definition resource (see
@@ -174,6 +186,7 @@ const MONSTERS := [
 # --- Run state (reset by reset_run() when the dungeon is built) ---
 static var occupied := {}        # Tiles holding a monster (cell -> monster node).
 static var open_doors := {}      # Doors that have finished opening (cell -> true).
+static var broken_walls := {}    # Cracked walls that have been broken (cell -> true); saved.
 static var unlocked_doors := {}  # Locked doors a key has been used on (cell -> true).
 static var player_cell := Vector2i(-1, -1)  # Set by player.gd as it moves.
 
@@ -212,6 +225,7 @@ static func reset_run() -> void:
 	occupied.clear()
 	open_doors.clear()
 	unlocked_doors.clear()
+	broken_walls.clear()
 
 
 ## True if the cell is a door of any kind (open, closed, locked or a portcullis).
@@ -247,13 +261,23 @@ static func is_blocked(cell: Vector2i) -> bool:
 	return is_wall(cell) or (is_door(cell) and not open_doors.has(cell))
 
 
-## True if the cell is a wall. Anything outside the map counts as wall.
+## True if the cell is a wall. Anything outside the map counts as wall, and so does a cracked
+## wall until it has been broken.
 static func is_wall(cell: Vector2i) -> bool:
 	if cell.y < 0 or cell.y >= MAP.size():
 		return true
 	if cell.x < 0 or cell.x >= MAP[cell.y].size():
 		return true
-	return MAP[cell.y][cell.x] == 1
+	var tile: int = MAP[cell.y][cell.x]
+	return tile == 1 or (tile == 6 and not broken_walls.has(cell))
+
+
+## True if the cell is a cracked wall that is still standing: the only kind that can break.
+## Ordinary walls, doors and portcullises are never destructible.
+static func is_destructible(cell: Vector2i) -> bool:
+	if cell.y < 0 or cell.y >= MAP.size() or cell.x < 0 or cell.x >= MAP[cell.y].size():
+		return false
+	return MAP[cell.y][cell.x] == 6 and not broken_walls.has(cell)
 
 
 ## World-space centre of a grid cell (at floor level).
