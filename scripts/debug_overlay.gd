@@ -27,6 +27,6 @@ func _unhandled_input(event: InputEvent) -> void:
 func _process(_delta: float) -> void:
 	if not visible or player == null:
 		return
-	label.text = "Tile: %d, %d\nFacing: %s" % [
+	label.text = "%d,%d %s" % [
 		player.cell.x, player.cell.y, FACING_NAMES[player.facing]]
 	minimap.queue_redraw()

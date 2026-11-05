@@ -1,55 +1,77 @@
 extends Control
-## Draws the DungeonMap.MAP array top-down, with the player as an arrow.
+## A small, slightly see-through map of the cells around the player, with the player always in the
+## middle (north is up) and a triangle for the way they face. Drawn by debug_overlay.gd on Tab.
+## Everything is palette colours; the cell size is even so it lines up with the 2x pixel grid.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 
-const CELL_PX := 12  # Size of one map cell on screen, in internal-resolution pixels.
-const WALL_COLOR := Color(0.7, 0.7, 0.7)
-const FLOOR_COLOR := Color(0.12, 0.12, 0.12)
-const DOOR_COLOR := Color(0.6, 0.4, 0.2)
-const MONSTER_COLOR := Color(0.9, 0.15, 0.15)
-const STAIRS_COLOR := Color(0.3, 0.6, 0.9)
-const LOCKED_COLOR := Color(0.8, 0.2, 0.2)
-const PLAYER_COLOR := Color(1.0, 0.3, 0.2)
+const CELL_PX := 6                 # One map cell, in 640x360 pixels.
+const COLS := 11                   # How many cells wide and tall the window shows (odd: the player is in the middle).
+const ROWS := 9
+const ALPHA := 0.72                # Translucency of everything in the map.
+
+const INK := Color("14101a")
+const STONE_700 := Color("463f4f")
+const STONE_300 := Color("968e9a")
+const WOOD_500 := Color("6e4629")
+const RUST_300 := Color("d98343")
+const RUST_500 := Color("b0592a")
+const TORCH_500 := Color("f0b83a")
+const TORCH_300 := Color("ffe38a")
 
 var player: Node3D  # Assigned by debug_overlay.gd.
 
 
 func _ready() -> void:
-	var rows: int = DungeonMap.MAP.size()
-	var cols: int = DungeonMap.MAP[0].size()
-	custom_minimum_size = Vector2(cols, rows) * CELL_PX
+	custom_minimum_size = Vector2(COLS, ROWS) * CELL_PX
+	clip_contents = true
+
+
+func _a(c: Color) -> Color:
+	return Color(c, ALPHA)
 
 
 func _draw() -> void:
-	for z in DungeonMap.MAP.size():
-		for x in DungeonMap.MAP[z].size():
-			var color := FLOOR_COLOR
-			if DungeonMap.MAP[z][x] == 1:
-				color = WALL_COLOR
-			elif DungeonMap.is_stairs(Vector2i(x, z)):
-				color = STAIRS_COLOR
-			elif DungeonMap.is_door(Vector2i(x, z)):
-				var c := Vector2i(x, z)
-				if DungeonMap.is_locked(c):
-					color = LOCKED_COLOR
-				elif not DungeonMap.open_doors.has(c):
-					color = DOOR_COLOR
-			draw_rect(Rect2(Vector2(x, z) * CELL_PX, Vector2.ONE * CELL_PX), color)
-
-	for monster_cell in DungeonMap.occupied:  # Monsters as red squares.
-		draw_rect(Rect2(Vector2(monster_cell) * CELL_PX + Vector2.ONE, Vector2.ONE * (CELL_PX - 2)), MONSTER_COLOR)
-
+	draw_rect(Rect2(Vector2.ZERO, size), _a(INK))
 	if player == null:
 		return
+	var origin: Vector2i = player.cell - Vector2i(COLS / 2, ROWS / 2)  # Map cell drawn in the top-left corner.
+	for row in ROWS:
+		for col in COLS:
+			var c := origin + Vector2i(col, row)
+			if c.y < 0 or c.y >= DungeonMap.MAP.size() or c.x < 0 or c.x >= DungeonMap.MAP[c.y].size():
+				continue  # Off the edge of the level: empty.
+			var color := _cell_color(c)
+			if color.a > 0.0:
+				draw_rect(Rect2(Vector2(col, row) * CELL_PX, Vector2.ONE * CELL_PX), color)
 
-	# Triangle pointing the way the player faces (map-up = north = -Z).
-	var centre := (Vector2(player.cell) + Vector2(0.5, 0.5)) * CELL_PX
+	for monster_cell in DungeonMap.occupied:  # Monsters as small squares.
+		var at: Vector2 = Vector2(monster_cell - origin) * CELL_PX
+		if at.x >= 0 and at.y >= 0 and at.x < size.x and at.y < size.y:
+			draw_rect(Rect2(at + Vector2.ONE * 2, Vector2.ONE * (CELL_PX - 4)), _a(RUST_300))
+
+	# The player: a triangle pointing the way they face (map-up = north = -Z), in the middle.
+	var centre := (Vector2(COLS / 2, ROWS / 2) + Vector2(0.5, 0.5)) * CELL_PX
 	var forward := Vector2(player.DIRS[player.facing])
 	var side := forward.orthogonal()
-	var r := CELL_PX * 0.45
+	var r := CELL_PX * 0.5
 	draw_colored_polygon(PackedVector2Array([
 		centre + forward * r,
 		centre - forward * r * 0.7 + side * r * 0.7,
 		centre - forward * r * 0.7 - side * r * 0.7,
-	]), PLAYER_COLOR)
+	]), TORCH_300)
+	draw_rect(Rect2(Vector2.ZERO, size), _a(STONE_300), false, 1.0)  # A thin frame.
+
+
+## Floor is left to the dark background (alpha 0 = nothing drawn).
+func _cell_color(c: Vector2i) -> Color:
+	if DungeonMap.MAP[c.y][c.x] == 1:
+		return _a(STONE_700)
+	if DungeonMap.is_stairs(c):
+		return _a(TORCH_500)
+	if DungeonMap.is_door(c):
+		if DungeonMap.is_locked(c):
+			return _a(RUST_500)
+		if not DungeonMap.open_doors.has(c):
+			return _a(WOOD_500)
+	return Color(0, 0, 0, 0)
