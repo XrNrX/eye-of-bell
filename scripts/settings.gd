@@ -7,6 +7,7 @@ extends RefCounted
 ##     Settings.set_music_volume(0.5)  # the ambient loop
 ##     Settings.set_sfx_volume(0.8)    # sound effects
 ##     Settings.set_fullscreen(false)  # remember the display mode (display_manager.gd applies it)
+##     Settings.set_fog(false)         # volumetric fog on or off (spell_effects_config.apply_environment)
 ##
 ## Each is a fraction 0..1 of full (0 mutes). They are applied to the audio buses: Master, and
 ## Music and SFX, which are created here if the project doesn't define them (both send to
@@ -23,6 +24,7 @@ static var volume := 1.0        # Master.
 static var music_volume := 0.7  # The ambient loop starts a little below full: it is a bed, not a feature.
 static var sfx_volume := 1.0
 static var fullscreen := true   # Borderless fullscreen by default; false = a window.
+static var fog := true          # The subtle volumetric fog; off on weak machines.
 static var loaded := false
 
 
@@ -36,6 +38,7 @@ static func apply() -> void:
 			music_volume = clampf(float(cfg.get_value(SECTION, "music_volume", music_volume)), 0.0, 1.0)
 			sfx_volume = clampf(float(cfg.get_value(SECTION, "sfx_volume", sfx_volume)), 0.0, 1.0)
 			fullscreen = bool(cfg.get_value(DISPLAY_SECTION, "fullscreen", fullscreen))
+			fog = bool(cfg.get_value(DISPLAY_SECTION, "fog", fog))
 	_push_to_engine()
 
 
@@ -59,6 +62,11 @@ static func set_fullscreen(value: bool) -> void:
 	_changed()
 
 
+static func set_fog(value: bool) -> void:
+	fog = value
+	_changed()
+
+
 static func _clean(value: float) -> float:
 	return clampf(snappedf(value, 0.05), 0.0, 1.0)
 
@@ -71,6 +79,7 @@ static func _changed() -> void:
 	cfg.set_value(SECTION, "music_volume", music_volume)
 	cfg.set_value(SECTION, "sfx_volume", sfx_volume)
 	cfg.set_value(DISPLAY_SECTION, "fullscreen", fullscreen)
+	cfg.set_value(DISPLAY_SECTION, "fog", fog)
 	cfg.save(path)
 
 

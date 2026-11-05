@@ -20,6 +20,7 @@ extends Node3D
 const MAIN_SCENE := "res://scenes/main.tscn"
 const SaveGame := preload("res://scripts/save_game.gd")
 const Settings := preload("res://scripts/settings.gd")
+const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const FONT := preload("res://art/fonts/PressStart2P-Regular.ttf")
 
@@ -63,6 +64,7 @@ const VOLUME_STEP := 0.1
 ## row that has the keyboard focus (or the one last used).
 var rows := {}
 var current_kind := "master"
+var fog_button: Button      # "FOG: ON" / "FOG: OFF".
 var display_button: Button  # "SCREEN: FULLSCREEN" / "SCREEN: WINDOWED", built in _build_display_button.
 
 var time := 0.0
@@ -83,6 +85,7 @@ func _ready() -> void:
 
 	_build_volume_rows()
 	_build_display_button()
+	_build_fog_button()
 	new_game_button.pressed.connect(_on_new_game_pressed)
 	load_button.pressed.connect(_on_load_pressed)
 	options_button.pressed.connect(_show_options.bind(true))
@@ -92,6 +95,7 @@ func _ready() -> void:
 	load_button.disabled = not SaveGame.has_save()  # Nothing to load yet: greyed out.
 	_refresh_volume()
 	_refresh_display()
+	_apply_look()
 	for b in [new_game_button, load_button, options_button, quit_button, back_button]:
 		b.pressed.connect(_click)  # (Load is also greyed out when there is no save: no click then.)
 	new_game_button.grab_focus()  # So Enter / Space and the arrow keys work straight away.
@@ -153,7 +157,28 @@ func _build_display_button() -> void:
 		dm.mode_changed.connect(func(_on): _refresh_display())
 
 
+## The volumetric fog switch (a copy of the Back button). The menu's own backdrop shows it at once.
+func _build_fog_button() -> void:
+	fog_button = back_button.duplicate()
+	fog_button.unique_name_in_owner = false
+	options_box.add_child(fog_button)
+	options_box.move_child(fog_button, back_button.get_index())
+	fog_button.pressed.connect(func():
+		Settings.set_fog(not Settings.fog)
+		_apply_look()
+		_refresh_display())
+	fog_button.pressed.connect(_click)
+
+
+## Glow and fog on the backdrop's environment, from data/spell_effects.tres and the Options switch.
+func _apply_look() -> void:
+	var world_env := get_node_or_null("View/Backdrop/Port/WorldEnvironment")
+	if world_env:
+		SpellEffectsConfig.apply_environment(world_env.environment, Settings.fog)
+
+
 func _refresh_display() -> void:
+	fog_button.text = "FOG: ON" if Settings.fog else "FOG: OFF"
 	display_button.text = "SCREEN: FULLSCREEN" if Settings.fullscreen else "SCREEN: WINDOWED"
 
 

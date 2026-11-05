@@ -406,6 +406,7 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 				return false
 			var damage := CombatRules.roll_damage(spell.damage_min, spell.damage_max)
 			monster.take_hit({"hit": true, "damage": damage, "chance": 100})
+			_fx(spell.effect, monster.cell)
 			text = "%s casts %s: it hits the %s for %d!" % [who, spell.display_name, monster.def.display_name, damage]
 			if monster.hp <= 0:
 				text += " It dies!"
@@ -434,6 +435,8 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 	_start_cooldown(m)
 	if spell.sound != "":
 		_cue(spell.sound)
+	if spell.target != SpellDef.Target.AHEAD:
+		_fx(spell.effect)
 	_say(text)
 	return true
 
@@ -712,6 +715,7 @@ func _read_scroll(m: Member, def: Resource) -> Dictionary:
 		return {"used": false, "message": "There is nothing to target.", "close": false}
 	var damage := CombatRules.roll_damage(def.spell_damage_min, def.spell_damage_max)
 	_cue("zap")
+	_fx("missile", target.cell)
 	target.take_hit({"hit": true, "damage": damage, "chance": 100})
 	var text := "%s reads the scroll: it hits the %s for %d!" % [m.def.display_name, target.def.display_name, damage]
 	if target.hp <= 0:
@@ -801,6 +805,17 @@ func _reachable_from(monster_cell: Vector2i) -> Array:
 		slots = [0, 2]                        # Left column.
 	var reachable := living.filter(func(m): return m.slot in slots)
 	return reachable if not reachable.is_empty() else living
+
+
+## Play a spell's lighting through the spell_effects node (group "spell_effects"), if the scene
+## has one: a bolt from the party to `at` for "missile", a glow around the party for the others.
+func _fx(effect: String, at := Vector2i(-1, -1)) -> void:
+	if effect == "":
+		return
+	if effect == "missile":
+		get_tree().call_group("spell_effects", "missile", player.cell, at)
+	else:
+		get_tree().call_group("spell_effects", "party_glow", effect)
 
 
 ## Play a sound through the audio node (group "audio"), if the scene has one.

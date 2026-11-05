@@ -5,6 +5,7 @@
 [resource]
 script = ExtResource("1_def")
 sound = "zap"
+effect = "missile"
 display_name = "Magic Missile"
 mana_cost = 3
 target = 0
