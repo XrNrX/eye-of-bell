@@ -27,6 +27,7 @@ func _ready() -> void:
 
 ## Show the screen and freeze the game underneath it.
 func show_screen() -> void:
+	get_tree().call_group("audio", "play", group_name)  # "level_complete" or "game_over": the jingle has the same name.
 	visible = true
 	get_tree().paused = true
 	restart_button.grab_focus()  # So Enter / Space also work.

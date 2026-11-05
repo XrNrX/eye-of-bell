@@ -144,6 +144,7 @@ func swap_positions(a: int, b: int) -> bool:
 	order[b] = t
 	var names := "%s and %s" % [member(a).def.display_name, member(b).def.display_name]
 	set_formation(order)
+	_cue("ui_swap")
 	_say("%s swap places." % names)
 	return true
 
@@ -326,6 +327,7 @@ func _do_throw(m: Member, source: Dictionary) -> bool:
 	if source.where == "quick":
 		quick_changed.emit(m.slot)
 	var dungeon = get_tree().get_first_node_in_group("dungeon")
+	_cue("throw")
 	if dungeon:
 		dungeon.place_item(land, piece)
 		dungeon.show_throw(player.cell, land, def)
@@ -430,6 +432,8 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 			text = "%s casts %s." % [who, spell.display_name]
 	m.mana -= spell.mana_cost
 	_start_cooldown(m)
+	if spell.sound != "":
+		_cue(spell.sound)
 	_say(text)
 	return true
 
@@ -695,6 +699,7 @@ func _drink(m: Member, def: Resource) -> Dictionary:
 	var healed := mini(def.heal_amount, m.def.max_hp - m.hp)
 	m.hp += healed
 	hp_changed.emit(m.slot)
+	_cue("potion")
 	return {"used": true, "close": false,
 		"message": "%s drinks the %s (+%d HP)." % [m.def.display_name, def.display_name, healed]}
 
@@ -706,6 +711,7 @@ func _read_scroll(m: Member, def: Resource) -> Dictionary:
 	if target == null:
 		return {"used": false, "message": "There is nothing to target.", "close": false}
 	var damage := CombatRules.roll_damage(def.spell_damage_min, def.spell_damage_max)
+	_cue("zap")
 	target.take_hit({"hit": true, "damage": damage, "chance": 100})
 	var text := "%s reads the scroll: it hits the %s for %d!" % [m.def.display_name, target.def.display_name, damage]
 	if target.hp <= 0:
@@ -738,12 +744,15 @@ func attack(slot: int) -> void:
 ## Swing at the tile in front; hand -1 means "first weapon" (see effective_stats).
 func _melee(m: Member, hand: int) -> void:
 	_start_cooldown(m)
+	_cue("swing")
 	var front: Vector2i = player.cell + player.DIRS[player.facing]
 	var target = DungeonMap.occupied.get(front)
 	if target == null or not is_instance_valid(target) or target.dying:
 		return
 	var result := CombatRules.resolve_attack(effective_stats(m, hand), target.def)
 	target.take_hit(result)
+	if result.hit:
+		_cue("hit")
 	if not result.hit:
 		_say("%s swings at the %s and misses." % [m.def.display_name, target.def.display_name], "miss")
 	elif target.hp <= 0:
@@ -765,9 +774,13 @@ func take_hit_from(monster: Node) -> void:
 		m.hp = maxi(0, m.hp - result.damage)
 		if m.hp == 0:
 			m.buffs.clear()
+			_cue("hero_die")
+		else:
+			_cue("hero_hurt")
 		hp_changed.emit(m.slot)
 		_say("The %s hits %s for %d." % [monster.def.display_name, m.def.display_name, result.damage])
 	else:
+		_cue("whiff")
 		_say("The %s misses %s." % [monster.def.display_name, m.def.display_name], "miss")
 	hero_hit.emit(m.slot, result.damage)
 	if is_wiped():
@@ -788,6 +801,11 @@ func _reachable_from(monster_cell: Vector2i) -> Array:
 		slots = [0, 2]                        # Left column.
 	var reachable := living.filter(func(m): return m.slot in slots)
 	return reachable if not reachable.is_empty() else living
+
+
+## Play a sound through the audio node (group "audio"), if the scene has one.
+func _cue(sound: String) -> void:
+	get_tree().call_group("audio", "play", sound)
 
 
 ## Show a message on the HUD. tone "miss" styles it as a miss (see hud.gd).

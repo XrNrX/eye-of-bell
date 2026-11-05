@@ -128,6 +128,7 @@ func _next_to_player() -> bool:
 
 func _attack() -> void:
 	attack_cooldown = def.attack_interval
+	get_tree().call_group("audio", "play", "monster_attack")
 	var was_telegraphing := _telegraphing
 	_end_feel()
 	if was_telegraphing and feel_cfg.telegraph_lunge:
@@ -211,6 +212,7 @@ func take_hit(result: Dictionary) -> void:
 	hp -= result.damage
 	_float_text(str(result.damage), DAMAGE_COLOUR)
 	get_tree().call_group("combat_feel", "monster_hit", result.damage, hp <= 0)
+	get_tree().call_group("audio", "play", "monster_die" if hp <= 0 else "monster_hurt")
 	if def.hurt_frames.size() == 2:  # [hurt, flash]: alternate the white frame with the hurt frame.
 		var hurt: int = def.hurt_frames[0]
 		var flash: int = def.hurt_frames[1]

@@ -1,18 +1,25 @@
 extends RefCounted
-## Player settings that outlive a run, saved to user://settings.cfg. Right now just the
-## master volume (the Options screen on the main menu). Use via preload:
+## Player settings that outlive a run, saved to user://settings.cfg: the three volumes of the
+## Options screen on the main menu. Use via preload:
 ##     const Settings := preload("res://scripts/settings.gd")
-##     Settings.apply()              # at startup: push the saved values into the engine
-##     Settings.set_volume(0.7)      # change, apply and save
+##     Settings.apply()                # at startup: push the saved values into the engine
+##     Settings.set_volume(0.7)        # master volume: change, apply and save
+##     Settings.set_music_volume(0.5)  # the ambient loop
+##     Settings.set_sfx_volume(0.8)    # sound effects
 ##
-## Volume is a fraction 0..1 of full, applied to the Master audio bus (0 mutes). The game
-## has no sound yet, so this is groundwork: anything played later obeys it automatically.
+## Each is a fraction 0..1 of full (0 mutes). They are applied to the audio buses: Master, and
+## Music and SFX, which are created here if the project doesn't define them (both send to
+## Master, so the master volume scales everything). audio.gd plays on those buses.
 
 const SECTION := "audio"
+const MUSIC_BUS := "Music"
+const SFX_BUS := "SFX"
 
 ## Where the file lives. A var so tests can point it elsewhere and never touch a real one.
 static var path := "user://settings.cfg"
-static var volume := 1.0
+static var volume := 1.0        # Master.
+static var music_volume := 0.7  # The ambient loop starts a little below full: it is a bed, not a feature.
+static var sfx_volume := 1.0
 static var loaded := false
 
 
@@ -22,20 +29,54 @@ static func apply() -> void:
 		loaded = true
 		var cfg := ConfigFile.new()
 		if cfg.load(path) == OK:
-			volume = clampf(float(cfg.get_value(SECTION, "volume", 1.0)), 0.0, 1.0)
+			volume = clampf(float(cfg.get_value(SECTION, "volume", volume)), 0.0, 1.0)
+			music_volume = clampf(float(cfg.get_value(SECTION, "music_volume", music_volume)), 0.0, 1.0)
+			sfx_volume = clampf(float(cfg.get_value(SECTION, "sfx_volume", sfx_volume)), 0.0, 1.0)
 	_push_to_engine()
 
 
 static func set_volume(value: float) -> void:
-	volume = clampf(snappedf(value, 0.05), 0.0, 1.0)
+	volume = _clean(value)
+	_changed()
+
+
+static func set_music_volume(value: float) -> void:
+	music_volume = _clean(value)
+	_changed()
+
+
+static func set_sfx_volume(value: float) -> void:
+	sfx_volume = _clean(value)
+	_changed()
+
+
+static func _clean(value: float) -> float:
+	return clampf(snappedf(value, 0.05), 0.0, 1.0)
+
+
+static func _changed() -> void:
 	loaded = true
 	_push_to_engine()
 	var cfg := ConfigFile.new()
 	cfg.set_value(SECTION, "volume", volume)
+	cfg.set_value(SECTION, "music_volume", music_volume)
+	cfg.set_value(SECTION, "sfx_volume", sfx_volume)
 	cfg.save(path)
 
 
+## Make sure the Music and SFX buses exist (each sends to Master). Returns nothing; safe to repeat.
+static func ensure_buses() -> void:
+	for bus_name in [MUSIC_BUS, SFX_BUS]:
+		if AudioServer.get_bus_index(bus_name) == -1:
+			AudioServer.add_bus()
+			var i := AudioServer.bus_count - 1
+			AudioServer.set_bus_name(i, bus_name)
+			AudioServer.set_bus_send(i, "Master")
+
+
 static func _push_to_engine() -> void:
-	var bus := AudioServer.get_bus_index("Master")
-	AudioServer.set_bus_mute(bus, volume <= 0.0)
-	AudioServer.set_bus_volume_db(bus, linear_to_db(maxf(volume, 0.0001)))
+	ensure_buses()
+	for pair in [["Master", volume], [MUSIC_BUS, music_volume], [SFX_BUS, sfx_volume]]:
+		var bus := AudioServer.get_bus_index(pair[0])
+		AudioServer.set_bus_mute(bus, pair[1] <= 0.0)
+		AudioServer.set_bus_volume_db(bus, linear_to_db(maxf(pair[1], 0.0001)))

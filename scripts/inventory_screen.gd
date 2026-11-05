@@ -79,6 +79,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func show_screen(member_slot: int, with_sheet := false) -> void:
 	focused_slot = member_slot
 	sheet.visible = with_sheet
+	if not visible:
+		get_tree().call_group("audio", "play", "ui_click")
 	visible = true
 	get_tree().paused = true
 	say("")
@@ -92,6 +94,8 @@ func say(text: String) -> void:
 
 
 func hide_screen() -> void:
+	if visible:
+		get_tree().call_group("audio", "play", "ui_click")
 	visible = false
 	sheet.visible = false
 	get_tree().paused = false

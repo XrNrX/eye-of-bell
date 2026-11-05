@@ -168,6 +168,8 @@ func _left_click() -> void:
 		var why: String = party.place_in_quick(member_slot, index, cursor)
 		if why != "":
 			_say(why)
+		else:
+			get_tree().call_group("audio", "play", "drop")
 	elif _item() != null:
 		party.use_quick(member_slot, index)
 
@@ -180,6 +182,7 @@ func _right_click() -> void:
 	if not cursor.accepts_more(here):
 		_say("Your hand is full.")
 		return
+	get_tree().call_group("audio", "play", "pickup")
 	if here.count > 1:
 		cursor.add(here.take_one())  # Split one off the stack.
 		party.quick_changed.emit(member_slot)

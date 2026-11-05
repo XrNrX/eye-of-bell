@@ -199,6 +199,7 @@ func _click_slot() -> void:
 			return
 		set_item(null)
 		cursor.hold(here)
+		get_tree().call_group("audio", "play", "pickup")
 		screen.say("")
 	else:
 		var held: RefCounted = cursor.held
@@ -216,6 +217,7 @@ func _click_slot() -> void:
 			set_item(cursor.release())
 			if here != null:
 				cursor.hold(here)  # Swap: what was in the slot is now on the cursor.
+		get_tree().call_group("audio", "play", "drop")
 		screen.say("")
 	screen.refresh()
 

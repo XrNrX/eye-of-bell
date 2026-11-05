@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" path="res://scenes/cursor_item.tscn" id="14_cursor"]
 [ext_resource type="Script" path="res://scripts/combat_feel.gd" id="20_feel"]
 [ext_resource type="Script" path="res://scripts/save_manager.gd" id="21_save"]
+[ext_resource type="Script" path="res://scripts/audio.gd" id="26_audio"]
 [ext_resource type="Script" path="res://scripts/game_view.gd" id="25_view"]
 [ext_resource type="Script" path="res://scripts/ui_frame.gd" id="23_frame"]
 [ext_resource type="Script" path="res://scripts/move_arrows.gd" id="24_arrows"]
@@ -104,6 +105,9 @@ script = ExtResource("20_feel")
 [node name="CursorItem" parent="." instance=ExtResource("14_cursor")]
 
 [node name="InventoryScreen" parent="." instance=ExtResource("15_inventory")]
+
+[node name="Audio" type="Node" parent="."]
+script = ExtResource("26_audio")
 
 [node name="SaveManager" type="Node" parent="."]
 script = ExtResource("21_save")

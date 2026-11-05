@@ -72,6 +72,7 @@ func _click_item(shift := false) -> void:
 	if cursor.is_holding():  # Goes on top of anything already there (a tile holds a pile).
 		var stack: RefCounted = cursor.release()
 		dungeon.place_item(front, stack)
+		_cue("drop")
 		_say("You put down the %s." % stack.label())
 	else:
 		var stack: RefCounted = dungeon.item_at(front)
@@ -84,6 +85,7 @@ func _click_item(shift := false) -> void:
 		# A thrown item goes home to the hand or quick slot it was thrown from, if that
 		# slot is free (or holds the same stack); otherwise it comes onto the cursor.
 		var home: String = party.return_to_origin(stack) if party else ""
+		_cue("pickup")
 		if home != "":
 			_say(home)
 			return
@@ -96,6 +98,8 @@ func _click_item(shift := false) -> void:
 ## doesn't fit anywhere stays on the floor.
 func _stow(front: Vector2i, stack: RefCounted) -> void:
 	var message: String = party.stow(stack)
+	if message != "":
+		_cue("pickup")
 	if stack.count <= 0:
 		dungeon.take_item(front)  # All of it went; remove the empty stack from the pile.
 	if message == "":
@@ -160,8 +164,10 @@ func command(kind: String) -> void:
 func _try_move(dir: Vector2i) -> void:
 	var target := cell + dir
 	if DungeonMap.is_blocked(target) or DungeonMap.is_occupied(target):  # Walls, closed doors, monsters.
+		_cue("bump")  # (audio.gd limits how often, so holding W against a wall isn't a drum roll.)
 		return
 	cell = target
+	_cue("step")
 	_report_position()
 	tween = create_tween()
 	tween.tween_property(self, "position", DungeonMap.cell_to_world(cell), MOVE_TIME)
@@ -210,9 +216,11 @@ func _interact() -> void:
 		return
 	if DungeonMap.is_locked(front):
 		if _take_key() == null:
+			_cue("door_locked")
 			_say("The door is locked.")
 			return
 		DungeonMap.unlocked_doors[front] = true
+		_cue("unlock")
 		_say("You unlock the door.")
 	get_tree().call_group("dungeon", "open_door", front)
 
@@ -227,6 +235,11 @@ func _take_key() -> Resource:
 	return null
 
 
+## Play a sound through the audio node (group "audio"), if the scene has one.
+func _cue(sound: String) -> void:
+	get_tree().call_group("audio", "play", sound)
+
+
 ## Show a message on the HUD (group "hud"), if there is one.
 func _say(text: String) -> void:
 	get_tree().call_group("hud", "show_message", text)
@@ -234,6 +247,7 @@ func _say(text: String) -> void:
 
 ## Turn 90 degrees: +1 = left (counter-clockwise), -1 = right.
 func _turn(direction: int) -> void:
+	_cue("turn")
 	facing = posmod(facing + direction, 4)
 	yaw_degrees += 90.0 * direction
 	tween = create_tween()

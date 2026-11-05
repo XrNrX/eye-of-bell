@@ -210,7 +210,7 @@ func _on_portrait(slot: int) -> void:
 	if drag_just_ended:
 		return  # This release ended a drag; it isn't a click.
 	if pending.is_empty():
-		get_tree().call_group("inventory", "show_screen", slot)
+		get_tree().call_group("inventory", "show_screen", slot)  # (the screen clicks for itself)
 		return
 	var p := pending
 	_end_target_mode()

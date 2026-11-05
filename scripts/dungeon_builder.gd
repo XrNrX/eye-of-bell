@@ -51,6 +51,7 @@ const LEVER_HEIGHT := 1.0
 
 var doors := {}       # Vector2i cell -> door MeshInstance3D
 var door_want := {}   # Vector2i cell -> true if the door is currently told to be open
+var plate_pressed := {}  # Vector2i cell -> true while the party stands on it (to sound the click once)
 var door_tweens := {} # Vector2i cell -> the Tween moving it
 var items := {}        # Vector2i cell -> {"sprite": Sprite3D, "pile": Array of ItemStack, top last} on the floor
 var plates := {}      # Vector2i cell -> pressure plate MeshInstance3D
@@ -180,7 +181,11 @@ func set_pile(cell: Vector2i, stacks: Array) -> void:
 ## The player calls this (via the "dungeon" group) whenever it changes tile.
 func refresh() -> void:
 	for cell in plates:
-		plates[cell].position.y = PLATE_DOWN_Y if DungeonMap.player_cell == cell else PLATE_UP_Y
+		var pressed: bool = DungeonMap.player_cell == cell
+		plates[cell].position.y = PLATE_DOWN_Y if pressed else PLATE_UP_Y
+		if plate_pressed.get(cell, false) != pressed:
+			plate_pressed[cell] = pressed
+			get_tree().call_group("audio", "play", "plate")
 	for cell in doors:
 		var id := DungeonMap.door_id(cell)
 		if id != "":
@@ -194,6 +199,7 @@ func pull_lever(cell: Vector2i, side: int) -> void:
 		return
 	lever_on[key] = not lever_on.get(key, false)
 	levers[key].frame = 1 if lever_on[key] else 0
+	get_tree().call_group("audio", "play", "lever")
 	refresh()
 
 
@@ -343,6 +349,7 @@ func _drive_door(cell: Vector2i, open: bool) -> void:
 	if not open and (DungeonMap.player_cell == cell or DungeonMap.is_occupied(cell)):
 		return
 	door_want[cell] = open
+	get_tree().call_group("audio", "play", "door_open" if open else "door_close")
 	if door_tweens.has(cell):
 		door_tweens[cell].kill()
 

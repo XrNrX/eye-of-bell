@@ -4,6 +4,7 @@
 
 [resource]
 script = ExtResource("1_def")
+sound = "heal"
 display_name = "Heal"
 mana_cost = 4
 target = 1

@@ -26,6 +26,8 @@ func _apply_pending() -> void:
 	var data := SaveGame.pending
 	SaveGame.pending = {}
 	var error := SaveGame.apply(get_tree(), data)
+	if error == "":
+		get_tree().call_group("audio", "play", "load")
 	_say("Game loaded." if error == "" else "Couldn't load: " + error)
 
 
@@ -45,6 +47,8 @@ func save_game() -> void:
 		_say("Can't save right now.")
 		return
 	var error := SaveGame.save(get_tree())
+	if error == "":
+		get_tree().call_group("audio", "play", "save")
 	_say("Game saved." if error == "" else error)
 
 

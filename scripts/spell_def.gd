@@ -6,6 +6,7 @@ extends Resource
 enum Target { AHEAD, HERO, PARTY }  # First monster ahead / one hero you pick / everyone alive.
 
 @export var display_name := "Spell"
+@export var sound := ""          # The effect played when it is cast (see audio.gd); "" for none.
 @export var mana_cost := 3
 @export var target: Target = Target.AHEAD
 @export var damage_min := 0      # AHEAD: never misses, like the scroll.

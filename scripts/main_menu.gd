@@ -7,7 +7,7 @@ extends Node3D
 ##
 ##   NEW GAME   starts a fresh run
 ##   LOAD GAME  loads the save (greyed out when there isn't one)
-##   OPTIONS    master volume (see settings.gd), kept between sessions
+##   OPTIONS    master, music and effects volume (see settings.gd), kept between sessions
 ##   QUIT       exits
 ##
 ## Also reached from Game over's "Quit to Menu" (see end_screen.gd).
@@ -53,12 +53,16 @@ const VOLUME_STEP := 0.1
 @onready var options_button: Button = %OptionsButton
 @onready var quit_button: Button = %QuitButton
 @onready var options_title: Label = %OptionsTitle
-@onready var volume_label: Label = %VolumeLabel
+@onready var volume_label: Label = %VolumeLabel  # The master volume's row; the others are built from it.
 @onready var volume_bar: ProgressBar = %VolumeBar
 @onready var volume_down: Button = %VolumeDown
 @onready var volume_up: Button = %VolumeUp
 @onready var back_button: Button = %BackButton
-@onready var blip: AudioStreamPlayer = %Blip
+
+## The three volumes: kind -> {name, label, bar, down, up}. Left and right arrows change the
+## row that has the keyboard focus (or the one last used).
+var rows := {}
+var current_kind := "master"
 
 var time := 0.0
 var base_position: Vector3
@@ -76,17 +80,17 @@ func _ready() -> void:
 	camera.position = base_position
 	camera.rotation_degrees.y = VIEW_FACING_DEG
 
+	_build_volume_rows()
 	new_game_button.pressed.connect(_on_new_game_pressed)
 	load_button.pressed.connect(_on_load_pressed)
 	options_button.pressed.connect(_show_options.bind(true))
 	quit_button.pressed.connect(func(): get_tree().quit())
 	back_button.pressed.connect(_show_options.bind(false))
-	volume_down.pressed.connect(_change_volume.bind(-VOLUME_STEP))
-	volume_up.pressed.connect(_change_volume.bind(VOLUME_STEP))
 
 	load_button.disabled = not SaveGame.has_save()  # Nothing to load yet: greyed out.
-	blip.stream = _make_blip()
 	_refresh_volume()
+	for b in [new_game_button, load_button, options_button, quit_button, back_button]:
+		b.pressed.connect(_click)  # (Load is also greyed out when there is no save: no click then.)
 	new_game_button.grab_focus()  # So Enter / Space and the arrow keys work straight away.
 
 
@@ -104,10 +108,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		_show_options(false)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_left"):
-		_change_volume(-VOLUME_STEP)
+		_change_volume(_focused_kind(), -VOLUME_STEP)
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("ui_right"):
-		_change_volume(VOLUME_STEP)
+		_change_volume(_focused_kind(), VOLUME_STEP)
 		get_viewport().set_input_as_handled()
 
 
@@ -128,18 +132,70 @@ func _show_options(open: bool) -> void:
 	(back_button if open else options_button).grab_focus()  # (+ and - may be greyed out; the keys work anyway)
 
 
-func _change_volume(delta: float) -> void:
-	Settings.set_volume(Settings.volume + delta)
+## Master comes from the scene; Music and Effects are copies of its label and row.
+func _build_volume_rows() -> void:
+	var master_row: Control = volume_down.get_parent()
+	rows["master"] = {"name": "MASTER", "label": volume_label, "bar": volume_bar, "down": volume_down, "up": volume_up}
+	var anchor: Control = master_row
+	for kind in ["music", "effects"]:
+		var label: Label = volume_label.duplicate()
+		var row: Control = master_row.duplicate()
+		for n in [label, row] + row.find_children("*", "", true, false):
+			n.unique_name_in_owner = false  # The copies share the originals' names.
+		options_box.add_child(label)
+		options_box.add_child(row)
+		options_box.move_child(label, anchor.get_index() + 1)
+		options_box.move_child(row, label.get_index() + 1)
+		anchor = row
+		var buttons := row.get_children()
+		rows[kind] = {"name": kind.to_upper(), "label": label, "bar": buttons[1], "down": buttons[0], "up": buttons[2]}
+	for kind in rows:
+		var r: Dictionary = rows[kind]
+		r.down.pressed.connect(_change_volume.bind(kind, -VOLUME_STEP))
+		r.up.pressed.connect(_change_volume.bind(kind, VOLUME_STEP))
+		for b in [r.down, r.up]:
+			b.focus_entered.connect(func(): current_kind = kind)
+
+
+func _volume_of(kind: String) -> float:
+	match kind:
+		"music": return Settings.music_volume
+		"effects": return Settings.sfx_volume
+	return Settings.volume
+
+
+func _focused_kind() -> String:
+	var focus := get_viewport().gui_get_focus_owner()
+	for kind in rows:
+		if focus != null and (focus == rows[kind].down or focus == rows[kind].up):
+			return kind
+	return current_kind
+
+
+func _change_volume(kind: String, delta: float) -> void:
+	current_kind = kind
+	var value := _volume_of(kind) + delta
+	match kind:
+		"music": Settings.set_music_volume(value)
+		"effects": Settings.set_sfx_volume(value)
+		_: Settings.set_volume(value)
 	_refresh_volume()
-	blip.play()  # So the new level can be heard (there is no other sound in the game yet).
+	_click()  # An effect, so a change to the effects or master volume can be heard right away.
+
+
+func _click() -> void:
+	if is_inside_tree():  # (New Game and Load have already replaced the scene by the time this runs.)
+		get_tree().call_group("audio", "play", "ui_click")
 
 
 func _refresh_volume() -> void:
-	var percent := roundi(Settings.volume * 100.0)
-	volume_bar.value = percent
-	volume_label.text = "VOLUME %d%%" % percent if percent > 0 else "VOLUME OFF"
-	volume_down.disabled = percent <= 0
-	volume_up.disabled = percent >= 100
+	for kind in rows:
+		var r: Dictionary = rows[kind]
+		var percent := roundi(_volume_of(kind) * 100.0)
+		r.bar.value = percent
+		r.label.text = "%s %d%%" % [r.name, percent] if percent > 0 else "%s OFF" % r.name
+		r.down.disabled = percent <= 0
+		r.up.disabled = percent >= 100
 
 
 # --------------------------------------------------------------------------
@@ -200,24 +256,3 @@ func _slab(fill: Color, edge: Color) -> StyleBoxFlat:
 	s.content_margin_top = 8
 	s.content_margin_bottom = 8
 	return s
-
-
-## A short square-wave beep, generated here (no audio files in the project yet).
-func _make_blip() -> AudioStreamWAV:
-	var rate := 22050
-	var samples := int(rate * 0.07)
-	var data := PackedByteArray()
-	data.resize(samples)
-	for i in samples:
-		var wave := 1.0 if int(i * 880.0 / rate) % 2 == 0 else -1.0
-		var envelope := 1.0 - float(i) / samples
-		data[i] = int(128.0 + wave * envelope * 60.0)
-	var wav := AudioStreamWAV.new()
-	wav.format = AudioStreamWAV.FORMAT_8_BITS
-	wav.mix_rate = rate
-	wav.stereo = false
-	# 8-bit WAV data is signed in Godot: convert from the unsigned form above.
-	for i in samples:
-		data[i] = (data[i] - 128) & 0xFF
-	wav.data = data
-	return wav
