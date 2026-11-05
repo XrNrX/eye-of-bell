@@ -247,6 +247,26 @@
     "portraits/thief/portrait_hurt.png": {
       "imported": "2026-11-05 19:37:33",
       "source": "portrait.png (derived)"
+    },
+    "tiles/ceiling.png": {
+      "imported": "2026-11-05 21:07:12",
+      "source": "ceiling.png"
+    },
+    "tiles/floor.png": {
+      "imported": "2026-11-05 21:07:12",
+      "source": "floor.png"
+    },
+    "tiles/wall.png": {
+      "imported": "2026-11-05 21:07:12",
+      "source": "wall.png"
+    },
+    "tiles/wall_2.png": {
+      "imported": "2026-11-05 21:07:12",
+      "source": "wall_2.png"
+    },
+    "tiles/wall_3.png": {
+      "imported": "2026-11-05 21:07:13",
+      "source": "wall_3.png"
     }
   }
 }

@@ -111,6 +111,16 @@ def wall():
     return stone_blocks(16, 8, True, 1, STONE[:5], base=0.5, tint=0.14, grain=0.08, moss_amount=0.28)
 
 
+def wall_2():
+    """A second plain wall (stained, dripping), used on some tiles so a long corridor is not one repeated pattern."""
+    return stone_blocks(16, 8, True, 11, STONE[:5], base=0.46, tint=0.16, grain=0.1, moss_amount=0.1)
+
+
+def wall_3():
+    """A third plain wall (rotten, with creeping moss)."""
+    return stone_blocks(16, 8, True, 21, STONE[:5], base=0.5, tint=0.12, grain=0.08, moss_amount=0.45)
+
+
 def wall_cracked():
     """The plain wall with a big jagged crack and two short branches on every face. Godot's box
     mesh shows each face as one cell of a 3x2 grid over the texture (21x32 pixels of it, the same
@@ -307,7 +317,7 @@ def stairs():
 
 def build():
     written = []
-    for name, make in (("wall", wall), ("floor", floor), ("ceiling", ceiling), ("door", door),
+    for name, make in (("wall", wall), ("wall_2", wall_2), ("wall_3", wall_3), ("floor", floor), ("ceiling", ceiling), ("door", door),
                        ("door_locked", locked_door), ("wall_cracked", wall_cracked), ("portcullis", portcullis), ("plate", plate), ("stairs", stairs)):
         written.append(save_png(to_image(make()), f"tiles/{name}.png", scale=world_scale()))
     return written
