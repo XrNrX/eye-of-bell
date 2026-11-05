@@ -125,7 +125,7 @@ func _make_panel(m) -> Dictionary:
 
 	# Two quick slots under the portrait (consumables; see quick_slot.gd).
 	var quick_row := HBoxContainer.new()
-	quick_row.add_theme_constant_override("separation", -2)
+	quick_row.add_theme_constant_override("separation", 0)
 	quick_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	quick_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(quick_row)

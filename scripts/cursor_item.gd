@@ -9,9 +9,13 @@ extends CanvasLayer
 ## the Party node. Self-contained: delete this scene and items just can't be picked
 ## up any more; nothing else breaks.
 
+const ItemStack := preload("res://scripts/item_stack.gd")
+const StackCount := preload("res://scripts/stack_count.gd")
+
 @onready var icon: TextureRect = %Icon
 
-var held: Resource  # The ItemDef currently on the cursor, or null if empty.
+var held: RefCounted  # The ItemStack on the cursor (the whole stack), or null if empty.
+var count_label: Control  # The pixel number in the icon's corner.
 
 
 func _ready() -> void:
@@ -20,6 +24,8 @@ func _ready() -> void:
 	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Never steal a click from the world.
 	icon.visible = false
+	count_label = StackCount.new()
+	icon.add_child(count_label)
 
 
 func _process(_delta: float) -> void:
@@ -37,21 +43,45 @@ func is_holding() -> bool:
 
 ## True if something is held and it's that ItemDef.Type.
 func holding_type(type: int) -> bool:
-	return held != null and held.type == type
+	return held != null and held.def.type == type
 
 
-## Put an item on the cursor, replacing whatever was already there.
-func hold(def: Resource) -> void:
-	held = def
-	icon.texture = def.icon
-	icon.size = def.icon.get_size()
+## Could one more of this stack's item be added to the cursor (empty hand, or the same
+## stackable item with room)? Used by right-click "split one off".
+func accepts_more(stack: RefCounted) -> bool:
+	return held == null or (held.can_stack_with(stack) and held.room() > 0)
+
+
+## Add a piece (e.g. one split off a stack) to the cursor: starts holding it, or joins
+## the stack already held.
+func add(piece: RefCounted) -> void:
+	if held == null:
+		hold(piece)
+	else:
+		held.count += piece.count
+		refresh()
+
+
+## Redraw after the held stack's count changed.
+func refresh() -> void:
+	count_label.set_count(held.count if held else 0)
+
+
+## Put an item on the cursor, replacing whatever was already there. Takes an ItemStack
+## (the whole stack) or a plain ItemDef (a stack of one).
+func hold(item) -> void:
+	held = ItemStack.wrap(item)
+	icon.texture = held.def.icon
+	icon.size = held.def.icon.get_size()
+	refresh()
 	_follow_mouse()  # Appear at the mouse straight away, not at the old spot for a frame.
 	icon.visible = true
 
 
-## Take the held item off the cursor and return it (null if nothing was held).
-func release() -> Resource:
-	var def := held
+## Take the held stack off the cursor and return it (null if nothing was held).
+func release() -> RefCounted:
+	var stack := held
 	held = null
 	icon.visible = false
-	return def
+	count_label.set_count(0)
+	return stack

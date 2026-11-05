@@ -9,11 +9,18 @@ extends Panel
 ## no drag and drop. Right-click uses a consumable in the slot: a potion heals this
 ## member, a scroll casts at the monster ahead (see Party.use_item).
 ##
+## Backpack cells hold stacks of identical stackable items (ItemDef.max_stack) with a
+## small count in the corner. Clicking picks up the whole stack; putting a stack on a
+## matching one merges them (the overflow stays on the cursor); right-clicking a stack
+## of 2+ splits one off onto the cursor (it only uses an item when there is just one).
+## Hands and armour hold a single item, so a stack can't go there.
+##
 ## Acts on the mouse PRESS. Godot routes the release to whichever control got the
 ## press, wherever the pointer has moved since, so the press is the only event that
 ## reliably belongs to the slot under the pointer.
 
 const ItemDef := preload("res://scripts/item_def.gd")
+const StackCount := preload("res://scripts/stack_count.gd")
 
 enum Kind { HAND, ARMOUR, BACKPACK, CHARACTER }
 
@@ -29,6 +36,7 @@ var kind: Kind
 var index: int = 0  # Hand index (0/1) or backpack index; unused for ARMOUR/CHARACTER.
 
 var icon: TextureRect
+var count_label: Control
 
 
 func _ready() -> void:
@@ -42,6 +50,8 @@ func _ready() -> void:
 	# portrait overflowed its 16x16 slot and overlapped its neighbours.
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	add_child(icon)
+	count_label = StackCount.new()
+	add_child(count_label)
 	_apply_kind()
 
 
@@ -61,8 +71,8 @@ func _apply_kind() -> void:
 				else TextureRect.STRETCH_KEEP_CENTERED
 
 
-## The ItemDef in this slot, or null. CHARACTER slots never hold anything directly.
-func get_item() -> Resource:
+## The ItemStack in this slot, or null. CHARACTER slots never hold anything directly.
+func get_item() -> RefCounted:
 	var m = screen.party.member(member_slot)
 	match kind:
 		Kind.HAND: return m.hands[index]
@@ -71,20 +81,26 @@ func get_item() -> Resource:
 	return null
 
 
-func set_item(def: Resource) -> void:
+func set_item(stack: RefCounted) -> void:
 	var m = screen.party.member(member_slot)
 	match kind:
-		Kind.HAND: m.hands[index] = def
-		Kind.ARMOUR: m.armour = def
-		Kind.BACKPACK: m.backpack[index] = def
+		Kind.HAND: m.hands[index] = stack
+		Kind.ARMOUR: m.armour = stack
+		Kind.BACKPACK: m.backpack[index] = stack
 
 
-## Would this slot take that item? Backpack cells take anything.
-func accepts(def: Resource) -> bool:
+## Why this slot won't take that stack, or "" if it will. Backpack cells take anything;
+## hands and armour take one item of the right type.
+func refusal(stack: RefCounted) -> String:
+	var allowed := true
 	match kind:
-		Kind.HAND: return ItemDef.allowed_in_hand(def.type)
-		Kind.ARMOUR: return ItemDef.allowed_in_armour(def.type)
-	return true
+		Kind.HAND: allowed = ItemDef.allowed_in_hand(stack.def.type)
+		Kind.ARMOUR: allowed = ItemDef.allowed_in_armour(stack.def.type)
+	if not allowed:
+		return "The %s doesn't go there." % stack.def.display_name
+	if kind != Kind.BACKPACK and stack.count > 1:
+		return "Only one at a time goes there."
+	return ""
 
 
 func refresh() -> void:
@@ -95,11 +111,17 @@ func refresh() -> void:
 		filled = member_slot == screen.focused_slot  # Highlight whichever member is shown.
 		tooltip_text = m.def.display_name
 	else:
-		var def := get_item()
-		icon.texture = def.icon if def else null
-		filled = def != null
-		tooltip_text = "" if def == null else def.display_name + \
-				("\nRight-click to use" if def.type == ItemDef.Type.CONSUMABLE else "")
+		var stack := get_item()
+		icon.texture = stack.def.icon if stack else null
+		count_label.set_count(stack.count if stack else 0)
+		filled = stack != null
+		tooltip_text = ""
+		if stack:
+			tooltip_text = stack.label()
+			if stack.count > 1:
+				tooltip_text += "\nRight-click to take one"
+			elif stack.def.type == ItemDef.Type.CONSUMABLE:
+				tooltip_text += "\nRight-click to use"
 	var box := StyleBoxFlat.new()
 	box.bg_color = FILLED_BG if filled else EMPTY_BG
 	box.border_color = EDGE
@@ -119,27 +141,46 @@ func _gui_input(event: InputEvent) -> void:
 	elif event.button_index == MOUSE_BUTTON_RIGHT:
 		accept_event()
 		if kind != Kind.CHARACTER:
-			_use_item()
+			_right_click()
 
 
-## Right-click: use the consumable in this slot. A potion heals whoever's inventory
-## this is; a scroll casts at the monster ahead and closes the screen so you can see it.
-func _use_item() -> void:
-	var def := get_item()
-	if def == null or def.type != ItemDef.Type.CONSUMABLE:
+## Right-click: on a stack of 2+, split one off onto the cursor (or onto the matching
+## stack already held). Otherwise use the consumable in this slot.
+func _right_click() -> void:
+	var here := get_item()
+	if here == null:
 		return
-	var result: Dictionary = screen.party.use_item(member_slot, def)
+	if here.count > 1:
+		if not screen.cursor.accepts_more(here):
+			screen.say("Your hand is full.")
+			return
+		screen.cursor.add(here.take_one())
+		screen.say("")
+		screen.refresh()
+		return
+	_use_item()
+
+
+## Use the consumable in this slot. A potion heals whoever's inventory this is; a
+## scroll casts at the monster ahead and closes the screen so you can see it.
+func _use_item() -> void:
+	var stack := get_item()
+	if stack == null or stack.def.type != ItemDef.Type.CONSUMABLE:
+		return
+	var result: Dictionary = screen.party.use_item(member_slot, stack.def)
 	screen.say(result.message)
 	if not result.used:
 		return
-	set_item(null)  # Spent.
+	stack.count -= 1  # Spent (the right-click path only gets here for a stack of one).
+	if stack.count <= 0:
+		set_item(null)
 	screen.refresh()
 	if result.close:
 		get_tree().call_group("hud", "show_message", result.message)
 		screen.hide_screen()
 
 
-## Pick up, put down, or swap with the cursor.
+## Pick up (the whole stack), put down, merge into a matching stack, or swap.
 func _click_slot() -> void:
 	var cursor = screen.cursor
 	var here := get_item()
@@ -150,13 +191,21 @@ func _click_slot() -> void:
 		cursor.hold(here)
 		screen.say("")
 	else:
-		var held: Resource = cursor.held
-		if not accepts(held):
-			screen.say("The %s doesn't go there." % held.display_name)
+		var held: RefCounted = cursor.held
+		var why := refusal(held)
+		if why != "":
+			screen.say(why)
 			return
-		set_item(cursor.release())
-		if here != null:
-			cursor.hold(here)  # Swap: what was in the slot is now on the cursor.
+		if kind == Kind.BACKPACK and here != null and here.can_stack_with(held) and here.room() > 0:
+			here.merge_from(held)  # Whatever doesn't fit stays on the cursor.
+			if held.count <= 0:
+				cursor.release()
+			else:
+				cursor.refresh()
+		else:
+			set_item(cursor.release())
+			if here != null:
+				cursor.hold(here)  # Swap: what was in the slot is now on the cursor.
 		screen.say("")
 	screen.refresh()
 
@@ -169,10 +218,11 @@ func _click_portrait() -> void:
 		screen.focus(member_slot)
 		return
 	var m = screen.party.member(member_slot)
-	var i: int = m.backpack.find(null)
-	if i < 0:
+	if not screen.party.add_to_backpack(member_slot, cursor.held):
+		cursor.refresh()  # Part of a stack may have fitted.
 		screen.say("%s's backpack is full." % m.def.display_name)
+		screen.refresh()
 		return
-	m.backpack[i] = cursor.release()
+	cursor.release()
 	screen.say("")
 	screen.refresh()

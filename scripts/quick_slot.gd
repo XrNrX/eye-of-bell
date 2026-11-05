@@ -5,9 +5,11 @@ extends Control
 ##
 ## Same click system as the inventory, no drag and drop -- the cursor
 ## (cursor_item.gd) is the hand:
-##   left click, hand full   put the held item in (swapping with what's there)
-##   left click, hand empty  use the item on this character now (see Party.use_quick)
-##   right click             pick the item back up onto the cursor
+##   left click, hand full   put the held item in (merging into a matching stack, or
+##                           swapping with what's there)
+##   left click, hand empty  use one item on this character now (see Party.use_quick)
+##   right click             pick the item back up onto the cursor (one, from a stack)
+## Identical consumables stack (ItemDef.max_stack); the count shows in the corner.
 ## Using an item starts a short cooldown, drawn as a grey clock-wipe over the slot.
 ## A dead character's slot is disabled: it can't be used or filled. Right-click still
 ## lifts its item out, so a consumable can't be stranded on a corpse.
@@ -16,6 +18,7 @@ extends Control
 ## view and the click handling. Acts on the mouse PRESS (see inventory_slot.gd for why).
 
 const PartyScript := preload("res://scripts/party.gd")
+const StackCount := preload("res://scripts/stack_count.gd")
 const FRAME_FILLED := preload("res://art/ui/quickslot.png")
 const FRAME_EMPTY := preload("res://art/ui/quickslot_empty.png")
 const SWEEP_TEXTURE := preload("res://art/ui/quickslot_sweep.png")
@@ -29,6 +32,7 @@ var index: int
 
 var frame: TextureRect
 var icon: TextureRect
+var count_label: Control
 var sweep: TextureProgressBar
 var hovering := false
 var hover_text := ""  # What this slot currently has showing in the message line.
@@ -49,6 +53,8 @@ func _ready() -> void:
 	add_child(frame)
 	icon = _make_rect(Vector2(1, 1), SLOT_SIZE - Vector2(2, 2))
 	add_child(icon)
+	count_label = StackCount.new()
+	add_child(count_label)
 
 	sweep = TextureProgressBar.new()
 	sweep.texture_progress = SWEEP_TEXTURE
@@ -77,7 +83,7 @@ func _make_rect(pos: Vector2, rect_size: Vector2) -> TextureRect:
 	return r
 
 
-func _item() -> Resource:
+func _item() -> RefCounted:
 	return party.member(member_slot).quick[index]
 
 
@@ -97,9 +103,11 @@ func refresh() -> void:
 	var item := _item()
 	frame.texture = FRAME_FILLED if item else FRAME_EMPTY
 	icon.texture = null
+	count_label.set_count(item.count if item else 0)
 	if item:
 		# The small floor icon fits the frame exactly; anything else is scaled to fit.
-		icon.texture = item.floor_icon if item.floor_icon else item.icon
+		var def: Resource = item.def
+		icon.texture = def.floor_icon if def.floor_icon else def.icon
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED \
 				if icon.texture.get_size() == Vector2(12, 12) else TextureRect.STRETCH_SCALE
 	_update_hint()
@@ -123,7 +131,7 @@ func _on_mouse_exited() -> void:
 ## down again afterwards (only if it's still our text).
 func _update_hint() -> void:
 	var item := _item()
-	var wanted: String = item.display_name if (hovering and item) else ""
+	var wanted: String = item.label() if (hovering and item) else ""
 	if wanted == hover_text:
 		return
 	if hover_text != "":
@@ -155,9 +163,16 @@ func _left_click() -> void:
 	var cursor = get_tree().get_first_node_in_group("cursor")
 	var here := _item()
 	if cursor and cursor.is_holding():
-		var held: Resource = cursor.held
+		var held: RefCounted = cursor.held
 		if not party.quick_accepts(held):
-			_say("The %s can't go in a quick slot." % held.display_name)
+			_say("The %s can't go in a quick slot." % held.def.display_name)
+			return
+		if here != null and here.can_stack_with(held) and here.room() > 0:
+			party.merge_quick(member_slot, index, held)  # The overflow stays on the cursor.
+			if held.count <= 0:
+				cursor.release()
+			else:
+				cursor.refresh()
 			return
 		party.set_quick(member_slot, index, cursor.release())
 		if here != null:
@@ -171,11 +186,15 @@ func _right_click() -> void:
 	var cursor = get_tree().get_first_node_in_group("cursor")
 	if here == null or cursor == null:
 		return
-	if cursor.is_holding():
+	if not cursor.accepts_more(here):
 		_say("Your hand is full.")
 		return
-	party.set_quick(member_slot, index, null)
-	cursor.hold(here)
+	if here.count > 1:
+		cursor.add(here.take_one())  # Split one off the stack.
+		party.quick_changed.emit(member_slot)
+	else:
+		party.set_quick(member_slot, index, null)
+		cursor.add(here)
 
 
 func _say(text: String) -> void:

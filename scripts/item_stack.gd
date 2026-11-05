@@ -1,0 +1,54 @@
+extends RefCounted
+## A stack of identical items in one slot: an ItemDef plus how many. Every place an
+## item can sit (hand, armour, backpack, quick slot, the cursor, a floor tile) holds
+## an ItemStack or null. The ItemDef (a shared .tres) is never changed; only `count` is.
+##
+## Never put one ItemStack in two places: moving items moves the object, splitting
+## makes a new one (take_one).
+
+var def: Resource
+var count := 1
+
+
+static func of(item_def: Resource, n := 1) -> RefCounted:
+	var s := new()
+	s.def = item_def
+	s.count = n
+	return s
+
+
+## Accepts an ItemDef (wrapped as a stack of 1), an ItemStack (returned as is) or
+## null, so callers can pass whichever they have.
+static func wrap(item) -> RefCounted:
+	if item is Resource:  # An ItemDef (a Resource is also a RefCounted, so test this first).
+		return of(item)
+	return item
+
+
+## Same kind of item, and a kind that stacks at all (max_stack > 1).
+func can_stack_with(other: RefCounted) -> bool:
+	return other != null and other.def == def and def.max_stack > 1
+
+
+func room() -> int:
+	return maxi(0, def.max_stack - count)
+
+
+## Move as many of `other` into this stack as fit; returns how many moved.
+func merge_from(other: RefCounted) -> int:
+	if not can_stack_with(other):
+		return 0
+	var moved := mini(room(), other.count)
+	count += moved
+	other.count -= moved
+	return moved
+
+
+## Split one item off into a new stack of 1. The caller empties its slot if count hits 0.
+func take_one() -> RefCounted:
+	count -= 1
+	return of(def, 1)
+
+
+func label() -> String:
+	return def.display_name if count <= 1 else "%s x%d" % [def.display_name, count]

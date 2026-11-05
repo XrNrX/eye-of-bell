@@ -15,6 +15,7 @@ enum Type { WEAPON, ARMOUR, CONSUMABLE, KEY }
 @export var icon: Texture2D          # Inventory slots and the cursor.
 @export var floor_icon: Texture2D    # Smaller version drawn on the floor; falls back to icon.
 @export var icon_pixel_size := 0.03  # World units per pixel of the floor sprite.
+@export var max_stack := 1          # How many identical items share one backpack or quick slot (1 = never stacks).
 
 @export_group("Stats")
 @export var attack_bonus := 0        # Weapon: added to the wielder's attack.

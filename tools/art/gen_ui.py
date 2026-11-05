@@ -12,6 +12,10 @@ Quick-slot art, all 14x14 (a 12x12 floor icon plus a 1px border):
 The frames use the same stone colours as the HUD's portrait panels (a stone_700
 border on stone_900), with the toolkit's top-left light: a lit top/left edge and a
 shaded bottom/right edge.
+
+digits.png (50x7): the stack-count font, digits 0-9 in 5x7 cells (a 3x5 glyph plus a
+1px ink outline), light stone on ink so it reads over any icon. Drawn by
+scripts/stack_count.gd, one cell per digit, cells overlapping by their outline.
 """
 import math
 
@@ -110,10 +114,33 @@ def quickslot_sweep():
     return Image.new("RGBA", (QUICK, QUICK), (*PAL["stone_500"], 255))
 
 
+DIGITS = {
+    "0": "111101101101111", "1": "010110010010111", "2": "111001111100111",
+    "3": "111001111001111", "4": "101101111001001", "5": "111100111001111",
+    "6": "111100111101111", "7": "111001001010010", "8": "111101111101111",
+    "9": "111101111001111",
+}
+
+
+def digit_sheet():
+    """Ten 5x7 cells side by side. add_outline draws the ink edge on transparent
+    pixels, so each glyph is pasted 1px in from the cell edge to leave room."""
+    sheet = Image.new("RGBA", (5 * 10, 7), (0, 0, 0, 0))
+    for d in range(10):
+        glyph = Image.new("RGBA", (3, 5), (0, 0, 0, 0))
+        px = glyph.load()
+        for i, bit in enumerate(DIGITS[str(d)]):
+            if bit == "1":
+                px[i % 3, i // 3] = (*PAL["stone_100"], 255)
+        sheet.paste(add_outline(glyph, PAL["ink"], pad=1), (5 * d, 0))
+    return sheet
+
+
 def build():
     return [
         save_png(hand_sword(), "ui/hand_sword.png"),
         save_png(quickslot_frame(True), "ui/quickslot.png"),
         save_png(quickslot_frame(False), "ui/quickslot_empty.png"),
         save_png(quickslot_sweep(), "ui/quickslot_sweep.png"),
+        save_png(digit_sheet(), "ui/digits.png"),
     ]

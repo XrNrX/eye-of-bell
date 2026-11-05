@@ -143,6 +143,6 @@ func can_drop_on_floor() -> bool:
 		or dungeon.item_at(front) != null)
 
 
-func drop_on_floor(def: Resource) -> void:
-	dungeon.place_item(_front_cell(), def)
+func drop_on_floor(item) -> void:
+	dungeon.place_item(_front_cell(), item)
 	refresh()

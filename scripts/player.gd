@@ -70,16 +70,16 @@ func _click_item() -> void:
 	if cursor.is_holding():
 		if dungeon.item_at(front) != null:
 			return  # Something's already there; no stacking two items on one tile.
-		var def: Resource = cursor.release()
-		dungeon.place_item(front, def)
-		_say("You put down the %s." % def.display_name)
+		var stack: RefCounted = cursor.release()
+		dungeon.place_item(front, stack)
+		_say("You put down the %s." % stack.label())
 	else:
-		var def: Resource = dungeon.item_at(front)
-		if def == null:
+		var stack: RefCounted = dungeon.item_at(front)
+		if stack == null:
 			return
 		dungeon.take_item(front)
-		cursor.hold(def)
-		_say("You pick up the %s." % def.display_name)
+		cursor.hold(stack)
+		_say("You pick up the %s." % stack.label())
 
 
 func _process(_delta: float) -> void:
@@ -171,7 +171,7 @@ func _interact() -> void:
 ## one from any party member's backpack. Returns it, or null if there is no key.
 func _take_key() -> Resource:
 	if cursor and cursor.holding_type(ItemDef.Type.KEY):
-		return cursor.release()
+		return cursor.release().def
 	if party:
 		return party.take_key()
 	return null

@@ -10,6 +10,7 @@ extends Node
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const CombatRules := preload("res://scripts/combat_rules.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
+const ItemStack := preload("res://scripts/item_stack.gd")
 
 const MISSILE_RANGE := 4  # How many tiles down the corridor ahead a scroll's missile reaches.
 const QUICK_SLOTS := 2        # Quick slots per member (see use_quick), shown under their portrait.
@@ -37,13 +38,13 @@ class Member:
 	var hp: int
 	var cooldown_left := 0.0
 
-	# Inventory: ItemDef or null per slot. A weapon in a hand changes the member's
+	# Inventory: an ItemStack or null per slot (hands and armour only ever hold one). A weapon in a hand changes the member's
 	# attack and damage (see Party.effective_stats); armour is still data only.
 	var hands: Array = [null, null]
-	var armour: Resource = null
+	var armour: RefCounted = null
 	var backpack: Array = []
 
-	# Quick slots: consumables ready to use with one click or a number key. Stored
+	# Quick slots (ItemStack or null): consumables ready to use with one click or a number key. Stored
 	# here, on the runtime member, not on the CharacterDef -- that resource is shared
 	# and must never be changed while the game runs. Cooldowns count down in
 	# Party._process.
@@ -107,9 +108,9 @@ func is_wiped() -> bool:
 ## The weapon this member fights with: the first weapon in a hand slot (left hand
 ## first), or null for bare hands. A weapon in the backpack doesn't count.
 func equipped_weapon(m: Member) -> Resource:
-	for item in m.hands:
-		if item != null and item.type == ItemDef.Type.WEAPON and item.damage_max > 0:
-			return item
+	for stack in m.hands:
+		if stack != null and stack.def.type == ItemDef.Type.WEAPON and stack.def.damage_max > 0:
+			return stack.def
 	return null
 
 
@@ -136,29 +137,62 @@ func effective_stats(m: Member) -> Stats:
 func take_key() -> Resource:
 	for m in members:
 		for i in m.backpack.size():
-			var item = m.backpack[i]
-			if item != null and item.type == ItemDef.Type.KEY:
-				m.backpack[i] = null
-				return item
+			var stack = m.backpack[i]
+			if stack != null and stack.def.type == ItemDef.Type.KEY:
+				stack.count -= 1
+				if stack.count <= 0:
+					m.backpack[i] = null
+				return stack.def
 	return null
 
 
+## Put a stack in a member's backpack: top up matching stacks first, then use the
+## first empty cell. Returns true if all of it fit; otherwise whatever didn't fit is
+## left in `stack` (its count reduced) and the backpack is as full as it can be.
+func add_to_backpack(slot: int, stack: RefCounted) -> bool:
+	var m := member(slot)
+	for s in m.backpack:
+		if s != null and s.can_stack_with(stack):
+			s.merge_from(stack)
+			if stack.count <= 0:
+				return true
+	var i: int = m.backpack.find(null)
+	if i < 0:
+		return false
+	m.backpack[i] = stack
+	return true
+
+
 ## Quick slots take consumables only (potions, scrolls, and later throwables).
-func quick_accepts(def: Resource) -> bool:
-	return def != null and def.type == ItemDef.Type.CONSUMABLE
+func quick_accepts(item) -> bool:
+	var stack := ItemStack.wrap(item)
+	return stack != null and stack.def.type == ItemDef.Type.CONSUMABLE
 
 
-## Put an item (or null, to empty it) in a quick slot. Returns false, changing
-## nothing, if the slot doesn't exist or the item isn't a consumable.
-func set_quick(slot: int, index: int, def: Resource) -> bool:
+## Put an item stack (or an ItemDef, or null to empty it) in a quick slot, replacing
+## what's there. Returns false, changing nothing, if the slot doesn't exist or the
+## item isn't a consumable.
+func set_quick(slot: int, index: int, item) -> bool:
 	var m := member(slot)
 	if m == null or index < 0 or index >= QUICK_SLOTS:
 		return false
-	if def != null and not quick_accepts(def):
+	if item != null and not quick_accepts(item):
 		return false
-	m.quick[index] = def
+	m.quick[index] = ItemStack.wrap(item)
 	quick_changed.emit(slot)
 	return true
+
+
+## Top up the stack in a quick slot from `stack` (same stackable item), moving as many
+## as fit out of it. Returns how many moved.
+func merge_quick(slot: int, index: int, stack: RefCounted) -> int:
+	var m := member(slot)
+	if m == null or m.quick[index] == null:
+		return 0
+	var moved: int = m.quick[index].merge_from(stack)
+	if moved > 0:
+		quick_changed.emit(slot)
+	return moved
 
 
 ## Use the item in a member's quick slot on that member, right now. A potion heals
@@ -172,12 +206,14 @@ func use_quick(slot: int, index: int) -> Dictionary:
 	var m := member(slot)
 	if m == null or index < 0 or index >= QUICK_SLOTS:
 		return nothing
-	var def = m.quick[index]
-	if def == null or not m.is_alive() or m.quick_cooldown[index] > 0.0:
+	var stack = m.quick[index]
+	if stack == null or not m.is_alive() or m.quick_cooldown[index] > 0.0:
 		return nothing
-	var result := use_item(slot, def)
+	var result := use_item(slot, stack.def)
 	if result.used:
-		m.quick[index] = null
+		stack.count -= 1  # Uses one item from the stack.
+		if stack.count <= 0:
+			m.quick[index] = null
 		m.quick_cooldown[index] = QUICK_COOLDOWN
 		quick_changed.emit(slot)
 	if result.message != "":
