@@ -144,11 +144,12 @@ func equipped_weapon(m: Member) -> Resource:
 	return null
 
 
-## The member's stats with their weapon and buffs applied. The weapon adds its attack
+## The member's stats with their gear and buffs applied. The weapon adds its attack
 ## bonus and replaces their bare-handed damage range: by default their first weapon
 ## (equipped_weapon), or with `hand` the melee weapon in that hand (bare hands if it
-## holds none). Buffs (Shield, Bless) add attack and defence.
-func effective_stats(m: Member, hand := -1) -> Stats:
+## holds none). Worn armour adds its defence_bonus. Buffs (Shield, Bless) add attack
+## and defence, unless with_buffs is false (the character sheet shows gear alone).
+func effective_stats(m: Member, hand := -1, with_buffs := true) -> Stats:
 	var s := Stats.new()
 	s.attack = m.def.attack
 	s.defence = m.def.defence
@@ -159,9 +160,12 @@ func effective_stats(m: Member, hand := -1) -> Stats:
 		s.attack += weapon.attack_bonus
 		s.damage_min = weapon.damage_min
 		s.damage_max = weapon.damage_max
-	for b in m.buffs:
-		s.attack += b.spell.buff_attack
-		s.defence += b.spell.buff_defence
+	if m.armour != null:
+		s.defence += m.armour.def.defence_bonus
+	if with_buffs:
+		for b in m.buffs:
+			s.attack += b.spell.buff_attack
+			s.defence += b.spell.buff_defence
 	return s
 
 

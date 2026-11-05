@@ -17,6 +17,7 @@ extends CanvasLayer
 const InventorySlotScript := preload("res://scripts/inventory_slot.gd")
 const PartyScript := preload("res://scripts/party.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
+const CharacterSheet := preload("res://scripts/character_sheet.gd")
 
 @onready var backdrop: ColorRect = %Backdrop
 @onready var name_label: Label = %NameLabel
@@ -37,6 +38,8 @@ var strip_slots := []     # CHARACTER-kind InventorySlot, one per party member.
 var hand_slots := []      # HAND-kind InventorySlot, re-pointed to whoever's focused.
 var armour_slot: Panel
 var backpack_slots := []  # BACKPACK-kind InventorySlot, likewise re-pointed.
+var sheet: PanelContainer  # The character sheet beside the window (character_sheet.gd).
+@onready var window: Control = $Center/Window
 
 
 func _ready() -> void:
@@ -45,6 +48,13 @@ func _ready() -> void:
 	visible = false
 	backdrop.screen = self
 	close_button.pressed.connect(hide_screen)
+	# The name in the header opens/closes the character sheet.
+	name_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	name_label.tooltip_text = "Character sheet"
+	name_label.gui_input.connect(_on_name_input)
+	sheet = CharacterSheet.new()
+	sheet.visible = false
+	add_child(sheet)
 	# Deferred: siblings declared after us (e.g. Party) haven't necessarily run their
 	# own _ready() yet -- call_deferred waits until this frame's ready pass is done,
 	# correct regardless of node order (see player.gd for the bug this avoided).
@@ -66,8 +76,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## Open the screen focused on this party member. Called by party_hud.gd's portrait
 ## buttons (group "inventory"), and by this screen's own strip when switching.
-func show_screen(member_slot: int) -> void:
+func show_screen(member_slot: int, with_sheet := false) -> void:
 	focused_slot = member_slot
+	sheet.visible = with_sheet
 	visible = true
 	get_tree().paused = true
 	say("")
@@ -82,7 +93,23 @@ func say(text: String) -> void:
 
 func hide_screen() -> void:
 	visible = false
+	sheet.visible = false
 	get_tree().paused = false
+
+
+func _on_name_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		name_label.accept_event()
+		sheet.visible = not sheet.visible
+		refresh()
+
+
+## Keep the sheet just left of the inventory window (it follows the window's real
+## rect, so it stays put whatever the window's size).
+func _process(_delta: float) -> void:
+	if sheet.visible:
+		var r := window.get_global_rect()
+		sheet.position = Vector2(maxf(2.0, r.position.x - sheet.size.x - 2.0), r.position.y)
 
 
 func focus(member_slot: int) -> void:
@@ -130,6 +157,8 @@ func refresh() -> void:
 		backpack_slots[i].refresh()
 	for s in strip_slots:
 		s.refresh()
+	if sheet.visible:
+		sheet.refresh(party, focused_slot)
 
 
 func _front_cell() -> Vector2i:

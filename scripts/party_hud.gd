@@ -289,7 +289,16 @@ func _make_panel(m) -> Dictionary:
 		quick_row.add_child(qs)
 		quick_slots.append(qs)
 
-	col.add_child(_label(m.def.display_name, 8))
+	# Clicking the name opens the inventory screen with the character sheet showing.
+	var name_label := _label(m.def.display_name, 8)
+	name_label.mouse_filter = Control.MOUSE_FILTER_STOP
+	name_label.tooltip_text = "Character sheet"
+	name_label.gui_input.connect(func(e):
+		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+			name_label.accept_event()
+			if pending.is_empty():
+				get_tree().call_group("inventory", "show_screen", m.slot, true))
+	col.add_child(name_label)
 
 	var hp_bar := _bar(HP_FILL, Vector2(BAR_WIDTH, 3), m.def.max_hp)
 	col.add_child(hp_bar)
