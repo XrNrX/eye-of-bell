@@ -5,6 +5,7 @@ import io
 import json
 import os
 import random
+import re
 import shutil
 import sys
 import tempfile
@@ -59,6 +60,26 @@ def make_world(tmp):
     shutil.copytree(ART_DIR / "monsters" / "skeleton", art / "monsters" / "skeleton", ignore=shutil.ignore_patterns("*.import"))
     data.mkdir(parents=True)
     shutil.copy2(PROJECT_ROOT / "data" / "monsters" / "skeleton.tres", data / "skeleton.tres")
+    # The real skeleton has grown a walk cycle since this test was written. The tests below are about a
+    # plain 7-frame monster, so the fixture is rebuilt as one (the walk frames are tested on their own).
+    mdir = art / "monsters" / "skeleton"
+    base7 = ["idle_0", "idle_1", "attack_0", "attack_1", "attack_2", "hurt_0", "hurt_0_flash"]
+    for f in mdir.glob("walk_*.png"):
+        f.unlink()
+    frames7 = [Image.open(mdir / f"{n}.png").convert("RGBA") for n in base7]
+    fw7, fh7 = frames7[0].size
+    sheet7 = Image.new("RGBA", (fw7 * 7, fh7), (0, 0, 0, 0))
+    for i, im in enumerate(frames7):
+        sheet7.paste(im, (i * fw7, 0))
+    sheet7.save(mdir / "skeleton_sheet.png")
+    (mdir / "skeleton_sheet.json").write_text(json.dumps({
+        "frame_size": [fw7, fh7],
+        "frames": {n: {"x": i * fw7, "y": 0, "w": fw7, "h": fh7} for i, n in enumerate(base7)},
+        "animations": {"idle": base7[0:2], "attack": base7[2:5], "hurt": base7[5:7]}}, indent=2))
+    tres_text = (data / "skeleton.tres").read_text()
+    tres_text = re.sub(r"^hframes = .*$", "hframes = 7", tres_text, flags=re.M)
+    tres_text = re.sub(r"^walk_frames = .*$", "walk_frames = PackedInt32Array()", tres_text, flags=re.M)
+    (data / "skeleton.tres").write_text(tres_text)
     for d in ("inbox", "old"):
         (tmp / d).mkdir()
     return tmp
@@ -264,6 +285,32 @@ with tempfile.TemporaryDirectory() as t:
     check("the replaced frames are in the sheet at the right places (idle_0 first, attack_1 fourth)",
           sheet.crop((0, 0, 96, 128)).tobytes() == load(art / "monsters/skeleton/idle_0.png").tobytes() and sheet.crop((288, 0, 384, 128)).tobytes() == load(art / "monsters/skeleton/attack_1.png").tobytes())
     check("a 60x80 export is not a whole-number factor of 96x128: reported as a warning", "WARNING" in out and "not a whole-number factor" in out)
+
+    # ---- a walk cycle: walk_0.. are new frames at the end of the sheet, the .tres gets walk_frames
+    shutil.rmtree(old); old.mkdir()
+    for f in list(inbox.glob("*")):
+        if f.is_file(): f.unlink()
+    walk_dir = inbox / "monsters" / "skeleton"
+    walk_dir.mkdir(parents=True)
+    for i in range(4):
+        noisy((96, 128), 300 + i).save(walk_dir / f"walk_{i}.png")
+    tres_before = (tmp / "data/monsters/skeleton.tres").read_text()
+    code, out = run(tmp)
+    sheet_w = load(art / "monsters/skeleton/skeleton_sheet.png")
+    check("4 walk frames are accepted for a monster that has none (not 'unmatched')", code == 0 and "didn't match" not in out and "4 of 11 frame" in out)
+    check("they join the end of the sheet: 7 frames became 11", sheet_w.size == (96 * 11, 128))
+    jw = json.loads((art / "monsters/skeleton/skeleton_sheet.json").read_text())
+    check("the json lists walk_0..walk_3 after the old frames and a walk animation", list(jw["frames"])[-4:] == ["walk_0", "walk_1", "walk_2", "walk_3"] and jw["animations"]["walk"] == ["walk_0", "walk_1", "walk_2", "walk_3"])
+    tres_after = (tmp / "data/monsters/skeleton.tres").read_text()
+    check("the definition now has hframes = 11 and walk_frames = (7, 8, 9, 10)", "hframes = 11" in tres_after and "walk_frames = PackedInt32Array(7, 8, 9, 10)" in tres_after)
+    check("its idle, attack and hurt lists are untouched", all(l in tres_after for l in [x for x in tres_before.splitlines() if x.startswith(("idle_frames", "attack_frames", "hurt_frames"))]))
+    check("the walk frames are palette-only", all_in_palette(sheet_w))
+    check("the sheet is the frames side by side (walk_2 sits in slot 9)", sheet_w.crop((9 * 96, 0, 10 * 96, 128)).tobytes() == load(art / "monsters/skeleton/walk_2.png").tobytes())
+    # Flat names work too.
+    for f in walk_dir.glob("*"): f.unlink()
+    noisy((96, 128), 310).save(inbox / "skeleton_walk_4.png")
+    code, out = run(tmp)
+    check("skeleton_walk_4.png is recognised (a fifth walk frame)", "didn't match" not in out and load(art / "monsters/skeleton/skeleton_sheet.png").size == (96 * 12, 128))
 
     # ---- sprite sheets: the torch may change its frame count, the lever may not
     torch_frames = [noisy((16, 32), 100 + i) for i in range(8)]

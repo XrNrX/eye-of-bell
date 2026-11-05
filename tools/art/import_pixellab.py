@@ -162,6 +162,32 @@ def build_aliases(catalog):
     return aliases
 
 
+def add_walk_frames(files, inbox, catalog, aliases):
+    """A monster may gain a walk cycle: walk_0, walk_1, ... are valid frame names for any monster that
+    has a sheet, even though the art does not have them yet (process_monster appends them to the
+    sheet). Recognised as monsters/<name>/walk_<n>.png, <name>_walk_<n>.png or walk_<n>.png in a
+    folder named for the monster."""
+    sheets = {a.group for a in catalog.values() if a.kind == "monster_sheet"}
+    for path in files:
+        rel = normalise(path.relative_to(inbox).with_suffix("").as_posix())
+        parts = rel.split("/")
+        if parts[0] == "art":
+            parts = parts[1:]
+        mon = num = None
+        if len(parts) >= 2 and re.fullmatch(r"walk_\d+", parts[-1]) and parts[-2] in sheets:
+            mon, num = parts[-2], parts[-1]
+        else:
+            m = re.fullmatch(r"(.+)_(walk_\d+)", parts[-1])
+            if m and m.group(1) in sheets:
+                mon, num = m.group(1), m.group(2)
+        if mon:
+            key = f"monsters/{mon}/{num}"
+            if key not in catalog:
+                size = next(a.size for k, a in catalog.items() if a.kind == "frame" and a.group == mon)
+                catalog[key] = Asset(key, size, "frame", False, mon)
+                aliases.setdefault(f"{mon}_{num}", set()).add(key)
+
+
 def match(path, inbox, catalog, aliases, mapping):
     """-> ('ok', key) | ('ambiguous', [keys]) | ('none', None)."""
     rel = path.relative_to(inbox)
@@ -366,7 +392,7 @@ def find_layout(inbox_file):
     return None
 
 
-def patch_monster_tres(ctx, name, hframes, anims):
+def patch_monster_tres(ctx, name, hframes, anims, only=None):
     """Update the frame numbers in data/monsters/<name>.tres to match a new layout."""
     tres = ctx.data_dir / "monsters" / f"{name}.tres"
     if not tres.exists():
@@ -382,8 +408,8 @@ def patch_monster_tres(ctx, name, hframes, anims):
         return "PackedInt32Array(" + ", ".join(map(str, indices.get(a, []))) + ")"
 
     new = re.sub(r"^hframes = .*$", f"hframes = {hframes}", text, flags=re.M)
-    for field, anim in (("idle_frames", "idle"), ("attack_frames", "attack"), ("hurt_frames", "hurt")):
-        if anim in indices:
+    for field, anim in (("idle_frames", "idle"), ("attack_frames", "attack"), ("hurt_frames", "hurt"), ("walk_frames", "walk")):
+        if anim in indices and (only is None or anim in only):  # `only`: leave the other animations' hand-set frame lists alone
             new = re.sub(rf"^{field} = .*$", f"{field} = {arr(anim)}", new, flags=re.M)
     if new != text:
         ctx.write_text(new, f"data/monsters/{name}.tres", backup_to=(tres, f"data/monsters/{name}.tres"))
@@ -439,7 +465,15 @@ def process_monster(ctx, name, parts):
             for n, f in zip(order, frames):
                 incoming[n] = f
 
+    added_walk = False
     for fname, path in parts.get("frames", {}).items():
+        if fname not in new_order and re.fullmatch(r"walk_\d+", fname):
+            # A walk cycle is optional: its frames join the end of the sheet (a new animation "walk").
+            if new_order is order:
+                new_order, new_anims = list(order), {a: list(v) for a, v in anims.items()}
+            new_order.append(fname)
+            new_anims.setdefault("walk", []).append(fname)
+            added_walk = True
         if fname not in new_order:
             ctx.errors.append(f"monsters/{name}/{fname}: not a frame of this monster (frames: {', '.join(new_order)})")
             continue
@@ -474,6 +508,8 @@ def process_monster(ctx, name, parts):
                     if imp.exists():
                         imp.unlink()
         patch_monster_tres(ctx, name, len(new_order), layout)
+    if added_walk and not layout:
+        patch_monster_tres(ctx, name, len(new_order), {a: len(v) for a, v in new_anims.items()}, only=("walk",))  # hframes + walk_frames only
     ctx.replaced.append(f"monsters/{name} ({len(incoming)} of {len(new_order)} frame(s) from the inbox, sheet rebuilt)")
     ctx.used_files += sources
 
@@ -524,6 +560,7 @@ def run(inbox, ctx, keep_inbox=False):
     aliases = build_aliases(catalog)
     mapping = read_json(inbox / "map.json") or {}
     files = sorted(p for p in inbox.rglob("*.png") if "_done" not in p.relative_to(inbox).parts)
+    add_walk_frames(files, inbox, catalog, aliases)
 
     singles, monsters = {}, {}
     for path in files:

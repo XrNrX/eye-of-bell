@@ -121,8 +121,8 @@ same size in the world):**
 | Asset | Make it this size | Game file | Notes |
 |---|---|---|---|
 | Wall, floor, ceiling, door, locked door, cracked wall, portcullis, plate, stairs tiles | **128x128** | 128x128 | Seamless where they tile (wall, floor, ceiling). The portcullis has a transparent background (bars only). The cracked wall carries a crack in each of the six cells a box face can show (see `gen_tiles.py`). |
-| Skeleton, skeleton guard monster frames | **96x128** each | 96x128 | Front-facing, `pixel_size` 0.014. Sheet = 7 frames side by side (672x128): idle x2, attack x3, hurt x2 (hurt, flash). |
-| Slime, acid slime monster frames | **96x96** each | 96x96 | Front-facing, `pixel_size` 0.02. Sheet = 8 frames (768x96): idle x3, attack x3, hurt x2. |
+| Skeleton, skeleton guard monster frames | **96x128** each | 96x128 | Front-facing, `pixel_size` 0.014. Sheet = 11 frames side by side (1056x128): idle x2, attack x3, hurt x2 (hurt, flash), **walk x4** (a stride that loops while it steps toward the party). The lowest pixel of each frame is put on the floor by the game, so empty space under the feet is fine. |
+| Slime, acid slime monster frames | **96x96** each | 96x96 | Front-facing, `pixel_size` 0.02. Sheet = 12 frames (1152x96): idle x3, attack x3, hurt x2, walk x4 (a squash-and-crawl). The game stands the lowest pixel of each frame on the floor. |
 
 **3D art that is not doubled yet** (same world size, so it simply keeps its old pixel density next to the new art):
 torch sheet 4 frames of 16x32 (64x32), lever sheet 2 frames of 16x16 (32x16), key floor sprite 16x16,

@@ -29,8 +29,24 @@
       "source": "attack_0.png"
     },
     "monsters/skeleton/skeleton_sheet.png": {
-      "imported": "2026-11-05 18:32:37",
-      "source": "attack_0.png"
+      "imported": "2026-11-05 18:46:42",
+      "source": "walk_0.png"
+    },
+    "monsters/skeleton/walk_0.png": {
+      "imported": "2026-11-05 18:46:42",
+      "source": "walk_0.png"
+    },
+    "monsters/skeleton/walk_1.png": {
+      "imported": "2026-11-05 18:46:42",
+      "source": "walk_0.png"
+    },
+    "monsters/skeleton/walk_2.png": {
+      "imported": "2026-11-05 18:46:42",
+      "source": "walk_0.png"
+    },
+    "monsters/skeleton/walk_3.png": {
+      "imported": "2026-11-05 18:46:42",
+      "source": "walk_0.png"
     },
     "monsters/skeleton_guard/attack_0.png": {
       "imported": "2026-11-05 17:55:21",
@@ -61,8 +77,24 @@
       "source": "attack_0.png"
     },
     "monsters/skeleton_guard/skeleton_guard_sheet.png": {
-      "imported": "2026-11-05 17:55:21",
-      "source": "attack_0.png"
+      "imported": "2026-11-05 18:46:42",
+      "source": "walk_0.png"
+    },
+    "monsters/skeleton_guard/walk_0.png": {
+      "imported": "2026-11-05 18:46:42",
+      "source": "walk_0.png"
+    },
+    "monsters/skeleton_guard/walk_1.png": {
+      "imported": "2026-11-05 18:46:42",
+      "source": "walk_0.png"
+    },
+    "monsters/skeleton_guard/walk_2.png": {
+      "imported": "2026-11-05 18:46:42",
+      "source": "walk_0.png"
+    },
+    "monsters/skeleton_guard/walk_3.png": {
+      "imported": "2026-11-05 18:46:42",
+      "source": "walk_0.png"
     },
     "monsters/slime/attack_0.png": {
       "imported": "2026-11-05 18:32:38",
@@ -97,8 +129,24 @@
       "source": "attack_0.png"
     },
     "monsters/slime/slime_sheet.png": {
-      "imported": "2026-11-05 18:32:38",
-      "source": "attack_0.png"
+      "imported": "2026-11-05 18:46:43",
+      "source": "walk_0.png"
+    },
+    "monsters/slime/walk_0.png": {
+      "imported": "2026-11-05 18:46:42",
+      "source": "walk_0.png"
+    },
+    "monsters/slime/walk_1.png": {
+      "imported": "2026-11-05 18:46:42",
+      "source": "walk_0.png"
+    },
+    "monsters/slime/walk_2.png": {
+      "imported": "2026-11-05 18:46:42",
+      "source": "walk_0.png"
+    },
+    "monsters/slime/walk_3.png": {
+      "imported": "2026-11-05 18:46:42",
+      "source": "walk_0.png"
     },
     "monsters/slime_acid/attack_0.png": {
       "imported": "2026-11-05 18:32:38",
@@ -133,8 +181,24 @@
       "source": "attack_0.png"
     },
     "monsters/slime_acid/slime_acid_sheet.png": {
-      "imported": "2026-11-05 18:32:38",
-      "source": "attack_0.png"
+      "imported": "2026-11-05 18:46:43",
+      "source": "walk_0.png"
+    },
+    "monsters/slime_acid/walk_0.png": {
+      "imported": "2026-11-05 18:46:43",
+      "source": "walk_0.png"
+    },
+    "monsters/slime_acid/walk_1.png": {
+      "imported": "2026-11-05 18:46:43",
+      "source": "walk_0.png"
+    },
+    "monsters/slime_acid/walk_2.png": {
+      "imported": "2026-11-05 18:46:43",
+      "source": "walk_0.png"
+    },
+    "monsters/slime_acid/walk_3.png": {
+      "imported": "2026-11-05 18:46:43",
+      "source": "walk_0.png"
     }
   }
 }

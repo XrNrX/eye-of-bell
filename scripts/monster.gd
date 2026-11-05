@@ -16,6 +16,11 @@ const WIND_UP := 0.5      # Fraction of attack_interval it waits after reaching 
 const DAMAGE_COLOUR := Color(1.0, 0.89, 0.54)  # Palette torch_300.
 const MISS_COLOUR := Color(0.76, 0.74, 0.75)   # Palette stone_100.
 
+## Per sheet: for each frame, how many transparent rows lie below its lowest opaque pixel. A
+## monster stands with that pixel on the floor, so art with empty space under the feet (or a
+## puddle that does not reach the frame's bottom) does not float. Computed once per sheet.
+static var _foot_gap_cache := {}
+
 const DIRS: Array[Vector2i] = [
 	Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0),
 ]
@@ -28,6 +33,8 @@ var dying := false
 var sprite: Sprite3D
 var anim_time := 0.0
 var attack_cooldown := 0.0
+var _walking := false  # True while a step between tiles is animating (plays def.walk_frames).
+var _walk_time := 0.0
 var _one_shot := PackedInt32Array()  # Frames of an attack/hurt animation playing now.
 var _one_shot_time := 0.0
 var _one_shot_fps := 10.0
@@ -55,7 +62,8 @@ func _ready() -> void:
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	sprite.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y  # Always faces the camera, stays upright.
 	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
-	# Stand on the floor: lift by half the frame height.
+	# Stand on the floor: lift by half the frame height (the lowest opaque pixel of each frame is then
+	# dropped to the floor in _set_frame).
 	sprite.position.y = _sprite_height() / 2.0
 	add_child(sprite)
 
@@ -88,21 +96,57 @@ func _process(delta: float) -> void:
 		attack_cooldown = maxf(attack_cooldown, def.attack_interval * WIND_UP)
 
 
-## Show the attack/hurt animation if one is playing, otherwise loop the idle frames.
+## Show the attack/hurt animation if one is playing, else the walk cycle while stepping (if the
+## monster has one), else loop the idle frames.
 func _animate(delta: float) -> void:
 	anim_time += delta
 	if not _one_shot.is_empty():
 		_one_shot_time += delta
 		var i := int(_one_shot_time * _one_shot_fps)
 		if i < _one_shot.size():
-			sprite.frame = _frame(_one_shot[i])
+			_set_frame(_frame(_one_shot[i]))
 			return
 		if dying:
-			sprite.frame = _frame(_one_shot[_one_shot.size() - 1])  # Hold the last frame while dying.
+			_set_frame(_frame(_one_shot[_one_shot.size() - 1]))  # Hold the last frame while dying.
 			return
 		_one_shot = PackedInt32Array()
+	if _walking and not def.walk_frames.is_empty():
+		_walk_time += delta
+		_set_frame(_frame(def.walk_frames[int(_walk_time * def.walk_fps) % def.walk_frames.size()]))
+		return
 	var frames: PackedInt32Array = def.idle_frames
-	sprite.frame = _frame(frames[int(anim_time * def.idle_fps) % frames.size()])
+	_set_frame(_frame(frames[int(anim_time * def.idle_fps) % frames.size()]))
+
+
+## Show a frame, with its lowest opaque pixel on the floor.
+func _set_frame(i: int) -> void:
+	sprite.frame = i
+	var gaps := _foot_gaps()
+	sprite.offset.y = -float(gaps[i]) if i < gaps.size() else 0.0
+
+
+func _foot_gaps() -> PackedInt32Array:
+	var key: String = def.sheet.resource_path if def.sheet.resource_path != "" else str(def.sheet.get_instance_id())
+	if _foot_gap_cache.has(key):
+		return _foot_gap_cache[key]
+	var gaps := PackedInt32Array()
+	var image: Image = def.sheet.get_image()
+	if image != null:
+		var fw: int = image.get_width() / maxi(1, def.hframes)
+		for f in def.hframes:
+			var gap := image.get_height()
+			for row in range(image.get_height() - 1, -1, -1):
+				var seen := false
+				for x in fw:
+					if image.get_pixel(f * fw + x, row).a > 0.5:
+						seen = true
+						break
+				if seen:
+					gap = image.get_height() - 1 - row
+					break
+			gaps.append(gap if gap < image.get_height() else 0)
+	_foot_gap_cache[key] = gaps
+	return gaps
 
 
 ## A frame number from the definition, kept inside the sheet (a definition listing a frame the
@@ -310,9 +354,12 @@ func _step(dir: Vector2i) -> void:
 	var old := cell
 	cell += dir
 	DungeonMap.occupied[cell] = self
+	_walking = true
+	_walk_time = 0.0
 	var tween := create_tween()
 	tween.tween_property(self, "position", DungeonMap.cell_to_world(cell), STEP_TIME)
 	tween.tween_callback(func():
+		_walking = false
 		if DungeonMap.occupied.get(old) == self:
 			DungeonMap.occupied.erase(old)
 		get_tree().call_group("dungeon", "refresh"))  # Doors re-check who's standing in them.

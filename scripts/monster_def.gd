@@ -26,7 +26,11 @@ extends Resource
 ## Played when it is hit. Exactly two frames means [hurt, hurt flash]: they alternate
 ## flash, hurt, flash, hurt. Any other count (1, or 3 and more) plays in order, once.
 @export var hurt_frames := PackedInt32Array()
+## Looped while it is stepping from tile to tile (about 0.3 s a step). Empty: it keeps its idle
+## frames while it moves. The frames are extra frames at the end of the sheet (walk_0, walk_1, ...).
+@export var walk_frames := PackedInt32Array()
 @export var idle_fps := 2.0
+@export var walk_fps := 13.0  # Four frames in one 0.3 s step: one stride per step.
 @export var attack_fps := 8.0
 @export var hurt_fps := 14.0
 ## World units per sprite pixel (48x64 frame at 0.028 is about 1.3 x 1.8 units).
