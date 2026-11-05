@@ -10,3 +10,8 @@ __pycache__/
 tools/art/inbox/*
 !tools/art/inbox/README.md
 tools/art/_old/
+
+# Exported game builds
+Eye of Bell.exe
+Eye of Bell.console.exe
+Eye of Bell.pck
