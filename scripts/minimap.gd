@@ -10,14 +10,14 @@ const COLS := 11                   # How many cells wide and tall the window sho
 const ROWS := 9
 const ALPHA := 0.72                # Translucency of everything in the map.
 
-const INK := Color("14101a")
-const STONE_700 := Color("463f4f")
-const STONE_300 := Color("968e9a")
-const WOOD_500 := Color("6e4629")
-const RUST_300 := Color("d98343")
-const RUST_500 := Color("b0592a")
-const TORCH_500 := Color("f0b83a")
-const TORCH_300 := Color("ffe38a")
+const INK := Color("0b0a10")
+const STONE_700 := Color("31303c")
+const STONE_300 := Color("7b7a88")
+const WOOD_500 := Color("4f3a28")
+const RUST_300 := Color("a8673a")
+const RUST_500 := Color("7c4426")
+const TORCH_500 := Color("d99a36")
+const TORCH_300 := Color("f5cf80")
 
 var player: Node3D  # Assigned by debug_overlay.gd.
 

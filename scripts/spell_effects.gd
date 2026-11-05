@@ -13,9 +13,9 @@ const Config := preload("res://scripts/spell_effects_config.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const Settings := preload("res://scripts/settings.gd")
 
-const PALETTE_CORE := Color("e6dcc0")   # bone_300
-const PALETTE_MID := Color("c3bcc0")    # stone_100
-const PALETTE_EDGE := Color("968e9a")   # stone_300
+const PALETTE_CORE := Color("c9c0a4")   # bone_300
+const PALETTE_MID := Color("aaa9b4")    # stone_100
+const PALETTE_EDGE := Color("7b7a88")   # stone_300
 
 var orb: ImageTexture
 var live := 0  # Effects playing right now (tests read this).

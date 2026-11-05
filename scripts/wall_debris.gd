@@ -17,7 +17,7 @@ const SETTLE_SPEED := 0.12    # Slower than this (and not spinning fast) counts 
 const SETTLE_HOLD := 0.5      # Everything must stay settled this long.
 const MAX_SECONDS := 4.0      # Remove the cubes after this long however they are moving.
 const SHRINK_SECONDS := 0.3   # They shrink away rather than popping out.
-const DUST_COLOUR := Color("968e9a")  # stone_300
+const DUST_COLOUR := Color("7b7a88")  # stone_300
 
 var cubes: Array[RigidBody3D] = []
 var age := 0.0

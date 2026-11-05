@@ -31,7 +31,7 @@ def check(name, cond):
 
 
 # Palette
-check("palette has 24 distinct colours", len(PAL) == 24 and len(PAL.allowed) == 24)
+check("palette has 32 distinct colours", len(PAL) == 32 and len(PAL.allowed) == 32)
 check("every ramp colour exists", all(c in PAL.allowed for r in ("stone", "wood", "rust", "moss", "bone", "torch") for c in PAL.ramp(r)))
 check("nearest snaps to a palette colour", PAL.nearest((100, 100, 110)) in PAL.allowed)
 off = Image.new("RGBA", (2, 1), (*PAL["ink"], 255))

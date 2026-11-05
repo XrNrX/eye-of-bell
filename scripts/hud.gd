@@ -18,10 +18,10 @@ const UiLayout := preload("res://scripts/ui_layout.gd")
 const FeelConfigScript := preload("res://scripts/combat_feel_config.gd")
 
 const MAX_LINES := 40
-const NEWEST := Color("e6dcc0")    # Palette bone_300.
-const RECENT := Color("c3bcc0")    # Palette stone_100.
-const OLD := Color("968e9a")       # Palette stone_300.
-const STATUS := Color("ffe38a")    # Palette torch_300.
+const NEWEST := Color("c9c0a4")    # Palette bone_300.
+const RECENT := Color("aaa9b4")    # Palette stone_100.
+const OLD := Color("7b7a88")       # Palette stone_300.
+const STATUS := Color("f5cf80")    # Palette torch_300.
 const PADDING := Vector2(8, 6)
 const STATUS_HEIGHT := 12.0
 

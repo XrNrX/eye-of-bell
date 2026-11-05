@@ -25,17 +25,17 @@ const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const FONT := preload("res://art/fonts/PressStart2P-Regular.ttf")
 
 # Palette colours (tools/art/palette.json).
-const INK := Color("14101a")
-const STONE_900 := Color("231e2b")
-const STONE_800 := Color("322c3b")
-const STONE_700 := Color("463f4f")
-const STONE_500 := Color("6a6272")
-const STONE_100 := Color("c3bcc0")
-const RUST_700 := Color("7a3a1c")
-const BONE_300 := Color("e6dcc0")
-const TORCH_700 := Color("c78a1e")
-const TORCH_500 := Color("f0b83a")
-const TORCH_300 := Color("ffe38a")
+const INK := Color("0b0a10")
+const STONE_900 := Color("14131b")
+const STONE_800 := Color("1f1e28")
+const STONE_700 := Color("31303c")
+const STONE_500 := Color("504f5e")
+const STONE_100 := Color("aaa9b4")
+const RUST_700 := Color("4e2a1a")
+const BONE_300 := Color("c9c0a4")
+const TORCH_700 := Color("9a5f1c")
+const TORCH_500 := Color("d99a36")
+const TORCH_300 := Color("f5cf80")
 
 const TITLE_SIZE := 32        # Four native pixels per font pixel: chunky.
 const TEXT_SIZE := 16         # Two (the same pixel size as the 2x dungeon view).

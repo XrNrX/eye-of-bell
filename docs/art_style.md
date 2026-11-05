@@ -15,31 +15,32 @@ torchlight, and it is weak. Nothing is clean, bright, cute or heroic.
 
 ## Palette
 
-The palette is `tools/art/palette.json` (currently the original **24-colour** "Dark Stone Dungeon").
-Every game image uses only these colours; the importer snaps anything else to the nearest one
-(nearest colour, no dithering unless asked), so prompt for the *mood* and let the snap do the
-exact values.
+The palette is `tools/art/palette.json` (32 colours, "Cursed Dungeon 32"). Every game image uses
+only these colours; the importer snaps anything else to the nearest one (nearest colour, no
+dithering unless asked), so prompt for the *mood* and let the snap do the exact values.
 
-| Role | Names (dark to light) |
-|---|---|
-| Near-black and cold greys | `ink`, `stone_900`, `stone_800`, `stone_700`, `stone_500`, `stone_300`, `stone_100` |
-| Damp browns (wood, soil, leather) | `soil_900`, `wood_700`, `wood_500`, `leather_400` |
-| Rust (old iron, old fire) | `rust_700`, `rust_500`, `rust_300` |
-| Dead moss, rot and the **curse green** | `moss_900`, `moss_700`, `moss_500`, `slime_300` |
-| Old bone (dirty, never white) | `bone_700`, `bone_500`, `bone_300` |
-| **Torchlight** (the only warm light) | `torch_700`, `torch_500`, `torch_300` |
-
-**The curse accents.** The intended look uses a sickly pale green glow (the main curse colour),
-bruised purple and dried-blood red, sparingly. Today only the green exists (the `moss_*` and
-`slime_300` ramp); there is no purple and no true blood red in `palette.json`. A darker, colder
-32-colour palette that adds `curse_*`, `bruise_*` and `blood_*` was proposed and **not applied**
-(it is kept in a git stash); until a palette change is approved, approximate purple with
-`stone_700`/`stone_800` and blood with `rust_700`.
+| Role | Names (dark to light) | Hex |
+|---|---|---|
+| Near-black and cold greys | `ink`, `stone_900`, `stone_800`, `stone_700`, `stone_500`, `stone_300`, `stone_100` | `#0b0a10` `#14131b` `#1f1e28` `#31303c` `#504f5e` `#7b7a88` `#aaa9b4` |
+| Damp browns (wood, soil, leather) | `soil_900`, `wood_700`, `wood_500`, `leather_400` | `#1c1511` `#33261c` `#4f3a28` `#74553a` |
+| Rust (dull, old iron and old fire) | `rust_700`, `rust_500`, `rust_300` | `#4e2a1a` `#7c4426` `#a8673a` |
+| Dead moss and rot | `moss_900`, `moss_700`, `moss_500`, `slime_300` | `#161e1a` `#26382c` `#44624a` `#86a672` |
+| Old bone (dirty, never white) | `bone_700`, `bone_500`, `bone_300` | `#6b6250` `#9c9278` `#c9c0a4` |
+| **Torchlight** (the only warm light) | `torch_700`, `torch_500`, `torch_300` | `#9a5f1c` `#d99a36` `#f5cf80` |
+| **Curse green** (the main accent) | `curse_700`, `curse_500`, `curse_300` | `#3a6b4c` `#7fb88a` `#cdeec0` |
+| **Bruised purple** (accent) | `bruise_900`, `bruise_700`, `bruise_500` | `#1e1428` `#3b2850` `#6a4a86` |
+| **Dried blood** (accent) | `blood_700`, `blood_500` | `#4a1418` `#7a2224` |
 
 How much of each: in any picture, greys and browns should be roughly 80% or more of the pixels.
-The curse accents together are **a few percent**, placed where they mean something (eyes, veins,
-runes, a glow around a magic thing, rot in a crack). If the accents are everywhere they stop being
-a curse and become decoration.
+The three curse accents together are **a few percent**, placed where they mean something (eyes,
+veins, runes, a glow around a magic thing, rot in a crack). If the accents are everywhere they
+stop being a curse and become decoration. In particular: a creature's body is **grey or dark**, not
+green; the green is in its eyes, runes and cracks.
+
+Two lessons from the first test sprite: an image generator will happily make a whole skeleton pale
+curse green if "green" is in the prompt (ask for grey, blackened bones and put the green only in
+the eyes, runes and cracks), and "rusted chains" can come back as amber or gold specks (warm
+colours are for torchlight only: ask for dark iron chains).
 
 ## Light
 

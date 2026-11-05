@@ -1,0 +1,16 @@
+{
+  "files": {
+    "monsters/skeleton_guard/idle_0.png": {
+      "imported": "2026-11-05 17:35:20",
+      "source": "idle_0.png"
+    },
+    "monsters/skeleton_guard/idle_1.png": {
+      "imported": "2026-11-05 17:35:20",
+      "source": "idle_0.png"
+    },
+    "monsters/skeleton_guard/skeleton_guard_sheet.png": {
+      "imported": "2026-11-05 17:35:20",
+      "source": "idle_0.png"
+    }
+  }
+}

@@ -10,9 +10,9 @@ extends CanvasLayer
 const SaveGame := preload("res://scripts/save_game.gd")
 const MAIN_MENU := "res://scenes/main_menu.tscn"
 
-const INK := Color("14101a")
-const TORCH_500 := Color("f0b83a")
-const STONE_300 := Color("968e9a")
+const INK := Color("0b0a10")
+const TORCH_500 := Color("d99a36")
+const STONE_300 := Color("7b7a88")
 const BUTTON_WIDTH := 224.0
 
 var dim: ColorRect
