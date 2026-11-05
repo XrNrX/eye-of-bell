@@ -2,12 +2,19 @@ extends RefCounted
 ## The level data (used via preload, see dungeon_builder.gd / player.gd).
 ## Edit MAP below like a text file:
 ## 1 = wall, 0 = floor, 2 = door (starts closed), 3 = locked door (needs a key),
-## 4 = stairs down (stepping on any of them completes the level).
+## 4 = stairs down (stepping on any of them completes the level),
+## 5 = portcullis (an iron grate: a door you can see through, never opened by hand; give it
+## an ID in DOOR_IDS and only its linked lever or plate raises it).
 ## Row index is Z (north at top), column index is X.
 
 const TILE_SIZE := 2.0   # World units per grid tile.
 const WALL_HEIGHT := 2.0
 
+## The level is traced from a hand-drawn map (the 23x23 grid of map.png, shifted two rows down and one
+## column right so there is a wall border and room for two closets north of room 7). Where the map
+## drew a feature the game has no tile for, it became: archway = open floor, portcullis = a door
+## driven by a lever or plate (DOOR_IDS), up stairs = the landing the player starts on.
+## Numbers in the comments are the room numbers on that map.
 ## The level is traced from a hand-drawn map (the 23x23 grid of map.png, shifted two rows down and one
 ## column right so there is a wall border and room for two closets north of room 7). Where the map
 ## drew a feature the game has no tile for, it became: archway = open floor, portcullis = a door
@@ -35,7 +42,7 @@ const MAP := [
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1],  # 3
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1],  # 4
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 0, 0, 0, 1],  # 5
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 2, 1],  # 6
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 5, 1],  # 6
 	[1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],  # 7
 	[1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],  # 8
 	[1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1],  # 9
@@ -50,7 +57,7 @@ const MAP := [
 	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 3, 1],  # 18
 	[1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],  # 19
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1],  # 20
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 2, 0, 1],  # 21
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 5, 0, 1],  # 21
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1],  # 22
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 4, 4, 0, 1],  # 23
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 24
@@ -196,7 +203,7 @@ static func has_line_of_sight(a: Vector2i, b: Vector2i) -> bool:
 	var n: int = maxi(absi(d.x), absi(d.y))
 	for i in range(1, n):
 		var c := Vector2i(roundi(a.x + d.x * float(i) / n), roundi(a.y + d.y * float(i) / n))
-		if is_blocked(c):
+		if is_blocked(c) and not is_portcullis(c):  # Bars block feet, not eyes.
 			return false
 	return true
 
@@ -207,11 +214,19 @@ static func reset_run() -> void:
 	unlocked_doors.clear()
 
 
-## True if the cell is a door of any kind (open, closed or locked).
+## True if the cell is a door of any kind (open, closed, locked or a portcullis).
 static func is_door(cell: Vector2i) -> bool:
 	if cell.y < 0 or cell.y >= MAP.size() or cell.x < 0 or cell.x >= MAP[cell.y].size():
 		return false
-	return MAP[cell.y][cell.x] == 2 or MAP[cell.y][cell.x] == 3
+	return MAP[cell.y][cell.x] == 2 or MAP[cell.y][cell.x] == 3 or MAP[cell.y][cell.x] == 5
+
+
+## True if the cell is a portcullis (open or closed): the iron grate. It blocks movement and
+## missiles like a door while shut, but not sight (see has_line_of_sight).
+static func is_portcullis(cell: Vector2i) -> bool:
+	if cell.y < 0 or cell.y >= MAP.size() or cell.x < 0 or cell.x >= MAP[cell.y].size():
+		return false
+	return MAP[cell.y][cell.x] == 5
 
 
 ## True if the cell is the stairs down.

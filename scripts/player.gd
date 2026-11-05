@@ -60,6 +60,10 @@ func _find_singletons() -> void:
 ## A left click on the 3D view (game_view.gd passes it on; the frame and panels never reach
 ## it). Shift+click sends a floor item to the party instead of the cursor.
 func world_click(shift := false) -> void:
+	var front := cell + DIRS[facing]
+	if DungeonMap.is_portcullis(front) and not DungeonMap.open_doors.has(front):
+		_say("The portcullis won't budge.")  # Clicking the grate: it only answers to its switch.
+		return
 	_click_item(shift)
 
 
@@ -210,6 +214,9 @@ func _interact() -> void:
 
 	var front := cell + DIRS[facing]
 	if not DungeonMap.is_door(front) or DungeonMap.open_doors.has(front):
+		return
+	if DungeonMap.is_portcullis(front):
+		_say("The portcullis won't budge.")  # Never by hand: only its linked lever or plate.
 		return
 	if DungeonMap.door_id(front) != "":
 		_say("It won't budge.")  # Only its switches can open it.

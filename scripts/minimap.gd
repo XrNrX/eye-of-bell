@@ -69,6 +69,8 @@ func _cell_color(c: Vector2i) -> Color:
 		return _a(STONE_700)
 	if DungeonMap.is_stairs(c):
 		return _a(TORCH_500)
+	if DungeonMap.is_portcullis(c) and not DungeonMap.open_doors.has(c):
+		return _a(STONE_300)  # A grate: lighter than a wooden door.
 	if DungeonMap.is_door(c):
 		if DungeonMap.is_locked(c):
 			return _a(RUST_500)

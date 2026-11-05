@@ -16,6 +16,7 @@ const CEILING_TEXTURE := "res://art/tiles/ceiling.png"
 const STAIRS_TEXTURE := "res://art/tiles/stairs.png"
 const DOOR_TEXTURE := "res://art/tiles/door.png"
 const DOOR_LOCKED_TEXTURE := "res://art/tiles/door_locked.png"
+const PORTCULLIS_TEXTURE := "res://art/tiles/portcullis.png"
 const ITEM_HEIGHT := 0.22  # Low, near the floor -- "at the feet" of the view, not hip-height.
 const ITEM_BOB := 0.05
 const THROW_HEIGHT := 0.6          # A thrown item flies at about hand height...
@@ -28,6 +29,7 @@ const DOOR_COLOR := Color(0.40, 0.26, 0.14)
 
 const DOOR_THICKNESS := 0.2
 const DOOR_OPEN_TIME := 0.6
+const PORTCULLIS_TIME := 1.5   # A heavy grate: it rises and drops more slowly than a door.
 const TORCH_PIXEL_SIZE := 0.03  # World units per sprite pixel.
 const TORCH_HEIGHT := 1.3
 const TORCH_ENERGY := 0.9
@@ -92,6 +94,12 @@ func _ready() -> void:
 	locked_mesh.size = door_mesh.size
 	locked_mesh.material = _make_material(DOOR_COLOR, DOOR_LOCKED_TEXTURE)
 
+	# The portcullis: a single double-sided quad of transparent iron bars (alpha cut-out), so the
+	# gaps are really open and you can see through.
+	var portcullis_mesh := QuadMesh.new()
+	portcullis_mesh.size = Vector2(s, h)
+	portcullis_mesh.material = _make_grate_material(PORTCULLIS_TEXTURE)
+
 	for z in DungeonMap.MAP.size():
 		for x in DungeonMap.MAP[z].size():
 			var cell := Vector2i(x, z)
@@ -104,7 +112,7 @@ func _ready() -> void:
 			# Flip the plane upside down so its face points down at the player.
 			_add_mesh(ceiling_mesh, pos + Vector3(0, h, 0), Vector3(PI, 0, 0))
 			if DungeonMap.is_door(cell):
-				var mesh := locked_mesh if DungeonMap.is_locked(cell) else door_mesh
+				var mesh: Mesh = portcullis_mesh if DungeonMap.is_portcullis(cell) else (locked_mesh if DungeonMap.is_locked(cell) else door_mesh)
 				_add_door(mesh, cell, pos + Vector3(0, h / 2.0, 0))
 
 	for torch in DungeonMap.TORCHES:
@@ -335,7 +343,7 @@ func show_throw(from_cell: Vector2i, to_cell: Vector2i, def: Resource) -> void:
 
 ## Open an ordinary door (F). Called by the player via the "dungeon" group.
 func open_door(cell: Vector2i) -> void:
-	if not DungeonMap.is_locked(cell):
+	if not DungeonMap.is_locked(cell) and not DungeonMap.is_portcullis(cell):  # (A portcullis only opens through its switches.)
 		_drive_door(cell, true)
 
 
@@ -349,14 +357,15 @@ func _drive_door(cell: Vector2i, open: bool) -> void:
 	if not open and (DungeonMap.player_cell == cell or DungeonMap.is_occupied(cell)):
 		return
 	door_want[cell] = open
-	get_tree().call_group("audio", "play", "door_open" if open else "door_close")
+	var grate := DungeonMap.is_portcullis(cell)
+	get_tree().call_group("audio", "play", "portcullis" if grate else ("door_open" if open else "door_close"))
 	if door_tweens.has(cell):
 		door_tweens[cell].kill()
 
 	var h := DungeonMap.WALL_HEIGHT
 	var door: MeshInstance3D = doors[cell]
 	var target_y := h / 2.0 + (h if open else 0.0)
-	var time := DOOR_OPEN_TIME * absf(target_y - door.position.y) / h
+	var time := (PORTCULLIS_TIME if grate else DOOR_OPEN_TIME) * absf(target_y - door.position.y) / h
 	var tween := create_tween()
 	tween.tween_property(door, "position:y", target_y, time)
 	if open:
@@ -432,6 +441,15 @@ func _add_mesh(mesh: Mesh, pos: Vector3, rot := Vector3.ZERO) -> MeshInstance3D:
 
 
 ## Material with nearest filtering. Uses the texture if it exists, else a flat colour.
+## Transparent iron bars: alpha cut-out (hard pixel edges, no sorting problems), visible from both sides.
+func _make_grate_material(texture_path: String) -> StandardMaterial3D:
+	var mat := _make_material(Color(0.4, 0.4, 0.45), texture_path)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	mat.alpha_scissor_threshold = 0.5
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	return mat
+
+
 func _make_material(color: Color, texture_path: String) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	if ResourceLoader.exists(texture_path):

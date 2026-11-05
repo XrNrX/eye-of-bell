@@ -165,6 +165,16 @@ def door_open():
     return finish(swell(mix(creak, rasp), 0.12, 0.5), 0.6)
 
 
+def portcullis():
+    """A placeholder rattle: a grinding rumble with a run of clanking chain links."""
+    grind = gain(lowpass(noise(1.3, 71), 500), 0.5)
+    clanks = []
+    for i in range(11):
+        f = 700 + (i * 137) % 500
+        clanks.append((decay(osc(f, 0.1, "square"), 0.025), 0.05 + 0.105 * i))
+    return finish(swell(mix(grind, *clanks), 0.1, 0.35), 0.6)
+
+
 def door_close():
     return finish(thud(80, 38, 0.12, 0.38, 6, 0.6, 700), 0.7)
 
@@ -319,7 +329,7 @@ SOUNDS = {
     "swing": (swing, None), "whiff": (whiff, None), "hit": (hit, None), "throw": (throw, None),
     "monster_attack": (monster_attack, None), "monster_hurt": (monster_hurt, None), "monster_die": (monster_die, None),
     "hero_hurt": (hero_hurt, None), "hero_die": (hero_die, None),
-    "potion": (potion, None), "zap": (zap, None), "heal": (heal, None), "shield": (shield, None), "bless": (bless, None), "fireball": (fireball, None), "explosion": (explosion, None),
+    "potion": (potion, None), "zap": (zap, None), "heal": (heal, None), "shield": (shield, None), "bless": (bless, None), "portcullis": (portcullis, None), "fireball": (fireball, None), "explosion": (explosion, None),
     "ui_click": (ui_click, None), "ui_swap": (ui_swap, None), "save": (save, None), "load": (load, None),
     "level_complete": (level_complete, None), "game_over": (game_over, None),
 }

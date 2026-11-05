@@ -1,5 +1,5 @@
 """Dungeon tiles (64x64, all seamless): wall, floor, ceiling, door, locked door,
-pressure plate and stairs. Written to res://art/tiles/ using only palette colours.
+portcullis (transparent iron bars), pressure plate and stairs. Written to res://art/tiles/ using only palette colours.
 
 Most of them follow one recipe:
     height map -> top-left lighting -> add tint / grain / cracks -> dither onto a palette ramp
@@ -165,6 +165,31 @@ def door(seed=4):
     return img
 
 
+def portcullis():
+    """An iron grate you can see through: transparent except for the bars. Vertical bars every 8
+    pixels (lit on the left, shaded on the right) ending in spikes, three crossbars with rivets
+    where the bars cross. The 3D door uses it with alpha cut-out, so the gaps are really open."""
+    img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+    px = img.load()
+    light, base, dark = PAL["stone_300"], PAL["stone_500"], PAL["stone_700"]
+    bars = list(range(2, SIZE - 2, 8))
+    for x0 in bars:
+        for y in range(SIZE):
+            shape = [(0, light), (1, base), (2, dark)]
+            if y >= SIZE - 3:  # The spike: narrower toward the point.
+                shape = [(1, base)] if y == SIZE - 1 else [(1, base), (0, light)] if y == SIZE - 2 else shape
+            for dx, c in shape:
+                px[x0 + dx, y] = (*c, 255)
+    for y0 in (4, 28, 52):  # Crossbars.
+        for y in range(y0, y0 + 4):
+            for x in range(SIZE):
+                c = light if y == y0 else dark if y == y0 + 3 else base
+                px[x, y] = (*c, 255)
+        for x0 in bars:
+            px[x0 + 1, y0 + 1] = (*PAL["stone_100"], 255)  # Rivet where a bar crosses.
+    return img
+
+
 def locked_door():
     """The plain door with a big brass padlock and keyhole."""
     img = door()
@@ -234,6 +259,6 @@ def stairs():
 def build():
     written = []
     for name, make in (("wall", wall), ("floor", floor), ("ceiling", ceiling), ("door", door),
-                       ("door_locked", locked_door), ("plate", plate), ("stairs", stairs)):
+                       ("door_locked", locked_door), ("portcullis", portcullis), ("plate", plate), ("stairs", stairs)):
         written.append(save_png(to_image(make()), f"tiles/{name}.png"))
     return written
