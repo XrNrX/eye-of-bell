@@ -95,14 +95,20 @@ func _animate(delta: float) -> void:
 		_one_shot_time += delta
 		var i := int(_one_shot_time * _one_shot_fps)
 		if i < _one_shot.size():
-			sprite.frame = _one_shot[i]
+			sprite.frame = _frame(_one_shot[i])
 			return
 		if dying:
-			sprite.frame = _one_shot[_one_shot.size() - 1]  # Hold the last frame while dying.
+			sprite.frame = _frame(_one_shot[_one_shot.size() - 1])  # Hold the last frame while dying.
 			return
 		_one_shot = PackedInt32Array()
 	var frames: PackedInt32Array = def.idle_frames
-	sprite.frame = frames[int(anim_time * def.idle_fps) % frames.size()]
+	sprite.frame = _frame(frames[int(anim_time * def.idle_fps) % frames.size()])
+
+
+## A frame number from the definition, kept inside the sheet (a definition listing a frame the
+## sheet doesn't have shows the nearest one instead of erroring).
+func _frame(i: int) -> int:
+	return clampi(i, 0, maxi(0, def.hframes - 1))
 
 
 func _play(frames: PackedInt32Array, fps: float) -> void:
@@ -127,7 +133,7 @@ func _attack() -> void:
 	if was_telegraphing and feel_cfg.telegraph_lunge:
 		_lunge()
 	if not def.attack_frames.is_empty():
-		_play(def.attack_frames, 8.0)
+		_play(def.attack_frames, def.attack_fps)
 	get_tree().call_group("party", "take_hit_from", self)
 
 
@@ -205,10 +211,12 @@ func take_hit(result: Dictionary) -> void:
 	hp -= result.damage
 	_float_text(str(result.damage), DAMAGE_COLOUR)
 	get_tree().call_group("combat_feel", "monster_hit", result.damage, hp <= 0)
-	if def.hurt_frames.size() >= 2:  # Flash: alternate the white frame with the hurt frame.
+	if def.hurt_frames.size() == 2:  # [hurt, flash]: alternate the white frame with the hurt frame.
 		var hurt: int = def.hurt_frames[0]
 		var flash: int = def.hurt_frames[1]
-		_play(PackedInt32Array([flash, hurt, flash, hurt]), 14.0)
+		_play(PackedInt32Array([flash, hurt, flash, hurt]), def.hurt_fps)
+	elif not def.hurt_frames.is_empty():  # Any other number of frames: play them as drawn.
+		_play(def.hurt_frames, def.hurt_fps)
 	if hp <= 0:
 		_die()
 

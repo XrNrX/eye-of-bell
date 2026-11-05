@@ -11,6 +11,8 @@ lever), ui (hand icon), items (item icons), skeleton, slime, portraits (party fa
 To add one, drop a gen_<name>.py with build() into this folder.
 
 Options:  --only NAME   run just the generator with that name (e.g. --only tiles)
+          --overwrite-imported   also regenerate art that tools/art/import_pixellab.py replaced
+                        (normally left alone, so a rebuild never undoes an import)
           --scale N     pixel-size scale for the UI art (default 2). Generators whose build()
                         takes a `scale` argument (the frame, arrows, portraits, UI icons and
                         inventory item icons) are drawn on their small logical grid and
@@ -19,6 +21,7 @@ Options:  --only NAME   run just the generator with that name (e.g. --only tiles
 import argparse
 import importlib
 import inspect
+import os
 import sys
 import time
 from pathlib import Path
@@ -34,7 +37,11 @@ def main():
     ap = argparse.ArgumentParser(description="Regenerate all art.")
     ap.add_argument("--only", help="run only the step with this name")
     ap.add_argument("--scale", type=int, default=2, help="pixel-size scale for the UI art (default 2)")
+    ap.add_argument("--overwrite-imported", action="store_true",
+                    help="regenerate art that import_pixellab.py replaced (normally kept; see tools/art/imported.json)")
     args = ap.parse_args()
+    if args.overwrite_imported:
+        os.environ["ART_OVERWRITE_IMPORTED"] = "1"
 
     failures = []
     start = time.time()

@@ -15,12 +15,19 @@ extends Resource
 @export var sight_range := 4
 
 @export_group("Sprite")
-## Sprite sheet: one row of equally sized frames, side by side.
+## Sprite sheet: one row of equally sized frames, side by side. Nothing in the code assumes how
+## many: the frame count is `hframes`, and each animation is the list of frame numbers below,
+## so art with more (or fewer) frames just needs these numbers changed (the importer,
+## tools/art/import_pixellab.py, can do it from a layout file).
 @export var sheet: Texture2D
 @export var hframes := 1
-@export var idle_frames := PackedInt32Array([0])
-@export var attack_frames := PackedInt32Array()  # Played when it attacks.
-@export var hurt_frames := PackedInt32Array()    # [hurt, hurt flash]: played when hit.
+@export var idle_frames := PackedInt32Array([0])    # Looped.
+@export var attack_frames := PackedInt32Array()     # Played in order when it attacks.
+## Played when it is hit. Exactly two frames means [hurt, hurt flash]: they alternate
+## flash, hurt, flash, hurt. Any other count (1, or 3 and more) plays in order, once.
+@export var hurt_frames := PackedInt32Array()
 @export var idle_fps := 2.0
+@export var attack_fps := 8.0
+@export var hurt_fps := 14.0
 ## World units per sprite pixel (48x64 frame at 0.028 is about 1.3 x 1.8 units).
 @export var pixel_size := 0.028

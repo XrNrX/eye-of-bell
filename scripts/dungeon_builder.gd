@@ -20,7 +20,7 @@ const ITEM_HEIGHT := 0.22  # Low, near the floor -- "at the feet" of the view, n
 const ITEM_BOB := 0.05
 const THROW_HEIGHT := 0.6          # A thrown item flies at about hand height...
 const THROW_TIME_PER_TILE := 0.08  # ...this fast.
-const TORCH_SHEET := "res://art/sprites/torch.png"  # 4 frames of 16x32, side by side.
+const TORCH_SHEET := "res://art/sprites/torch.png"  # Frames of 16x32 side by side (any number, see _make_torch_frames).
 const WALL_COLOR := Color(0.45, 0.40, 0.35)
 const FLOOR_COLOR := Color(0.28, 0.25, 0.22)
 const CEILING_COLOR := Color(0.20, 0.18, 0.17)
@@ -393,16 +393,24 @@ func _add_torch(cell: Vector2i, side: int) -> void:
 	add_child(light)
 
 
-## Cut the 4-frame sprite sheet into an animation. Returns an empty set if missing.
+## Cut the torch sprite sheet (one row of frames, each half as wide as it is tall) into an
+## animation. The number of frames is read from the sheet itself, so art with more frames
+## just works. Returns an empty set if the sheet is missing.
 func _make_torch_frames() -> SpriteFrames:
+	return torch_frames_from(load(TORCH_SHEET) if ResourceLoader.exists(TORCH_SHEET) else null)
+
+
+## The torch animation from a sheet texture (null gives an empty one).
+func torch_frames_from(sheet: Texture2D) -> SpriteFrames:
 	var frames := SpriteFrames.new()  # Comes with an animation called "default".
 	frames.set_animation_speed("default", 8.0)
-	if ResourceLoader.exists(TORCH_SHEET):
-		var sheet: Texture2D = load(TORCH_SHEET)
-		for i in 4:
+	if sheet != null:
+		var frame_h := sheet.get_height()
+		var frame_w := maxi(1, int(frame_h * 0.5))  # Torch frames are 1:2 (16x32 as drawn).
+		for i in maxi(1, int(sheet.get_width() / float(frame_w))):
 			var frame := AtlasTexture.new()
 			frame.atlas = sheet
-			frame.region = Rect2(i * 16, 0, 16, 32)
+			frame.region = Rect2(i * frame_w, 0, frame_w, frame_h)
 			frames.add_frame("default", frame)
 	return frames
 

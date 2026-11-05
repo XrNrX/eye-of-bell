@@ -5,6 +5,7 @@
     save_frames(images, order, animations, "slime")   # frames + sheet + JSON
 """
 import json
+import os
 import re
 from pathlib import Path
 
@@ -17,6 +18,29 @@ from palette import ART_DIR, PAL
 CRISP = {"mipmaps/generate": "false", "detect_3d/compress_to": "0", "compress/mode": "0"}
 
 
+# Art that tools/art/import_pixellab.py has replaced (hand-made or PixelLab, not procedural) is
+# listed in tools/art/imported.json. The generators must not overwrite it, so save_png skips those
+# files (and says so). Set ART_OVERWRITE_IMPORTED=1, or pass `build_all.py --overwrite-imported`,
+# to regenerate them anyway; `import_pixellab.py --restore` brings the procedural version back.
+IMPORTED_MANIFEST = Path(__file__).resolve().parent / "imported.json"
+
+
+def imported_paths():
+    """Set of art-relative paths (forward slashes) that were imported, per imported.json."""
+    try:
+        return set(json.loads(IMPORTED_MANIFEST.read_text()).get("files", {}))
+    except (OSError, ValueError):
+        return set()
+
+
+def is_protected(rel_path, root=None):
+    """True if this file is imported art the generators must leave alone. Only ever true for the
+    real art folder (a `root` override, used by tests, is never protected)."""
+    if root is not None or os.environ.get("ART_OVERWRITE_IMPORTED"):
+        return False
+    return str(rel_path).replace("\\", "/") in imported_paths()
+
+
 def save_png(img, rel_path, check=True, root=None, scale=1):
     """Save an image under res://art/<rel_path>, creating folders as needed. Raises if
     any opaque pixel is off-palette (pass check=False only for deliberate exceptions).
@@ -24,9 +48,12 @@ def save_png(img, rel_path, check=True, root=None, scale=1):
     whole number first, nearest-neighbour, so the art is drawn once on a small logical grid
     and every logical pixel becomes a scale x scale block (UI art uses 2: the same pixel
     size as the 3D view, which is rendered small and shown at 2x)."""
+    dest = (root or ART_DIR) / rel_path
+    if is_protected(rel_path, root):
+        print(f"    kept imported art: {rel_path}")
+        return dest
     if scale != 1:
         img = img.resize((img.width * scale, img.height * scale), Image.NEAREST)
-    dest = (root or ART_DIR) / rel_path
     if check:
         PAL.check(img, str(rel_path))
     dest.parent.mkdir(parents=True, exist_ok=True)
@@ -52,9 +79,23 @@ def save_frames(images, order, animations, name, out_dir=None):
         rects[frame] = {"x": i * fw, "y": 0, "w": fw, "h": fh}
     written.append(save_png(sheet, f"{sub}{name}_sheet.png", root=root))
     json_path = (root or ART_DIR) / sub / f"{name}_sheet.json"
-    json_path.write_text(json.dumps({"frame_size": [fw, fh], "frames": rects, "animations": animations}, indent=2))
+    if not is_protected(f"{sub}{name}_sheet.png", root):  # Imported sheet: its json describes the imported art.
+        json_path.write_text(json.dumps({"frame_size": [fw, fh], "frames": rects, "animations": animations}, indent=2))
     written.append(json_path)
     return written
+
+
+def save_sheet_info(rel_png, frame_size, frames, count_free, root=None):
+    """Write <name>_sheet.json beside a one-row sprite sheet (art/sprites/torch.png ->
+    torch_sheet.json): the size of one frame and how many there are. The importer reads these to
+    know what a replacement sheet must look like; count_free says whether the game copes with a
+    different number of frames (the torch does, it reads the count from the sheet)."""
+    rel_json = str(rel_png).rsplit(".", 1)[0] + "_sheet.json"
+    dest = (root or ART_DIR) / rel_json
+    if is_protected(rel_png, root):
+        return dest
+    dest.write_text(json.dumps({"frame_size": list(frame_size), "frames": frames, "count_free": count_free}, indent=2))
+    return dest
 
 
 def patch_imports(root=None):

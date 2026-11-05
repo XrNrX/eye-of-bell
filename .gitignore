@@ -5,3 +5,8 @@
 # Python
 __pycache__/
 *.pyc
+
+# PixelLab importer: the inbox holds your raw exports, _old the procedural originals it replaced
+tools/art/inbox/*
+!tools/art/inbox/README.md
+tools/art/_old/
