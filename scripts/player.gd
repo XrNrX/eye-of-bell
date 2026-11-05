@@ -152,8 +152,6 @@ func _try_move(dir: Vector2i) -> void:
 	tween.tween_callback(_arrive)
 
 
-## Tell the world which tile we're on, so pressure plates and switch doors react.
-## Done when a step STARTS: we already count as standing on the new tile.
 ## Put the party at a cell and facing at once (loading a save).
 func restore(new_cell: Vector2i, new_facing: int) -> void:
 	if tween and tween.is_running():
@@ -166,6 +164,8 @@ func restore(new_cell: Vector2i, new_facing: int) -> void:
 	_report_position()
 
 
+## Tell the world which tile we're on, so pressure plates and switch doors react.
+## Done when a step STARTS: we already count as standing on the new tile.
 func _report_position() -> void:
 	DungeonMap.player_cell = cell
 	get_tree().call_group("dungeon", "refresh")
