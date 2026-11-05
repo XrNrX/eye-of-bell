@@ -29,6 +29,7 @@ const MANA_REGEN_TIME := 2.5  # Seconds per point of mana regained (always; ther
 enum Act { NOTHING, MELEE, THROW, SPELLS, CANT_REACH }
 
 signal hp_changed(slot: int)
+signal formation_changed  # The party was rearranged (see set_formation); HUDs redraw every panel.
 signal quick_changed(slot: int)  # A member's quick slots changed (contents or cooldown started).
 signal cooldown_started(slot: int, duration: float)
 signal hero_hit(slot: int, damage: int)  # damage 0 means the monster missed.
@@ -46,7 +47,8 @@ const HAND_SLOTS := 2
 
 class Member:
 	var def: Resource
-	var slot: int
+	var hero_index: int  # Which hero this is (index into hero_defs). Never changes.
+	var slot: int        # Where they stand now: 0-3, front row first. Changes when the formation does.
 	var hp: int
 	var cooldown_left := 0.0
 
@@ -82,7 +84,13 @@ class Stats:
 	var damage_max: int
 
 
-var members: Array = []  # Member per slot.
+var members: Array = []  # Member per position (slot), front row first. Reordered by set_formation.
+
+## The formation: the hero_index standing in each position, e.g. [0, 1, 2, 3] by default
+## or [2, 1, 0, 3] after the fighter and thief swap. This is the party data a save/load
+## stores; restore it with set_formation(). Everything keyed by position (front row =
+## slots 0-1, who can melee, who a monster can reach, the HUD panels) follows it.
+var formation: Array[int] = []
 @onready var player: Node3D = get_node_or_null(player_path)
 
 
@@ -94,6 +102,7 @@ func _ready() -> void:
 	for i in hero_defs.size():
 		var m := Member.new()
 		m.def = hero_defs[i]
+		m.hero_index = i
 		m.slot = i
 		m.hp = m.def.max_hp
 		m.mana = m.def.max_mana
@@ -105,6 +114,7 @@ func _ready() -> void:
 				var n: int = m.def.start_hand_counts[h] if h < m.def.start_hand_counts.size() else 1
 				m.hands[h] = ItemStack.of(item, maxi(1, n))
 		members.append(m)
+		formation.append(i)
 
 
 func _process(delta: float) -> void:
@@ -117,6 +127,49 @@ func _process(delta: float) -> void:
 		for b in m.buffs:
 			b.left -= delta
 		m.buffs = m.buffs.filter(func(b): return b.left > 0.0)
+
+
+## Swap two positions (e.g. drag one portrait onto another). Whole characters move:
+## their stats, hands, backpack, quick slots, mana and buffs are on the Member and go
+## with them. Dead characters can be swapped too. Returns false for a bad position.
+func swap_positions(a: int, b: int) -> bool:
+	if a == b or member(a) == null or member(b) == null:
+		return false
+	var order := formation.duplicate()
+	var t = order[a]
+	order[a] = order[b]
+	order[b] = t
+	var names := "%s and %s" % [member(a).def.display_name, member(b).def.display_name]
+	set_formation(order)
+	_say("%s swap places." % names)
+	return true
+
+
+## Apply a formation: the hero_index for each position. It must be a permutation of
+## every hero (otherwise nothing changes and false is returned). Used by swap_positions
+## and, later, by loading a save.
+func set_formation(order: Array) -> bool:
+	if order.size() != members.size():
+		return false
+	var by_hero := {}
+	for m in members:
+		by_hero[m.hero_index] = m
+	var seen := {}
+	for h in order:
+		if not by_hero.has(h) or seen.has(h):
+			return false
+		seen[h] = true
+	var reordered := []
+	for pos in order.size():
+		var m = by_hero[order[pos]]
+		m.slot = pos
+		reordered.append(m)
+	members = reordered
+	formation.assign(order)
+	for pos in members.size():
+		quick_changed.emit(pos)  # Quick-slot widgets are keyed by position: redraw them.
+	formation_changed.emit()
+	return true
 
 
 func member(slot: int) -> Member:

@@ -5,7 +5,8 @@ extends CanvasLayer
 ##
 ## Each hand button shows the item in that hand (an empty hand shows the fist) and
 ## acts with it (Party.act): swing, throw, or -- for a spellbook or holy symbol --
-## open the spell pop-up (spell_menu.gd). Picking a spell that needs a hero (Shield,
+## open the spell pop-up (spell_menu.gd). Dragging a portrait (or name) onto another
+## panel swaps the two characters' positions (see "Formation drag" below). Picking a spell that needs a hero (Shield,
 ## Heal) enters target mode: the next portrait click casts it. Right-click, Esc or a
 ## click anywhere else cancels the pop-up or target mode. Otherwise a portrait click
 ## opens that hero's inventory (group "inventory"). The game keeps running throughout.
@@ -47,6 +48,20 @@ var menu_owner := {}   # {"caster", "hand"} for the open pop-up.
 var pending := {}      # {"caster", "hand", "spell"} in target mode.
 var catcher: Control   # Full-screen, under the panels: a click on it cancels.
 
+# Formation drag: press on a portrait/name, move past DRAG_THRESHOLD, release over another
+# panel. The release position picks the target (not Godot's control routing, which sends
+# a release to the control that got the press).
+const DRAG_THRESHOLD := 3.0       # Pixels (in the 320x200 view) before a press becomes a drag.
+const DRAG_GHOST := Color(1, 1, 1, 0.55)
+const DROP_EDGE := Color(0.941, 0.722, 0.227)  # Palette torch_500, like the mana bar.
+var press_slot := -1               # Position pressed on, -1 if none.
+var press_pos := Vector2.ZERO
+var dragging := false
+var drag_from := -1
+var drag_over := -1                # Position it would swap with, or -1.
+var ghost: TextureRect
+var drag_just_ended := false       # So the click that ends a drag isn't also a click.
+
 
 func _ready() -> void:
 	party = get_tree().get_first_node_in_group("party")
@@ -57,6 +72,7 @@ func _ready() -> void:
 		_update_hp(m.slot)
 	party.hp_changed.connect(_update_hp)
 	party.hero_hit.connect(_on_hero_hit)
+	party.formation_changed.connect(_on_formation_changed)
 
 	catcher = Control.new()
 	catcher.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -73,6 +89,7 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if party == null:
 		return
+	drag_just_ended = false
 	for m in party.members:
 		var p: Dictionary = panels[m.slot]
 		var cooling: bool = m.cooldown_left > 0.0 or not m.is_alive()
@@ -159,6 +176,8 @@ func _on_spell_chosen(spell: Resource) -> void:
 ## A portrait was clicked: in target mode it picks the spell's target, otherwise it
 ## opens that hero's inventory.
 func _on_portrait(slot: int) -> void:
+	if drag_just_ended:
+		return  # This release ended a drag; it isn't a click.
 	if pending.is_empty():
 		get_tree().call_group("inventory", "show_screen", slot)
 		return
@@ -189,6 +208,7 @@ func _end_target_mode() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	_drag_input(event)
 	if menu == null and pending.is_empty():
 		return
 	var cancel: bool = (event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE) \
@@ -201,6 +221,9 @@ func _input(event: InputEvent) -> void:
 func _update_hp(slot: int) -> void:
 	var m = party.member(slot)
 	var p: Dictionary = panels[slot]
+	p.name_label.text = m.def.display_name  # (Changes when the formation does.)
+	p.mana_bar.max_value = maxi(1, m.def.max_mana)
+	p.mana_bar.modulate.a = 1.0 if m.def.max_mana > 0 else 0.0
 	p.hp_bar.max_value = m.def.max_hp
 	p.hp_bar.value = m.hp
 	p.portrait.texture_normal = m.def.portrait if m.is_alive() else m.def.portrait_dead
@@ -235,8 +258,118 @@ func _on_hero_hit(slot: int, damage: int) -> void:
 			p.portrait.texture_normal = m.def.portrait_hurt  # already shows portrait_dead permanently.
 			var timer := get_tree().create_timer(HURT_FLASH_TIME)
 			timer.timeout.connect(func():
-				if m.is_alive():
-					p.portrait.texture_normal = m.def.portrait)
+				if m.is_alive():  # The hero may have moved to another position meanwhile.
+					panels[m.slot].portrait.texture_normal = m.def.portrait)
+
+
+# --------------------------------------------------------------------------
+# Formation drag
+# --------------------------------------------------------------------------
+
+## A left press landed on a portrait or name. It becomes a drag only if the mouse
+## moves on, and only when nothing is in the way: no item on the cursor (items own the
+## click), no spell pop-up or target mode, no inventory screen open.
+func _press_on(slot: int, global_pos: Vector2) -> void:
+	var cursor = get_tree().get_first_node_in_group("cursor")
+	if (cursor and cursor.is_holding()) or menu != null or not pending.is_empty() \
+			or get_tree().paused or dragging:
+		return
+	press_slot = slot
+	press_pos = global_pos
+
+
+func _drag_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion and press_slot != -1:
+		var pos: Vector2 = event.position
+		if not dragging and pos.distance_to(press_pos) >= DRAG_THRESHOLD:
+			_begin_drag()
+		if dragging:
+			_update_drag(pos)
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and not event.pressed:
+		if dragging:
+			_finish_drag(event.position)
+		press_slot = -1  # Released without moving far: a plain click, handled by the buttons.
+	elif dragging and ((event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE) \
+			or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT)):
+		_end_drag()
+		get_viewport().set_input_as_handled()
+
+
+func _begin_drag() -> void:
+	dragging = true
+	drag_from = press_slot
+	var m = party.member(drag_from)
+	ghost = TextureRect.new()
+	ghost.texture = m.def.portrait if m.is_alive() else m.def.portrait_dead
+	ghost.size = PORTRAIT_SIZE
+	ghost.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	ghost.stretch_mode = TextureRect.STRETCH_SCALE
+	ghost.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	ghost.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	ghost.modulate = DRAG_GHOST
+	add_child(ghost)  # Last child: drawn over the panels.
+	panels[drag_from].portrait.modulate.a = 0.35  # The origin looks vacated.
+	_update_drag(get_viewport().get_mouse_position())
+
+
+## Which position's panel is under this point, or -1.
+func _panel_at(pos: Vector2) -> int:
+	for slot in panels:
+		if panels[slot].root.get_global_rect().has_point(pos):
+			return slot
+	return -1
+
+
+func _update_drag(pos: Vector2) -> void:
+	ghost.position = pos - ghost.size / 2.0
+	var over := _panel_at(pos)
+	if over == drag_from:
+		over = -1  # Over its own panel: it would swap with nothing.
+	if over != drag_over:
+		_highlight(drag_over, false)
+		drag_over = over
+		_highlight(drag_over, true)
+
+
+func _highlight(slot: int, on: bool) -> void:
+	if slot < 0 or not panels.has(slot):
+		return
+	var box: StyleBoxFlat = panels[slot].box
+	box.border_color = DROP_EDGE if on else PANEL_EDGE
+	box.set_border_width_all(2 if on else 1)
+
+
+## Dropping on another panel swaps; anywhere else (including its own panel) cancels.
+func _finish_drag(pos: Vector2) -> void:
+	var target := _panel_at(pos)
+	var from := drag_from
+	_end_drag()
+	drag_just_ended = true  # Suppress the click this release would otherwise be.
+	if target != -1 and target != from:
+		party.swap_positions(from, target)
+
+
+func _end_drag() -> void:
+	_highlight(drag_over, false)
+	if panels.has(drag_from):
+		panels[drag_from].portrait.modulate.a = 1.0
+	if ghost:
+		ghost.queue_free()
+		ghost = null
+	dragging = false
+	drag_from = -1
+	drag_over = -1
+	press_slot = -1
+
+
+## The party was rearranged: every panel redraws for whoever now stands there. (Hands,
+## cooldown, mana and buffs are polled each frame; quick slots listen to quick_changed.)
+func _on_formation_changed() -> void:
+	cancel_casting()
+	for slot in panels:
+		_update_hp(slot)
+		var portrait: Control = panels[slot].portrait
+		portrait.position.x = 0.0  # Cancel a shake that was in progress.
 
 
 ## The portrait of a hero who was hit jolts sideways and settles (a bigger hit shakes
@@ -259,6 +392,9 @@ func _shake_portrait(portrait: Control, damage: int) -> void:
 
 
 func _make_panel(m) -> Dictionary:
+	# This panel's fixed position. Closures below use `pos`, never `m.slot`: the member
+	# standing here changes when the formation does, but the panel stays put.
+	var pos: int = m.slot
 	var root := PanelContainer.new()
 	var box := StyleBoxFlat.new()
 	box.bg_color = PANEL_BG
@@ -283,7 +419,10 @@ func _make_panel(m) -> Dictionary:
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	portrait.focus_mode = Control.FOCUS_NONE
 	portrait.tooltip_text = "Inventory"
-	portrait.pressed.connect(_on_portrait.bind(m.slot))
+	portrait.pressed.connect(_on_portrait.bind(pos))
+	portrait.gui_input.connect(func(e):
+		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
+			_press_on(pos, portrait.get_global_rect().position + e.position))
 	# In a plain Control frame, not straight in the column: a container keeps resetting
 	# its children's positions, which would undo the portrait's hit shake.
 	var frame := Control.new()
@@ -314,7 +453,7 @@ func _make_panel(m) -> Dictionary:
 	var quick_slots := []
 	for qi in party.QUICK_SLOTS:
 		var qs := QuickSlot.new()
-		qs.setup(party, m.slot, qi)
+		qs.setup(party, pos, qi)
 		quick_row.add_child(qs)
 		quick_slots.append(qs)
 
@@ -323,10 +462,12 @@ func _make_panel(m) -> Dictionary:
 	name_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	name_label.tooltip_text = "Character sheet"
 	name_label.gui_input.connect(func(e):
-		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
-			name_label.accept_event()
-			if pending.is_empty():
-				get_tree().call_group("inventory", "show_screen", m.slot, true))
+		if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT:
+			if e.pressed:
+				_press_on(pos, name_label.get_global_rect().position + e.position)  # Might become a drag...
+			elif not drag_just_ended and pending.is_empty():
+				# ...otherwise it's a click, acted on at the release (after the drag logic has run).
+				get_tree().call_group("inventory", "show_screen", pos, true))
 	col.add_child(name_label)
 
 	var hp_bar := _bar(HP_FILL, Vector2(BAR_WIDTH, 3), m.def.max_hp)
@@ -352,7 +493,7 @@ func _make_panel(m) -> Dictionary:
 	var cool_bar := _bar(COOL_FILL, Vector2(BAR_WIDTH, 2), 100)
 	col.add_child(cool_bar)
 
-	return {"root": root, "portrait": portrait, "buff_ring": buff_ring, "hands": hands,
+	return {"root": root, "box": box, "name_label": name_label, "portrait": portrait, "buff_ring": buff_ring, "hands": hands,
 		"cool_bar": cool_bar, "hp_bar": hp_bar, "mana_bar": mana_bar, "quick": quick_slots}
 
 
