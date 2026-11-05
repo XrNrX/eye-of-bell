@@ -10,6 +10,9 @@ replaces, renamed to that art's file name, and written into `art/`. The procedur
 `tools/art/_old/` (first time only) and the file is protected from `build_all.py`. Processed files
 move to `_done/`.
 
+Art made through the PixelLab MCP tools goes the same way: save the generated image or sheet
+here under the key's name (below), then import it. Nothing is written into `art/` directly.
+
 Name files so they can be recognised: `python tools/art/import_pixellab.py --list` prints every key
 (`tiles/wall`, `items/dagger_hud`, `portraits/fighter/portrait`, `monsters/skeleton/idle_0`,
 `monsters/skeleton/skeleton_sheet`, `sprites/torch`...). A file may be named by its key
