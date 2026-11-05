@@ -95,7 +95,7 @@ def build():
     return [
         save_png(torch_sheet(), "sprites/torch.png"),
         save_sheet_info("sprites/torch.png", (16, 32), 4, count_free=True),    # The game reads the count from the sheet.
-        save_png(key_sprite(), "sprites/key.png"),
+        save_png(key_sprite(), "sprites/key.png", scale=2),  # 32x32; the key's icon_pixel_size (0.015) is set for that
         save_png(lever_sheet(), "sprites/lever.png"),
         save_sheet_info("sprites/lever.png", (16, 16), 2, count_free=False),   # Exactly two states: off, on.
     ]

@@ -234,14 +234,15 @@ def render(parts, size):
 def build(scale=2):
     """Per item: <name>.png (24x24 logical: inventory slots and the cursor), <name>_hud.png
     (12x12 logical: hand and quick slots on the party panel) -- both enlarged `scale` times to
-    match the UI's pixel size -- and <name>_floor.png (12x12, NOT enlarged: it is a sprite in
-    the 3D world, which is rendered small and shown at 2x already)."""
+    match the UI's pixel size -- and <name>_floor.png (the full icon drawing at 48x48: the sprite
+    in the 3D world, whose view is drawn at 1:1, so it needs the detail. Always enlarged 2x, whatever
+    `scale` is, because each item's `icon_pixel_size` in its .tres (0.01) is set for 48 px)."""
     written = []
     for name, make in ITEMS.items():
         parts = make()
         written.append(save_png(render(parts, ICON), f"items/{name}.png", scale=scale))
         written.append(save_png(render(parts, FLOOR), f"items/{name}_hud.png", scale=scale))
-        written.append(save_png(render(parts, FLOOR), f"items/{name}_floor.png"))
+        written.append(save_png(render(parts, ICON), f"items/{name}_floor.png", scale=2))
     # The key's sprite lives in gen_sprites (it is also the 3D floor sprite); its inventory
     # icon is that same drawing, enlarged.
     from gen_sprites import key_sprite
