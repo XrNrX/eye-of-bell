@@ -15,12 +15,14 @@ const CombatRules := preload("res://scripts/combat_rules.gd")
 const QuickSlot := preload("res://scripts/quick_slot.gd")
 const SpellMenu := preload("res://scripts/spell_menu.gd")
 const SpellDef := preload("res://scripts/spell_def.gd")
+const UiLayout := preload("res://scripts/ui_layout.gd")
 const FeelConfigScript := preload("res://scripts/combat_feel_config.gd")
 const StackCount := preload("res://scripts/stack_count.gd")
 
-const PORTRAIT_SIZE := Vector2(24, 24)
-const HAND_SIZE := Vector2(12, 12)
+const PORTRAIT_SIZE := Vector2(32, 32)   # The portrait art's own size: crisp, no scaling.
+const HAND_SIZE := Vector2(16, 16)
 const BAR_WIDTH := 24.0
+const PANEL_SIZE := Vector2(58, 90)      # Two across, two down fill the party window (ui_layout.gd).
 
 const HAND_READY := Color(1, 1, 1)
 const HAND_COOLING := Color(0.35, 0.33, 0.38)
@@ -65,6 +67,11 @@ var drag_just_ended := false       # So the click that ends a drag isn't also a 
 
 func _ready() -> void:
 	party = get_tree().get_first_node_in_group("party")
+	# The red hit flash covers the 3D view only, not the whole screen.
+	flash.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	flash.position = UiLayout.VIEW.position
+	flash.size = UiLayout.VIEW.size
+	panels_grid.position = UiLayout.PARTY.position
 	if party == null:
 		return
 	for m in party.members:
@@ -380,7 +387,8 @@ func _on_formation_changed() -> void:
 	for slot in panels:
 		_update_hp(slot)
 		var portrait: Control = panels[slot].portrait
-		portrait.position.x = 0.0  # Cancel a shake that was in progress.
+		if portrait.has_meta("rest_x"):
+			portrait.position.x = portrait.get_meta("rest_x")  # Cancel a shake that was in progress.
 
 
 ## The portrait of a hero who was hit jolts sideways and settles (a bigger hit shakes
@@ -390,6 +398,10 @@ func _shake_portrait(portrait: Control, damage: int) -> void:
 		return
 	var amp: float = feel_cfg.portrait_shake_pixels * (1.0 + minf(damage, 8) / 8.0)
 	var t: float = feel_cfg.portrait_shake_seconds
+	# The portrait sits centred in its panel, not at x=0: remember where, and shake around it.
+	if not portrait.has_meta("rest_x"):
+		portrait.set_meta("rest_x", portrait.position.x)
+	var rest: float = portrait.get_meta("rest_x")
 	if portrait.has_meta("shake_tween"):
 		portrait.get_meta("shake_tween").kill()
 	var tween := create_tween()
@@ -398,8 +410,8 @@ func _shake_portrait(portrait: Control, damage: int) -> void:
 	for i in steps:
 		var fall := 1.0 - float(i) / steps
 		var dir := 1.0 if i % 2 == 0 else -1.0
-		tween.tween_property(portrait, "position:x", dir * amp * fall, t / (steps + 1))
-	tween.tween_property(portrait, "position:x", 0.0, t / (steps + 1))
+		tween.tween_property(portrait, "position:x", rest + dir * amp * fall, t / (steps + 1))
+	tween.tween_property(portrait, "position:x", rest, t / (steps + 1))
 
 
 func _make_panel(m) -> Dictionary:
@@ -413,11 +425,12 @@ func _make_panel(m) -> Dictionary:
 	box.set_border_width_all(1)
 	box.set_content_margin_all(3)
 	root.add_theme_stylebox_override("panel", box)
+	root.custom_minimum_size = PANEL_SIZE
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panels_grid.add_child(root)
 
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", 1)
+	col.add_theme_constant_override("separation", 0)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(col)
 
@@ -441,7 +454,15 @@ func _make_panel(m) -> Dictionary:
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(frame)
 	frame.add_child(portrait)
-	portrait.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	# 32x32 in the middle of the panel's width, however wide the frame turns out to be.
+	portrait.anchor_left = 0.5
+	portrait.anchor_right = 0.5
+	portrait.anchor_top = 0.0
+	portrait.anchor_bottom = 1.0
+	portrait.offset_left = -PORTRAIT_SIZE.x / 2.0
+	portrait.offset_right = PORTRAIT_SIZE.x / 2.0
+	portrait.offset_top = 0.0
+	portrait.offset_bottom = 0.0
 
 	# A gold outline over the portrait while a buff (Shield, Bless) is active.
 	var buff_ring := Panel.new()
@@ -453,7 +474,8 @@ func _make_panel(m) -> Dictionary:
 	buff_ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	buff_ring.visible = false
 	portrait.add_child(buff_ring)
-	portrait.resized.connect(func(): buff_ring.size = portrait.size)
+	buff_ring.anchor_right = 1.0   # Fills its parent whatever size layout gives it
+	buff_ring.anchor_bottom = 1.0  # (a resized signal missed the portrait's first layout).
 
 	# Two quick slots under the portrait (consumables; see quick_slot.gd).
 	var quick_row := HBoxContainer.new()

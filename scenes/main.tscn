@@ -3,6 +3,9 @@
 [ext_resource type="PackedScene" path="res://scenes/cursor_item.tscn" id="14_cursor"]
 [ext_resource type="Script" path="res://scripts/combat_feel.gd" id="20_feel"]
 [ext_resource type="Script" path="res://scripts/save_manager.gd" id="21_save"]
+[ext_resource type="Script" path="res://scripts/view_camera.gd" id="22_camera"]
+[ext_resource type="Script" path="res://scripts/ui_frame.gd" id="23_frame"]
+[ext_resource type="Script" path="res://scripts/move_arrows.gd" id="24_arrows"]
 [ext_resource type="PackedScene" path="res://scenes/inventory_screen.tscn" id="15_inventory"]
 [ext_resource type="Script" path="res://scripts/party.gd" id="7_party"]
 [ext_resource type="Resource" path="res://data/party/fighter.tres" id="8_fighter"]
@@ -41,6 +44,7 @@ script = ExtResource("2_player")
 [node name="Camera3D" type="Camera3D" parent="Player"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 fov = 75.0
+script = ExtResource("22_camera")
 
 [node name="Torch" type="OmniLight3D" parent="Player"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, 0)
@@ -52,6 +56,12 @@ script = ExtResource("3_torch")
 
 [node name="DebugOverlay" parent="." instance=ExtResource("4_debug")]
 player_path = NodePath("../Player")
+
+[node name="Frame" type="CanvasLayer" parent="."]
+script = ExtResource("23_frame")
+
+[node name="Arrows" type="CanvasLayer" parent="."]
+script = ExtResource("24_arrows")
 
 [node name="Hud" parent="." instance=ExtResource("5_hud")]
 

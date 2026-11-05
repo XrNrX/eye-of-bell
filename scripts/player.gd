@@ -7,6 +7,7 @@ extends Node3D
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
+const UiLayout := preload("res://scripts/ui_layout.gd")
 
 const MOVE_TIME := 0.2  # Seconds per step or turn.
 
@@ -57,8 +58,9 @@ func _find_singletons() -> void:
 ## click actually landed on the item's sprite doesn't matter, only that it's there;
 ## see the summary for why (headless-testable determinism over pixel-precise picking).
 ## Shift+click (empty-handed) sends the item straight to the party instead: see Party.stow.
+## Only clicks inside the 3D view window count: the stone frame around it takes no clicks.
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT 			and UiLayout.VIEW.has_point(event.position):
 		_click_item(event.shift_pressed)
 
 
@@ -127,17 +129,32 @@ func _process(_delta: float) -> void:
 
 	# Polling (instead of key events) lets you hold a key to keep walking.
 	if Input.is_physical_key_pressed(KEY_W):
-		_try_move(DIRS[facing])
+		command("forward")
 	elif Input.is_physical_key_pressed(KEY_S):
-		_try_move(DIRS[(facing + 2) % 4])
+		command("back")
 	elif Input.is_physical_key_pressed(KEY_A):
-		_try_move(DIRS[(facing + 1) % 4])  # Left of facing.
+		command("strafe_left")
 	elif Input.is_physical_key_pressed(KEY_D):
-		_try_move(DIRS[(facing + 3) % 4])  # Right of facing.
+		command("strafe_right")
 	elif Input.is_physical_key_pressed(KEY_Q):
-		_turn(1)
+		command("turn_left")
 	elif Input.is_physical_key_pressed(KEY_E):
-		_turn(-1)
+		command("turn_right")
+
+
+## One step or turn, ignored while another is still animating. The keys above and the
+## on-screen arrows (move_arrows.gd) both come through here.
+## kind: forward, back, strafe_left, strafe_right, turn_left, turn_right.
+func command(kind: String) -> void:
+	if tween and tween.is_running():
+		return
+	match kind:
+		"forward": _try_move(DIRS[facing])
+		"back": _try_move(DIRS[(facing + 2) % 4])
+		"strafe_left": _try_move(DIRS[(facing + 1) % 4])  # Left of facing.
+		"strafe_right": _try_move(DIRS[(facing + 3) % 4])
+		"turn_left": _turn(1)
+		"turn_right": _turn(-1)
 
 
 ## Step one tile in grid direction `dir`, unless a wall is in the way.

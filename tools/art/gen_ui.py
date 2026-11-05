@@ -1,6 +1,6 @@
 """UI art written to res://art/ui/.
 
-hand_sword.png (24x24): an armoured fist gripping a sword pointing up and to the
+hand_sword.png (24x24) and hand_sword_small.png (16x16, drawn separately on its own grid): an armoured fist gripping a sword pointing up and to the
 right, the weapon-hand button on the party HUD. Each part is a pixel mask shaded
 with top-left lighting; the whole icon gets a 1px dark outline.
 
@@ -74,6 +74,32 @@ def hand_sword():
     return add_outline(img, PAL["ink"])
 
 
+def hand_sword_small():
+    """The same armoured fist and sword at 16x16, drawn directly on that grid (not scaled
+    down from the 24x24 one), for the 16x16 hand buttons of the party panel."""
+    steel = [PAL["stone_500"], PAL["stone_300"], PAL["stone_100"]]
+    iron = [PAL["stone_800"], PAL["stone_700"], PAL["stone_500"]]
+    gold = [PAL["torch_700"], PAL["torch_500"], PAL["torch_300"]]
+    leather = [PAL["wood_700"], PAL["wood_500"], PAL["leather_400"]]
+    blade = thick_line((7, 9), (13, 3), 2) | {(14, 2)}
+    guard = thick_line((5, 8), (9, 11), 1) | thick_line((6, 7), (9, 10), 1)
+    grip = thick_line((4, 11), (6, 9), 1)
+    pommel = {(3, 12), (3, 11)}
+    fist = {(x, y) for x in range(3, 8) for y in range(9, 14) if not (x == 3 and y in (9, 13))}
+    knuckles = {(x, 9) for x in range(4, 7)}
+    cuff = {(x, y) for x in range(1, 5) for y in range(12, 15) if not (x == 1 and y == 12)}
+    pixels = {}
+    for mask, ramp in ((blade, steel), (guard, gold), (grip, leather), (pommel, gold),
+                       (cuff, iron), (fist, iron), (knuckles, steel)):
+        pixels.update(shade_mask(mask, ramp))
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    for (x, y), c in pixels.items():
+        if 0 <= x < 16 and 0 <= y < 16:
+            px[x, y] = (*c, 255)
+    return add_outline(img, PAL["ink"])
+
+
 QUICK = 14
 
 
@@ -139,6 +165,7 @@ def digit_sheet():
 def build():
     return [
         save_png(hand_sword(), "ui/hand_sword.png"),
+        save_png(hand_sword_small(), "ui/hand_sword_small.png"),
         save_png(quickslot_frame(True), "ui/quickslot.png"),
         save_png(quickslot_frame(False), "ui/quickslot_empty.png"),
         save_png(quickslot_sweep(), "ui/quickslot_sweep.png"),
