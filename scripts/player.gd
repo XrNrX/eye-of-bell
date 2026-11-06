@@ -131,7 +131,7 @@ func _process(_delta: float) -> void:
 
 	# 1-8: use that quick slot (two per hero, in party order). Real time, so this works mid-move too.
 	for i in 8:
-		var down := Input.is_physical_key_pressed(KEY_1 + i)
+		var down := Input.is_physical_key_pressed(KEY_1 + i) and not Input.is_physical_key_pressed(KEY_SHIFT)  # (Shift+1..4 open the character sheets.)
 		if down and not quick_was_down[i]:
 			get_tree().call_group("party", "use_quick", i >> 1, i & 1)
 		quick_was_down[i] = down

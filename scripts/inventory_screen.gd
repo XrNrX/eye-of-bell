@@ -73,6 +73,33 @@ func _unhandled_input(event: InputEvent) -> void:
 	if visible and event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		hide_screen()
 		get_viewport().set_input_as_handled()  # So the pause menu doesn't also open.
+		return
+	# C opens the character sheet (for the hero whose panel the mouse is over, else the one you last
+	# looked at; closes it when it is showing). Shift+1 to Shift+4 open each hero's sheet directly, by
+	# position on the party panel. Not while another screen (pause menu, Level complete, Game over)
+	# owns the paused game.
+	if not (event is InputEventKey and event.pressed and not event.echo):
+		return
+	if get_tree().paused and not visible:
+		return
+	var slot := -1
+	if event.physical_keycode == KEY_C and not event.shift_pressed and not event.ctrl_pressed and not event.alt_pressed:
+		if visible and sheet.visible:
+			sheet.visible = false
+			refresh()
+			get_viewport().set_input_as_handled()
+			return
+		slot = focused_slot
+		var hud := get_tree().get_first_node_in_group("party_hud")
+		if hud != null and not visible:
+			var over: int = hud.slot_under_mouse()
+			if over >= 0:
+				slot = over
+	elif event.shift_pressed and event.physical_keycode >= KEY_1 and event.physical_keycode <= KEY_4:
+		slot = event.physical_keycode - KEY_1
+	if slot >= 0 and slot < party.members.size():
+		show_screen(slot, true)
+		get_viewport().set_input_as_handled()
 
 
 ## Open the screen focused on this party member. Called by party_hud.gd's portrait

@@ -103,6 +103,28 @@ def hand_sword_small():
 QUICK = 14
 
 
+def name_scroll():
+    """A tiny rolled scroll (8x8 logical with its outline, 16x16 once enlarged) shown beside each hero's
+    name on the party panel: clicking it opens the character sheet. Pale parchment, curled top and bottom,
+    a line of writing, a 1px ink outline (the art style's readability rule), and nothing warm: gold is for
+    the hover."""
+    img = Image.new("RGBA", (6, 6), (0, 0, 0, 0))
+    px = img.load()
+    pale, mid, dark = PAL["bone_300"], PAL["bone_500"], PAL["bone_700"]
+    for x in range(0, 6):  # Curled top: a roll, lit on top.
+        px[x, 0] = (*pale, 255)
+        px[x, 1] = (*mid, 255)
+    for y in (2, 3):       # The sheet, narrower than the rolls.
+        for x in range(1, 5):
+            px[x, y] = (*pale, 255)
+    px[2, 3] = (*dark, 255)  # A line of writing.
+    px[3, 3] = (*dark, 255)
+    for x in range(0, 6):  # Curled bottom, shaded underneath.
+        px[x, 4] = (*mid, 255)
+        px[x, 5] = (*dark, 255)
+    return add_outline(img, PAL["ink"], pad=1)
+
+
 def quickslot_frame(filled):
     """A filled slot: a stone bevel (lit top-left in stone_500, shaded bottom-right in stone_700)
     around an ink inside, darker than the panel it sits on. An empty slot: a stone_700 outline with
@@ -173,4 +195,5 @@ def build(scale=2):
         save_png(quickslot_frame(False), "ui/quickslot_empty.png", scale=scale),
         save_png(quickslot_sweep(), "ui/quickslot_sweep.png", scale=scale),
         save_png(digit_sheet(), "ui/digits.png", scale=scale),
+        save_png(name_scroll(), "ui/name_scroll.png", scale=scale),
     ]

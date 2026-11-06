@@ -71,6 +71,7 @@ func _ready() -> void:
 	sweep.visible = false
 	add_child(sweep)
 
+	mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	party.quick_changed.connect(_on_quick_changed)
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
@@ -108,6 +109,7 @@ func refresh() -> void:
 	frame.texture = FRAME_FILLED if item else FRAME_EMPTY
 	icon.texture = null
 	count_label.set_count(item.count if item else 0)
+	tooltip_text = "Quick slot (key %d)" % (member_slot * 2 + index + 1)
 	if item:
 		var def: Resource = item.def
 		icon.texture = def.hud_texture()  # 24x24 fits inside the frame exactly; anything else is scaled to fit.
@@ -122,11 +124,13 @@ func refresh() -> void:
 
 func _on_mouse_entered() -> void:
 	hovering = true
+	frame.self_modulate = Color(1.22, 1.2, 1.15)  # Brightens, like every other clickable part of the panel.
 	_update_hint()
 
 
 func _on_mouse_exited() -> void:
 	hovering = false
+	frame.self_modulate = Color.WHITE
 	_update_hint()
 
 

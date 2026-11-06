@@ -66,6 +66,7 @@ var rows := {}
 var current_kind := "master"
 var fog_button: Button      # "FOG: ON" / "FOG: OFF".
 var flash_button: Button    # "REDUCE FLASHING: ON" / "REDUCE FLASHING: OFF".
+var hints_button: Button    # "HINTS: ON" / "HINTS: OFF".
 var display_button: Button  # "SCREEN: FULLSCREEN" / "SCREEN: WINDOWED", built in _build_display_button.
 
 var time := 0.0
@@ -88,6 +89,7 @@ func _ready() -> void:
 	_build_display_button()
 	_build_fog_button()
 	_build_flash_button()
+	_build_hints_button()
 	new_game_button.pressed.connect(_on_new_game_pressed)
 	load_button.pressed.connect(_on_load_pressed)
 	options_button.pressed.connect(_show_options.bind(true))
@@ -184,6 +186,18 @@ func _build_flash_button() -> void:
 	flash_button.pressed.connect(_click)
 
 
+## The "show hints" switch: first-time tips such as how to open the character sheet.
+func _build_hints_button() -> void:
+	hints_button = back_button.duplicate()
+	hints_button.unique_name_in_owner = false
+	options_box.add_child(hints_button)
+	options_box.move_child(hints_button, back_button.get_index())
+	hints_button.pressed.connect(func():
+		Settings.set_show_hints(not Settings.show_hints)
+		_refresh_display())
+	hints_button.pressed.connect(_click)
+
+
 ## Glow and fog on the backdrop's environment, from data/spell_effects.tres and the Options switch.
 func _apply_look() -> void:
 	var world_env := get_node_or_null("View/Backdrop/Port/WorldEnvironment")
@@ -194,6 +208,7 @@ func _apply_look() -> void:
 func _refresh_display() -> void:
 	fog_button.text = "FOG: ON" if Settings.fog else "FOG: OFF"
 	flash_button.text = "REDUCE FLASHING: ON" if Settings.reduce_flashing else "REDUCE FLASHING: OFF"
+	hints_button.text = "HINTS: ON" if Settings.show_hints else "HINTS: OFF"
 	display_button.text = "SCREEN: FULLSCREEN" if Settings.fullscreen else "SCREEN: WINDOWED"
 
 

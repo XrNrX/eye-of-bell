@@ -9,6 +9,7 @@ extends RefCounted
 ##     Settings.set_fullscreen(false)  # remember the display mode (display_manager.gd applies it)
 ##     Settings.set_fog(false)         # volumetric fog on or off (spell_effects_config.apply_environment)
 ##     Settings.set_reduce_flashing(true)  # softer holy light and glows (spell_effects.gd, party_hud.gd)
+##     Settings.set_show_hints(false)      # first-time hints on or off; Settings.hint_seen(id) / mark_hint(id)
 ##
 ## Each is a fraction 0..1 of full (0 mutes). They are applied to the audio buses: Master, and
 ## Music and SFX, which are created here if the project doesn't define them (both send to
@@ -16,6 +17,8 @@ extends RefCounted
 
 const SECTION := "audio"
 const DISPLAY_SECTION := "display"
+const HINTS_SECTION := "hints"
+const SEEN_SECTION := "hints_seen"
 const MUSIC_BUS := "Music"
 const SFX_BUS := "SFX"
 
@@ -27,6 +30,8 @@ static var sfx_volume := 1.0
 static var fullscreen := true   # Borderless fullscreen by default; false = a window.
 static var fog := true          # The subtle volumetric fog; off on weak machines.
 static var reduce_flashing := false  # Softer spell and holy-light pulses: steady glows, no flicker, no shake.
+static var show_hints := true   # First-time hints ("Click a name to see their character sheet."). Options: HINTS.
+static var hints_seen := {}     # hint id -> true once it has been shown (saved, so a hint shows only once ever).
 static var loaded := false
 
 
@@ -42,6 +47,10 @@ static func apply() -> void:
 			fullscreen = bool(cfg.get_value(DISPLAY_SECTION, "fullscreen", fullscreen))
 			fog = bool(cfg.get_value(DISPLAY_SECTION, "fog", fog))
 			reduce_flashing = bool(cfg.get_value(DISPLAY_SECTION, "reduce_flashing", reduce_flashing))
+			show_hints = bool(cfg.get_value(HINTS_SECTION, "show", show_hints))
+			if cfg.has_section(SEEN_SECTION):
+				for id in cfg.get_section_keys(SEEN_SECTION):
+					hints_seen[id] = bool(cfg.get_value(SEEN_SECTION, id, false))
 	_push_to_engine()
 
 
@@ -70,6 +79,24 @@ static func set_fog(value: bool) -> void:
 	_changed()
 
 
+static func set_show_hints(value: bool) -> void:
+	show_hints = value
+	_changed()
+
+
+## Has this first-time hint been shown already (in any earlier run)?
+static func hint_seen(id: String) -> bool:
+	apply()
+	return hints_seen.get(id, false)
+
+
+## Remember that a hint has been shown, so it never shows again.
+static func mark_hint(id: String) -> void:
+	apply()
+	hints_seen[id] = true
+	_changed()
+
+
 static func set_reduce_flashing(value: bool) -> void:
 	reduce_flashing = value
 	_changed()
@@ -89,6 +116,9 @@ static func _changed() -> void:
 	cfg.set_value(DISPLAY_SECTION, "fullscreen", fullscreen)
 	cfg.set_value(DISPLAY_SECTION, "fog", fog)
 	cfg.set_value(DISPLAY_SECTION, "reduce_flashing", reduce_flashing)
+	cfg.set_value(HINTS_SECTION, "show", show_hints)
+	for id in hints_seen:
+		cfg.set_value(SEEN_SECTION, id, hints_seen[id])
 	cfg.save(path)
 
 

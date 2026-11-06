@@ -20,11 +20,16 @@ const FeelConfigScript := preload("res://scripts/combat_feel_config.gd")
 const StackCount := preload("res://scripts/stack_count.gd")
 const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
 const Settings := preload("res://scripts/settings.gd")
+const SaveGame := preload("res://scripts/save_game.gd")
 
 # Sizes are in 640x360 pixels. The art is drawn at 2x (see ui_layout.gd), so each of these is the
 # art's own size: portraits 64x64, hand buttons 32x32.
 const PORTRAIT_SIZE := Vector2(64, 64)
 const HAND_SIZE := Vector2(32, 32)
+const NAME_HOVER := Color(0.961, 0.812, 0.502)    # Palette torch_300: the name brightens to this on hover.
+const NAME_NORMAL := Color(0.92, 0.89, 0.82)
+const HOVER_BRIGHT := Color(1.22, 1.2, 1.15)      # Portraits, hands and quick slots brighten a little on hover.
+const SCROLL_ICON := preload("res://art/ui/name_scroll.png")
 const PANEL_SIZE := Vector2(98, 170)     # Two across, two down fill the party window (ui_layout.gd).
 # Content margins (left, top, right, bottom). Everything in a panel sits on EVEN pixel
 # coordinates, so the 2x2 blocks of the art line up with the frame's (a block starting on an
@@ -95,9 +100,12 @@ func _ready() -> void:
 	party.hp_changed.connect(_update_hp)
 	party.hero_hit.connect(_on_hero_hit)
 	party.formation_changed.connect(_on_formation_changed)
+	add_to_group("party_hud")
 	party.holy_cast.connect(_on_holy_cast)
 	party.revive_requested.connect(_on_revive_requested)
 	party.revived.connect(_on_revived)
+
+	_first_time_hint()
 
 	catcher = Control.new()
 	catcher.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -109,6 +117,24 @@ func _ready() -> void:
 			cancel_casting())
 	add_child(catcher)
 	move_child(catcher, panels_grid.get_index())  # Under the panels, so portraits still get clicks.
+
+
+## The first time the party panel appears in a new game (never on a loaded one, and only until it has been
+## shown once): the names pulse gently twice and the log says how to open a character sheet. Remembered in
+## the settings; switched off by Options: HINTS.
+func _first_time_hint() -> void:
+	if not Settings.show_hints or Settings.hint_seen("character_sheet") or not SaveGame.pending.is_empty():
+		return
+	Settings.mark_hint("character_sheet")
+	await get_tree().create_timer(0.8).timeout
+	for label in name_labels:
+		if not is_instance_valid(label):
+			continue
+		var tween := create_tween()
+		for i in 2:
+			tween.tween_property(label, "modulate", Color(1.5, 1.25, 0.7), 0.4).set_trans(Tween.TRANS_SINE)
+			tween.tween_property(label, "modulate", Color.WHITE, 0.4).set_trans(Tween.TRANS_SINE)
+	get_tree().call_group("hud", "show_message", "Click a name to see their character sheet.")
 
 
 func _process(_delta: float) -> void:
@@ -151,6 +177,7 @@ var holy_glows := {}  # hand TextureButton -> {"glow": TextureRect, "tween": Twe
 var revive_pending := {}  # {"slot", "index"}: a Scroll of Resurrection from this quick slot waits for a portrait click.
 var column_texture: Texture2D  # The gold column over a revived hero (made once, in _revive_column_texture).
 var holy_icon: Texture2D
+var name_labels := []  # Every hero's name label (they pulse once, the first time the panel appears).
 
 
 ## Light the holy symbol in that hand slot: a gold glow (added over the icon, so the metal still
@@ -740,6 +767,7 @@ func _make_panel(m) -> Dictionary:
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	portrait.focus_mode = Control.FOCUS_NONE
 	portrait.tooltip_text = "Inventory"
+	_make_hoverable(portrait, portrait)
 	portrait.pressed.connect(_on_portrait.bind(pos))
 	portrait.gui_input.connect(func(e):
 		if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_LEFT:
@@ -801,10 +829,20 @@ func _make_panel(m) -> Dictionary:
 		quick_row.add_child(qs)
 		quick_slots.append(qs)
 
-	# Clicking the name opens the inventory screen with the character sheet showing.
+	# Clicking the name (or the little scroll beside it) opens the inventory screen with the character sheet
+	# showing. Hovering the name brightens it, underlines it and shows a pointing hand and a tooltip.
 	var name_label := _label(m.def.display_name, 8)
 	name_label.mouse_filter = Control.MOUSE_FILTER_STOP
-	name_label.tooltip_text = "Character sheet"
+	name_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	name_label.tooltip_text = "Character sheet (C)"
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var underline := ColorRect.new()
+	underline.color = NAME_HOVER
+	underline.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	underline.visible = false
+	name_label.add_child(underline)
+	name_label.mouse_entered.connect(func(): _hover_name(name_label, underline, true))
+	name_label.mouse_exited.connect(func(): _hover_name(name_label, underline, false))
 	name_label.gui_input.connect(func(e):
 		if e is InputEventMouseButton and e.button_index == MOUSE_BUTTON_LEFT:
 			if e.pressed:
@@ -812,7 +850,26 @@ func _make_panel(m) -> Dictionary:
 			elif not drag_just_ended and pending.is_empty():
 				# ...otherwise it's a click, acted on at the release (after the drag logic has run).
 				get_tree().call_group("inventory", "show_screen", pos, true))
-	col.add_child(name_label)
+	var name_row := HBoxContainer.new()
+	name_row.add_theme_constant_override("separation", 2)
+	name_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_row.add_child(name_label)
+	var scroll_button := TextureButton.new()
+	scroll_button.texture_normal = SCROLL_ICON
+	scroll_button.custom_minimum_size = Vector2(16, 12)  # (the 16x16 art overhangs by 2 px into the row gaps, so the panel keeps its 170 px)
+	scroll_button.ignore_texture_size = true
+	scroll_button.stretch_mode = TextureButton.STRETCH_KEEP_CENTERED
+	scroll_button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	scroll_button.focus_mode = Control.FOCUS_NONE
+	scroll_button.tooltip_text = "Character sheet (C)"
+	scroll_button.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	scroll_button.pressed.connect(func():
+		if pending.is_empty() and revive_pending.is_empty():
+			get_tree().call_group("inventory", "show_screen", pos, true))
+	_make_hoverable(scroll_button, scroll_button)
+	name_row.add_child(scroll_button)
+	col.add_child(name_row)
+	name_labels.append(name_label)
 
 	var hp_bar := _bar(HP_FILL, Vector2(0, HP_HEIGHT), m.def.max_hp)
 	col.add_child(hp_bar)
@@ -842,6 +899,35 @@ func _make_panel(m) -> Dictionary:
 		"cool_bar": cool_bar, "hp_bar": hp_bar, "mana_bar": mana_bar, "quick": quick_slots}
 
 
+# --------------------------------------------------------------------------
+# Hover: the same treatment on every clickable thing in the panel
+# --------------------------------------------------------------------------
+
+## A hero's name under the pointer: it brightens to torch gold and gets a thin underline.
+func _hover_name(label: Label, underline: ColorRect, on: bool) -> void:
+	label.add_theme_color_override("font_color", NAME_HOVER if on else NAME_NORMAL)
+	underline.visible = on
+	if on:
+		var font: Font = label.get_theme_font("font")
+		var width: float = font.get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 8).x
+		underline.size = Vector2(width, 2)
+		underline.position = Vector2((label.size.x - width) / 2.0, label.size.y - 2.0)
+
+
+## Any clickable control: a pointing hand over it, and `target` (the control or its picture) brightens
+## while the pointer is on it. Uses self_modulate, which nothing else here touches (the cooling dim, the
+## drag fade and the dead grey all use modulate).
+func _make_hoverable(control: Control, target: CanvasItem) -> void:
+	control.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	control.mouse_entered.connect(func(): target.self_modulate = HOVER_BRIGHT)
+	control.mouse_exited.connect(func(): target.self_modulate = Color.WHITE)
+
+
+## Which panel (position) the mouse is over, or -1. Used by the C key.
+func slot_under_mouse() -> int:
+	return _panel_at(get_viewport().get_mouse_position())
+
+
 func _make_hand(m, i: int) -> TextureButton:
 	var hand := TextureButton.new()
 	hand.texture_normal = m.def.hand_icon
@@ -852,6 +938,7 @@ func _make_hand(m, i: int) -> TextureButton:
 	hand.focus_mode = Control.FOCUS_NONE  # Space/Enter shouldn't trigger it.
 	hand.pressed.connect(_on_hand.bind(m.slot, i))
 	hand.add_child(StackCount.new())  # How many darts are left (child 0; see _show_hand).
+	_make_hoverable(hand, hand)
 	return hand
 
 
