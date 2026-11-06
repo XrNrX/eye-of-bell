@@ -236,8 +236,8 @@ func _build_hints_button() -> void:
 	hints_button.pressed.connect(_click)
 
 
-## The title screen picture (art/ui/title.png, 320x180 drawn at 2x: the entrance to a cursed dungeon at night)
-## is the menu's backdrop. The 3D corridor (the game's own level builder) is kept in the scene, hidden and not
+## The title screen picture (art/ui/title.png, 640x360 at full resolution, shown 1:1: the entrance to a cursed
+## dungeon at night) is the menu's backdrop. The 3D corridor (the game's own level builder) is kept in the scene, hidden and not
 ## rendering, as the fallback if the picture is missing.
 func _show_title_art() -> void:
 	if not ResourceLoader.exists(TITLE_ART):

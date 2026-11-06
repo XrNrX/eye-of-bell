@@ -13,7 +13,8 @@ WHAT IT DOES TO EACH IMAGE
      no soft edges, and the palette check only knows solid pixels).
   2. Size: nearest-neighbour only, to the size of the art it replaces (read from the files in
      art/ at run time, so it follows whatever the game currently uses). UI art (items, portraits,
-     ui/) is stored at --scale (default 2) times its logical size: an export at the logical size is
+     ui/, except the full-resolution title screen ui/title, 640x360 as drawn) is stored at --scale
+     (default 2) times its logical size: an export at the logical size is
      enlarged by the scale; one already at the stored size is left alone; any other whole-number
      factor is applied as is; anything else is resized with a warning.
   3. Colour: every pixel snapped to the nearest colour in palette.json. No dithering unless
@@ -101,6 +102,8 @@ def is_ui_art(key):
     """UI art is drawn on a logical grid and stored enlarged by the UI scale; 3D art (tiles,
     sprites, monsters, floor icons) is stored as drawn."""
     parts = key.split("/")
+    if key == "ui/title":
+        return False  # The title screen is full resolution (640x360 as drawn), not 2x blocks.
     if parts[0] in ("ui", "portraits"):
         return True
     return parts[0] == "items" and not parts[1].endswith("_floor")

@@ -54,7 +54,7 @@ def make_world(tmp):
     for rel in ["tiles/wall.png", "items/dagger.png", "items/dagger_hud.png", "items/dagger_floor.png", "items/key.png",
                 "sprites/key.png", "sprites/torch.png", "sprites/torch_sheet.json", "sprites/lever.png", "sprites/lever_sheet.json",
                 "portraits/fighter/portrait.png", "portraits/fighter/portrait_hurt.png", "portraits/fighter/portrait_dead.png", "portraits/mage/portrait.png",
-                "ui/quickslot.png"]:
+                "ui/quickslot.png", "ui/title.png"]:
         (art / rel).parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(ART_DIR / rel, art / rel)
     shutil.copytree(ART_DIR / "monsters" / "skeleton", art / "monsters" / "skeleton", ignore=shutil.ignore_patterns("*.import"))
@@ -119,6 +119,7 @@ with tempfile.TemporaryDirectory() as t:
           cat["tiles/wall"].size == (128, 128) and cat["items/dagger"].size == (48, 48) and cat["items/dagger_hud"].size == (24, 24) and cat["items/dagger_floor"].size == (48, 48))
     check("UI art is flagged (items, portraits, ui), 3D art is not (tiles, floor icons, sprites)",
           cat["items/dagger"].ui and cat["portraits/fighter/portrait"].ui and cat["ui/quickslot"].ui and not cat["tiles/wall"].ui and not cat["items/dagger_floor"].ui and not cat["sprites/key"].ui)
+    check("the title screen is full resolution: 640x360, not UI art (no 2x)", cat["ui/title"].size == (640, 360) and not cat["ui/title"].ui)
     check("monster frames know their frame size and the sheet its kind", cat["monsters/skeleton/idle_0"].size == (96, 128) and cat["monsters/skeleton/skeleton_sheet"].kind == "monster_sheet" and cat["sprites/torch"].kind == "sprite_sheet")
 
     # ---- palette snapping
