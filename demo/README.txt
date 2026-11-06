@@ -26,6 +26,14 @@ CASTING
   The symbol must be in a hand, not the backpack: "You need your holy symbol."
   When the Cleric casts Heal or Bless the symbol glows and a gold light sweeps the corridor.
 
+RAISING THE FALLEN
+  Two Scrolls of Resurrection lie hidden on the floor. With one on your cursor, click a fallen
+  hero's portrait (on the party panel, or the portrait strip in the inventory) to raise them at
+  half health and no mana. From a quick slot: click the slot, then click the fallen hero.
+  Right-click or Esc cancels. On a living hero it does nothing: "The scroll needs the fallen."
+  A raised Cleric returns at full health but shaken: no mana and no spells for 20 seconds,
+  shown by a dimmed holy symbol on the portrait.
+
 OTHER KEYS
   Tab            minimap
   Esc            pause menu (Resume, Save, Load, Quit)
