@@ -97,6 +97,13 @@ func _click_item(shift := false) -> void:
 			_say(home)
 			return
 		stack.origin = {}  # On the cursor it has no home any more.
+		# A key goes straight into a party member's backpack (the first with room), and only stays on the
+		# cursor if every pack is full.
+		if party and stack.def.type == ItemDef.Type.KEY:
+			var packed: String = party.stow_in_backpack(stack)
+			if packed != "" and stack.count <= 0:
+				_say(packed)
+				return
 		cursor.hold(stack)
 		_say("You pick up the %s." % stack.label())
 

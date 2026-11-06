@@ -665,19 +665,30 @@ func stow(stack: RefCounted) -> String:
 					if message == "":
 						message = "%s readies the %s." % [m.def.display_name, item_name]
 	if stack.count > 0:
-		for m in members:
-			if not m.is_alive():
-				continue
-			var before: int = stack.count
-			var copy := ItemStack.of(stack.def, stack.count)
-			if add_to_backpack(m.slot, copy):
-				stack.count = 0
-			else:
-				stack.count = copy.count  # Whatever didn't fit (it may have topped up stacks).
-			if stack.count < before and message == "":
-				message = "%s stows the %s." % [m.def.display_name, item_name]
-			if stack.count <= 0:
-				break
+		var packed := stow_in_backpack(stack)
+		if message == "":
+			message = packed
+	return message
+
+
+## Put as much of the stack as fits into the first living hero's backpack with room (party order),
+## then the next. What does not fit stays in `stack` (its count reduced). Returns "Fighter stows the key."
+## if anything went in, else "". Used by a plain pick-up of a key (it goes straight to a pack, never the
+## cursor, unless every pack is full) and by the backpack half of stow().
+func stow_in_backpack(stack: RefCounted) -> String:
+	var message := ""
+	var item_name: String = stack.def.display_name.to_lower()
+	for m in members:
+		if not m.is_alive() or stack.count <= 0:
+			continue
+		var before: int = stack.count
+		var copy := ItemStack.of(stack.def, stack.count)
+		if add_to_backpack(m.slot, copy):
+			stack.count = 0
+		else:
+			stack.count = copy.count  # Whatever didn't fit (it may have topped up stacks).
+		if stack.count < before and message == "":
+			message = "%s stows the %s." % [m.def.display_name, item_name]
 	return message
 
 
