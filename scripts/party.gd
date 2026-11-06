@@ -38,6 +38,7 @@ signal formation_changed  # The party was rearranged (see set_formation); HUDs r
 signal quick_changed(slot: int)  # A member's quick slots changed (contents or cooldown started).
 signal cooldown_started(slot: int, duration: float)
 signal hero_hit(slot: int, damage: int)  # damage 0 means the monster missed.
+signal holy_cast(slot: int, hand: int, spell: Resource)  # A Heal or Bless was cast from a holy symbol in this hand.
 signal wiped
 
 ## Hero definitions (CharacterDef .tres), in slot order.
@@ -366,6 +367,8 @@ func cast_refusal(slot: int, hand: int) -> String:
 		return ""
 	var stack = m.hands[hand]
 	if stack == null or stack.def.type != ItemDef.Type.FOCUS:
+		if m.def.magic == ItemDef.Magic.DIVINE:
+			return "You need your holy symbol."  # The cleric prays through it; it must be in a hand.
 		return "Nothing to cast from."
 	if m.def.max_mana <= 0 or m.def.magic != stack.def.magic:
 		return "The %s can't make sense of the %s." % [m.def.display_name, stack.def.display_name]
@@ -394,6 +397,8 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 	if m == null or not m.is_alive() or m.cooldown_left > 0.0:
 		return false
 	if not (spell in spells_in(slot, hand)):
+		if m.def.magic == ItemDef.Magic.DIVINE and cast_refusal(slot, hand) != "":
+			_say("You need your holy symbol.")
 		return false
 	if not can_afford(slot, spell):
 		_say("Not enough mana.")
@@ -459,6 +464,10 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 		_cue(spell.sound)
 	if spell.target != SpellDef.Target.AHEAD:
 		_fx(spell.effect)
+	var focus = m.hands[hand]
+	if focus != null and focus.def.magic == ItemDef.Magic.DIVINE and spell.effect in ["heal", "bless"]:
+		get_tree().call_group("spell_effects", "holy_pulse")  # The one pure warm light in a cursed land.
+		holy_cast.emit(slot, hand, spell)
 	_say(text)
 	return true
 

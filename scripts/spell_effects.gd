@@ -245,6 +245,36 @@ func impact(cell: Vector2i) -> void:
 
 
 ## A soft glow around the party: a light that swells and fades, and motes drifting up.
+## The cleric's holy light (Heal and Bless cast from a holy symbol): a gold light that swells
+## outward from the party and lights the corridor walls, while nearby green curse glows dim.
+## "Reduce flashing" (Settings) makes it a weaker, steady glow that does not swell.
+func holy_pulse() -> void:
+	var c := Config.get_config()
+	var player := get_tree().get_first_node_in_group("player")
+	if player == null:
+		return
+	var reduced: bool = Settings.reduce_flashing
+	live += 1
+	var forward := Vector3(player.DIRS[player.facing].x, 0, player.DIRS[player.facing].y)
+	var light := OmniLight3D.new()
+	light.position = DungeonMap.cell_to_world(player.cell) + forward * 0.5 + Vector3(0, 0.9, 0)
+	light.light_color = c.holy_color
+	light.light_energy = 0.0
+	light.omni_range = c.holy_light_range if reduced else c.holy_start_range
+	add_child(light)
+	var strength: float = c.holy_light_energy * (c.holy_reduced_scale if reduced else 1.0)
+	var seconds: float = c.holy_seconds * (1.5 if reduced else 1.0)
+	if not reduced:
+		light.create_tween().tween_property(light, "omni_range", c.holy_light_range, seconds).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	var energy := light.create_tween()
+	energy.tween_property(light, "light_energy", strength, seconds * 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	energy.tween_property(light, "light_energy", 0.0, seconds * 0.6).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	energy.tween_callback(func():
+		light.queue_free()
+		live -= 1)
+	get_tree().call_group("dungeon", "dim_curse", c.holy_curse_dim, c.holy_curse_dim_in, c.holy_curse_dim_hold, c.holy_curse_dim_out)
+
+
 func party_glow(kind: String) -> void:
 	var c := Config.get_config()
 	if not ["heal", "bless", "shield"].has(kind):

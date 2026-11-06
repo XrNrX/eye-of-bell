@@ -231,6 +231,58 @@ def render(parts, size):
     return add_outline(img, PAL["ink"])
 
 
+def holy_symbol_glow():
+    """The cleric's holy symbol glowing: three frames side by side (dim, medium, bright), each
+    16x16 logical (32x32 once enlarged: the size of a hand button), drawn over the symbol's own
+    24x24 hand icon with ADDITIVE blending in the party panel. Gold is kept to the glow: only some
+    of the symbol's lit pixels turn torch gold (more of them as the glow strengthens), so the
+    metal still looks worn, and a halo of torch-coloured rings spreads around the silhouette.
+    Built from art/items/holy_symbol_hud.png, so it follows whatever art the symbol has."""
+    from pathlib import Path
+    from artio import ART_DIR
+    src = Image.open(Path(ART_DIR) / "items" / "holy_symbol_hud.png").convert("RGBA")
+    logical = src.resize((src.width // 2, src.height // 2), Image.NEAREST)  # Back to logical pixels (12x12).
+    w, h = logical.size
+    ox, oy = (16 - w) // 2, (16 - h) // 2
+    solid = {(x + ox, y + oy) for y in range(h) for x in range(w) if logical.getpixel((x, y))[3] > 0}
+    colours = {(x + ox, y + oy): logical.getpixel((x, y))[:3] for y in range(h) for x in range(w) if logical.getpixel((x, y))[3] > 0}
+    ink = PAL["ink"]
+    inside = {p for p in solid if colours[p] != ink}
+
+    def ring(cells, steps):
+        """Cells within `steps` of the silhouette, not in it (4-neighbour spread)."""
+        out = {}
+        frontier = set(cells)
+        for d in range(1, steps + 1):
+            nxt = set()
+            for (x, y) in frontier:
+                for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    q = (x + dx, y + dy)
+                    if 0 <= q[0] < 16 and 0 <= q[1] < 16 and q not in cells and q not in out:
+                        out[q] = d
+                        nxt.add(q)
+            frontier = nxt
+        return out
+
+    halo = ring(solid, 2)
+    sheet = Image.new("RGBA", (48, 16), (0, 0, 0, 0))
+    spec = [  # (symbol pixels turned gold, ring colours by distance)
+        (0.40, {1: PAL["torch_700"]}),
+        (0.70, {1: PAL["torch_500"], 2: PAL["torch_700"]}),
+        (1.00, {1: PAL["torch_300"], 2: PAL["torch_500"]}),
+    ]
+    for f, (share, rings) in enumerate(spec):
+        px = sheet.load()
+        for (x, y), d in halo.items():
+            if d in rings and (d == 1 or (x + y) % 2 == 0):  # The outer ring is dithered, so it reads as a glow, not a blob.
+                px[f * 16 + x, y] = (*rings[d], 255)
+        for (x, y) in inside:
+            if ((x * 7 + y * 13) % 10) / 10.0 < share:
+                lit = sum(colours[(x, y)]) > 3 * 110  # Light metal goes bright gold, dark metal a deeper gold.
+                px[f * 16 + x, y] = (*(PAL["torch_300"] if lit else PAL["torch_500"]), 255)
+    return sheet
+
+
 def build(scale=2):
     """Per item: <name>.png (24x24 logical: inventory slots and the cursor), <name>_hud.png
     (12x12 logical: hand and quick slots on the party panel) -- both enlarged `scale` times to
@@ -247,4 +299,5 @@ def build(scale=2):
     # icon is that same drawing, enlarged.
     from gen_sprites import key_sprite
     written.append(save_png(key_sprite(), "items/key.png", scale=scale))
+    written.append(save_png(holy_symbol_glow(), "items/holy_symbol_glow.png", scale=2))
     return written

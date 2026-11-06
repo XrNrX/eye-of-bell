@@ -120,7 +120,7 @@ func glow(kind: String) -> Dictionary:
 @export var heal_light_range := 5.0
 @export var heal_pulse_seconds := 0.7                   # Rise and fall of the light.
 @export var heal_motes := 18                            # Soft specks drifting up around the party.
-@export var heal_mote_color := Color(1.8, 1.5, 0.7)     # HDR.
+@export var heal_mote_color := Color(2.0, 1.45, 0.5)     # HDR.
 @export var heal_mote_rise := 0.8
 @export var heal_mote_seconds := 1.1
 
@@ -130,7 +130,7 @@ func glow(kind: String) -> Dictionary:
 @export var bless_light_range := 5.5
 @export var bless_pulse_seconds := 0.8
 @export var bless_motes := 22
-@export var bless_mote_color := Color(2.0, 1.9, 1.4)
+@export var bless_mote_color := Color(2.1, 1.6, 0.6)
 @export var bless_mote_rise := 0.9
 @export var bless_mote_seconds := 1.2
 
@@ -143,6 +143,30 @@ func glow(kind: String) -> Dictionary:
 @export var shield_mote_color := Color(1.0, 1.6, 2.6)
 @export var shield_mote_rise := 0.6
 @export var shield_mote_seconds := 0.9
+
+@export_group("Holy light (the cleric's symbol)")
+## Heal and Bless cast from a holy symbol: a gold light swells outward from the party, lighting the
+## corridor walls (the one pure warm light in a cursed land), and nearby green curse glows dim while it lasts.
+@export var holy_color := Color(1.0, 0.8, 0.38)
+@export var holy_light_energy := 2.0
+@export var holy_start_range := 1.5                # The light starts this wide...
+@export var holy_light_range := 8.0                # ...and swells to this, so the pulse seems to travel outward.
+@export var holy_seconds := 1.0                    # How long the pulse lasts (rises for 40%, fades for 60%).
+@export var holy_curse_dim := 0.65                 # How much the green curse glows dim (0 none, 1 out completely).
+@export var holy_curse_dim_in := 0.25
+@export var holy_curse_dim_hold := 0.6
+@export var holy_curse_dim_out := 0.9
+@export var holy_reduced_scale := 0.45             # "Reduce flashing": the light's strength is multiplied by this and it never swells.
+
+@export_group("Holy symbol on the party panel")
+## The glowing symbol in the cleric's hand slot (art/items/holy_symbol_glow.png, three frames).
+@export var holy_hud_seconds := 1.2                # How long it pulses (the length of the cast)...
+@export var holy_hud_pulses := 3                   # ...in this many pulses...
+@export var holy_hud_fade := 1.0                   # ...then fades out over this.
+@export var holy_hud_motes := 7                    # Light motes rising off the symbol (0 for none).
+@export var holy_hud_mote_color := Color(0.96, 0.81, 0.5)
+@export var holy_hud_mote_rise := 16.0             # Pixels per second.
+@export var holy_hud_mote_seconds := 1.0
 
 @export_group("Glow (bloom)")
 ## Only pixels brighter than glow_hdr_threshold bloom, so the torches' own light stays put while

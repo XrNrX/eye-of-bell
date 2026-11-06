@@ -8,6 +8,7 @@ extends RefCounted
 ##     Settings.set_sfx_volume(0.8)    # sound effects
 ##     Settings.set_fullscreen(false)  # remember the display mode (display_manager.gd applies it)
 ##     Settings.set_fog(false)         # volumetric fog on or off (spell_effects_config.apply_environment)
+##     Settings.set_reduce_flashing(true)  # softer holy light and glows (spell_effects.gd, party_hud.gd)
 ##
 ## Each is a fraction 0..1 of full (0 mutes). They are applied to the audio buses: Master, and
 ## Music and SFX, which are created here if the project doesn't define them (both send to
@@ -25,6 +26,7 @@ static var music_volume := 0.7  # The ambient loop starts a little below full: i
 static var sfx_volume := 1.0
 static var fullscreen := true   # Borderless fullscreen by default; false = a window.
 static var fog := true          # The subtle volumetric fog; off on weak machines.
+static var reduce_flashing := false  # Softer spell and holy-light pulses: steady glows, no flicker, no shake.
 static var loaded := false
 
 
@@ -39,6 +41,7 @@ static func apply() -> void:
 			sfx_volume = clampf(float(cfg.get_value(SECTION, "sfx_volume", sfx_volume)), 0.0, 1.0)
 			fullscreen = bool(cfg.get_value(DISPLAY_SECTION, "fullscreen", fullscreen))
 			fog = bool(cfg.get_value(DISPLAY_SECTION, "fog", fog))
+			reduce_flashing = bool(cfg.get_value(DISPLAY_SECTION, "reduce_flashing", reduce_flashing))
 	_push_to_engine()
 
 
@@ -67,6 +70,11 @@ static func set_fog(value: bool) -> void:
 	_changed()
 
 
+static func set_reduce_flashing(value: bool) -> void:
+	reduce_flashing = value
+	_changed()
+
+
 static func _clean(value: float) -> float:
 	return clampf(snappedf(value, 0.05), 0.0, 1.0)
 
@@ -80,6 +88,7 @@ static func _changed() -> void:
 	cfg.set_value(SECTION, "sfx_volume", sfx_volume)
 	cfg.set_value(DISPLAY_SECTION, "fullscreen", fullscreen)
 	cfg.set_value(DISPLAY_SECTION, "fog", fog)
+	cfg.set_value(DISPLAY_SECTION, "reduce_flashing", reduce_flashing)
 	cfg.save(path)
 
 

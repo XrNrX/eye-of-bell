@@ -18,6 +18,8 @@ const SpellDef := preload("res://scripts/spell_def.gd")
 const UiLayout := preload("res://scripts/ui_layout.gd")
 const FeelConfigScript := preload("res://scripts/combat_feel_config.gd")
 const StackCount := preload("res://scripts/stack_count.gd")
+const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
+const Settings := preload("res://scripts/settings.gd")
 
 # Sizes are in 640x360 pixels. The art is drawn at 2x (see ui_layout.gd), so each of these is the
 # art's own size: portraits 64x64, hand buttons 32x32.
@@ -93,6 +95,7 @@ func _ready() -> void:
 	party.hp_changed.connect(_update_hp)
 	party.hero_hit.connect(_on_hero_hit)
 	party.formation_changed.connect(_on_formation_changed)
+	party.holy_cast.connect(_on_holy_cast)
 
 	catcher = Control.new()
 	catcher.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -129,6 +132,105 @@ func _process(_delta: float) -> void:
 	for state in [menu_owner, pending]:
 		if not state.is_empty() and party.action_for(state.caster, state.hand) != party.Act.SPELLS:
 			cancel_casting()
+
+
+# --------------------------------------------------------------------------
+# The cleric's holy symbol glowing while Heal or Bless is cast
+# --------------------------------------------------------------------------
+
+const HOLY_GLOW_SHEET := "res://art/items/holy_symbol_glow.png"  # Three frames of 32x32: dim, medium, bright.
+var holy_glows := {}  # hand TextureButton -> {"glow": TextureRect, "tween": Tween}
+
+
+## Light the holy symbol in that hand slot: a gold glow (added over the icon, so the metal still
+## looks worn) pulsing for the length of the cast, a few light motes rising, then fading out.
+## "Reduce flashing" makes it one steady swell with no pulsing and no motes.
+func _on_holy_cast(slot: int, hand_index: int, _spell: Resource) -> void:
+	if not panels.has(slot) or not ResourceLoader.exists(HOLY_GLOW_SHEET):
+		return
+	var hand: TextureButton = panels[slot].hands[hand_index]
+	var c := SpellEffectsConfig.get_config()
+	var entry: Dictionary = holy_glows.get(hand, {})
+	if entry.is_empty():
+		var sheet: Texture2D = load(HOLY_GLOW_SHEET)
+		var frames: Array[Texture2D] = []
+		for i in 3:
+			var atlas := AtlasTexture.new()
+			atlas.atlas = sheet
+			atlas.region = Rect2(i * 32, 0, 32, 32)
+			frames.append(atlas)
+		var glow := TextureRect.new()
+		glow.top_level = true  # Not under the hand button: a cooling hand is dimmed and the glow must not be.
+		glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		glow.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		glow.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		glow.size = Vector2(32, 32)
+		var mat := CanvasItemMaterial.new()
+		mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		glow.material = mat
+		glow.set_meta("frames", frames)
+		panels[slot].root.add_child(glow)
+		entry = {"glow": glow, "tween": null}
+		holy_glows[hand] = entry
+	var glow: TextureRect = entry.glow
+	if entry.tween != null and entry.tween.is_valid():
+		entry.tween.kill()
+	var reduced: bool = Settings.reduce_flashing
+	var seconds: float = c.holy_hud_seconds
+	var fade: float = c.holy_hud_fade
+	var pulses: int = maxi(1, c.holy_hud_pulses)
+	glow.visible = true
+	var tween := create_tween()
+	entry.tween = tween
+	tween.tween_method(func(t: float) -> void:
+		var k: float
+		if t < seconds:
+			if reduced:
+				k = minf(1.0, t / (seconds * 0.5)) * 0.7  # One steady swell.
+			else:
+				k = lerpf(0.4, 1.0, 0.5 - 0.5 * cos(TAU * pulses * t / seconds))
+		else:
+			var end_k: float = 0.7 if reduced else lerpf(0.4, 1.0, 0.5 - 0.5 * cos(TAU * pulses))
+			k = end_k * clampf(1.0 - (t - seconds) / fade, 0.0, 1.0)
+		_set_holy_glow(hand, glow, k), 0.0, seconds + fade, seconds + fade)
+	tween.tween_callback(func():
+		glow.visible = false)
+	if not reduced and c.holy_hud_motes > 0:
+		_holy_motes(glow, c, seconds)
+
+
+## One frame of the glow: the frame shows how strong it is, and it follows its hand button.
+func _set_holy_glow(hand: TextureButton, glow: TextureRect, k: float) -> void:
+	var frames: Array = glow.get_meta("frames")
+	glow.global_position = hand.global_position
+	glow.texture = frames[0 if k < 0.45 else (1 if k < 0.75 else 2)]
+	glow.modulate = Color(1, 1, 1, clampf(k * 1.3, 0.0, 1.0))
+
+
+func _holy_motes(glow: Control, c: Resource, seconds: float) -> void:
+	var motes := CPUParticles2D.new()
+	motes.position = Vector2(16, 20)
+	motes.amount = maxi(1, int(c.holy_hud_motes * 2))
+	motes.lifetime = c.holy_hud_mote_seconds
+	motes.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	motes.emission_rect_extents = Vector2(7, 5)
+	motes.direction = Vector2(0, -1)
+	motes.spread = 12.0
+	motes.gravity = Vector2.ZERO
+	motes.initial_velocity_min = c.holy_hud_mote_rise * 0.6
+	motes.initial_velocity_max = c.holy_hud_mote_rise
+	motes.scale_amount_min = 2.0  # 2x2 pixel specks, like the art.
+	motes.scale_amount_max = 2.0
+	motes.color = c.holy_hud_mote_color
+	motes.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	glow.add_child(motes)
+	motes.emitting = true
+	get_tree().create_timer(seconds).timeout.connect(func():
+		if is_instance_valid(motes):
+			motes.emitting = false)
+	get_tree().create_timer(seconds + c.holy_hud_mote_seconds + 0.2).timeout.connect(func():
+		if is_instance_valid(motes):
+			motes.queue_free())
 
 
 ## Draw what's in a hand: the item's small icon (with a count for a stack of darts),
