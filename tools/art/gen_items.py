@@ -160,6 +160,14 @@ def scroll():
     ]
 
 
+def scroll_resurrection():
+    """The scroll with a faint gold seal and cord (gold is the holy colour, not the curse green)."""
+    parts = scroll()[:-1]
+    parts.append((disc(15.5, 16.5, 2.4), GOLD))  # Wax seal, in gold.
+    parts.append((seg((12.5, 8), (12.5, 16), 0.6), GOLD))  # A thin gold cord round the middle.
+    return parts
+
+
 def dagger():
     return [
         (seg((10, 14), (18.5, 5.5), 2.8), STEEL),                 # Short blade...
@@ -209,6 +217,7 @@ ITEMS = {
     "healing_potion": healing_potion,
     "scroll": scroll,
     "dagger": dagger,
+    "scroll_resurrection": scroll_resurrection,
     "darts": darts,
     "spellbook": spellbook,
     "holy_symbol": holy_symbol,

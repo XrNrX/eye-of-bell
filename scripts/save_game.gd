@@ -101,7 +101,7 @@ static func serialize(tree: SceneTree) -> Dictionary:
 		for b in m.buffs:
 			buffs.append({"spell": b.spell.resource_path, "left": b.left})
 		heroes.append({
-			"hero": m.hero_index, "hp": m.hp, "mana": m.mana,
+			"hero": m.hero_index, "hp": m.hp, "mana": m.mana, "shaken": m.shaken_left,
 			"hands": m.hands.map(stack_to_data), "armour": stack_to_data(m.armour),
 			"backpack": m.backpack.map(stack_to_data), "quick": m.quick.map(stack_to_data),
 			"buffs": buffs,
@@ -200,6 +200,7 @@ static func apply(tree: SceneTree, data: Dictionary) -> String:
 			return "The saved party doesn't match this game."
 		m.hp = clampi(int(h.hp), 0, m.def.max_hp)
 		m.mana = clampf(float(h.mana), 0.0, float(m.def.max_mana))
+		m.shaken_left = maxf(0.0, float(h.get("shaken", 0.0))) if m.hp > 0 else 0.0  # (An older save has none.)
 		m.cooldown_left = 0.0
 		for i in m.hands.size():
 			m.hands[i] = data_to_stack(h.hands[i]) if i < h.hands.size() else null

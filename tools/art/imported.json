@@ -96,6 +96,18 @@
       "imported": "2026-11-05 22:29:57",
       "source": "scroll_hud.png"
     },
+    "items/scroll_resurrection.png": {
+      "imported": "2026-11-06 00:22:13",
+      "source": "scroll_resurrection.png"
+    },
+    "items/scroll_resurrection_floor.png": {
+      "imported": "2026-11-06 00:22:13",
+      "source": "scroll_resurrection_floor.png"
+    },
+    "items/scroll_resurrection_hud.png": {
+      "imported": "2026-11-06 00:22:13",
+      "source": "scroll_resurrection_hud.png"
+    },
     "items/short_sword.png": {
       "imported": "2026-11-05 22:29:57",
       "source": "short_sword.png"

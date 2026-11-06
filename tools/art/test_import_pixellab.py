@@ -115,8 +115,8 @@ with tempfile.TemporaryDirectory() as t:
 
     # ---- the catalogue comes from the folders
     cat = imp.build_catalog(art)
-    check("catalogue reads sizes from the art folders (wall 128x128, dagger 48x48, hud 24x24, floor 12x12)",
-          cat["tiles/wall"].size == (128, 128) and cat["items/dagger"].size == (48, 48) and cat["items/dagger_hud"].size == (24, 24) and cat["items/dagger_floor"].size == (12, 12))
+    check("catalogue reads sizes from the art folders (wall 128x128, dagger 48x48, hud 24x24, floor 48x48)",
+          cat["tiles/wall"].size == (128, 128) and cat["items/dagger"].size == (48, 48) and cat["items/dagger_hud"].size == (24, 24) and cat["items/dagger_floor"].size == (48, 48))
     check("UI art is flagged (items, portraits, ui), 3D art is not (tiles, floor icons, sprites)",
           cat["items/dagger"].ui and cat["portraits/fighter/portrait"].ui and cat["ui/quickslot"].ui and not cat["tiles/wall"].ui and not cat["items/dagger_floor"].ui and not cat["sprites/key"].ui)
     check("monster frames know their frame size and the sheet its kind", cat["monsters/skeleton/idle_0"].size == (96, 128) and cat["monsters/skeleton/skeleton_sheet"].kind == "monster_sheet" and cat["sprites/torch"].kind == "sprite_sheet")
@@ -170,7 +170,7 @@ with tempfile.TemporaryDirectory() as t:
     noisy((256, 256), 2).save(inbox / "wall.png")
     noisy((24, 24), 3).save(inbox / "dagger.png")
     noisy((64, 64), 4).save(inbox / "fighter_portrait.png")
-    noisy((12, 12), 5).save(inbox / "dagger_floor.png")
+    noisy((48, 48), 5).save(inbox / "dagger_floor.png")
     noisy((8, 8), 6).save(inbox / "banana.png")
     noisy((8, 8), 7).save(inbox / "key.png")
     code, out = run(tmp, "--dry-run")
@@ -181,7 +181,7 @@ with tempfile.TemporaryDirectory() as t:
     check("wall: 256x256 export -> 128x128, palette colours only", wall.size == (128, 128) and all_in_palette(wall))
     dag = load(art / "items/dagger.png")
     check("dagger: 24x24 export -> 48x48 (2x UI scale), palette colours only", dag.size == (48, 48) and all_in_palette(dag))
-    check("dagger_floor stays 12x12 (3D art is not scaled)", load(art / "items/dagger_floor.png").size == (12, 12))
+    check("dagger_floor stays 48x48 (3D art is not scaled)", load(art / "items/dagger_floor.png").size == (48, 48))
     check("portrait: 64x64 export kept at 64x64", load(art / "portraits/fighter/portrait.png").size == (64, 64))
     check("the existing file names are kept (nothing new in tiles/, items/)", sorted(p.name for p in (art / "tiles").iterdir()) == ["wall.png"])
     check("the procedural original is backed up to _old", (old / "tiles/wall.png").read_bytes() == original_wall)

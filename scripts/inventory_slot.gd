@@ -230,6 +230,16 @@ func _click_portrait() -> void:
 		screen.focus(member_slot)
 		return
 	var m = screen.party.member(member_slot)
+	if cursor.held.def.revive_percent > 0 and not m.is_alive():  # A Scroll of Resurrection on a fallen hero's portrait.
+		if screen.party.revive(member_slot, cursor.held.def).used:
+			cursor.held.count -= 1
+			if cursor.held.count <= 0:
+				cursor.release()
+			else:
+				cursor.refresh()
+			screen.say("")
+			screen.refresh()
+		return
 	if not screen.party.add_to_backpack(member_slot, cursor.held):
 		cursor.refresh()  # Part of a stack may have fitted.
 		screen.say("%s's backpack is full." % m.def.display_name)

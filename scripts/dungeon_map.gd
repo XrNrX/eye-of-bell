@@ -148,6 +148,7 @@ const ITEMS := [
 	{"cell": Vector2i(20, 1), "def": "res://data/items/scroll.tres"},  # Closet behind the locked door: the best loot.
 	{"cell": Vector2i(20, 1), "def": "res://data/items/healing_potion.tres", "count": 2},
 	{"cell": Vector2i(20, 1), "def": "res://data/items/darts.tres", "count": 6},
+	{"cell": Vector2i(20, 1), "def": "res://data/items/scroll_resurrection.tres"},  # Rare: the locked closet.
 	{"cell": Vector2i(13, 19), "def": "res://data/items/key.tres"},  # Room 4: key three (opens the locked closet).
 	{"cell": Vector2i(14, 17), "def": "res://data/items/healing_potion.tres"},
 	{"cell": Vector2i(16, 21), "def": "res://data/items/darts.tres", "count": 5},  # Room 6.
@@ -160,6 +161,7 @@ const ITEMS := [
 	{"cell": Vector2i(2, 3), "def": "res://data/items/healing_potion.tres", "count": 3},  # The secret closet behind the cracked wall.
 	{"cell": Vector2i(2, 4), "def": "res://data/items/scroll.tres"},
 	{"cell": Vector2i(2, 5), "def": "res://data/items/darts.tres", "count": 8},
+	{"cell": Vector2i(2, 5), "def": "res://data/items/scroll_resurrection.tres"},  # Rare: the secret closet.
 	{"cell": Vector2i(2, 3), "def": "res://data/items/leather_armour.tres"},
 ]
 

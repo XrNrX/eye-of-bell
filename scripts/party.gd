@@ -39,6 +39,8 @@ signal quick_changed(slot: int)  # A member's quick slots changed (contents or c
 signal cooldown_started(slot: int, duration: float)
 signal hero_hit(slot: int, damage: int)  # damage 0 means the monster missed.
 signal holy_cast(slot: int, hand: int, spell: Resource)  # A Heal or Bless was cast from a holy symbol in this hand.
+signal revived(slot: int, shaken: bool)  # A fallen hero was raised (shaken: a divine caster, who returns rattled).
+signal revive_requested(slot: int, index: int)  # A Scroll of Resurrection was used from this quick slot: the HUD asks "Raise whom?".
 signal wiped
 
 ## Hero definitions (CharacterDef .tres), in slot order.
@@ -76,6 +78,7 @@ class Member:
 	# each {"spell": SpellDef, "left": seconds}.
 	var mana := 0.0
 	var buffs: Array = []
+	var shaken_left := 0.0  # A resurrected Cleric: seconds until their faith steadies (no mana, no prayer until then).
 
 	func is_alive() -> bool:
 		return hp > 0
@@ -128,7 +131,14 @@ func _process(delta: float) -> void:
 		m.cooldown_left = maxf(0.0, m.cooldown_left - delta)
 		for i in QUICK_SLOTS:
 			m.quick_cooldown[i] = maxf(0.0, m.quick_cooldown[i] - delta)
-		if m.is_alive():
+		if not m.is_alive():
+			m.shaken_left = 0.0  # Dying ends it.
+		elif m.shaken_left > 0.0:
+			m.shaken_left -= delta
+			if m.shaken_left <= 0.0:
+				m.shaken_left = 0.0
+				_say("%s's faith steadies." % m.def.display_name)
+		else:
 			m.mana = minf(m.def.max_mana, m.mana + delta / MANA_REGEN_TIME)
 		for b in m.buffs:
 			b.left -= delta
@@ -365,6 +375,8 @@ func cast_refusal(slot: int, hand: int) -> String:
 	var m := member(slot)
 	if m == null or not m.is_alive():
 		return ""
+	if m.shaken_left > 0.0 and m.def.magic == ItemDef.Magic.DIVINE:
+		return "%s is too shaken to pray." % m.def.display_name
 	var stack = m.hands[hand]
 	if stack == null or stack.def.type != ItemDef.Type.FOCUS:
 		if m.def.magic == ItemDef.Magic.DIVINE:
@@ -397,8 +409,10 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 	if m == null or not m.is_alive() or m.cooldown_left > 0.0:
 		return false
 	if not (spell in spells_in(slot, hand)):
-		if m.def.magic == ItemDef.Magic.DIVINE and cast_refusal(slot, hand) != "":
-			_say("You need your holy symbol.")
+		if m.def.magic == ItemDef.Magic.DIVINE:
+			var why := cast_refusal(slot, hand)  # "You need your holy symbol." or "... too shaken to pray."
+			if why != "":
+				_say(why)
 		return false
 	if not can_afford(slot, spell):
 		_say("Not enough mana.")
@@ -698,6 +712,12 @@ func use_quick(slot: int, index: int) -> Dictionary:
 		if m.cooldown_left > 0.0:
 			return nothing
 		return {"used": _do_throw(m, {"where": "quick", "index": index}), "message": "", "close": false}
+	if stack.def.revive_percent > 0:  # Pick who to raise: the HUD enters target mode and calls revive_from_quick.
+		if fallen().is_empty():
+			_say("The scroll needs the fallen.")
+		else:
+			revive_requested.emit(slot, index)
+		return nothing
 	var result := use_item(slot, stack.def)
 	if result.used:
 		stack.count -= 1  # Uses one item from the stack.
@@ -718,6 +738,9 @@ func use_item(slot: int, def: Resource) -> Dictionary:
 	var m := member(slot)
 	if m == null or def == null or def.type != ItemDef.Type.CONSUMABLE:
 		return {"used": false, "message": "", "close": false}
+	if def.revive_percent > 0:  # A Scroll of Resurrection is read on a fallen hero's portrait, not by its holder.
+		return {"used": false, "close": false, "message": "The scroll needs the fallen." if fallen().is_empty() \
+				else "Click a fallen hero's portrait with it."}
 	if not m.is_alive():
 		return {"used": false, "message": "%s is dead." % m.def.display_name, "close": false}
 	if def.heal_amount > 0:
@@ -725,6 +748,60 @@ func use_item(slot: int, def: Resource) -> Dictionary:
 	if def.spell_damage_max > 0:
 		return _read_scroll(m, def)
 	return {"used": false, "message": "Nothing happens.", "close": false}
+
+
+## The heroes at 0 HP.
+func fallen() -> Array:
+	return members.filter(func(m): return not m.is_alive())
+
+
+## Read a Scroll of Resurrection on the hero in this position. Returns {used, message}; the caller
+## takes one scroll away when `used`. Only the fallen can be raised ("The scroll needs the fallen.");
+## they return with ItemDef.revive_percent of their max HP (at least 1) and no mana, keeping their gear,
+## quick slots and place in the formation. A divine caster (the Cleric) returns with FULL HP but shaken:
+## no mana regeneration and no spells for ItemDef.shaken_seconds. Feedback is the HUD's and spell_effects'.
+func revive(slot: int, def: Resource) -> Dictionary:
+	var m := member(slot)
+	if m == null or def == null or def.revive_percent <= 0:
+		return {"used": false, "message": ""}
+	if m.is_alive():
+		_say("The scroll needs the fallen.")
+		return {"used": false, "message": "The scroll needs the fallen."}
+	var divine: bool = m.def.magic == ItemDef.Magic.DIVINE
+	m.hp = m.def.max_hp if divine else maxi(1, ceili(m.def.max_hp * def.revive_percent / 100.0))
+	m.mana = 0.0
+	m.buffs.clear()
+	m.cooldown_left = 0.0
+	m.quick_cooldown = [0.0, 0.0]
+	m.shaken_left = def.shaken_seconds if divine else 0.0
+	hp_changed.emit(m.slot)
+	_cue("bless")
+	get_tree().call_group("spell_effects", "holy_pulse", 1.6 if divine else 1.0)
+	revived.emit(m.slot, divine)
+	var text := "%s returns, whole in body but too shaken to pray." % m.def.display_name if divine \
+			else "%s returns from the dead." % m.def.display_name
+	_say(text)
+	return {"used": true, "message": text}
+
+
+## A Scroll of Resurrection from a quick slot, after the HUD asked "Raise whom?": raise `target_slot`,
+## and spend the scroll and start the slot's cooldown only if it worked.
+func revive_from_quick(slot: int, index: int, target_slot: int) -> bool:
+	var m := member(slot)
+	if m == null or not m.is_alive() or index < 0 or index >= QUICK_SLOTS:
+		return false
+	var stack = m.quick[index]
+	if stack == null or stack.def.revive_percent <= 0:
+		return false
+	var result := revive(target_slot, stack.def)
+	if not result.used:
+		return false
+	stack.count -= 1
+	if stack.count <= 0:
+		m.quick[index] = null
+	m.quick_cooldown[index] = QUICK_COOLDOWN
+	quick_changed.emit(slot)
+	return true
 
 
 func _drink(m: Member, def: Resource) -> Dictionary:

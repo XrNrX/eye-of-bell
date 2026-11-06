@@ -168,6 +168,20 @@ func glow(kind: String) -> Dictionary:
 @export var holy_hud_mote_rise := 16.0             # Pixels per second.
 @export var holy_hud_mote_seconds := 1.0
 
+@export_group("Resurrection (Scroll of Resurrection)")
+## The scroll burns away in gold light, a column of warm holy light rises over the revived hero's portrait
+## (bigger and brighter for a Cleric), and the 3D view gets a gold pulse (holy_pulse, scaled below).
+@export var revive_burn_seconds := 0.6             # The scroll's icon burning away where it was read.
+@export var revive_column_seconds := 1.8
+@export var revive_column_rise := 14.0             # Pixels the column drifts upward while it fades.
+@export var revive_column_scale := 1.0             # Size of the column (the Cleric's is multiplied by the next one).
+@export var revive_cleric_scale := 1.5
+@export var revive_column_brightness := 1.0        # Added light (HDR above 1); the Cleric's is multiplied by the next one.
+@export var revive_cleric_brightness := 1.5
+@export var revive_motes := 10
+@export var revive_cleric_motes := 24
+@export var revive_reduced_scale := 0.5            # "Reduce flashing": the column is this much dimmer, steady, with no motes.
+
 @export_group("Glow (bloom)")
 ## Only pixels brighter than glow_hdr_threshold bloom, so the torches' own light stays put while
 ## the HDR bolt and sparks pop. Lower the threshold (or raise intensity) for more bloom everywhere.

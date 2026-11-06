@@ -96,6 +96,8 @@ func _ready() -> void:
 	party.hero_hit.connect(_on_hero_hit)
 	party.formation_changed.connect(_on_formation_changed)
 	party.holy_cast.connect(_on_holy_cast)
+	party.revive_requested.connect(_on_revive_requested)
+	party.revived.connect(_on_revived)
 
 	catcher = Control.new()
 	catcher.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -128,6 +130,12 @@ func _process(_delta: float) -> void:
 		p.cool_bar.value = (m.cooldown_left / total) * 100.0 if m.is_alive() else 0.0
 		p.mana_bar.value = m.mana
 		p.buff_ring.visible = not m.buffs.is_empty()
+		p.shaken.visible = m.shaken_left > 0.0 and m.is_alive()  # A dimmed holy symbol: too shaken to pray.
+	if not revive_pending.is_empty():  # The scroll left its quick slot (or its hero died): drop target mode.
+		var src = party.member(revive_pending.slot)
+		var held = src.quick[revive_pending.index] if src != null else null
+		if held == null or held.def.revive_percent <= 0 or not src.is_alive():
+			_end_revive()
 	# Close the pop-up / target mode if the caster died or the item left their hand.
 	for state in [menu_owner, pending]:
 		if not state.is_empty() and party.action_for(state.caster, state.hand) != party.Act.SPELLS:
@@ -140,6 +148,9 @@ func _process(_delta: float) -> void:
 
 const HOLY_GLOW_SHEET := "res://art/items/holy_symbol_glow.png"  # Three frames of 32x32: dim, medium, bright.
 var holy_glows := {}  # hand TextureButton -> {"glow": TextureRect, "tween": Tween}
+var revive_pending := {}  # {"slot", "index"}: a Scroll of Resurrection from this quick slot waits for a portrait click.
+var column_texture: Texture2D  # The gold column over a revived hero (made once, in _revive_column_texture).
+var holy_icon: Texture2D
 
 
 ## Light the holy symbol in that hand slot: a gold glow (added over the icon, so the metal still
@@ -311,6 +322,13 @@ func _on_spell_chosen(spell: Resource) -> void:
 func _on_portrait(slot: int) -> void:
 	if drag_just_ended:
 		return  # This release ended a drag; it isn't a click.
+	if not revive_pending.is_empty():
+		_revive_from_quick(slot)
+		return
+	var cursor = get_tree().get_first_node_in_group("cursor")
+	if cursor != null and cursor.is_holding() and cursor.held.def.revive_percent > 0:
+		_revive_from_cursor(slot, cursor)  # A Scroll of Resurrection on the cursor: read it on this portrait.
+		return
 	if pending.is_empty():
 		get_tree().call_group("inventory", "show_screen", slot)  # (the screen clicks for itself)
 		return
@@ -323,6 +341,7 @@ func _on_portrait(slot: int) -> void:
 func cancel_casting() -> void:
 	_close_menu()
 	_end_target_mode()
+	_end_revive()
 
 
 func _close_menu() -> void:
@@ -342,13 +361,172 @@ func _end_target_mode() -> void:
 
 func _input(event: InputEvent) -> void:
 	_drag_input(event)
-	if menu == null and pending.is_empty():
+	if menu == null and pending.is_empty() and revive_pending.is_empty():
 		return
 	var cancel: bool = (event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE) \
 			or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT)
 	if cancel:
 		cancel_casting()
 		get_viewport().set_input_as_handled()
+
+
+# --------------------------------------------------------------------------
+# Scroll of Resurrection
+# --------------------------------------------------------------------------
+
+## From a quick slot: wait for the portrait click that says who to raise.
+func _on_revive_requested(slot: int, index: int) -> void:
+	cancel_casting()
+	revive_pending = {"slot": slot, "index": index}
+	catcher.visible = true
+	get_tree().call_group("hud", "show_message", "Raise whom?", true)
+
+
+func _end_revive() -> void:
+	if revive_pending.is_empty():
+		return
+	revive_pending = {}
+	get_tree().call_group("hud", "clear_message", "Raise whom?")
+	catcher.visible = menu != null or not pending.is_empty()
+
+
+func _revive_from_quick(target: int) -> void:
+	var src: Dictionary = revive_pending
+	var stack = party.member(src.slot).quick[src.index]
+	var tex: Texture2D = stack.def.icon if stack != null else null
+	var from: Vector2 = get_viewport().get_mouse_position()
+	if party.revive_from_quick(src.slot, src.index, target):
+		_end_revive()
+		_burn_scroll(tex, from)
+	else:
+		_end_revive()  # "The scroll needs the fallen." was already said; the scroll is kept.
+
+
+func _revive_from_cursor(target: int, cursor: Node) -> void:
+	var def: Resource = cursor.held.def
+	var from: Vector2 = get_viewport().get_mouse_position()
+	var result: Dictionary = party.revive(target, def)
+	if not result.used:
+		return  # The scroll stays on the cursor; the log said why.
+	cursor.held.count -= 1
+	if cursor.held.count <= 0:
+		cursor.release()
+	else:
+		cursor.refresh()
+	_burn_scroll(def.icon, from)
+
+
+## The scroll's icon burns away in gold light where it was read: it flares to bright gold and fades,
+## drifting up a little.
+func _burn_scroll(tex: Texture2D, at: Vector2) -> void:
+	if tex == null:
+		return
+	var c := SpellEffectsConfig.get_config()
+	var icon := TextureRect.new()
+	icon.texture = tex
+	icon.size = tex.get_size()
+	icon.position = at - icon.size / 2.0
+	icon.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	icon.material = mat
+	add_child(icon)
+	var seconds: float = c.revive_burn_seconds * (1.5 if Settings.reduce_flashing else 1.0)
+	var bright: float = 1.0 if Settings.reduce_flashing else 2.2
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(icon, "modulate", Color(bright, bright * 0.75, bright * 0.3, 0.0), seconds).from(Color(1.2, 1.0, 0.6, 1.0))
+	tween.tween_property(icon, "position:y", icon.position.y - 10.0, seconds)
+	tween.chain().tween_callback(icon.queue_free)
+
+
+## A hero was raised: a column of warm holy light rises over their portrait (taller, wider and
+## brighter for a Cleric) with light motes, all steadier and dimmer with "Reduce flashing".
+func _on_revived(slot: int, shaken: bool) -> void:
+	if not panels.has(slot):
+		return
+	var c := SpellEffectsConfig.get_config()
+	var reduced: bool = Settings.reduce_flashing
+	var portrait: TextureButton = panels[slot].portrait
+	var scale: float = c.revive_column_scale * (c.revive_cleric_scale if shaken else 1.0)
+	var bright: float = c.revive_column_brightness * (c.revive_cleric_brightness if shaken else 1.0) * (c.revive_reduced_scale if reduced else 1.0)
+	var column := TextureRect.new()
+	column.top_level = true
+	column.texture = _revive_column_texture()
+	column.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	column.stretch_mode = TextureRect.STRETCH_SCALE
+	column.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	column.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	column.size = Vector2(36, 84) * scale
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	column.material = mat
+	var rect: Rect2 = portrait.get_global_rect()
+	var base := Vector2(rect.get_center().x - column.size.x / 2.0, rect.end.y + 6.0 - column.size.y)  # Its foot at the portrait's foot.
+	column.global_position = base
+	column.modulate = Color(bright, bright, bright, 0.0)
+	panels[slot].root.add_child(column)
+	var seconds: float = c.revive_column_seconds * (1.4 if reduced else 1.0)
+	var tween := create_tween().set_parallel(true)
+	tween.tween_property(column, "modulate:a", 1.0, seconds * 0.3)
+	tween.tween_property(column, "global_position:y", base.y - c.revive_column_rise, seconds)
+	tween.chain().tween_property(column, "modulate:a", 0.0, seconds * 0.7)
+	tween.chain().tween_callback(column.queue_free)
+	if not reduced:
+		_revive_motes(portrait, column, c.revive_cleric_motes if shaken else c.revive_motes, seconds)
+
+
+func _revive_motes(portrait: Control, parent: Control, amount: int, seconds: float) -> void:
+	var c := SpellEffectsConfig.get_config()
+	var motes := CPUParticles2D.new()
+	motes.position = Vector2(parent.size.x / 2.0, parent.size.y * 0.92)
+	motes.amount = maxi(1, amount)
+	motes.lifetime = 1.1
+	motes.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
+	motes.emission_rect_extents = Vector2(parent.size.x * 0.25, 6)
+	motes.direction = Vector2(0, -1)
+	motes.spread = 10.0
+	motes.gravity = Vector2.ZERO
+	motes.initial_velocity_min = 24.0
+	motes.initial_velocity_max = 48.0
+	motes.scale_amount_min = 2.0
+	motes.scale_amount_max = 2.0
+	motes.color = c.holy_hud_mote_color
+	motes.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	parent.add_child(motes)
+	motes.emitting = true
+	get_tree().create_timer(seconds * 0.6).timeout.connect(func():
+		if is_instance_valid(motes):
+			motes.emitting = false)
+
+
+## The column's picture: 18 x 55 logical pixels (drawn 2x2) of torch gold, bright down the middle and
+## fading toward the sides and the top, with a dithered edge, so it looks like pixel art, not a gradient.
+## Added over the portrait (additive), so black is nothing.
+func _revive_column_texture() -> Texture2D:
+	if column_texture != null:
+		return column_texture
+	const W := 18
+	const H := 55
+	var image := Image.create(W, H, false, Image.FORMAT_RGBA8)
+	var ramp := [Color("9a5f1c"), Color("d99a36"), Color("f5cf80")]  # Palette torch_700 / 500 / 300.
+	for y in H:
+		var down: float = pow(clampf(float(y) / float(H - 1), 0.0, 1.0), 0.7)  # Strongest at the bottom.
+		for x in W:
+			var across: float = 1.0 - absf((x + 0.5) / W * 2.0 - 1.0)  # 1 in the middle, 0 at the sides.
+			var v: float = across * down
+			var bayer: float = (((x & 1) * 2 + (y & 1) * 3) % 4) / 4.0 * 0.18  # Tiny ordered dither.
+			v += bayer - 0.09
+			var colour := Color(0, 0, 0, 0)
+			if v > 0.62:
+				colour = ramp[2]
+			elif v > 0.36:
+				colour = ramp[1]
+			elif v > 0.14:
+				colour = ramp[0]
+			image.set_pixel(x, y, colour)
+	column_texture = ImageTexture.create_from_image(image)
+	return column_texture
 
 
 func _update_hp(slot: int) -> void:
@@ -361,6 +539,7 @@ func _update_hp(slot: int) -> void:
 	p.hp_bar.value = m.hp
 	p.portrait.texture_normal = m.def.portrait if m.is_alive() else m.def.portrait_dead
 	p.root.modulate = Color(0.5, 0.5, 0.5) if not m.is_alive() else Color.WHITE
+	p.shaken.visible = m.shaken_left > 0.0 and m.is_alive()
 
 
 ## A hero was attacked: float the damage (or "Miss") above their panel, flash the
@@ -595,6 +774,20 @@ func _make_panel(m) -> Dictionary:
 	buff_ring.anchor_right = 1.0   # Fills its parent whatever size layout gives it
 	buff_ring.anchor_bottom = 1.0  # (a resized signal missed the portrait's first layout).
 
+	# A small dimmed holy symbol on a resurrected Cleric's portrait while they are too shaken to pray.
+	var shaken := TextureRect.new()
+	shaken.texture = load("res://art/items/holy_symbol_hud.png")
+	shaken.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	shaken.stretch_mode = TextureRect.STRETCH_SCALE
+	shaken.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	shaken.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	shaken.modulate = Color(1, 1, 1, 0.5)
+	shaken.size = Vector2(24, 24)
+	shaken.position = Vector2(2, PORTRAIT_SIZE.y - 26)
+	shaken.visible = false
+	shaken.tooltip_text = "Too shaken to pray"
+	portrait.add_child(shaken)
+
 	# Two quick slots under the portrait (consumables; see quick_slot.gd).
 	var quick_row := HBoxContainer.new()
 	quick_row.add_theme_constant_override("separation", 0)
@@ -645,7 +838,7 @@ func _make_panel(m) -> Dictionary:
 	var cool_bar := _bar(COOL_FILL, Vector2(0, COOL_HEIGHT), 100)
 	col.add_child(cool_bar)
 
-	return {"root": root, "box": box, "name_label": name_label, "portrait": portrait, "buff_ring": buff_ring, "hands": hands,
+	return {"root": root, "box": box, "name_label": name_label, "portrait": portrait, "buff_ring": buff_ring, "shaken": shaken, "hands": hands,
 		"cool_bar": cool_bar, "hp_bar": hp_bar, "mana_bar": mana_bar, "quick": quick_slots}
 
 

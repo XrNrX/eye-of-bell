@@ -39,6 +39,13 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export var throw_damage_max := 0
 @export var melee := true            # False for thrown-only weapons (darts).
 
+@export_group("Resurrection")
+## A Scroll of Resurrection: read on a fallen hero's portrait. revive_percent is the share of max HP
+## they return with (a divine caster, the Cleric, returns with full HP but is shaken: no mana and no
+## prayer for shaken_seconds). 0 means it is not one. See Party.revive.
+@export var revive_percent := 0
+@export var shaken_seconds := 0.0
+
 @export_group("Breaking")
 @export var breaks_walls := false     # A heavy weapon: one swing at a cracked wall breaks it (the war hammer).
 
