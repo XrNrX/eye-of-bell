@@ -18,6 +18,7 @@ extends Node3D
 ## a palette-coloured drop shadow. All colours are the game's palette.
 
 const MAIN_SCENE := "res://scenes/main.tscn"
+const TITLE_ART := "res://art/ui/title.png"
 const SaveGame := preload("res://scripts/save_game.gd")
 const Settings := preload("res://scripts/settings.gd")
 const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
@@ -65,8 +66,9 @@ const VOLUME_STEP := 0.1
 var rows := {}
 var current_kind := "master"
 var fog_button: Button      # "FOG: ON" / "FOG: OFF".
-var flash_button: Button    # "REDUCE FLASHING: ON" / "REDUCE FLASHING: OFF".
+var flash_button: Button    # "FLASHING: REDUCED" / "FLASHING: NORMAL".
 var hints_button: Button    # "HINTS: ON" / "HINTS: OFF".
+var options_panel: Panel    # The dark panel behind the Options screen.
 var display_button: Button  # "SCREEN: FULLSCREEN" / "SCREEN: WINDOWED", built in _build_display_button.
 
 var time := 0.0
@@ -75,6 +77,7 @@ var base_position: Vector3
 
 func _ready() -> void:
 	Settings.apply()
+	_show_title_art()
 	root_ui.theme = _make_theme()
 	options_title.add_theme_color_override("font_color", TORCH_300)
 	_style_title()
@@ -90,6 +93,7 @@ func _ready() -> void:
 	_build_fog_button()
 	_build_flash_button()
 	_build_hints_button()
+	_arrange_options()
 	new_game_button.pressed.connect(_on_new_game_pressed)
 	load_button.pressed.connect(_on_load_pressed)
 	options_button.pressed.connect(_show_options.bind(true))
@@ -140,6 +144,9 @@ func _on_load_pressed() -> void:
 func _show_options(open: bool) -> void:
 	menu_box.visible = not open
 	options_box.visible = open
+	if options_panel:
+		options_panel.visible = open
+	title.visible = not open  # The Options panel covers the title.
 	(back_button if open else options_button).grab_focus()  # (+ and - may be greyed out; the keys work anyway)
 
 
@@ -186,6 +193,37 @@ func _build_flash_button() -> void:
 	flash_button.pressed.connect(_click)
 
 
+## Lay the Options screen out so it fits 640x360 with all its switches: the four toggles (screen, fog, flashing,
+## hints) sit in two columns, and a dark panel behind makes the text readable over the title picture.
+func _arrange_options() -> void:
+	options_box.offset_left = 48.0
+	options_box.offset_top = 44.0
+	options_box.offset_right = 592.0
+	options_box.offset_bottom = 348.0
+	var grid := GridContainer.new()
+	grid.columns = 2
+	grid.add_theme_constant_override("h_separation", 8)
+	grid.add_theme_constant_override("v_separation", 2)
+	options_box.add_child(grid)
+	options_box.move_child(grid, back_button.get_index())
+	for b in [display_button, fog_button, flash_button, hints_button]:
+		b.reparent(grid)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var panel := Panel.new()
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(STONE_900.r, STONE_900.g, STONE_900.b, 0.9)
+	box.border_color = Color("7c4426")  # Palette rust_500: rusted iron.
+	box.set_border_width_all(2)
+	panel.add_theme_stylebox_override("panel", box)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.position = Vector2(32, 28)
+	panel.size = Vector2(576, 324)
+	panel.visible = false
+	root_ui.add_child(panel)
+	root_ui.move_child(panel, options_box.get_index())  # Behind the options.
+	options_panel = panel
+
+
 ## The "show hints" switch: first-time tips such as how to open the character sheet.
 func _build_hints_button() -> void:
 	hints_button = back_button.duplicate()
@@ -198,6 +236,28 @@ func _build_hints_button() -> void:
 	hints_button.pressed.connect(_click)
 
 
+## The title screen picture (art/ui/title.png, 320x180 drawn at 2x: the entrance to a cursed dungeon at night)
+## is the menu's backdrop. The 3D corridor (the game's own level builder) is kept in the scene, hidden and not
+## rendering, as the fallback if the picture is missing.
+func _show_title_art() -> void:
+	if not ResourceLoader.exists(TITLE_ART):
+		return
+	var art := TextureRect.new()
+	art.name = "TitleArt"
+	art.texture = load(TITLE_ART)
+	art.position = Vector2.ZERO
+	art.size = Vector2(640, 360)
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_SCALE
+	art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	art.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var backdrop: Node = get_node("View/Backdrop")
+	backdrop.get_parent().add_child(art)
+	backdrop.get_parent().move_child(art, backdrop.get_index() + 1)
+	backdrop.visible = false
+	get_node("View/Backdrop/Port").render_target_update_mode = SubViewport.UPDATE_DISABLED
+
+
 ## Glow and fog on the backdrop's environment, from data/spell_effects.tres and the Options switch.
 func _apply_look() -> void:
 	var world_env := get_node_or_null("View/Backdrop/Port/WorldEnvironment")
@@ -207,7 +267,7 @@ func _apply_look() -> void:
 
 func _refresh_display() -> void:
 	fog_button.text = "FOG: ON" if Settings.fog else "FOG: OFF"
-	flash_button.text = "REDUCE FLASHING: ON" if Settings.reduce_flashing else "REDUCE FLASHING: OFF"
+	flash_button.text = "FLASHING: REDUCED" if Settings.reduce_flashing else "FLASHING: NORMAL"
 	hints_button.text = "HINTS: ON" if Settings.show_hints else "HINTS: OFF"
 	display_button.text = "SCREEN: FULLSCREEN" if Settings.fullscreen else "SCREEN: WINDOWED"
 

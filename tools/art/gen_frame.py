@@ -20,6 +20,8 @@ The masonry uses the same recipe as the wall tile (tools/art/gen_tiles.py): a br
 a height map lit from the top-left, noise tints, dithered onto the stone ramp. Windows are
 recessed: their top and left lips are in shadow, their bottom and right lips catch the light.
 """
+from pathlib import Path
+
 from PIL import Image, ImageDraw
 
 from artio import save_png
@@ -48,8 +50,29 @@ def clamp01(v):
 # Masonry
 # --------------------------------------------------------------------------
 
+PIECES = Path(__file__).parent / "pieces"
+
+
+def pixellab_masonry():
+    """The frame's stone: a 32x32 tile of blackened brick made with PixelLab (tools/art/pieces/frame_stone.png,
+    a source piece kept here and not in art/ because gen_frame composes it) tiled across the screen at
+    logical size, snapped to the palette. None if the piece is missing (the procedural wall is used)."""
+    path = PIECES / "frame_stone.png"
+    if not path.exists():
+        return None
+    tile = Image.open(path).convert("RGBA")
+    img = Image.new("RGBA", (W, H))
+    for y in range(0, H, tile.height):
+        for x in range(0, W, tile.width):
+            img.paste(tile, (x, y))
+    return PAL.snap(img)
+
+
 def masonry(seed=11, bw=16, bh=8):
-    """A screen-sized brick wall, lit from the top-left."""
+    """A screen-sized brick wall, lit from the top-left (the PixelLab tile when there is one)."""
+    piece = pixellab_masonry()
+    if piece is not None:
+        return piece
     def layout(x, y):
         row = y // bh
         sx = x + (bw // 2 if row % 2 else 0)
@@ -105,30 +128,40 @@ def recess(img, rect, fill):
                 top_left = x < rx or y < ry
                 bottom_right = x >= rx + rw or y >= ry + rh
                 if top_left and not bottom_right:
-                    px[x, y] = (*PAL["stone_800"], 255)
+                    px[x, y] = (*PAL["rust_700"], 255)   # The lips are rusted iron: shaded top and left...
                 elif bottom_right and not top_left:
-                    px[x, y] = (*PAL["stone_300"], 255)
+                    px[x, y] = (*PAL["rust_300"], 255)   # ...lit bottom and right.
                 else:
-                    px[x, y] = (*PAL["stone_500"], 255)  # The corners where the two lips meet.
+                    px[x, y] = (*PAL["rust_500"], 255)   # The corners where the two lips meet.
 
 
 def dark_panel(seed):
-    """A recessed panel's floor: stone_900 with a sparse stone_800 grain."""
+    """A recessed panel's floor: the PixelLab blackened brick when there is one (so text and bars stand out on
+    it: it is near-black), else stone_900 with a sparse stone_800 grain."""
+    piece = pixellab_masonry()
+    if piece is not None:
+        ppx = piece.load()
+
+        def brick(x, y):
+            r, g, b, _a = ppx[x % W, y % H]
+            return (r, g, b)
+        return brick
+
     def fill(x, y):
         return PAL["stone_800"] if hash01(seed, x, y) > 0.93 else PAL["stone_900"]
     return fill
 
 
 def rivet(img, cx, cy):
-    """A 3x3 iron stud: lit top-left, shaded bottom-right."""
+    """A 3x3 rusted iron stud: lit top-left, shaded bottom-right."""
     px = img.load()
     for dy in (-1, 0, 1):
         for dx in (-1, 0, 1):
-            c = PAL["stone_500"]
+            c = PAL["rust_500"]
             if dx == -1 and dy == -1:
-                c = PAL["stone_100"]
+                c = PAL["rust_300"]
             elif dx == 1 or dy == 1:
-                c = PAL["stone_700"]
+                c = PAL["rust_700"]
             px[cx + dx, cy + dy] = (*c, 255)
     for dx, dy in ((2, 0), (2, 1), (2, 2), (0, 2), (1, 2), (-1, 2)):  # A short drop shadow.
         x, y = cx + dx, cy + dy
@@ -149,6 +182,24 @@ def outer_bevel(img):
     px[0, H - 1] = (*PAL["stone_500"], 255)
 
 
+SKULL = (  # 4x4: a small skull set into each corner of the screen (. empty, b bone, k ink).
+    ".bb.",
+    "bkkb",
+    ".bb.",
+    ".kk.",
+)
+
+
+def skull(img, x0, y0):
+    px = img.load()
+    for dy, row in enumerate(SKULL):
+        for dx, ch in enumerate(row):
+            if ch == "b":
+                px[x0 + dx, y0 + dy] = (*PAL["bone_500"], 255)
+            elif ch == "k":
+                px[x0 + dx, y0 + dy] = (*INK, 255)
+
+
 def frame():
     img = masonry()
     recess(img, ARROWS, dark_panel(1))
@@ -159,7 +210,11 @@ def frame():
     # Studs on the corners and the T-junctions of the dividers.
     for cx, cy in ((2, 2), (W - 3, 2), (2, H - 3), (W - 3, H - 3), (214, 2), (214, H - 3),
                    (214, 136), (154, 136), (154, H - 3)):
+        if (cx, cy) in ((2, 2), (W - 3, 2), (2, H - 3), (W - 3, H - 3)):
+            continue  # The four screen corners get a skull instead (below).
         rivet(img, cx, cy)
+    for x0, y0 in ((0, 0), (W - 4, 0), (0, H - 4), (W - 4, H - 4)):
+        skull(img, x0, y0)  # (All inside the 4 px frame: the 3D view's window stays exactly VIEW.)
     return img
 
 
@@ -189,20 +244,20 @@ def arrow_mask(kind):
 def arrow_button(kind, pressed):
     img = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
     px = img.load()
-    body = PAL["stone_800"] if pressed else PAL["stone_700"]
+    body = PAL["stone_900"] if pressed else PAL["stone_800"]  # Blackened stone...
     for y in range(SIZE):
         for x in range(SIZE):
             px[x, y] = (*body, 255)
-    # Bevel: raised when up (lit top-left), sunk when pressed.
-    hi, lo = PAL["stone_300"], PAL["stone_900"]
+    # Bevel: raised when up (lit top-left), sunk when pressed. Rusted iron edges.
+    hi, lo = PAL["rust_500"], PAL["ink"]
     top_left, bottom_right = (lo, hi) if pressed else (hi, lo)
     for i in range(SIZE):
         px[i, 0] = (*top_left, 255)
         px[0, i] = (*top_left, 255)
         px[i, SIZE - 1] = (*bottom_right, 255)
         px[SIZE - 1, i] = (*bottom_right, 255)
-    px[SIZE - 1, 0] = (*PAL["stone_500"], 255)
-    px[0, SIZE - 1] = (*PAL["stone_500"], 255)
+    px[SIZE - 1, 0] = (*PAL["rust_700"], 255)
+    px[0, SIZE - 1] = (*PAL["rust_700"], 255)
     # The glyph: bone-coloured with an ink drop shadow, nudged down-right when pressed.
     mask = arrow_mask(kind)
     mp = mask.load()

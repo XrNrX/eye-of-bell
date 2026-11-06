@@ -142,15 +142,15 @@ def quickslot_frame(filled):
                 continue
             if filled:
                 if (x, y) == (0, 0):
-                    colour = PAL["stone_500"]
+                    colour = PAL["rust_300"]
                 elif (x, y) == (last, last):
-                    colour = PAL["stone_700"]
+                    colour = PAL["rust_700"]
                 elif edge_x and edge_y:
-                    colour = PAL["stone_700"]
+                    colour = PAL["rust_700"]
                 elif y == 0 or x == 0:
-                    colour = PAL["stone_500"]   # Lit edges.
+                    colour = PAL["rust_500"]    # Lit edges: rusted iron.
                 else:
-                    colour = PAL["stone_700"]   # Shaded edges.
+                    colour = PAL["rust_700"]    # Shaded edges.
             else:
                 if edge_x and edge_y:
                     continue                    # Cut corners.
