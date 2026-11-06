@@ -253,8 +253,10 @@ def holy_symbol_glow():
     logical = src.resize((src.width // 2, src.height // 2), Image.NEAREST)  # Back to logical pixels (12x12).
     w, h = logical.size
     ox, oy = (16 - w) // 2, (16 - h) // 2
-    solid = {(x + ox, y + oy) for y in range(h) for x in range(w) if logical.getpixel((x, y))[3] > 0}
-    colours = {(x + ox, y + oy): logical.getpixel((x, y))[:3] for y in range(h) for x in range(w) if logical.getpixel((x, y))[3] > 0}
+    aura = {PAL["curse_700"], PAL["moss_700"]}  # The icon's own faint green glow is not part of the symbol.
+    solid = {(x + ox, y + oy) for y in range(h) for x in range(w)
+             if logical.getpixel((x, y))[3] > 0 and logical.getpixel((x, y))[:3] not in aura}
+    colours = {(x + ox, y + oy): logical.getpixel((x, y))[:3] for y in range(h) for x in range(w) if (x + ox, y + oy) in solid}
     ink = PAL["ink"]
     inside = {p for p in solid if colours[p] != ink}
 

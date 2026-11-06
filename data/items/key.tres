@@ -10,4 +10,4 @@ display_name = "Key"
 type = 3
 icon = ExtResource("2_icon")
 floor_icon = ExtResource("3_floor")
-icon_pixel_size = 0.015
+icon_pixel_size = 0.01
