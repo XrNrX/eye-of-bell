@@ -35,7 +35,8 @@ REMAPS = {
     "stale_bread": GRIM_FOOD, "hard_cheese": GRIM_CHEESE,
     "short_sword": PLAIN_STEEL, "dagger": PLAIN_STEEL, "mace": PLAIN_STEEL, "war_hammer": PLAIN_STEEL, "darts": PLAIN_STEEL,
 }
-MONSTERS = {"skeleton": 11, "skeleton_guard": 11, "slime": 12, "slime_acid": 12}
+# The slimes are left out: their current PixelLab art has its own outline (a second ring would double it).
+MONSTERS = {"skeleton": 11, "skeleton_guard": 11}
 
 
 def source(rel):
