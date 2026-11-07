@@ -185,8 +185,14 @@ def bevel_frame(size, filled):
 
 
 def name_scroll_native():
-    """The rolled-scroll button beside the name, drawn at 1:1 (16x16): a curled parchment sheet with writing, shaded from the
-    top-left, a 1px ink outline. Bone tones only: gold is for the hover."""
+    """The rolled-scroll button beside the name at 1:1 (16x16). The art is a PixelLab piece (tools/art/pieces/ui/name_scroll.png,
+    made with create_object_pro_flash at its native 16x16, palette limited to bone, stone, wood and dried blood: no green, which
+    is the curse's colour). If the piece is missing, a drawn one stands in: a curled parchment sheet with writing, shaded from
+    the top-left, a 1px ink outline. Bone tones only: gold is for the hover."""
+    from pathlib import Path
+    piece = Path(__file__).parent / "pieces" / "ui" / "name_scroll.png"
+    if piece.exists():
+        return PAL.snap(Image.open(piece).convert("RGBA"))
     img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
     px = img.load()
     pale, mid, dark = PAL["bone_300"], PAL["bone_500"], PAL["bone_700"]
