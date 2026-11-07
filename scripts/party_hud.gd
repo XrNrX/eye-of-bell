@@ -134,7 +134,7 @@ func _first_time_hint() -> void:
 		for i in 2:
 			tween.tween_property(label, "modulate", Color(1.5, 1.25, 0.7), 0.4).set_trans(Tween.TRANS_SINE)
 			tween.tween_property(label, "modulate", Color.WHITE, 0.4).set_trans(Tween.TRANS_SINE)
-	get_tree().call_group("hud", "show_message", "Click a name to see their character sheet.")
+	get_tree().call_group("hud", "show_message", "Click a portrait to see their inventory and stats.")
 
 
 func _process(_delta: float) -> void:
@@ -357,7 +357,7 @@ func _on_portrait(slot: int) -> void:
 		_revive_from_cursor(slot, cursor)  # A Scroll of Resurrection on the cursor: read it on this portrait.
 		return
 	if pending.is_empty():
-		get_tree().call_group("inventory", "show_screen", slot)  # (the screen clicks for itself)
+		get_tree().call_group("inventory", "show_screen", slot, true)  # The stat sheet opens alongside the inventory.
 		return
 	var p := pending
 	_end_target_mode()
@@ -766,7 +766,7 @@ func _make_panel(m) -> Dictionary:
 	portrait.stretch_mode = TextureButton.STRETCH_SCALE
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	portrait.focus_mode = Control.FOCUS_NONE
-	portrait.tooltip_text = "Inventory"
+	portrait.tooltip_text = "Inventory and stats"
 	_make_hoverable(portrait, portrait)
 	portrait.pressed.connect(_on_portrait.bind(pos))
 	portrait.gui_input.connect(func(e):

@@ -30,7 +30,7 @@ static var sfx_volume := 1.0
 static var fullscreen := true   # Borderless fullscreen by default; false = a window.
 static var fog := true          # The subtle volumetric fog; off on weak machines.
 static var reduce_flashing := false  # Softer spell and holy-light pulses: steady glows, no flicker, no shake.
-static var show_hints := true   # First-time hints ("Click a name to see their character sheet."). Options: HINTS.
+static var show_hints := true   # First-time hints ("Click a portrait to see their inventory and stats."). Options: HINTS.
 static var hints_seen := {}     # hint id -> true once it has been shown (saved, so a hint shows only once ever).
 static var loaded := false
 
