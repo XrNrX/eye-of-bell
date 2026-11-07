@@ -212,6 +212,11 @@ func glow(kind: String) -> Dictionary:
 @export var mm_impact_light_energy := PackedFloat32Array([6.0, 9.0, 7.0, 5.0, 3.0, 1.5, 0.6, 0.2, 0.0])  # A bright cold spike, gone in under half a second.
 @export var mm_impact_light_colors := PackedColorArray([Color(0.9, 0.95, 1.0), Color(0.75, 0.88, 1.0), Color(0.6, 0.8, 1.0), Color(0.5, 0.72, 1.0), Color(0.45, 0.65, 0.95)])
 @export var mm_impact_light_range := 12.0
+@export var px_arcane_ramp := PackedColorArray([Color(1.6, 1.9, 2.6), Color(0.8, 1.1, 1.8), Color(0.4, 0.6, 1.1), Color(0.2, 0.3, 0.6)])  # Cold pale blue, bright to dark, in steps.
+@export var mm_trail_per_second := 36.0     # Pixel sparks shed behind the bolt as it flies.
+@export var mm_trail_size := 2.0            # Art pixels across.
+@export var mm_trail_life := Vector2(0.25, 0.5)
+@export var mm_impact_sparks := 16
 @export var mm_scorch_size := 0.7
 @export var mm_scorch_strength := 0.45
 
@@ -248,7 +253,8 @@ func glow(kind: String) -> Dictionary:
 
 @export_group("Fireball aftermath")
 @export var scorch_seconds := 6.0                    # The soot mark lasts this long...
-@export var scorch_hold := 0.4                       # ...solid for this fraction of it, then it fades.
+@export var scorch_hold := 0.4                       # ...solid for this fraction of it, then it lightens in `scorch_steps` steps (a stepped fade, never a smooth one).
+@export var scorch_steps := 4
 @export var scorch_size := 1.7                       # World units across.
 @export var scorch_floor_strength := 0.95
 @export var scorch_wall_strength := 0.75

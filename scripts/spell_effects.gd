@@ -132,9 +132,20 @@ func _missile_flipbook(from_cell: Vector2i, to_cell: Vector2i) -> void:
 	var flip := _flipbook(proj, true, c.mm_projectile_scale, c.mm_tint)
 	bolt.add_child(flip)
 	bolt.add_child(_fx_light(flip, c.mm_flight_light_energy, c.mm_flight_light_colors, c.mm_flight_light_range, true, c.mm_flight_flicker))
+	_ensure_pixels()
 	var tiles := maxf(1.0, (to_cell - from_cell).length())
+	var flight: float = tiles * c.bolt_seconds_per_tile
+	var owed := [0.0]
 	var tween := bolt.create_tween()
-	tween.tween_property(bolt, "position", end, tiles * c.bolt_seconds_per_tile)
+	tween.tween_property(bolt, "position", end, flight)
+	tween.parallel().tween_method(func(_v: float) -> void:  # Sparks shed behind it, stepping through cold blue.
+		owed[0] += c.mm_trail_per_second * get_process_delta_time()
+		var n := int(owed[0])
+		owed[0] -= n
+		if n > 0 and is_instance_valid(bolt):
+			pixels.emit(bolt.position - forward * 0.12, n, {"ramp": c.px_arcane_ramp, "speed": Vector2(0.1, 0.5), "spread": 1.0,
+					"gravity": 0.3, "life": c.mm_trail_life, "size": c.mm_trail_size, "jitter": Vector3(0.08, 0.08, 0.08)}),
+			0.0, 1.0, flight)
 	tween.tween_callback(func():
 		_missile_impact(to_cell)
 		bolt.queue_free()
@@ -158,6 +169,9 @@ func _missile_impact(cell: Vector2i) -> void:
 	var light := _fx_light(flip, c.mm_impact_light_energy, c.mm_impact_light_colors, c.mm_impact_light_range, false, 0.0)
 	light.position = at
 	add_child(light)
+	_ensure_pixels()
+	pixels.emit(at, c.mm_impact_sparks, {"ramp": c.px_arcane_ramp, "speed": Vector2(0.8, 3.0), "spread": 1.0, "gravity": 3.0,
+			"drag": 0.5, "life": Vector2(0.35, 0.8), "size": c.mm_trail_size, "jitter": Vector3(0.1, 0.1, 0.1)})
 	if _scorch_tex == null and ResourceLoader.exists(SCORCH):
 		_scorch_tex = load(SCORCH)
 	_decal(DungeonMap.cell_to_world(cell) + Vector3(0, 0.02, 0), Basis.IDENTITY, Vector3(c.mm_scorch_size, 0.8, c.mm_scorch_size), c.mm_scorch_strength, c)
@@ -339,7 +353,10 @@ func _decal(at: Vector3, basis: Basis, size: Vector3, strength: float, c: Resour
 	add_child(decal)
 	var tween := decal.create_tween()
 	tween.tween_interval(c.scorch_seconds * c.scorch_hold)
-	tween.tween_property(decal, "modulate:a", 0.0, c.scorch_seconds * (1.0 - c.scorch_hold))
+	var steps := maxi(1, int(c.scorch_steps))
+	for i in steps:  # Lighter in whole steps, so it stays pixel art rather than a smooth fade.
+		tween.tween_callback(func(): decal.modulate = Color(1, 1, 1, strength * (1.0 - float(i + 1) / steps)))
+		tween.tween_interval(c.scorch_seconds * (1.0 - c.scorch_hold) / steps)
 	tween.tween_callback(decal.queue_free)
 
 
@@ -561,7 +578,7 @@ func party_glow(kind: String) -> void:
 		live -= 1)
 
 
-## Little unshaded squares that fade out: the common part of sparks, trails and motes.
+## Little unshaded squares that step through darker colours (no alpha fade) and vanish: the common part of sparks, trails and motes.
 func _particles(amount: int, seconds: float, size: float, color: Color) -> CPUParticles3D:
 	var p := CPUParticles3D.new()
 	p.amount = amount
@@ -577,9 +594,10 @@ func _particles(amount: int, seconds: float, size: float, color: Color) -> CPUPa
 	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	quad.material = material
 	p.mesh = quad
-	p.color = color  # HDR colour; the ramp below fades its alpha out.
+	p.color = color  # HDR colour; the ramp below steps its brightness down (alpha stays 1: a step, never a fade).
 	var ramp := Gradient.new()
-	ramp.set_color(0, Color(1, 1, 1, 1))
-	ramp.set_color(1, Color(1, 1, 1, 0))
+	ramp.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CONSTANT
+	ramp.offsets = PackedFloat32Array([0.0, 0.4, 0.7, 0.9])
+	ramp.colors = PackedColorArray([Color(1, 1, 1, 1), Color(0.7, 0.7, 0.7, 1), Color(0.4, 0.4, 0.4, 1), Color(0.2, 0.2, 0.2, 1)])
 	p.color_ramp = ramp
 	return p
