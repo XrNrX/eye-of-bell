@@ -209,7 +209,13 @@ func glow(kind: String) -> Dictionary:
 @export var mm_flight_light_colors := PackedColorArray([Color(0.6, 0.8, 1.0), Color(0.7, 0.85, 1.0), Color(0.55, 0.75, 1.0), Color(0.65, 0.82, 1.0)])
 @export var mm_flight_light_range := 6.0
 @export var mm_flight_flicker := 0.15
-@export var mm_impact_light_energy := PackedFloat32Array([6.0, 9.0, 7.0, 5.0, 3.0, 1.5, 0.6, 0.2, 0.0])  # A bright cold spike, gone in under half a second.
+@export var mm_impact_light_energy := PackedFloat32Array([9.0, 13.0, 10.0, 7.0, 4.0, 2.0, 0.8, 0.2, 0.0])  # A bright cold spike, gone in under half a second.
+## What the party feels when a spell lands (the Mage's missile and its scroll): a small camera kick and a short hit pause. Reduce
+## flashing stops the kick, like every shake. Both can be set to 0.
+@export var mm_impact_shake_strength := 0.03
+@export var mm_impact_shake_seconds := 0.18
+@export var mm_impact_pause_seconds := 0.05
+@export var blast_pause_seconds := 0.09              # The Fireball's hit pause (its shake is blast_shake_strength).
 @export var mm_impact_light_colors := PackedColorArray([Color(0.9, 0.95, 1.0), Color(0.75, 0.88, 1.0), Color(0.6, 0.8, 1.0), Color(0.5, 0.72, 1.0), Color(0.45, 0.65, 0.95)])
 @export var mm_impact_light_range := 12.0
 @export var px_arcane_ramp := PackedColorArray([Color(1.6, 1.9, 2.6), Color(0.8, 1.1, 1.8), Color(0.4, 0.6, 1.1), Color(0.2, 0.3, 0.6)])  # Cold pale blue, bright to dark, in steps.

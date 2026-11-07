@@ -161,6 +161,9 @@ func _missile_impact(cell: Vector2i) -> void:
 		return
 	live += 1
 	var at := _cell_pos(cell, c.bolt_height)
+	get_tree().call_group("combat_feel", "shake_by", c.mm_impact_shake_strength, c.mm_impact_shake_seconds, Vector2.UP)  # A kick, up and back.
+	if c.mm_impact_pause_seconds > 0.0:
+		get_tree().call_group("combat_feel", "hit_pause", c.mm_impact_pause_seconds)
 	var flip := _flipbook(sheet, false, c.mm_impact_scale, c.mm_tint)
 	flip.position = at
 	add_child(flip)
@@ -299,6 +302,8 @@ func explosion(cell: Vector2i) -> void:
 	var at := _cell_pos(cell, c.bolt_height)
 	get_tree().call_group("audio", "play", "explosion")
 	get_tree().call_group("combat_feel", "shake_by", c.blast_shake_strength * (_light_strength() if Settings.reduce_flashing else 1.0), c.blast_shake_seconds)
+	if c.blast_pause_seconds > 0.0:
+		get_tree().call_group("combat_feel", "hit_pause", c.blast_pause_seconds)
 	var flip := _flipbook(sheet, false, c.fb_impact_scale)
 	flip.position = at
 	add_child(flip)
