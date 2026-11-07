@@ -225,19 +225,24 @@ def frame():
 SIZE = 16
 
 
-def arrow_mask(kind):
-    """A 16x16 black/white mask of the glyph (white = glyph), made with ImageDraw polygons
-    on an up-pointing master and rotated in exact quarter turns."""
-    m = Image.new("L", (SIZE, SIZE), 0)
+def arrow_mask(kind, size=SIZE):
+    """A black/white mask of the glyph (white = glyph), made with ImageDraw polygons
+    on an up-pointing master and rotated in exact quarter turns. Designed on 16x16 and scaled to `size`."""
+    f = size / SIZE
+
+    def P(pts):
+        return [(round(x * f), round(y * f)) for x, y in pts]
+
+    def R(x0, y0, x1, y1):
+        return [round(x0 * f), round(y0 * f), round((x1 + 1) * f) - 1, round((y1 + 1) * f) - 1]
+    m = Image.new("L", (size, size), 0)
     d = ImageDraw.Draw(m)
     if kind in ("up", "down", "left", "right"):
-        d.polygon([(8, 2), (13, 8), (10, 8), (10, 13), (6, 13), (6, 8), (3, 8)], fill=255)
+        d.polygon(P([(8, 2), (13, 8), (10, 8), (10, 13), (6, 13), (6, 8), (3, 8)]), fill=255)
         return m.rotate({"up": 0, "left": 90, "down": 180, "right": 270}[kind])
-    # Turning arrows: a stem that rises and bends, with the head at the end of the bend.
-    d.polygon([(2, 6), (6, 2), (6, 5), (13, 5), (13, 8), (11, 8), (11, 13), (8, 13), (8, 8), (6, 8), (6, 10)], fill=0)
-    d.rectangle([8, 7, 11, 13], fill=255)       # Stem.
-    d.rectangle([5, 5, 11, 8], fill=255)        # The bend.
-    d.polygon([(1, 6), (6, 1), (6, 11)], fill=255)  # Head, pointing left.
+    d.rectangle(R(8, 7, 11, 13), fill=255)       # Stem.
+    d.rectangle(R(5, 5, 11, 8), fill=255)        # The bend.
+    d.polygon(P([(1, 6), (6, 1), (6, 11)]), fill=255)  # Head, pointing left.
     return m if kind == "turn_left" else m.transpose(Image.FLIP_LEFT_RIGHT)
 
 
@@ -270,6 +275,114 @@ def arrow_button(kind, pressed):
                         if c is INK and px[sx, sy][:3] != body:
                             continue  # Don't shadow over the glyph itself.
                         px[sx, sy] = (*c, 255)
+    return img
+
+
+RUIN = 36  # The ruined arrow buttons are drawn natively at 36x36 (PixelLab stone, script silhouette).
+
+
+def _lum(c):
+    return (c[0] * 3 + c[1] * 4 + c[2]) / 8
+
+
+def _mossy(c):
+    return c[1] > c[0] + 6 and c[1] > c[2] + 2
+
+
+def arrow_button_ruin(kind, pressed):
+    """A crumbling stone arrow: the stone is PixelLab's (pieces/ui/ruin_stone.png), the silhouette,
+    chips, cracks and the hard cast shadow (down and to the right) are the script's, so the arrow
+    always reads. Chips and cracks are seeded by `kind` alone, so the pressed one is the same stone."""
+    import random
+    n = RUIN
+    rnd = random.Random("ruin-" + kind)
+    path = PIECES / "ui" / "ruin_stone.png"
+    tile = Image.open(path).convert("RGB") if path.exists() else None
+    tp = tile.load() if tile else None
+    ox, oy = rnd.randrange(0, 26), rnd.randrange(0, 26)
+
+    def tex(x, y):
+        return tp[(x + ox) % tile.width, (y + oy) % tile.height] if tp else (110, 110, 120)
+
+    img = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    px = img.load()
+    face = [PAL["ink"], PAL["stone_900"], PAL["stone_800"], PAL["stone_700"]]
+    for y in range(n):
+        for x in range(n):
+            c = tex(x, y)
+            lum = _lum(c) / 255.0
+            col = PAL["moss_900"] if _mossy(c) and lum > 0.25 else face[min(3, int(lum * 4.6))]
+            if pressed and col == PAL["stone_700"]:
+                col = PAL["stone_800"]
+            px[x, y] = (*col, 255)
+
+    # Rusted iron border: raised when up, sunk when pressed, with chipped bites.
+    hi, lo = PAL["rust_500"], PAL["ink"]
+    tl, br = (lo, hi) if pressed else (hi, lo)
+    for i in range(n):
+        px[i, 0] = (*tl, 255)
+        px[0, i] = (*tl, 255)
+        px[i, n - 1] = (*br, 255)
+        px[n - 1, i] = (*br, 255)
+    inner = lo if pressed else PAL["rust_700"]
+    for i in range(1, n - 1):
+        px[i, 1] = (*inner, 255)
+        px[1, i] = (*inner, 255)
+    for _ in range(14):
+        side = rnd.randrange(4)
+        t = rnd.randrange(2, n - 2)
+        x, y = [(t, 0), (0, t), (t, n - 1), (n - 1, t)][side]
+        px[x, y] = (*PAL["stone_900"], 255)
+        if rnd.random() < 0.5:
+            dx, dy = [(0, 1), (1, 0), (0, -1), (-1, 0)][side]
+            px[x + dx, y + dy] = (*PAL["rust_700"], 255)
+
+    # The arrow's silhouette (nudged down-right when pressed).
+    mask = arrow_mask(kind, n)
+    off = 1 if pressed else 0
+    inside = set()
+    mp = mask.load()
+    for y in range(n):
+        for x in range(n):
+            if mp[x, y] and 2 <= x + off < n - 2 and 2 <= y + off < n - 2:
+                inside.add((x + off, y + off))
+    edge = {(x, y) for (x, y) in inside
+            if any((x + dx, y + dy) not in inside for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)))}
+    chipped = {e for e in sorted(edge) if rnd.random() < 0.16}   # The rim crumbles in places.
+    cracks = set()                                               # Short ink random walks.
+    cells = sorted(inside)
+    for _ in range(3):
+        x, y = cells[rnd.randrange(len(cells))]
+        dx, dy = rnd.choice(((1, 1), (1, 0), (0, 1), (-1, 1)))
+        for _ in range(rnd.randrange(5, 10)):
+            cracks.add((x, y))
+            if rnd.random() < 0.4:
+                dx, dy = rnd.choice(((1, 1), (1, 0), (0, 1), (-1, 1), (1, -1)))
+            x, y = x + dx, y + dy
+    solid = inside - chipped
+
+    # Hard cast shadow, down and to the right of the slab: 3 px long (1 px when pressed).
+    length = 1 if pressed else 3
+    for (x, y) in solid:
+        for d in range(1, length + 1):
+            sx, sy = x + d, y + d
+            if (sx, sy) not in solid and 1 < sx < n - 1 and 1 < sy < n - 1:
+                px[sx, sy] = (*PAL["ink"], 255)
+    # The slab, lit from the top-left.
+    ramp = [PAL["stone_700"], PAL["stone_500"], PAL["stone_300"], PAL["stone_100"], PAL["bone_500"]]
+    if pressed:
+        ramp = [PAL["stone_800"], PAL["stone_700"], PAL["stone_500"], PAL["stone_300"], PAL["bone_700"]]
+    for (x, y) in solid:
+        c = tex(x, y)
+        lum = _lum(c) / 255.0
+        col = PAL["moss_500"] if _mossy(c) and lum > 0.3 else ramp[min(4, int(lum * 6.0))]
+        if (x, y) in cracks:
+            col = PAL["ink"]
+        elif (x - 1, y) not in solid or (x, y - 1) not in solid:
+            col = PAL["bone_300"] if not pressed else PAL["bone_500"]      # Lit top-left edge.
+        elif (x + 1, y) not in solid or (x, y + 1) not in solid:
+            col = PAL["stone_700"] if not pressed else PAL["stone_800"]    # Shaded bottom-right edge.
+        px[x, y] = (*col, 255)
     return img
 
 
@@ -310,6 +423,6 @@ def build(scale=2):
     written = [save_png(frame(), "ui/frame.png", scale=scale)]
     written.append(save_png(stone_panel(), "ui/panel_stone.png", scale=scale))
     for kind in ARROWS_ALL:
-        written.append(save_png(arrow_button(kind, False), f"ui/arrow_{kind}.png", scale=scale))
-        written.append(save_png(arrow_button(kind, True), f"ui/arrow_{kind}_pressed.png", scale=scale))
+        written.append(save_png(arrow_button_ruin(kind, False), f"ui/arrow_{kind}.png", scale=1))
+        written.append(save_png(arrow_button_ruin(kind, True), f"ui/arrow_{kind}_pressed.png", scale=1))
     return written

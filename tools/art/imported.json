@@ -507,6 +507,54 @@
     "tiles/wall_cracked.png": {
       "imported": "2026-11-05 21:30:13",
       "source": "wall_cracked.png"
+    },
+    "ui/arrow_down.png": {
+      "imported": "2026-11-07 13:29:18",
+      "source": "arrow_down.png"
+    },
+    "ui/arrow_down_pressed.png": {
+      "imported": "2026-11-07 13:29:18",
+      "source": "arrow_down_pressed.png"
+    },
+    "ui/arrow_left.png": {
+      "imported": "2026-11-07 13:29:18",
+      "source": "arrow_left.png"
+    },
+    "ui/arrow_left_pressed.png": {
+      "imported": "2026-11-07 13:29:18",
+      "source": "arrow_left_pressed.png"
+    },
+    "ui/arrow_right.png": {
+      "imported": "2026-11-07 13:29:18",
+      "source": "arrow_right.png"
+    },
+    "ui/arrow_right_pressed.png": {
+      "imported": "2026-11-07 13:29:18",
+      "source": "arrow_right_pressed.png"
+    },
+    "ui/arrow_turn_left.png": {
+      "imported": "2026-11-07 13:29:18",
+      "source": "arrow_turn_left.png"
+    },
+    "ui/arrow_turn_left_pressed.png": {
+      "imported": "2026-11-07 13:29:18",
+      "source": "arrow_turn_left_pressed.png"
+    },
+    "ui/arrow_turn_right.png": {
+      "imported": "2026-11-07 13:29:18",
+      "source": "arrow_turn_right.png"
+    },
+    "ui/arrow_turn_right_pressed.png": {
+      "imported": "2026-11-07 13:29:18",
+      "source": "arrow_turn_right_pressed.png"
+    },
+    "ui/arrow_up.png": {
+      "imported": "2026-11-07 13:29:18",
+      "source": "arrow_up.png"
+    },
+    "ui/arrow_up_pressed.png": {
+      "imported": "2026-11-07 13:29:18",
+      "source": "arrow_up_pressed.png"
     }
   }
 }
