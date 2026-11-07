@@ -14,6 +14,23 @@ A first-person, grid-based dungeon crawler in the style of Eye of the Beholder, 
 - **Display modes** (`display_manager.gd`, the `DisplayManager` autoload in `project.godot`; `Settings.fullscreen`, saved under `[display]` in `user://settings.cfg`): the game starts in **borderless fullscreen** (`Window.MODE_FULLSCREEN`, not exclusive) unless the saved choice is windowed. Alt+Enter toggles at any time (the autoload runs while paused), as does the Options button, which listens to `mode_changed`. Windowed opens at the largest whole multiple of 640x360 that fits the screen's usable area including the title bar (`DisplayManager.best_scale(usable, extra)`, measured after a frame because the decorations only exist then), centred. Leftover screen is black bars in both modes (integer scale; the engine's own transform maps clicks, bars included, so no input code was needed). Nothing happens under `--headless`. In a `-s` SceneTree test, autoloads join the tree *after* `_init`, so `await process_frame` before using `root.get_node("DisplayManager")`; tests of display switching must set `Settings.path` to a temp file first, and run windowed (not headless).
 - Mouse positions are in the 640x360 space everywhere. The 3D view's clicks come from the `SubViewportContainer`'s `gui_input` (`game_view.gd`, which calls `Player.world_click`), not from input forwarded into the SubViewport, so they too are screen coordinates (tested pixel by pixel at the view's corners and edges, with and without black bars). Clicks pick up or put down the item on the tile in front wherever they land in the view; monsters are not clickable (heroes attack through their hand buttons).
 
+## Project map
+
+Where things really are (scripts are in one flat folder, `scripts/`, not subfolders):
+- **Combat:** `scripts/combat_rules.gd` (hit, damage, crits), `party.gd` (hero side), `monster.gd` and `monster_def.gd` (monster AI and stats), `combat_feel.gd` (shake, pause), `direction_warning.gd`. Rules are on the combat design page linked below, and `docs/combat_design.md` only points to it.
+- **Party and inventory:** `party.gd`, `party_hud.gd`, `inventory_screen.gd`, `inventory_slot.gd`, `quick_slot.gd`, `character_sheet.gd`, `item_def.gd`, `item_stack.gd`; data in `data/party/`, `data/items/`.
+- **Spells and effects:** `spell_effects.gd`, `spell_def.gd`, `spell_effects_config.gd`, `data/spells/`, `data/spell_effects.tres`.
+- **Levels:** `scripts/dungeon_map.gd` (the level is a script, not a scene), built by `dungeon_builder.gd`. There is **no test room** and no `levels/` folder.
+- **Art pipeline:** `tools/art/` (Python); the art itself in `art/`.
+- **Design docs:** `docs/art_style.md`, `docs/banter_ideas.md`, `docs/combat_design.md`. There is no `docs/tone.md`.
+- **Banter:** `scripts/banter.gd`, `data/banter.json`.
+
+## Keeping usage down
+
+- Only open the files the current task needs. Use the project map above and the Architecture section below instead of searching the whole project.
+- Read design docs only when the task involves them.
+- Never open image files, sprite sheets or other binary assets unless the user asks to look at one. Measure art with a script instead (size, colours, brightness) and report numbers. When the user asks for screenshots or a visual check, that counts as asking.
+
 ## Design references
 
 **Combat design blueprint:** https://claude.ai/artifact/BGAw8C4bkJfdBrSScE49yY
