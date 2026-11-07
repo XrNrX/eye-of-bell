@@ -24,7 +24,7 @@ from PIL import Image
 from artio import save_png
 from lighting import shade_mask
 from outline import add_outline
-from palette import PAL
+from palette import ART_DIR, PAL
 
 SIZE = 24
 
@@ -185,6 +185,21 @@ def digit_sheet():
     return sheet
 
 
+def slot_placeholder(item_name):
+    """The faint picture shown in an EMPTY hand or armour slot of the inventory, so the player can see what goes
+    there: the silhouette of a sword (hands) or a chestplate (armour), a flat stone_300, made from the item's own
+    48x48 icon (art/items/<item_name>.png) so it follows whatever art the item has. The inventory draws it at
+    about a third of full strength (a modulate; palette images have no alpha), and drops it when an item is in."""
+    src = Image.open(ART_DIR / "items" / f"{item_name}.png").convert("RGBA")
+    out = Image.new("RGBA", src.size, (0, 0, 0, 0))
+    sp, op = src.load(), out.load()
+    for y in range(src.height):
+        for x in range(src.width):
+            if sp[x, y][3] > 0:
+                op[x, y] = (*PAL["stone_300"], 255)
+    return out
+
+
 def build(scale=2):
     """Everything here is drawn on its small logical grid and enlarged `scale` times (see
     artio.save_png), so each logical pixel is a scale x scale block, matching the 3D view."""
@@ -196,4 +211,6 @@ def build(scale=2):
         save_png(quickslot_sweep(), "ui/quickslot_sweep.png", scale=scale),
         save_png(digit_sheet(), "ui/digits.png", scale=scale),
         save_png(name_scroll(), "ui/name_scroll.png", scale=scale),
+        save_png(slot_placeholder("short_sword"), "ui/slot_hand.png", scale=1),
+        save_png(slot_placeholder("leather_armour"), "ui/slot_armour.png", scale=1),
     ]

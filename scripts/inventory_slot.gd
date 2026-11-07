@@ -30,6 +30,11 @@ const PORTRAIT_SLOT := Vector2(32, 32)  # A 64x64 portrait scaled to exactly hal
 const EMPTY_BG := Color(0.078, 0.075, 0.106, 0.6)  # Palette stone_900, translucent.
 const FILLED_BG := Color(0.192, 0.188, 0.235)        # Palette stone_700.
 const EDGE := Color(0.482, 0.478, 0.533)            # Palette stone_300.
+## What an empty hand or armour slot shows, faintly: a sword and a chestplate (art/ui/slot_*.png, made by
+## gen_ui.slot_placeholder), so it is clear what goes where.
+const HAND_PLACEHOLDER := preload("res://art/ui/slot_hand.png")
+const ARMOUR_PLACEHOLDER := preload("res://art/ui/slot_armour.png")
+const PLACEHOLDER_TINT := Color(1, 1, 1, 0.3)
 
 var screen: Node    # InventoryScreen: party/cursor access, refresh() and say().
 var member_slot: int
@@ -120,9 +125,19 @@ func refresh() -> void:
 	else:
 		var stack := get_item()
 		icon.texture = stack.def.icon if stack else null
+		icon.modulate = Color.WHITE
+		icon.flip_h = false
+		if stack == null and (kind == Kind.HAND or kind == Kind.ARMOUR):
+			icon.texture = HAND_PLACEHOLDER if kind == Kind.HAND else ARMOUR_PLACEHOLDER
+			icon.modulate = PLACEHOLDER_TINT
+			icon.flip_h = kind == Kind.HAND and index == 1  # The two hands face each other.
 		count_label.set_count(stack.count if stack else 0)
 		filled = stack != null
 		tooltip_text = ""
+		if stack == null and kind == Kind.HAND:
+			tooltip_text = "%s hand: a weapon or a spell focus" % ("Left" if index == 0 else "Right")
+		elif stack == null and kind == Kind.ARMOUR:
+			tooltip_text = "Armour"
 		if stack:
 			tooltip_text = stack.label()
 			if stack.count > 1:
