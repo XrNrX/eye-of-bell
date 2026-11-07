@@ -100,9 +100,10 @@ func _click_item(shift := false) -> void:
 		# A key goes straight into a party member's backpack (the first with room), and only stays on the
 		# cursor if every pack is full.
 		if party and stack.def.type == ItemDef.Type.KEY:
+			get_tree().call_group("hud", "show_banner", "Key picked up!")
 			var packed: String = party.stow_in_backpack(stack)
 			if packed != "" and stack.count <= 0:
-				_say(packed)
+				_say("Key picked up! %s" % packed)  # "Fighter stows the key."
 				return
 		cursor.hold(stack)
 		_say("You pick up the %s." % stack.label())

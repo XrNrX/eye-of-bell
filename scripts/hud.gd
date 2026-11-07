@@ -11,6 +11,7 @@ extends CanvasLayer
 ##   show_message(text, false, "miss")   a log line in the miss style (prefix and colour
 ##                                  from data/combat_feel.tres)
 ##   clear_message(only_if)         clear the status row (only if it shows that text)
+##   show_banner(text)              big text over the top of the 3D view for a moment ("Key picked up!")
 ##
 ## last_message / last_tone are the newest log line, for anything that wants to read it.
 
@@ -32,6 +33,8 @@ var feel_cfg: Resource = FeelConfigScript.get_config()  # data/combat_feel.tres
 var lines := []  # [{text, colour: Color or null (use the age colour)}], oldest first.
 var last_message := ""
 var last_tone := ""
+var banner: Label
+var banners: Array = []  # Every banner shown, for tests.
 
 
 func _ready() -> void:
@@ -69,6 +72,30 @@ func show_message(text: String, hold := false, tone := "") -> void:
 	if lines.size() > MAX_LINES:
 		lines.pop_front()
 	_redraw()
+
+
+## Big text in the upper part of the 3D view that holds a moment and fades: for things the player must not miss.
+## A newer banner replaces the one showing.
+func show_banner(text: String) -> void:
+	if banner != null and is_instance_valid(banner):
+		banner.queue_free()
+	banner = Label.new()
+	banner.text = text
+	banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	banner.add_theme_font_size_override("font_size", 16)
+	banner.add_theme_color_override("font_color", STATUS)
+	banner.add_theme_color_override("font_outline_color", Color("0b0a10"))  # Palette ink.
+	banner.add_theme_constant_override("outline_size", 4)
+	var view := UiLayout.VIEW
+	banner.size = Vector2(view.size.x, 20)
+	banner.position = Vector2(view.position.x, view.position.y + 38)
+	add_child(banner)
+	banners.append(text)
+	var tween := banner.create_tween()
+	tween.tween_interval(1.6)
+	tween.tween_property(banner, "modulate:a", 0.0, 0.5)
+	tween.tween_callback(banner.queue_free)
 
 
 ## Clear the status row now. With only_if, only if that exact text is showing, so a hover
