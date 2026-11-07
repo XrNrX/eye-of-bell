@@ -40,9 +40,11 @@ var armour_slot: Panel
 var backpack_slots := []  # BACKPACK-kind InventorySlot, likewise re-pointed.
 var sheet: PanelContainer  # The character sheet beside the window (character_sheet.gd).
 @onready var window: Control = $Center/Window
+const StonePanel := preload("res://scripts/stone_panel.gd")
 
 
 func _ready() -> void:
+	window.add_theme_stylebox_override("panel", StonePanel.make())
 	add_to_group("inventory")
 	process_mode = Node.PROCESS_MODE_ALWAYS  # Clicks keep working while paused.
 	visible = false

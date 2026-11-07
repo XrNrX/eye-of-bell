@@ -276,8 +276,39 @@ def arrow_button(kind, pressed):
 ARROWS_ALL = ("up", "down", "left", "right", "turn_left", "turn_right")
 
 
+def stone_panel():
+    """The overlays' window (scripts/stone_panel.gd): the frame's blackened brick inside a rusted iron lip, 40x40 logical. The
+    4 px border is the part that never tiles and the 32x32 middle is one whole brick tile, so it repeats without a seam."""
+    size = 40
+    img = Image.new("RGBA", (size, size), (*PAL["ink"], 255))
+    px = img.load()
+    piece = PIECES / "frame_stone.png"
+    tile = PAL.snap(Image.open(piece).convert("RGBA")).load() if piece.exists() else None
+    # One step darker than the frame's brick, because small text sits on this one: only the mortar lines and a faint brick show.
+    def dim(colour):
+        lit = sum(colour) / 3
+        return PAL["stone_800"] if lit > 60 else (PAL["stone_900"] if lit > 26 else PAL["ink"])
+    for y in range(4, size - 4):
+        for x in range(4, size - 4):
+            px[x, y] = (*(dim(tile[x - 4, y - 4][:3]) if tile else PAL["stone_900"]), 255)
+    last = size - 1
+    for i in range(size):
+        for a, b in ((i, 0), (0, i)):  # The lit outer edge (top and left).
+            px[a, b] = (*PAL["rust_300"], 255)
+        for a, b in ((i, last), (last, i)):  # The shaded outer edge.
+            px[a, b] = (*PAL["rust_700"], 255)
+    for i in range(1, last):
+        for a, b in ((i, 1), (1, i), (i, last - 1), (last - 1, i)):
+            px[a, b] = (*PAL["rust_500"], 255)
+    for i in range(2, last - 1):  # A dark line between the iron and the brick.
+        for a, b in ((i, 2), (2, i), (i, last - 2), (last - 2, i)):
+            px[a, b] = (*PAL["ink"], 255)
+    return img
+
+
 def build(scale=2):
     written = [save_png(frame(), "ui/frame.png", scale=scale)]
+    written.append(save_png(stone_panel(), "ui/panel_stone.png", scale=scale))
     for kind in ARROWS_ALL:
         written.append(save_png(arrow_button(kind, False), f"ui/arrow_{kind}.png", scale=scale))
         written.append(save_png(arrow_button(kind, True), f"ui/arrow_{kind}_pressed.png", scale=scale))

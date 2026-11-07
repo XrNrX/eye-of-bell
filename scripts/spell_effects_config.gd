@@ -261,7 +261,7 @@ func glow(kind: String) -> Dictionary:
 @export_group("Volumetric fog")
 ## Subtle haze that catches the torchlight. Switched on and off in Options. A density of 0 turns it off.
 @export var fog_density := 0.018
-@export var fog_albedo := Color(0.62, 0.55, 0.5)
+@export var fog_albedo := Color(0.56, 0.56, 0.6)
 @export var fog_emission := Color(0.0, 0.0, 0.0)
 @export var fog_emission_energy := 0.0
 @export var fog_length := 14.0

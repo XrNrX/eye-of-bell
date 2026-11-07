@@ -15,11 +15,10 @@ extends PanelContainer
 ## screen after every change, so equipping a sword updates it live.
 
 const CombatRules := preload("res://scripts/combat_rules.gd")
+const StonePanel := preload("res://scripts/stone_panel.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
 
 const WIDTH := 150.0
-const BG := Color(0.078, 0.075, 0.106, 0.95)     # Palette stone_900.
-const EDGE := Color(0.192, 0.188, 0.235)           # Palette stone_700.
 const TEXT := Color(0.92, 0.89, 0.82)
 const MUTED := Color(0.482, 0.478, 0.533)         # Palette stone_300.
 const TITLE := Color(1, 0.85, 0.3)
@@ -41,12 +40,7 @@ var spell_crit_row: Control
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP  # Clicks on the sheet must not reach the backdrop (floor drop).
 	custom_minimum_size.x = WIDTH
-	var box := StyleBoxFlat.new()
-	box.bg_color = BG
-	box.border_color = EDGE
-	box.set_border_width_all(2)
-	box.set_content_margin_all(8)
-	add_theme_stylebox_override("panel", box)
+	add_theme_stylebox_override("panel", StonePanel.make())
 
 	var col := VBoxContainer.new()
 	col.add_theme_constant_override("separation", 3)

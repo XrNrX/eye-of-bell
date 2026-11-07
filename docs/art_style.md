@@ -101,8 +101,8 @@ the overall brightness.
 - **Monsters face the viewer** (front-facing, south) because the game is first-person.
 - **Transparent background** for monsters, sprites and items (tiles and the UI frame fill their
   whole canvas).
-- **Resolution.** The 3D view is rendered at **416x260, exactly the pixels it occupies on the
-  640x360 base screen (1:1, nearest filtering)**. 3D art is drawn at **double** the old size so it
+- **Resolution.** The 3D view is rendered at **416x260, twice the old 208x130 and exactly the
+  pixels it occupies on the 640x360 base screen (1:1, nearest filtering)**. 3D art is drawn at **double** the old size so it
   carries more detail: a skeleton standing one tile in front of the player is about **150 screen
   pixels tall**, drawn from a **128-pixel-tall** sprite, so each art pixel is roughly one screen
   pixel. The UI is still drawn at 2x (each logical pixel is a 2x2 block). Never blur or smooth when
@@ -120,29 +120,33 @@ same size in the world):**
 
 | Asset | Make it this size | Game file | Notes |
 |---|---|---|---|
-| Wall, floor, ceiling, door, locked door, cracked wall, portcullis, plate, stairs tiles | **128x128** | 128x128 | Seamless where they tile (wall, floor, ceiling). The portcullis has a transparent background (bars only). The cracked wall carries a crack in each of the six cells a box face can show (see `gen_tiles.py`). |
+| Wall, floor, ceiling, door, locked door, cracked wall, portcullis, plate, stairs tiles | **128x128** | 128x128 | Make them at a true 128x128. **The current wall, wall_2, wall_3, floor and ceiling are 64x64 images enlarged 2x**, so their pixels are twice as coarse as the other tiles' and the monsters'; every other tile is a true 128x128. Seamless where they tile (wall, floor, ceiling). The portcullis has a transparent background (bars only). The cracked wall carries a crack in each of the six cells a box face can show (see `gen_tiles.py`). |
 | Title screen (`ui/title`) | **640x360, full resolution** | 640x360 | Not UI art: no 2x blocks, one art pixel per screen pixel, shown 1:1 behind the main menu, so it matches the fine pixels of the doubled dungeon art. Made at full size with `create_image_pro` (limits: pixflux 400x400; pixen 768 per side, area up to 512x512; pro 688x384 for 16:9, so 640x360 fits in one image, no layers needed). The entrance to a cursed dungeon at night: ruined archway, sickly green glow from deep inside, dead twisted trees, fog, dark sky at the top left clear for the logo. The importer leaves a 640x360 export as is. |
 | Spell effect flipbooks (`spells/<spell>/<name>_sheet`) | **at the in-game pixel density**: a flipbook frame is drawn so one art pixel is one monster pixel (0.014 world units). Fireball: cast 48x48, projectile 56x56 (loop), impact 96x96 | one row of frames + a `_sheet.json` | Made with PixelLab's effects tool (`vfx_workbench`), unshaded and additive in game (black adds nothing, so the sprite's dark outline disappears and the colours glow), so draw the light parts bright and keep the palette. Sources live in `tools/art/pieces/spells/`. |
 | Skeleton, skeleton guard monster frames | **96x128** each | 96x128 | Front-facing, `pixel_size` 0.014. Sheet = 11 frames side by side (1056x128): idle x2, attack x3, hurt x2 (hurt, flash), **walk x4** (a stride that loops while it steps toward the party). The lowest pixel of each frame is put on the floor by the game, so empty space under the feet is fine. |
 | Slime, acid slime monster frames | **96x96** each | 96x96 | Front-facing, `pixel_size` 0.02. Sheet = 12 frames (1152x96): idle x3, attack x3, hurt x2, walk x4 (a squash-and-crawl). The game stands the lowest pixel of each frame on the floor. |
 
 **3D art that is not doubled yet** (same world size, so it simply keeps its old pixel density next to the new art):
-torch sheet 4 frames of 16x32 (64x32), lever sheet 2 frames of 16x16 (32x16), key floor sprite 16x16,
-item floor sprites 48x48 (`*_floor`, the same drawing as the icon; `icon_pixel_size` 0.01 in each `.tres`), and the spell effect bolt (7x7).
+torch sheet 4 frames of 16x32 (64x32), lever sheet 2 frames of 16x16 (32x16), item and key floor sprites 48x48
+(`*_floor` and `sprites/key`, the same drawing as the icon; `icon_pixel_size` 0.01 in each `.tres`, so about 41 screen pixels at one tile), and the spell effect bolt (7x7).
+Scorch decal 32x32. `decals/rune_panel` (48x48) and `decals/hidden_button` (32x32) exist but nothing in the game uses them yet.
+
+**Items are finer than the rest of the UI.** A 48x48 or 24x24 export is stored as it is, not doubled, and all the current item art is that way: one art pixel per screen pixel inside a UI drawn in 2x2 blocks. **The importer treats `items/x`, `items/x_hud` and `items/x_floor` as three separate images, so a new item needs all three in the inbox** (a 48x48 export of each works: the hud one is reduced to 24x24). Importing only `items/x` leaves the placeholder in the hand, quick slot and on the floor.
 
 **UI art (drawn at 2x; make it the "logical" size and the importer doubles it):**
 
 | Asset | Make it this size | Game file (after import) | Notes |
 |---|---|---|---|
-| Item inventory icon (sword, mace, hammer, armour, potion, scroll...) | **24x24** | 48x48 (2x) | |
-| Item hand and quick-slot icon (`*_hud`) | **12x12** | 24x24 (2x) | |
-| Key (inventory) | **16x16** | 32x32 (2x) | |
+| Item inventory icon (sword, mace, hammer, armour, potion, scroll, food, key...) | **48x48** (or 24x24, doubled) | 48x48 | The current art is native 48x48. |
+| Item hand and quick-slot icon (`*_hud`) | **48x48** reduced, or 12x12 doubled | 24x24 | The current art is native 24x24. The key has none. |
 | Hero portraits (living, hurt, dead) | **64x64** each (native: finer than the 2x UI pixels) | 64x64 | Three stills per hero, not an animation. Only the living one is generated: the importer tints hurt (red) and dead (grey with a faint curse tint) from it. Prompt for an **extreme close-up** whose head fills the whole 64x64 from top to bottom and edge to edge (hood, helmet or hat cropped by the frame): a bust leaves the face small in its panel. A grim flat mouth, lit from the left. |
 | Movement arrows (and pressed versions) | **16x16** | 32x32 (2x) | |
 | Hand button | **24x24** / small **16x16** | 48x48 / 32x32 (2x) | |
 | Quick slot (and empty, sweep) | **14x14** | 28x28 (2x) | |
 | UI frame | **320x180** | 640x360 (2x) | The stone frame; its 3D-view hole must stay exactly where it is (416x260 at 8,8). |
 | Digit strip (stack counts) | **50x7** | 100x14 (2x) | |
+| Name scroll button | **8x8** | 16x16 (2x) | |
+| Empty hand and armour slot placeholders | made from the item icons by `gen_ui.py` | 48x48 | One flat colour, drawn at 30% strength. |
 
 PixelLab cannot always make an exact size; generate at the nearest size it allows (an exact
 multiple is best; `create_image_pixflux` takes up to 400 per side, `create_object_pro_flash`
@@ -179,12 +183,12 @@ Write the subject first, then the suffix.
 - **Item:** `a worn rusty <item>, battered and stained, faint green curse glow, single object,
   transparent background, <suffix>`
 - **Portrait:** `a haggard <class> hero, hollow eyes, dirty and bruised, a hint of the curse in
-  one eye, front-facing bust, <suffix>`
+  one eye, extreme close-up, the head filling the whole frame, <suffix>`
 
 ### PixelLab settings that help
 
 Transparent background on (monsters, items, sprites); a single-colour dark outline; flat or low
-shading rather than smooth; low-to-medium detail so edges stay clean at 48x64; a front-facing
+shading rather than smooth; low-to-medium detail so edges stay clean at 96x128; a front-facing
 view. Always follow the readability rule above (outline plus rim glow).
 
 ## Workflow
@@ -194,8 +198,11 @@ view. Always follow the readability rule above (outline plus rim glow).
 3. `python tools/art/import_pixellab.py --dry-run`, then the real run: it snaps to the palette,
    resizes with nearest-neighbour, applies the 2x UI scale, slices sheets, backs up the
    procedural original to `tools/art/_old/` and reports mismatches.
-4. Look at it in the game, in a dark corridor and next to the existing procedural art, before
+4. For an item or monster sheet, delete its copy in `tools/art/pieces/regrade_src/` and run
+   `python tools/art/regrade_items.py`, which adds the ink outline.
+5. Look at it in the game, in a dark corridor and next to the existing procedural art, before
    generating more. Style is approved one asset type at a time.
 
-The procedural generators in `tools/art/` follow the same palette, so procedural and PixelLab art
-share one look until the procedural ones are replaced.
+The procedural generators in `tools/art/` follow the same palette, but sharing a palette does not
+give procedural and PixelLab art one look. Most game art is PixelLab now; what is still procedural is
+the UI icons, the frame's iron, the scorch mark and the effects of every spell except Fireball.

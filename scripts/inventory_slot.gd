@@ -28,8 +28,8 @@ enum Kind { HAND, ARMOUR, BACKPACK, CHARACTER }
 const ITEM_SLOT := Vector2(48, 48)      # Holds a 48x48 item icon (24x24 logical, drawn at 2x) at its native size.
 const PORTRAIT_SLOT := Vector2(32, 32)  # A 64x64 portrait scaled to exactly half.
 const EMPTY_BG := Color(0.078, 0.075, 0.106, 0.6)  # Palette stone_900, translucent.
-const FILLED_BG := Color(0.192, 0.188, 0.235)        # Palette stone_700.
-const EDGE := Color(0.482, 0.478, 0.533)            # Palette stone_300.
+const FILLED_BG := Color(0.122, 0.118, 0.157)        # Palette stone_800.
+const EDGE := Color(0.486, 0.267, 0.149)            # Palette rust_500: the same rusted iron as the window's lip.
 ## What an empty hand or armour slot shows, faintly: a sword and a chestplate (art/ui/slot_*.png, made by
 ## gen_ui.slot_placeholder), so it is clear what goes where.
 const HAND_PLACEHOLDER := preload("res://art/ui/slot_hand.png")
