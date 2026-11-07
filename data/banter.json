@@ -25,6 +25,14 @@
 			{"speaker": "$actor", "alone": true, "priority": 1, "text": "Nobody saw that."}
 		]
 	},
+	"hit_behind": {
+		"chance": 1.0,
+		"cooldown": 0,
+		"lines": [
+			{"speaker": "Mage", "text": "BEHIND US! WHY IS IT ALWAYS BEHIND US?"},
+			{"speaker": "Mage", "text": "IT'S BEHIND US! I SAID THIS!"}
+		]
+	},
 	"eat": {
 		"chance": 0.5,
 		"cooldown": 30,

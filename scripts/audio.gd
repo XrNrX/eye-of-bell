@@ -17,6 +17,7 @@ extends Node
 ## the inventory's clicks sound.
 
 const Settings := preload("res://scripts/settings.gd")
+const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
 
 const SFX_DIR := "res://audio/sfx/"
 const MUSIC_PATH := "res://audio/music/dungeon_drone.wav"
@@ -109,7 +110,7 @@ func variants(sound: String) -> int:
 
 
 ## Play a sound effect by name. volume_db adds to the sound's own level, pitch multiplies its speed.
-func play(sound: String, volume_db := 0.0, pitch := 1.0) -> void:
+func play(sound: String, volume_db := 0.0, pitch := 1.0, bus := Settings.SFX_BUS) -> void:
 	if not library.has(sound):
 		return
 	var cue: Dictionary = CUES.get(sound, {})
@@ -119,6 +120,7 @@ func play(sound: String, volume_db := 0.0, pitch := 1.0) -> void:
 	last_played[sound] = now
 	var options: Array = library[sound]
 	var voice := _free_voice()
+	voice.bus = bus
 	voice.stream = options[randi() % options.size()]
 	voice.volume_db = volume_db + float(cue.get("db", 0.0))
 	voice.pitch_scale = pitch * (1.0 + randf_range(-1.0, 1.0) * float(cue.get("pitch", DEFAULT_PITCH_WOBBLE)))
@@ -126,6 +128,36 @@ func play(sound: String, volume_db := 0.0, pitch := 1.0) -> void:
 	played.append(sound)
 	if played.size() > 64:
 		played.pop_front()
+
+
+## Play a sound from a side of the party: "left" and "right" are panned, "behind" is muffled (stereo has no behind), and
+## anything else is the plain effects bus.
+func play_from(sound: String, side: String, volume_db := 0.0, pitch := 1.0) -> void:
+	play(sound, volume_db, pitch, _side_bus(side))
+
+
+## The bus for that side, made the first time it is wanted. Each sends to SFX, so the Effects volume still applies.
+func _side_bus(side: String) -> String:
+	if side not in ["left", "right", "behind"]:
+		return Settings.SFX_BUS
+	var bus_name := "SFX " + side.capitalize()
+	if AudioServer.get_bus_index(bus_name) != -1:
+		return bus_name
+	Settings.ensure_buses()
+	AudioServer.add_bus()
+	var i := AudioServer.bus_count - 1
+	AudioServer.set_bus_name(i, bus_name)
+	AudioServer.set_bus_send(i, Settings.SFX_BUS)
+	var c: Resource = SpellEffectsConfig.get_config()
+	if side == "behind":
+		var filter := AudioEffectLowPassFilter.new()
+		filter.cutoff_hz = c.hit_sound_behind_cutoff
+		AudioServer.add_bus_effect(i, filter)
+	else:
+		var panner := AudioEffectPanner.new()
+		panner.pan = -c.hit_sound_pan if side == "left" else c.hit_sound_pan
+		AudioServer.add_bus_effect(i, panner)
+	return bus_name
 
 
 ## An idle voice, or the one that has been sounding longest.

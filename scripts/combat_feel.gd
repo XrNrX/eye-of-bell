@@ -10,12 +10,20 @@ extends Node
 
 const FeelConfigScript := preload("res://scripts/combat_feel_config.gd")
 const Settings := preload("res://scripts/settings.gd")
+const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
+
+const JOLT_RISE := 0.2  # The share of a jolt spent being knocked; the rest is settling back.
 
 var feel_cfg: Resource = FeelConfigScript.get_config()  # data/combat_feel.tres
 var camera: Camera3D
 var shake_left := 0.0
 var shake_total := 0.0
 var shake_strength := 0.0
+var shake_direction := Vector2.ZERO  # On screen; zero shakes every way.
+var jolt_offset := Vector3.ZERO      # Where a jolt knocks the camera, local to it, at its furthest.
+var jolt_left := 0.0
+var jolt_total := 0.0
+var camera_rest := Vector3.ZERO
 var pause_id := 0
 
 
@@ -28,9 +36,12 @@ func _find_singletons() -> void:
 	var party := get_tree().get_first_node_in_group("party")
 	if party and not party.hero_hit.is_connected(_on_hero_hit):
 		party.hero_hit.connect(_on_hero_hit)
+		party.hit_from.connect(_on_hit_from)
 	var player := get_tree().get_first_node_in_group("player")
 	if player:
 		camera = player.get_node_or_null("Camera3D")
+		if camera:
+			camera_rest = camera.position
 
 
 func _exit_tree() -> void:
@@ -61,6 +72,33 @@ func monster_crit(killed: bool) -> void:
 			shake_by(feel_cfg.crit_shake_strength, feel_cfg.crit_shake_seconds)
 
 
+## A blow from behind or the side: the camera is knocked away from it and shakes that way. Front hits only get the shake in
+## _on_hero_hit. All of it from the "Hit direction" group of data/spell_effects.tres.
+func _on_hit_from(side: String, _slot: int, _damage: int) -> void:
+	var c: Resource = SpellEffectsConfig.get_config()
+	if not c.hit_direction_enabled:
+		return
+	match side:
+		"behind":
+			jolt(Vector3(0, 0, -c.rear_jolt_distance), c.rear_jolt_seconds)
+			shake_by(c.rear_shake_strength, c.rear_shake_seconds, Vector2.UP)
+		"left":
+			jolt(Vector3(c.side_jolt_distance, 0, 0), c.side_jolt_seconds)
+			shake_by(c.side_shake_strength, c.side_shake_seconds, Vector2.RIGHT)
+		"right":
+			jolt(Vector3(-c.side_jolt_distance, 0, 0), c.side_jolt_seconds)
+			shake_by(c.side_shake_strength, c.side_shake_seconds, Vector2.RIGHT)
+
+
+## Knock the camera by `offset` (local to it) and let it settle back. Reduce flashing stops it, like the shake.
+func jolt(offset: Vector3, seconds: float) -> void:
+	if not feel_cfg.screen_shake_enabled or Settings.reduce_flashing or seconds <= 0.0:
+		return
+	jolt_offset = offset
+	jolt_total = seconds
+	jolt_left = seconds
+
+
 ## Freeze the game for a moment. A timer that ignores time scale brings it back; a
 ## newer pause supersedes an older one instead of stacking. seconds < 0: the usual length.
 func hit_pause(seconds := -1.0) -> void:
@@ -84,17 +122,20 @@ func shake(damage: int) -> void:
 	var fresh: float = feel_cfg.screen_shake_strength * clampf(damage / full, 0.3, 1.0)
 	var running := shake_strength * (shake_left / maxf(shake_total, 0.001))  # What's left of a shake in progress.
 	shake_strength = maxf(running, fresh)
+	shake_direction = Vector2.ZERO
 	shake_total = feel_cfg.screen_shake_seconds
 	shake_left = shake_total
 
 
 ## Shake the 3D view by a given strength (camera offset in world units) for `seconds`; used by
-## spells (the Fireball blast). Respects the same on/off switch as the hit shake, and Reduce flashing stops all of it.
-func shake_by(strength: float, seconds: float) -> void:
+## spells (the Fireball blast). `direction` (on screen) makes it shake mostly along that line; zero shakes every way.
+## Respects the same on/off switch as the hit shake, and Reduce flashing stops all of it.
+func shake_by(strength: float, seconds: float, direction := Vector2.ZERO) -> void:
 	if not feel_cfg.screen_shake_enabled or Settings.reduce_flashing or strength <= 0.0:
 		return
 	var running := shake_strength * (shake_left / maxf(shake_total, 0.001))
 	shake_strength = maxf(running, strength)
+	shake_direction = direction.normalized()
 	shake_total = seconds
 	shake_left = seconds
 
@@ -102,6 +143,7 @@ func shake_by(strength: float, seconds: float) -> void:
 func _process(delta: float) -> void:
 	if camera == null:
 		return
+	_update_jolt(delta)
 	if shake_left <= 0.0:
 		if camera.h_offset != 0.0 or camera.v_offset != 0.0:
 			camera.h_offset = 0.0
@@ -111,5 +153,21 @@ func _process(delta: float) -> void:
 	shake_left = maxf(0.0, shake_left - delta / maxf(Engine.time_scale, 0.001))
 	var falloff := shake_left / maxf(shake_total, 0.001)  # Strong at first, then settling.
 	var s := shake_strength * falloff
-	camera.h_offset = randf_range(-1.0, 1.0) * s
-	camera.v_offset = randf_range(-1.0, 1.0) * s * 0.7
+	if shake_direction == Vector2.ZERO:
+		camera.h_offset = randf_range(-1.0, 1.0) * s
+		camera.v_offset = randf_range(-1.0, 1.0) * s * 0.7
+		return
+	var along := shake_direction * randf_range(-1.0, 1.0) * s  # Mostly along the line, a little across it.
+	var across := shake_direction.orthogonal() * randf_range(-1.0, 1.0) * s * 0.25
+	camera.h_offset = along.x + across.x
+	camera.v_offset = along.y + across.y
+
+
+## Real time, like the shake. Out fast, back slowly.
+func _update_jolt(delta: float) -> void:
+	if jolt_left <= 0.0:
+		return
+	jolt_left = maxf(0.0, jolt_left - delta / maxf(Engine.time_scale, 0.001))
+	var t := 1.0 - jolt_left / maxf(jolt_total, 0.001)
+	var amount := t / JOLT_RISE if t < JOLT_RISE else pow((1.0 - t) / (1.0 - JOLT_RISE), 2.0)
+	camera.position = camera_rest + jolt_offset * amount

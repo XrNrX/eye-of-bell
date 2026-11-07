@@ -646,8 +646,9 @@ func _on_hero_hit(slot: int, damage: int) -> void:
 
 	if damage > 0:
 		_shake_portrait(p.portrait, damage)
-		flash.color.a = 0.35
-		create_tween().tween_property(flash, "color:a", 0.0, 0.35)
+		if party.last_hit_side == "front":  # From behind or the side, the glow on that edge says it instead (direction_warning.gd).
+			flash.color.a = 0.35
+			create_tween().tween_property(flash, "color:a", 0.0, 0.35)
 		if m.is_alive():  # Still alive: flash the hurt portrait, then revert. Dead
 			p.portrait.texture_normal = m.def.portrait_hurt  # already shows portrait_dead permanently.
 			var timer := get_tree().create_timer(HURT_FLASH_TIME)

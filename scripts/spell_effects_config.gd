@@ -267,3 +267,25 @@ func glow(kind: String) -> Dictionary:
 @export var fog_length := 14.0
 @export var fog_anisotropy := 0.35
 @export var fog_ambient_inject := 0.0
+
+@export_group("Hit direction")
+## A blow from behind or the side is felt from that side: the camera is knocked away from it and shakes, a red glow
+## shows on that edge of the view, and the sound comes from there. A frontal hit keeps the ordinary shake in
+## combat_feel.tres. Reduce flashing stops the jolt and shake, and steadies the glow.
+@export var hit_direction_enabled := true
+@export var rear_jolt_distance := 0.32    # How far a hit from behind knocks the camera forward (world units).
+@export var rear_jolt_seconds := 0.28
+@export var rear_shake_strength := 0.11   # Stronger than the hardest frontal shake (screen_shake_strength, 0.05).
+@export var rear_shake_seconds := 0.4
+@export var side_jolt_distance := 0.24    # How far a side hit knocks it sideways, away from the attacker.
+@export var side_jolt_seconds := 0.24
+@export var side_shake_strength := 0.07
+@export var side_shake_seconds := 0.3
+@export var edge_glow_colour := Color(0.9, 0.12, 0.12)  # Brighter than blood_500, the palette's reddest: it has to read over a dark view.
+@export var edge_glow_depth := 40         # Pixels the glow reaches in from the edge of the view.
+@export var edge_glow_seconds := 0.7
+@export var edge_glow_pulses := 2.0       # Flashes while it fades.
+@export var edge_glow_reduced_strength := 0.5  # With Reduce flashing: one steady glow this strong.
+@export var hit_sound_pan := 0.85         # A side hit's sound: -1 to 1 is full left to full right.
+@export var hit_sound_behind_cutoff := 1100.0  # Stereo has no "behind": a hit from there is muffled instead (Hz).
+@export var fight_gap_seconds := 12.0     # With no monster attacking for this long a fight is over, and "Something's behind you!" can show again.

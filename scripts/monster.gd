@@ -174,7 +174,7 @@ func _next_to_player() -> bool:
 
 func _attack() -> void:
 	attack_cooldown = def.attack_interval
-	get_tree().call_group("audio", "play", "monster_attack")
+	get_tree().call_group("party", "cue_attack_from", self)
 	var was_telegraphing := _telegraphing
 	_end_feel()
 	if was_telegraphing and feel_cfg.telegraph_lunge:

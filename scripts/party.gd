@@ -44,6 +44,7 @@ signal revive_requested(slot: int, index: int)  # A Scroll of Resurrection was u
 signal food_tick(slot: int, amount: int)  # Food healed this much just now (the HUD shows a warm tick on the HP bar).
 signal sick_tick(slot: int, amount: int)  # Sickness took this much just now.
 signal hero_crit(slot: int, damage: int)  # A monster's crit landed on this hero (the HUD flashes the portrait red).
+signal hit_from(side: String, slot: int, damage: int)  # A monster's blow landed: "front", "behind", "left" or "right" of the party.
 signal critical_fail(slot: int, slipped: bool)  # A hero's attack went badly wrong (slipped: they dropped their weapon).
 signal wiped
 
@@ -104,6 +105,9 @@ class Stats:
 	var damage_max: int
 
 
+var last_hit_side := "front"  # Where the latest blow came from (the HUD's full-view flash is for the front only).
+var behind_warned := false    # "Something's behind you!" has shown this fight.
+var fight_left := 0.0         # Seconds until this fight counts as over (see take_hit_from).
 var members: Array = []  # Member per position (slot), front row first. Reordered by set_formation.
 
 ## The formation: the hero_index standing in each position, e.g. [0, 1, 2, 3] by default
@@ -138,6 +142,10 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if fight_left > 0.0:
+		fight_left -= delta
+		if fight_left <= 0.0:
+			behind_warned = false
 	for m in members:
 		m.cooldown_left = maxf(0.0, m.cooldown_left - delta)
 		for i in QUICK_SLOTS:
@@ -1099,6 +1107,9 @@ func take_hit_from(monster: Node) -> void:
 	var targets := _reachable_from(monster.cell)
 	if targets.is_empty():
 		return
+	var side := side_of(monster.cell)
+	last_hit_side = side
+	fight_left = SpellEffectsConfig.get_config().fight_gap_seconds
 	var m: Member = targets[CombatRules.rng().randi_range(0, targets.size() - 1)]
 	# The hero's effective stats, so Shield (and later armour) counts.
 	var result := CombatRules.resolve_attack(monster.def, effective_stats(m), monster.def.crit_chance, CombatRules.MONSTER_CRIT_MULT)
@@ -1108,9 +1119,9 @@ func take_hit_from(monster: Node) -> void:
 		m.hp = maxi(0, m.hp - result.damage)
 		if m.hp == 0:
 			m.buffs.clear()
-			_cue("hero_die")
+			_cue_from("hero_die", side)
 		else:
-			_cue("crit_hurt" if result.crit else "hero_hurt")
+			_cue_from("crit_hurt" if result.crit else "hero_hurt", side)
 		hp_changed.emit(m.slot)
 		if result.crit:
 			_say("CRITICAL! The %s hits %s for %d." % [monster.def.display_name, m.def.display_name, result.damage], "hurt")
@@ -1118,25 +1129,48 @@ func take_hit_from(monster: Node) -> void:
 		else:
 			_say("The %s hits %s for %d." % [monster.def.display_name, m.def.display_name, result.damage])
 	else:
-		_cue("whiff")
+		_cue_from("whiff", side)
 		_say("The %s misses %s." % [monster.def.display_name, m.def.display_name], "miss")
 	hero_hit.emit(m.slot, result.damage)
+	if result.hit:
+		hit_from.emit(side, m.slot, result.damage)
+		if side == "behind" and not behind_warned and not is_wiped():
+			behind_warned = true
+			_say("Something's behind you!", "hurt")
+			_banter("hit_behind", m)
 	if is_wiped():
 		wiped.emit()
 		get_tree().call_group("game_over", "show_screen")
 
 
+## Which side of the party this tile is on, for the way it faces now: "front", "behind", "left" or "right".
+func side_of(cell: Vector2i) -> String:
+	var side: Vector2i = cell - player.cell
+	var f: int = player.facing
+	if side == player.DIRS[f]:
+		return "front"
+	if side == player.DIRS[(f + 2) % 4]:
+		return "behind"
+	if side == player.DIRS[(f + 1) % 4]:
+		return "left"
+	return "right"
+
+
+## A monster's attack is heard from its side of the party.
+func cue_attack_from(monster: Node) -> void:
+	_cue_from("monster_attack", side_of(monster.cell))
+
+
 func _reachable_from(monster_cell: Vector2i) -> Array:
 	var living := members.filter(func(m): return m.is_alive())
-	var side: Vector2i = monster_cell - player.cell
-	var f: int = player.facing
 	var slots := [1, 3]                       # Right column.
-	if side == player.DIRS[f]:
-		slots = [0, 1]                        # In front: front row.
-	elif side == player.DIRS[(f + 2) % 4]:
-		slots = [2, 3]                        # Behind: back row.
-	elif side == player.DIRS[(f + 1) % 4]:
-		slots = [0, 2]                        # Left column.
+	match side_of(monster_cell):
+		"front":
+			slots = [0, 1]                    # In front: front row.
+		"behind":
+			slots = [2, 3]                    # Behind: back row.
+		"left":
+			slots = [0, 2]                    # Left column.
 	var reachable := living.filter(func(m): return m.slot in slots)
 	return reachable if not reachable.is_empty() else living
 
@@ -1157,6 +1191,11 @@ func _fx(effect: String, at := Vector2i(-1, -1)) -> void:
 ## Play a sound through the audio node (group "audio"), if the scene has one.
 func _cue(sound: String) -> void:
 	get_tree().call_group("audio", "play", sound)
+
+
+## Play a sound from that side of the party (see Audio.play_from).
+func _cue_from(sound: String, side: String) -> void:
+	get_tree().call_group("audio", "play_from", sound, side)
 
 
 ## Show a message on the HUD. tone "miss" styles it as a miss (see hud.gd).
