@@ -13,6 +13,7 @@ extends SubViewportContainer
 ## layer and takes its own clicks first, so only clicks that land on the picture reach here.
 
 const UiLayout := preload("res://scripts/ui_layout.gd")
+const PaletteFilter := preload("res://scripts/palette_filter.gd")
 
 var player: Node
 
@@ -24,6 +25,11 @@ func _ready() -> void:
 	stretch = true
 	stretch_shrink = UiLayout.VIEW_SCALE
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var port := get_node_or_null("Port")
+	if port:
+		var filter := PaletteFilter.new()  # Hidden unless Options: PALETTE FILTER is on.
+		filter.name = "PaletteFilter"
+		port.add_child(filter)
 
 
 func _gui_input(event: InputEvent) -> void:

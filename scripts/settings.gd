@@ -30,6 +30,7 @@ static var sfx_volume := 1.0
 static var fullscreen := true   # Borderless fullscreen by default; false = a window.
 static var fog := true          # The subtle volumetric fog; off on weak machines.
 static var reduce_flashing := false  # Softer spell and holy-light pulses: steady glows, no flicker, no shake.
+static var palette_filter := false  # Snap the 3D view to the palette with a light dither (palette_filter.gd). Off by default.
 static var show_hints := true   # First-time hints ("Click a portrait to see their inventory and stats."). Options: HINTS.
 static var hints_seen := {}     # hint id -> true once it has been shown (saved, so a hint shows only once ever).
 static var loaded := false
@@ -47,6 +48,7 @@ static func apply() -> void:
 			fullscreen = bool(cfg.get_value(DISPLAY_SECTION, "fullscreen", fullscreen))
 			fog = bool(cfg.get_value(DISPLAY_SECTION, "fog", fog))
 			reduce_flashing = bool(cfg.get_value(DISPLAY_SECTION, "reduce_flashing", reduce_flashing))
+			palette_filter = bool(cfg.get_value(DISPLAY_SECTION, "palette_filter", palette_filter))
 			show_hints = bool(cfg.get_value(HINTS_SECTION, "show", show_hints))
 			if cfg.has_section(SEEN_SECTION):
 				for id in cfg.get_section_keys(SEEN_SECTION):
@@ -76,6 +78,11 @@ static func set_fullscreen(value: bool) -> void:
 
 static func set_fog(value: bool) -> void:
 	fog = value
+	_changed()
+
+
+static func set_palette_filter(value: bool) -> void:
+	palette_filter = value
 	_changed()
 
 
@@ -116,6 +123,7 @@ static func _changed() -> void:
 	cfg.set_value(DISPLAY_SECTION, "fullscreen", fullscreen)
 	cfg.set_value(DISPLAY_SECTION, "fog", fog)
 	cfg.set_value(DISPLAY_SECTION, "reduce_flashing", reduce_flashing)
+	cfg.set_value(DISPLAY_SECTION, "palette_filter", palette_filter)
 	cfg.set_value(HINTS_SECTION, "show", show_hints)
 	for id in hints_seen:
 		cfg.set_value(SEEN_SECTION, id, hints_seen[id])

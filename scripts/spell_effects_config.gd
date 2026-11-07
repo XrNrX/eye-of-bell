@@ -182,6 +182,71 @@ func glow(kind: String) -> Dictionary:
 @export var revive_cleric_motes := 24
 @export var revive_reduced_scale := 0.5            # "Reduce flashing": the column is this much dimmer, steady, with no motes.
 
+@export_group("Fireball sprites (PixelLab flipbooks)")
+## Three flipbooks in art/spells/fireball/ (tools/art/gen_spell_fx.py): a cast flash at the party's hands, the
+## fireball itself (a loop) and the impact. They are drawn unshaded and additive, so they glow; the tint may go
+## above 1.0 so the glow blooms. One art pixel is `fb_pixel_size` world units (0.014 matches the monsters).
+@export var fb_pixel_size := 0.014
+@export var fb_additive := true
+@export var fb_sprite_tint := Color(1.4, 1.2, 1.0)
+@export var fb_cast_scale := 1.0
+@export var fb_cast_distance := 1.2                  # How far ahead of the party the cast flash appears...
+@export var fb_cast_height := 0.78                   # ...and how high (the hands).
+@export var fb_projectile_scale := 1.0
+@export var fb_impact_scale := 2.1                   # The explosion is 96 art pixels across; this makes it fill the corridor.
+
+@export_group("Fireball light (synced to the animation)")
+## One value for each animation frame (the light is blended between frames), so the walls catch what the sprite is doing.
+@export var fb_cast_light_energy := PackedFloat32Array([3.0, 5.0, 3.5, 1.5, 0.4])
+@export var fb_cast_light_colors := PackedColorArray([Color(1.0, 0.85, 0.55), Color(1.0, 0.7, 0.35), Color(1.0, 0.55, 0.2), Color(0.9, 0.4, 0.15), Color(0.7, 0.3, 0.1)])
+@export var fb_cast_light_range := 6.0
+@export var fb_flight_light_energy := PackedFloat32Array([2.4, 3.2, 2.0, 2.8, 1.9, 3.0, 2.2, 2.6])  # A loop: it flickers in flight.
+@export var fb_flight_light_colors := PackedColorArray([Color(1.0, 0.62, 0.22), Color(1.0, 0.72, 0.3), Color(1.0, 0.55, 0.18), Color(1.0, 0.68, 0.26)])
+@export var fb_flight_light_range := 7.0
+@export var fb_flight_flicker := 0.18                # Extra random flutter on top of the per-frame values.
+@export var fb_impact_light_energy := PackedFloat32Array([11.0, 15.0, 12.0, 8.0, 5.0, 3.0, 1.6, 0.8, 0.3, 0.0])  # A big spike, gone in about half a second.
+@export var fb_impact_light_colors := PackedColorArray([Color(1.0, 0.95, 0.8), Color(1.0, 0.8, 0.45), Color(1.0, 0.6, 0.22), Color(1.0, 0.45, 0.15), Color(0.9, 0.35, 0.12), Color(0.8, 0.28, 0.1), Color(0.6, 0.2, 0.08), Color(0.45, 0.16, 0.07), Color(0.3, 0.12, 0.06), Color(0.2, 0.1, 0.05)])
+@export var fb_impact_light_range := 18.0
+
+@export_group("Pixel particles (palette colours, stepped, never faded)")
+## Square pixels with nearest filtering. Each steps through its ramp (bright to dark) and vanishes: no alpha fade.
+## Ramps are palette colours: torch_300/500, rust_500/700, bone_300, stone_300/500/700.
+@export var px_ember_ramp := PackedColorArray([Color("f5cf80"), Color("d99a36"), Color("7c4426"), Color("4e2a1a")])
+@export var px_spark_ramp := PackedColorArray([Color("c9c0a4"), Color("f5cf80"), Color("d99a36")])
+@export var px_smoke_ramp := PackedColorArray([Color("7b7a88"), Color("504f5e"), Color("31303c")])
+@export var px_flight_embers_per_second := 40.0      # Shed behind the fireball as it flies.
+@export var px_flight_ember_size := 2.0              # Art pixels across.
+@export var px_flight_ember_life := Vector2(0.3, 0.6)
+@export var px_impact_embers := 38
+@export var px_impact_sparks := 24
+@export var px_impact_speed := Vector2(1.5, 5.0)
+@export var px_impact_life := Vector2(0.45, 1.0)
+@export var px_gravity := 4.0
+@export var px_impact_ember_size := 2.0             # Art pixels across.
+@export var px_impact_spark_size := 1.0
+@export var px_flight_ember_speed := Vector2(0.15, 0.7)
+
+@export_group("Fireball aftermath")
+@export var scorch_seconds := 6.0                    # The soot mark lasts this long...
+@export var scorch_hold := 0.4                       # ...solid for this fraction of it, then it fades.
+@export var scorch_size := 1.7                       # World units across.
+@export var scorch_floor_strength := 0.95
+@export var scorch_wall_strength := 0.75
+@export var linger_embers := 8                       # A few embers that stay on the floor...
+@export var linger_seconds := 3.2
+@export var linger_ember_size := 3.0                # Art pixels across.
+@export var smoke_puffs := 7                         # ...and a wisp of pixel smoke above.
+@export var smoke_seconds := 2.8
+@export var smoke_size := 5.0                        # Art pixels across.
+@export var smoke_stagger := 0.16                    # Seconds between one puff and the next.
+@export var smoke_rise := Vector2(0.25, 0.55)        # Speed, world units a second.
+@export var linger_ember_speed := Vector2(0.03, 0.25)
+
+@export_group("Palette filter (Options: PALETTE FILTER)")
+## An optional post-process on the 3D view that snaps every colour to the 32-colour palette with a light ordered
+## dither, so lights, bloom and particles all land on palette colours. 0 turns the dither off (hard bands).
+@export var palette_dither := 0.05
+
 @export_group("Glow (bloom)")
 ## Only pixels brighter than glow_hdr_threshold bloom, so the torches' own light stays put while
 ## the HDR bolt and sparks pop. Lower the threshold (or raise intensity) for more bloom everywhere.

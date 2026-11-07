@@ -25,6 +25,7 @@ var flickers := []  # [{light, base, seed}]: lights that flutter (the fireball),
 func _ready() -> void:
 	add_to_group("spell_effects")
 	orb = _make_orb()
+	RenderingServer.decals_set_filter(RenderingServer.DECAL_FILTER_NEAREST)  # Scorch marks stay pixel art.
 	var env_node := get_parent().get_node_or_null("WorldEnvironment")
 	if env_node:
 		Config.apply_environment(env_node.environment, Settings.fog)
@@ -100,9 +101,190 @@ func missile(from_cell: Vector2i, to_cell: Vector2i) -> void:
 		live -= 1)
 
 
+# --------------------------------------------------------------------------
+# Fireball: PixelLab flipbooks + synced light + pixel particles + aftermath
+# --------------------------------------------------------------------------
+
+const Flipbook := preload("res://scripts/fx_flipbook.gd")
+const FxLight := preload("res://scripts/fx_light.gd")
+const PixelParticles := preload("res://scripts/pixel_particles.gd")
+const SCORCH := "res://art/spells/scorch.png"
+
+var pixels: Node3D            # The pixel particle system (pixel_particles.gd).
+var _sheets := {}             # "spell/name" -> {texture, frames, fps} (empty if the art is missing)
+var _scorch_tex: Texture2D
+
+
+## A flipbook's sheet and its frame count and speed (art/spells/<spell>/<name>_sheet.png and .json, made by
+## tools/art/gen_spell_fx.py). Empty when the art is not there.
+func _sheet(spell: String, name: String) -> Dictionary:
+	var key := "%s/%s" % [spell, name]
+	if _sheets.has(key):
+		return _sheets[key]
+	var png := "res://art/spells/%s/%s_sheet.png" % [spell, name]
+	var json_path := "res://art/spells/%s/%s_sheet.json" % [spell, name]
+	var entry := {}
+	if ResourceLoader.exists(png) and FileAccess.file_exists(json_path):
+		var info = JSON.parse_string(FileAccess.get_file_as_string(json_path))
+		if info is Dictionary:
+			entry = {"texture": load(png), "frames": int(info.frames), "fps": float(info.fps)}
+	_sheets[key] = entry
+	return entry
+
+
+func _flipbook(sheet: Dictionary, looping: bool, scale_by: float) -> MeshInstance3D:
+	var c := Config.get_config()
+	var flip: MeshInstance3D = Flipbook.new()
+	flip.setup(sheet.texture, sheet.frames, sheet.fps, looping, c.fb_pixel_size, c.fb_sprite_tint, c.fb_additive, scale_by)
+	return flip
+
+
+## Reduce flashing (Settings) turns the light strength down and its flicker off.
+func _light_strength() -> float:
+	return Config.get_config().holy_reduced_scale if Settings.reduce_flashing else 1.0
+
+
+func _fx_light(flip: Node, energy: PackedFloat32Array, colours: PackedColorArray, range_: float, looping: bool, flutter: float) -> OmniLight3D:
+	var light: OmniLight3D = FxLight.new()
+	light.setup(flip, energy, colours, range_, looping, 0.0 if Settings.reduce_flashing else flutter, _light_strength())
+	return light
+
+
+func _ensure_pixels() -> void:
+	if pixels == null:
+		pixels = PixelParticles.new()
+		pixels.pixel_size = Config.get_config().fb_pixel_size
+		add_child(pixels)
+
+
+## The Fireball. If its flipbooks are missing the old square-orb version plays instead.
+func fireball(from_cell: Vector2i, to_cell: Vector2i) -> void:
+	var proj := _sheet("fireball", "projectile")
+	if proj.is_empty():
+		_fireball_basic(from_cell, to_cell)
+		return
+	var c := Config.get_config()
+	_ensure_pixels()
+	live += 1
+	var forward := Vector3(to_cell.x - from_cell.x, 0, to_cell.y - from_cell.y).normalized()
+	_cast_flash(from_cell, forward)
+	var start := _cell_pos(from_cell, c.bolt_height) + forward * 0.7
+	var end := _cell_pos(to_cell, c.bolt_height)
+	var ball := Node3D.new()
+	ball.position = start
+	add_child(ball)
+	var flip := _flipbook(proj, true, c.fb_projectile_scale)
+	ball.add_child(flip)
+	ball.add_child(_fx_light(flip, c.fb_flight_light_energy, c.fb_flight_light_colors, c.fb_flight_light_range, true, c.fb_flight_flicker))
+	var tiles := maxf(1.0, (to_cell - from_cell).length())
+	var flight: float = tiles * c.fire_seconds_per_tile
+	var owed := [0.0]
+	var tween := ball.create_tween()
+	tween.tween_property(ball, "position", end, flight)
+	tween.parallel().tween_method(func(_v: float) -> void:  # Embers shed behind it as it flies.
+		owed[0] += c.px_flight_embers_per_second * get_process_delta_time()
+		var n := int(owed[0])
+		owed[0] -= n
+		if n > 0 and is_instance_valid(ball):
+			pixels.emit(ball.position - forward * 0.15, n, {"ramp": c.px_ember_ramp, "speed": c.px_flight_ember_speed, "spread": 1.0,
+					"gravity": 1.5, "life": c.px_flight_ember_life, "size": c.px_flight_ember_size, "jitter": Vector3(0.12, 0.12, 0.12)}),
+			0.0, 1.0, flight)
+	tween.tween_callback(func():
+		explosion(to_cell)
+		ball.queue_free()
+		live -= 1)
+
+
+## A flash of fire at the hands of the party as the spell is cast, with a light that spikes and dies with it.
+func _cast_flash(from_cell: Vector2i, forward: Vector3) -> void:
+	var sheet := _sheet("fireball", "cast")
+	if sheet.is_empty():
+		return
+	var c := Config.get_config()
+	var at: Vector3 = _cell_pos(from_cell, c.fb_cast_height) + forward * c.fb_cast_distance
+	var flip := _flipbook(sheet, false, c.fb_cast_scale)
+	flip.position = at
+	add_child(flip)
+	var light := _fx_light(flip, c.fb_cast_light_energy, c.fb_cast_light_colors, c.fb_cast_light_range, false, 0.0)
+	light.position = at - forward * 0.3
+	add_child(light)
+
+
+## The fireball bursts: a flipbook explosion with a light that spikes with it and fades over about half a second, a
+## spray of pixel embers and sparks, a boom and a screen shake, then the aftermath on the floor and walls.
+func explosion(cell: Vector2i) -> void:
+	var sheet := _sheet("fireball", "impact")
+	if sheet.is_empty():
+		_explosion_basic(cell)
+		return
+	var c := Config.get_config()
+	_ensure_pixels()
+	live += 1
+	var at := _cell_pos(cell, c.bolt_height)
+	get_tree().call_group("audio", "play", "explosion")
+	get_tree().call_group("combat_feel", "shake_by", c.blast_shake_strength * (_light_strength() if Settings.reduce_flashing else 1.0), c.blast_shake_seconds)
+	var flip := _flipbook(sheet, false, c.fb_impact_scale)
+	flip.position = at
+	add_child(flip)
+	flip.finished.connect(func():
+		live -= 1)
+	var light := _fx_light(flip, c.fb_impact_light_energy, c.fb_impact_light_colors, c.fb_impact_light_range, false, 0.0)
+	light.position = at
+	add_child(light)
+	pixels.emit(at, c.px_impact_embers, {"ramp": c.px_ember_ramp, "speed": c.px_impact_speed, "spread": 1.0, "gravity": c.px_gravity,
+			"drag": 0.5, "life": c.px_impact_life, "size": c.px_impact_ember_size, "jitter": Vector3(0.2, 0.2, 0.2)})
+	pixels.emit(at, c.px_impact_sparks, {"ramp": c.px_spark_ramp, "speed": c.px_impact_speed * 1.4, "spread": 1.0, "gravity": c.px_gravity * 0.5,
+			"drag": 0.3, "life": c.px_impact_life * 0.7, "size": c.px_impact_spark_size, "jitter": Vector3(0.1, 0.1, 0.1)})
+	_aftermath(cell, c)
+
+
+## What the blast leaves behind: a soot mark on the floor and on any wall beside the impact (it fades over a few
+## seconds), embers glowing on in the rubble and a wisp of pixel smoke.
+func _aftermath(cell: Vector2i, c: Resource) -> void:
+	if _scorch_tex == null and ResourceLoader.exists(SCORCH):
+		_scorch_tex = load(SCORCH)
+	var centre := DungeonMap.cell_to_world(cell)
+	_decal(centre + Vector3(0, 0.02, 0), Basis.IDENTITY, Vector3(c.scorch_size, 0.8, c.scorch_size), c.scorch_floor_strength, c)  # Centred on the floor: a decal fades out toward the edges of its box.
+	for d in [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0)]:
+		if DungeonMap.is_wall(cell + d):
+			var dir := Vector3(d.x, 0, d.y)
+			var surface := centre + dir * (DungeonMap.TILE_SIZE / 2.0) + Vector3(0, 0.8, 0)
+			_decal(surface, Basis(Quaternion(Vector3.DOWN, dir)), Vector3(c.scorch_size, 0.6, c.scorch_size), c.scorch_wall_strength, c)
+	pixels.emit(centre + Vector3(0, 0.08, 0), c.linger_embers, {"ramp": c.px_ember_ramp, "speed": c.linger_ember_speed, "spread": 1.0,
+			"gravity": 0.0, "life": Vector2(c.linger_seconds * 0.55, c.linger_seconds), "size": c.linger_ember_size, "jitter": Vector3(0.5, 0.0, 0.5)})
+	for i in int(c.smoke_puffs):
+		get_tree().create_timer(0.1 + i * c.smoke_stagger).timeout.connect(func():
+			if is_inside_tree():
+				pixels.emit(centre + Vector3(0, 0.45, 0), 1, {"ramp": c.px_smoke_ramp, "speed": c.smoke_rise, "spread": 0.2,
+						"gravity": -0.1, "drag": 0.35, "life": Vector2(c.smoke_seconds * 0.6, c.smoke_seconds), "size": c.smoke_size,
+						"jitter": Vector3(0.3, 0.1, 0.3)}))
+
+
+## A soot mark projected onto whatever surface lies inside its box (nearest filtering, so it stays pixel art).
+## Solid for the first 40% of its time, then it fades away.
+func _decal(at: Vector3, basis: Basis, size: Vector3, strength: float, c: Resource) -> void:
+	if _scorch_tex == null:
+		return
+	var decal := Decal.new()
+	decal.texture_albedo = _scorch_tex
+	decal.size = size
+	decal.position = at
+	decal.basis = basis
+	decal.modulate = Color(1, 1, 1, strength)
+	decal.normal_fade = 0.15
+	decal.upper_fade = 0.05
+	decal.lower_fade = 0.05
+	add_child(decal)
+	var tween := decal.create_tween()
+	tween.tween_interval(c.scorch_seconds * c.scorch_hold)
+	tween.tween_property(decal, "modulate:a", 0.0, c.scorch_seconds * (1.0 - c.scorch_hold))
+	tween.tween_callback(decal.queue_free)
+
+
+## The old fireball (a flat orange orb): used only when the flipbooks are missing.
 ## A fireball flies from the party's tile to `to_cell`: a big orange orb with a flickering light and
 ## a trail of embers, then it explodes there (see explosion).
-func fireball(from_cell: Vector2i, to_cell: Vector2i) -> void:
+func _fireball_basic(from_cell: Vector2i, to_cell: Vector2i) -> void:
 	var c := Config.get_config()
 	live += 1
 	var forward := Vector3(to_cell.x - from_cell.x, 0, to_cell.y - from_cell.y).normalized()
@@ -142,14 +324,14 @@ func fireball(from_cell: Vector2i, to_cell: Vector2i) -> void:
 	var tween := ball.create_tween()
 	tween.tween_property(ball, "position", end, tiles * c.fire_seconds_per_tile)
 	tween.tween_callback(func():
-		explosion(to_cell)
+		_explosion_basic(to_cell)
 		ball.queue_free()
 		live -= 1)
 
 
 ## The fireball bursts: a flash that lights the whole area and fades over about half a second, a
 ## swelling orange orb, a spray of embers, a boom and a screen shake.
-func explosion(cell: Vector2i) -> void:
+func _explosion_basic(cell: Vector2i) -> void:
 	var c := Config.get_config()
 	live += 1
 	var at := _cell_pos(cell, c.bolt_height)

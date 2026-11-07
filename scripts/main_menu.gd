@@ -68,6 +68,7 @@ var current_kind := "master"
 var fog_button: Button      # "FOG: ON" / "FOG: OFF".
 var flash_button: Button    # "FLASHING: REDUCED" / "FLASHING: NORMAL".
 var hints_button: Button    # "HINTS: ON" / "HINTS: OFF".
+var palette_button: Button  # "PALETTE: ON" / "PALETTE: OFF" (the optional palette filter on the 3D view).
 var options_panel: Panel    # The dark panel behind the Options screen.
 var display_button: Button  # "SCREEN: FULLSCREEN" / "SCREEN: WINDOWED", built in _build_display_button.
 
@@ -93,6 +94,7 @@ func _ready() -> void:
 	_build_fog_button()
 	_build_flash_button()
 	_build_hints_button()
+	_build_palette_button()
 	_arrange_options()
 	new_game_button.pressed.connect(_on_new_game_pressed)
 	load_button.pressed.connect(_on_load_pressed)
@@ -197,7 +199,7 @@ func _build_flash_button() -> void:
 ## hints) sit in two columns, and a dark panel behind makes the text readable over the title picture.
 func _arrange_options() -> void:
 	options_box.offset_left = 48.0
-	options_box.offset_top = 44.0
+	options_box.offset_top = 24.0
 	options_box.offset_right = 592.0
 	options_box.offset_bottom = 348.0
 	var grid := GridContainer.new()
@@ -206,9 +208,10 @@ func _arrange_options() -> void:
 	grid.add_theme_constant_override("v_separation", 2)
 	options_box.add_child(grid)
 	options_box.move_child(grid, back_button.get_index())
-	for b in [display_button, fog_button, flash_button, hints_button]:
+	for b in [display_button, fog_button, flash_button, hints_button, palette_button]:
 		b.reparent(grid)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.custom_minimum_size = Vector2(0, 26)  # Shorter, so five switches in two columns still fit.
 	var panel := Panel.new()
 	var box := StyleBoxFlat.new()
 	box.bg_color = Color(STONE_900.r, STONE_900.g, STONE_900.b, 0.9)
@@ -216,12 +219,25 @@ func _arrange_options() -> void:
 	box.set_border_width_all(2)
 	panel.add_theme_stylebox_override("panel", box)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.position = Vector2(32, 28)
-	panel.size = Vector2(576, 324)
+	panel.position = Vector2(32, 8)
+	panel.size = Vector2(576, 344)
 	panel.visible = false
 	root_ui.add_child(panel)
 	root_ui.move_child(panel, options_box.get_index())  # Behind the options.
 	options_panel = panel
+
+
+## The palette filter switch: the 3D view snapped to the 32 colours with a light dither, to compare with the
+## plain look. Takes effect when a game starts.
+func _build_palette_button() -> void:
+	palette_button = back_button.duplicate()
+	palette_button.unique_name_in_owner = false
+	options_box.add_child(palette_button)
+	options_box.move_child(palette_button, back_button.get_index())
+	palette_button.pressed.connect(func():
+		Settings.set_palette_filter(not Settings.palette_filter)
+		_refresh_display())
+	palette_button.pressed.connect(_click)
 
 
 ## The "show hints" switch: first-time tips such as how to open the character sheet.
@@ -269,6 +285,7 @@ func _refresh_display() -> void:
 	fog_button.text = "FOG: ON" if Settings.fog else "FOG: OFF"
 	flash_button.text = "FLASHING: REDUCED" if Settings.reduce_flashing else "FLASHING: NORMAL"
 	hints_button.text = "HINTS: ON" if Settings.show_hints else "HINTS: OFF"
+	palette_button.text = "PALETTE: ON" if Settings.palette_filter else "PALETTE: OFF"
 	display_button.text = "SCREEN: FULLSCREEN" if Settings.fullscreen else "SCREEN: WINDOWED"
 
 
