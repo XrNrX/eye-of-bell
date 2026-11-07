@@ -11,6 +11,7 @@ MOVING AND ACTING
   (or the six on-screen arrows)
   F              use a door, lever, or the cracked wall in front of you
   Left click     pick up / put down an item on the tile in front
+               (a key goes straight to a backpack: "Key picked up!")
   Shift+click    send a floor item straight to a quick slot or backpack
 
 THE PARTY
@@ -47,6 +48,13 @@ CRITICAL HITS AND FAILS
   too, rarely, but a crit won't kill a hero at half health or more.
   A miss can be a CRITICAL FAIL!: the hero stumbles and loses their next attack, or their weapon
   lands on the tile in front. Picking it up puts it back in their hand. Someone will comment.
+
+HITS FROM BEHIND AND THE SIDES
+  A monster behind you hits the back row (by default the Thief and the Mage); one at your side
+  hits that side's column. The view lurches away from the blow, that edge of the screen glows
+  red, and you hear it from that side. The first hit from behind in a fight says "Something's
+  behind you!" Turn to face it: you can only strike forwards. Drag a portrait onto another to
+  swap who stands where.
 
 OTHER KEYS
   Tab            show / hide the minimap (on by default)
