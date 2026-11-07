@@ -38,6 +38,8 @@ Where things really are (scripts are in one flat folder, `scripts/`, not subfold
 
 ## Design references
 
+**Game overview:** `docs/game_overview.md` has the pitch, tone rule, the four heroes, visual style, systems built so far and what is planned. **Update its "Systems built" list whenever a major feature lands.**
+
 **Combat design blueprint:** https://claude.ai/artifact/BGAw8C4bkJfdBrSScE49yY
 
 This page is the source of truth for combat rules. It covers stats, hit chance and damage formulas, cooldowns, party slots and melee, monster targeting, data structures, the script list, starting numbers, and the agreed decisions (swinging at air uses the cooldown; the back row steps up; adjacent monsters stop moving).
