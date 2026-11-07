@@ -104,6 +104,10 @@ func refusal(stack: RefCounted) -> String:
 		Kind.ARMOUR: allowed = ItemDef.allowed_in_armour(stack.def.type)
 	if not allowed:
 		return "The %s doesn't go there." % stack.def.display_name
+	if (kind == Kind.HAND or kind == Kind.ARMOUR) and screen != null and screen.party != null:
+		var m = screen.party.member(member_slot)
+		if m != null and not screen.party.can_equip(m, stack.def):  # The same class rule as clicking a portrait.
+			return "The %s can't %s that." % [m.def.display_name.to_lower(), "wear" if stack.def.type == ItemDef.Type.ARMOUR else "use"]
 	if stack.count > 1 and not holds_stacks(stack.def):
 		return "Only one at a time goes there."
 	return ""

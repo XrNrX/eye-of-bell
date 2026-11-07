@@ -159,8 +159,93 @@ def quickslot_frame(filled):
     return img
 
 
-def quickslot_sweep():
-    return Image.new("RGBA", (QUICK, QUICK), (*PAL["stone_500"], 255))
+def bevel_frame(size, filled):
+    """A slot frame at the portraits' own pixel density (drawn at 1:1, no 2x blocks): a 2 px worn bevel (lit top-left, shaded
+    bottom-right) round a dark inside with a 2 px inner shadow under the top and left lips. Filled slots are rusted iron,
+    empty ones plain stone, so an empty slot reads as the same frame with nothing in it. Corners are chipped here and there
+    (the same chips every time) so it looks worn, not machined."""
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    px = img.load()
+    last = size - 1
+    lit1, lit2, dark1, dark2 = ((PAL["rust_300"], PAL["rust_500"], PAL["rust_700"], PAL["rust_700"]) if filled
+                                else (PAL["stone_500"], PAL["stone_700"], PAL["stone_700"], PAL["stone_800"]))
+    for y in range(size):
+        for x in range(size):
+            if x in (0, last) or y in (0, last):  # Outer ring: lit on top and left, shaded on the bottom and right.
+                px[x, y] = (*(lit1 if (x == 0 or y == 0) and not (x == last or y == last) else dark1), 255)
+            elif x in (1, last - 1) or y in (1, last - 1):
+                px[x, y] = (*(lit2 if (x == 1 or y == 1) and not (x == last - 1 or y == last - 1) else dark2), 255)
+            else:  # The inside: ink under the top and left lips (inner shadow), stone_900 elsewhere.
+                px[x, y] = (*(PAL["ink"] if x < 4 or y < 4 else PAL["stone_900"]), 255)
+    for x, y in ((0, 0), (last, 0), (0, last), (last, last)):
+        px[x, y] = (0, 0, 0, 0)  # Cut corners.
+    for x, y in ((size // 3, last), (last, size // 2), (2, 0)):
+        px[x, y] = (*PAL["ink"], 255)  # A few chips in the rim.
+    return img
+
+
+def name_scroll_native():
+    """The rolled-scroll button beside the name, drawn at 1:1 (16x16): a curled parchment sheet with writing, shaded from the
+    top-left, a 1px ink outline. Bone tones only: gold is for the hover."""
+    img = Image.new("RGBA", (16, 16), (0, 0, 0, 0))
+    px = img.load()
+    pale, mid, dark = PAL["bone_300"], PAL["bone_500"], PAL["bone_700"]
+    for x in range(2, 14):  # The curled top roll.
+        px[x, 2] = (*pale, 255)
+        px[x, 3] = (*pale, 255)
+        px[x, 4] = (*mid, 255)
+    for y in range(5, 12):  # The sheet, with a shaded right edge.
+        for x in range(3, 13):
+            px[x, y] = (*(mid if x >= 11 else pale), 255)
+    for y in (6, 8, 10):  # Lines of writing, the last one short.
+        for x in range(4, 10 if y == 10 else 11):
+            px[x, y] = (*dark, 255)
+    for x in range(2, 14):  # The curled bottom roll, shaded underneath.
+        px[x, 12] = (*mid, 255)
+        px[x, 13] = (*dark, 255)
+    for y in (2, 3, 4, 12, 13):  # Roll ends.
+        px[2, y] = (*mid, 255)
+        px[13, y] = (*dark, 255)
+    return add_outline(img, PAL["ink"])
+
+
+def hand_empty():
+    """What an empty hand button shows, at 1:1 in the 32x32 button: a faint sword silhouette (stone_700, no outline, so it
+    sits quietly in the frame), made from the short sword's hand icon so it follows whatever art that has."""
+    src = Image.open(ART_DIR / "items" / "short_sword_hud.png").convert("RGBA")
+    out = Image.new("RGBA", (40, 40), (0, 0, 0, 0))
+    sp, op = src.load(), out.load()
+    ox, oy = (40 - src.width) // 2, (40 - src.height) // 2
+    for y in range(src.height):
+        for x in range(src.width):
+            if sp[x, y][3]:
+                op[x + ox, y + oy] = (*PAL["stone_700"], 255)
+    return out
+
+
+def digit_sheet_native():
+    """The stack-count digits at 1:1: Press Start 2P's own 8x8 digits with a 1 px ink outline, in 10x14 cells (the same 100x14
+    sheet as before, so scripts/stack_count.gd is unchanged), light stone on ink so they read over any icon."""
+    from PIL import ImageFont
+    font = ImageFont.truetype(str(ART_DIR / "fonts" / "PressStart2P-Regular.ttf"), 8)
+    sheet = Image.new("RGBA", (100, 14), (0, 0, 0, 0))
+    for d in range(10):
+        mask = font.getmask(str(d), mode="1")
+        glyph = Image.new("RGBA", (8, 8), (0, 0, 0, 0))
+        gp = glyph.load()
+        mw, mh = mask.size
+        for y in range(min(8, mh)):
+            for x in range(min(8, mw)):
+                if mask[y * mw + x]:
+                    gp[x, y] = (*PAL["stone_100"], 255)
+        cell = add_outline(glyph, PAL["ink"], pad=1)
+        sheet.paste(cell, (10 * d, 14 - cell.height))
+    return sheet
+
+
+def flat_sweep(size):
+    """Flat grey, tinted translucent at runtime and swept as a clock wipe over a slot while it cools down."""
+    return Image.new("RGBA", (size, size), (*PAL["stone_500"], 255))
 
 
 DIGITS = {
@@ -205,12 +290,15 @@ def build(scale=2):
     artio.save_png), so each logical pixel is a scale x scale block, matching the 3D view."""
     return [
         save_png(hand_sword(), "ui/hand_sword.png", scale=scale),
-        save_png(hand_sword_small(), "ui/hand_sword_small.png", scale=scale),
-        save_png(quickslot_frame(True), "ui/quickslot.png", scale=scale),
-        save_png(quickslot_frame(False), "ui/quickslot_empty.png", scale=scale),
-        save_png(quickslot_sweep(), "ui/quickslot_sweep.png", scale=scale),
-        save_png(digit_sheet(), "ui/digits.png", scale=scale),
-        save_png(name_scroll(), "ui/name_scroll.png", scale=scale),
+        # The party panel's art is drawn at 1:1, the portraits' own pixel density (see docs/art_style.md); the rest is still 2x.
+        save_png(hand_empty(), "ui/hand_sword_small.png", scale=1),
+        save_png(bevel_frame(36, True), "ui/quickslot.png", scale=1),
+        save_png(bevel_frame(36, False), "ui/quickslot_empty.png", scale=1),
+        save_png(bevel_frame(40, True), "ui/handslot.png", scale=1),
+        save_png(flat_sweep(36), "ui/quickslot_sweep.png", scale=1),
+        save_png(flat_sweep(40), "ui/handslot_sweep.png", scale=1),
+        save_png(digit_sheet_native(), "ui/digits.png", scale=1),
+        save_png(name_scroll_native(), "ui/name_scroll.png", scale=1),
         save_png(slot_placeholder("short_sword"), "ui/slot_hand.png", scale=1),
         save_png(slot_placeholder("leather_armour"), "ui/slot_armour.png", scale=1),
     ]

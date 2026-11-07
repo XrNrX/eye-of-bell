@@ -25,24 +25,27 @@ const SaveGame := preload("res://scripts/save_game.gd")
 # Sizes are in 640x360 pixels. The art is drawn at 2x (see ui_layout.gd), so each of these is the
 # art's own size: portraits 64x64, hand buttons 32x32.
 const PORTRAIT_SIZE := Vector2(64, 64)
-const HAND_SIZE := Vector2(32, 32)
+const HAND_SIZE := Vector2(40, 40)
 const NAME_HOVER := Color(0.961, 0.812, 0.502)    # Palette torch_300: the name brightens to this on hover.
 const NAME_NORMAL := Color(0.92, 0.89, 0.82)
 const HOVER_BRIGHT := Color(1.22, 1.2, 1.15)      # Portraits, hands and quick slots brighten a little on hover.
 const SCROLL_ICON := preload("res://art/ui/name_scroll.png")
+const HAND_FRAME := preload("res://art/ui/handslot.png")
+const HINT_UP := Color(0.525, 0.651, 0.447)     # Palette slime_300: better (the palette has no pure green; the arrow and number say it too).
+const HINT_DOWN := Color(0.659, 0.404, 0.227)   # Palette rust_300: worse.
+const HINT_FLAT := Color(0.482, 0.478, 0.533)   # Palette stone_300: no change.
 const PANEL_SIZE := Vector2(98, 170)     # Two across, two down fill the party window (ui_layout.gd).
 # Content margins (left, top, right, bottom). Everything in a panel sits on EVEN pixel
 # coordinates, so the 2x2 blocks of the art line up with the frame's (a block starting on an
 # odd pixel would straddle two of the frame's blocks). The inner width of 88 centres the 64-wide
 # portrait, the 56-wide quick slots and the 68-wide hands on even x; every row height and gap is even.
 const MARGIN_LEFT := 6
-const MARGIN_TOP := 4
+const MARGIN_TOP := 3
 const MARGIN_RIGHT := 4
-const MARGIN_BOTTOM := 4
-const ROW_GAP := 2                       # Between the rows inside a panel.
+const MARGIN_BOTTOM := 3
+const ROW_GAP := 1                       # Between the rows inside a panel.
 const HP_HEIGHT := 6
-const MANA_HEIGHT := 4
-const COOL_HEIGHT := 4
+const MANA_HEIGHT := 3
 
 const HAND_READY := Color(1, 1, 1)
 const HAND_COOLING := Color(0.35, 0.33, 0.38)
@@ -50,7 +53,8 @@ const PANEL_BG := Color(0.078, 0.075, 0.106, 0.88)  # Palette stone_900.
 const PANEL_EDGE := Color(0.192, 0.188, 0.235)        # Palette stone_700.
 const HP_FILL := Color(0.486, 0.267, 0.149)            # Palette rust_500.
 const HP_BACK := Color(0.043, 0.039, 0.063)          # Palette ink.
-const COOL_FILL := Color(0.482, 0.478, 0.533)        # Palette stone_300.
+const HAND_SWEEP := preload("res://art/ui/handslot_sweep.png")
+const SWEEP_TINT := Color(1, 1, 1, 0.65)
 const HIT_COLOUR := Color(0.659, 0.404, 0.227)          # Palette rust_300.
 const MISS_COLOUR := Color(0.667, 0.663, 0.706)         # Palette stone_100.
 const MANA_FILL := Color(0.851, 0.604, 0.212)        # Palette torch_500 (the palette has no blue).
@@ -156,8 +160,12 @@ func _process(_delta: float) -> void:
 			hand.modulate = HAND_COOLING if cooling else HAND_READY
 			_show_hand(m, i, hand)
 		var total := CombatRules.hero_cooldown(m.def.speed)
-		p.cool_bar.value = (m.cooldown_left / total) * 100.0 if m.is_alive() else 0.0
+		for hand in p.hands:  # The cooldown is a clock wipe over each hand button, as on the quick slots.
+			var sweep: TextureProgressBar = hand.get_meta("sweep")
+			sweep.visible = m.is_alive() and m.cooldown_left > 0.0
+			sweep.value = (m.cooldown_left / total) * 100.0
 		p.mana_bar.value = m.mana
+		_update_equip_hint(m, p, cursor)
 		p.buff_ring.visible = not m.buffs.is_empty()
 		p.shaken.visible = m.shaken_left > 0.0 and m.is_alive()  # A dimmed holy symbol: too shaken to pray.
 		p.food_mark.visible = m.is_alive() and (m.food_left > 0.0 or m.sick_left > 0.0)
@@ -364,12 +372,71 @@ func _on_portrait(slot: int) -> void:
 	if cursor != null and cursor.is_holding() and cursor.held.def.is_food():
 		_feed_from_cursor(slot, cursor)  # Food on the cursor: feed this hero.
 		return
+	if cursor != null and cursor.is_holding() and party.is_equippable(cursor.held.def):
+		var result: Dictionary = party.equip_from_cursor(slot, cursor)  # Armour or a weapon: put it on this hero.
+		get_tree().call_group("hud", "show_message", result.message)
+		return
 	if pending.is_empty():
 		get_tree().call_group("inventory", "show_screen", slot, true)  # The stat sheet opens alongside the inventory.
 		return
 	var p := pending
 	_end_target_mode()
 	party.cast(p.caster, p.hand, p.spell, slot)
+
+
+## While armour or a weapon is on the cursor, each portrait shows what it would change: an arrow and the number (defence for
+## armour, average damage for a weapon), in torch-free colours, or the portrait greys out if that class can't use it.
+func _update_equip_hint(m, p: Dictionary, cursor: Node) -> void:
+	var hint: Control = p.equip_hint
+	var show: bool = cursor != null and cursor.is_holding() and party.is_equippable(cursor.held.def)
+	hint.visible = show
+	var portrait: Control = p.portrait
+	if not show:
+		if portrait.has_meta("equip_grey"):
+			portrait.remove_meta("equip_grey")
+			portrait.self_modulate = Color.WHITE
+		return
+	var change: Dictionary = party.equip_change(m, cursor.held.def)
+	var blocked: bool = change.blocked or change.dead
+	portrait.set_meta("equip_grey", true)
+	portrait.self_modulate = Color(0.4, 0.4, 0.45) if blocked else Color.WHITE
+	var arrow: TextureRect = hint.get_node("Arrow")
+	var label: Label = hint.get_node("Label")
+	if blocked:
+		arrow.visible = false
+		label.text = "X"
+		label.add_theme_color_override("font_color", HINT_DOWN)
+		return
+	var delta: int = change.delta
+	arrow.visible = delta != 0
+	arrow.texture = _arrow_texture(delta > 0)
+	var colour: Color = HINT_UP if delta > 0 else (HINT_DOWN if delta < 0 else HINT_FLAT)
+	arrow.self_modulate = colour
+	label.text = ("%+d" % delta) if delta != 0 else "="
+	label.add_theme_color_override("font_color", colour)
+	hint.tooltip_text = "%s %s" % [("defence" if change.kind == "defence" else "damage"), ("%+d" % delta)]
+
+
+var _arrow_up: ImageTexture
+var _arrow_down: ImageTexture
+
+
+## A 7x7 solid arrow, white (tinted by the caller), drawn here so the hint needs no art file.
+func _arrow_texture(up: bool) -> ImageTexture:
+	if _arrow_up == null:
+		var image := Image.create(7, 7, false, Image.FORMAT_RGBA8)
+		for row in 7:
+			var half := row if row < 4 else 3
+			for x in range(3 - mini(half, 3), 4 + mini(half, 3)):
+				if row < 4:
+					image.set_pixel(x, row, Color.WHITE)
+		for y in range(4, 7):
+			for x in range(2, 5):
+				image.set_pixel(x, y, Color.WHITE)
+		_arrow_up = ImageTexture.create_from_image(image)
+		image.flip_y()
+		_arrow_down = ImageTexture.create_from_image(image)
+	return _arrow_up if up else _arrow_down
 
 
 ## Close the pop-up and leave target mode, casting nothing.
@@ -856,6 +923,23 @@ func _make_panel(m) -> Dictionary:
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(frame)
 	frame.add_child(portrait)
+	# What equipping the item on the cursor would change (arrow and number), top-right of the portrait; hidden otherwise.
+	var equip_hint := HBoxContainer.new()
+	equip_hint.add_theme_constant_override("separation", 1)
+	equip_hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	equip_hint.visible = false
+	equip_hint.position = Vector2(2, 2)
+	var hint_arrow := TextureRect.new()
+	hint_arrow.name = "Arrow"
+	hint_arrow.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	hint_arrow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint_arrow.stretch_mode = TextureRect.STRETCH_KEEP
+	hint_arrow.custom_minimum_size = Vector2(7, 8)
+	equip_hint.add_child(hint_arrow)
+	var hint_label := _label("", 8)
+	hint_label.name = "Label"
+	equip_hint.add_child(hint_label)
+	frame.add_child(equip_hint)
 	# 32x32 in the middle of the panel's width, however wide the frame turns out to be.
 	portrait.anchor_left = 0.5
 	portrait.anchor_right = 0.5
@@ -933,7 +1017,7 @@ func _make_panel(m) -> Dictionary:
 	name_row.add_child(name_label)
 	var scroll_button := TextureButton.new()
 	scroll_button.texture_normal = SCROLL_ICON
-	scroll_button.custom_minimum_size = Vector2(16, 12)  # (the 16x16 art overhangs by 2 px into the row gaps, so the panel keeps its 170 px)
+	scroll_button.custom_minimum_size = Vector2(16, 10)  # (the 16x16 art overhangs by 2 px into the row gaps, so the panel keeps its 170 px)
 	scroll_button.ignore_texture_size = true
 	scroll_button.stretch_mode = TextureButton.STRETCH_KEEP_CENTERED
 	scroll_button.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -979,11 +1063,8 @@ func _make_panel(m) -> Dictionary:
 		hands_row.add_child(hand)
 		hands.append(hand)
 
-	var cool_bar := _bar(COOL_FILL, Vector2(0, COOL_HEIGHT), 100)
-	col.add_child(cool_bar)
-
 	return {"root": root, "box": box, "name_label": name_label, "portrait": portrait, "buff_ring": buff_ring, "shaken": shaken, "food_mark": food_mark, "hands": hands,
-		"cool_bar": cool_bar, "hp_bar": hp_bar, "mana_bar": mana_bar, "quick": quick_slots}
+		"equip_hint": equip_hint, "hp_bar": hp_bar, "mana_bar": mana_bar, "quick": quick_slots}
 
 
 # --------------------------------------------------------------------------
@@ -1025,6 +1106,24 @@ func _make_hand(m, i: int) -> TextureButton:
 	hand.focus_mode = Control.FOCUS_NONE  # Space/Enter shouldn't trigger it.
 	hand.pressed.connect(_on_hand.bind(m.slot, i))
 	hand.add_child(StackCount.new())  # How many darts are left (child 0; see _show_hand).
+	var frame := TextureRect.new()  # The iron bevel behind the icon, at the portraits' pixel density.
+	frame.texture = HAND_FRAME
+	frame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	frame.show_behind_parent = true
+	frame.set_anchors_preset(Control.PRESET_FULL_RECT)
+	hand.add_child(frame)
+	var sweep := TextureProgressBar.new()
+	sweep.texture_progress = HAND_SWEEP
+	sweep.tint_progress = SWEEP_TINT
+	sweep.fill_mode = TextureProgressBar.FILL_CLOCKWISE
+	sweep.min_value = 0.0
+	sweep.max_value = 100.0
+	sweep.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sweep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	sweep.visible = false
+	hand.add_child(sweep)
+	hand.set_meta("sweep", sweep)
 	_make_hoverable(hand, hand)
 	return hand
 
@@ -1034,6 +1133,9 @@ func _label(text: String, size: int) -> Label:
 	l.text = text
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", Color(0.92, 0.89, 0.82))
+	l.add_theme_color_override("font_shadow_color", HP_BACK)  # A 1 px ink drop shadow: whole pixels only, so every letter stays crisp.
+	l.add_theme_constant_override("shadow_offset_x", 1)
+	l.add_theme_constant_override("shadow_offset_y", 1)
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	return l

@@ -108,6 +108,20 @@ the overall brightness.
   pixel. The UI is still drawn at 2x (each logical pixel is a 2x2 block). Never blur or smooth when
   resizing: **nearest-neighbour only**.
 
+### UI pixel density
+
+**The hero portraits set the standard: one art pixel is one screen pixel (64x64 art shown at 64x64).** Party panel art matches
+that, drawn 1:1 with no 2x blocks: slot frames (`quickslot`, `quickslot_empty` 28x28, `handslot` 32x32, a 2 px worn bevel with
+a 2 px inner shadow, `gen_ui.bevel_frame`), the name scroll (16x16), the stack-count digits (Press Start 2P's own 8x8 digits)
+and item icons in hand and quick slots. **Hand buttons are 40x40 and quick slots 36x36; the icon (`*_hud`) is a native 32x32
+PixelLab image, so it fits the quick slot's inside exactly and sits centred with a 2 px margin in a hand button. The weapons
+(short sword, war hammer, mace, dagger, darts) are 32x32 now; every other item's `*_hud` is still 24x24, drawn centred, until it
+is redone** (generate 32x32, keep the outline, and put the piece in `tools/art/pieces/items32/`; add the name to `NATIVE32` in
+`regrade_items.py`). The hand cooldown is a clock wipe over the button, not a bar. Text is Press Start 2P at its native 8 px with a 1 px ink
+drop shadow, never scaled or smoothed (`antialiasing=0`, `hinting=0`). HP, mana and cooldown bars are flat 1:1 rectangles. Still
+drawn at 2x blocks and so coarser than the portraits: the main screen frame, the movement arrows, the quick-slot cooldown sweep
+and the inventory's frames. New party-panel art should be made 1:1; do not draw it on a half-size grid and enlarge it.
+
 ### Exact target sizes
 
 Generate at the **native size** in the "make it this size" column and let the importer

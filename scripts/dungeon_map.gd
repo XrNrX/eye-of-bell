@@ -118,6 +118,14 @@ const PLATES := [
 	{"cell": Vector2i(18, 21), "target": "gate_s"},
 ]
 
+# Hand-placed scenery (see wall_decor.gd): {"cell": the floor tile, "kind": "arch" | "pillar" | "alcove", "side": 0 north,
+# 1 west, 2 south, 3 east (for a pillar or alcove: which wall of the tile it is on), "axis": "x" | "z" (arch only; the
+# direction the corridor runs, found from the walls if left out)}. Nothing here blocks movement. Long corridors also
+# get arches by rule (data/wall_decor.tres), so list only the spots you want to be sure of.
+const STRUCTURES := [
+	{"cell": Vector2i(8, 13), "kind": "alcove", "side": 0},  # Beside the long first corridor: the first thing a player sees.
+]
+
 # Wall levers: "cell" is the floor tile you stand on, "side" the wall it hangs on
 # (0 = north, 1 = west, 2 = south, 3 = east). Face that wall and press F to toggle.
 const LEVERS := [

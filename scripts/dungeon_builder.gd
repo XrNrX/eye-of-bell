@@ -14,6 +14,7 @@ const ItemStack := preload("res://scripts/item_stack.gd")
 const CURSE_GLOW := 2.0  # Emission strength of the cracked wall's green crack.
 const WALL_TEXTURE := "res://art/tiles/wall.png"
 ## Plain walls pick one of these by their cell, so a corridor is not one repeated pattern.
+const WallDecor := preload("res://scripts/wall_decor.gd")  # The ancient stone look (data/wall_decor.tres).
 const WALL_VARIANTS := ["res://art/tiles/wall.png", "res://art/tiles/wall_2.png", "res://art/tiles/wall_3.png"]
 const WALL_CRACKED_TEXTURE := "res://art/tiles/wall_cracked.png"
 const FLOOR_TEXTURE := "res://art/tiles/floor.png"
@@ -79,6 +80,7 @@ func _ready() -> void:
 
 	var s := DungeonMap.TILE_SIZE
 	var h := DungeonMap.WALL_HEIGHT
+	var decor := WallDecor.new()
 
 	# Meshes and materials are shared by every tile.
 	var wall_meshes: Array[Mesh] = []
@@ -124,6 +126,8 @@ func _ready() -> void:
 			if DungeonMap.is_wall(cell):
 				if DungeonMap.is_destructible(cell):  # The crack is the tell.
 					walls[cell] = _add_mesh(cracked_mesh, pos + Vector3(0, h / 2.0, 0))
+				elif decor.active():
+					decor.add_faces(self, cell)  # Stone, grime and decals on every face that can be seen.
 				else:
 					_add_mesh(wall_meshes[_wall_variant(cell)], pos + Vector3(0, h / 2.0, 0))
 				continue
@@ -135,6 +139,9 @@ func _ready() -> void:
 				var mesh: Mesh = portcullis_mesh if DungeonMap.is_portcullis(cell) else (locked_mesh if DungeonMap.is_locked(cell) else door_mesh)
 				_add_door(mesh, cell, pos + Vector3(0, h / 2.0, 0))
 
+	if decor.active():
+		decor.add_structures(self)
+		decor.start_pulse(self)
 	for torch in DungeonMap.TORCHES:
 		_add_torch(Vector2i(torch.x, torch.y), torch.z)
 	if populate:

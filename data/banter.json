@@ -33,6 +33,16 @@
 			{"speaker": "Mage", "text": "IT'S BEHIND US! I SAID THIS!"}
 		]
 	},
+	"equip": {
+		"chance": 0.6,
+		"cooldown": 8,
+		"lines": [
+			{"speaker": "Fighter", "about": "self", "text": "Mine."},
+			{"speaker": "Thief", "about": "self", "text": "Finders keepers."},
+			{"speaker": "Cleric", "about": "self", "text": "Humble, but fitting."},
+			{"speaker": "Mage", "about": "self", "holding": "armour", "text": "I can't feel my legs."}
+		]
+	},
 	"eat": {
 		"chance": 0.5,
 		"cooldown": 30,

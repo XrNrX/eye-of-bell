@@ -37,6 +37,8 @@ REMAPS = {
 }
 # The slimes are left out: their current PixelLab art has its own outline (a second ring would double it).
 MONSTERS = {"skeleton": 11, "skeleton_guard": 11}
+# Hand and quick-slot icons made natively at 32x32 (tools/art/pieces/items32/): already outlined and steel-grey, so left alone.
+NATIVE32 = {"short_sword", "war_hammer", "mace", "dagger", "darts"}
 
 
 def source(rel):
@@ -70,6 +72,8 @@ def build():
             continue
         rel = path.relative_to(ART).as_posix()
         name = path.stem.removesuffix("_floor").removesuffix("_hud")
+        if path.stem.endswith("_hud") and name in NATIVE32:
+            continue
         img = source(rel)
         if name in REMAPS:
             remap(img, REMAPS[name])

@@ -112,7 +112,13 @@ func _click_item(shift := false) -> void:
 ## Shift+click: the party takes the item without it passing through the cursor. What
 ## doesn't fit anywhere stays on the floor.
 func _stow(front: Vector2i, stack: RefCounted) -> void:
-	var message: String = party.stow(stack)
+	var worn: String = party.equip_best(stack)  # Armour goes on whoever gains the most defence...
+	if worn != "":
+		if stack.count <= 0:
+			dungeon.take_item(front)
+		_say(worn)
+		return
+	var message: String = party.stow(stack)  # ...otherwise into a backpack, as any item.
 	if message != "":
 		_cue("pickup")
 	if stack.count <= 0:

@@ -17,6 +17,7 @@ attack_bonus = 0
 damage_min = 0
 damage_max = 0
 defence_bonus = 2
+cant_use = PackedStringArray("Mage")
 heal_amount = 0
 spell_damage_min = 0
 spell_damage_max = 0

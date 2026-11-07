@@ -672,6 +672,112 @@ func hand_refusal(stack: RefCounted) -> String:
 	return ""
 
 
+# --------------------------------------------------------------------------
+# Equipping from the cursor or the floor
+# --------------------------------------------------------------------------
+
+## Can this hero wear or wield the item (ItemDef.cant_use lists the classes that can't)?
+func can_equip(m: Member, def: Resource) -> bool:
+	return not (m.def.display_name in def.cant_use)
+
+
+## Armour and melee-or-thrown weapons can be equipped straight from the cursor (focus items, keys and the rest cannot).
+func is_equippable(def: Resource) -> bool:
+	return def.type == ItemDef.Type.ARMOUR or def.type == ItemDef.Type.WEAPON
+
+
+## What equipping `def` would change for this hero: {"kind": "defence" or "damage", "delta": int, "blocked": bool, "dead": bool}.
+## Armour is judged by defence, a weapon by its average damage against what the main hand does now.
+func equip_change(m: Member, def: Resource) -> Dictionary:
+	var out := {"kind": "defence", "delta": 0, "blocked": not can_equip(m, def), "dead": not m.is_alive()}
+	if def.type == ItemDef.Type.ARMOUR:
+		out.delta = def.defence_bonus - (m.armour.def.defence_bonus if m.armour != null else 0)
+		return out
+	out.kind = "damage"
+	var now := effective_stats(m, 0, false)
+	var new_avg: float = (def.damage_min + def.damage_max) / 2.0 if def.damage_max > 0 else (def.throw_damage_min + def.throw_damage_max) / 2.0
+	out.delta = roundi(new_avg - (now.damage_min + now.damage_max) / 2.0)
+	return out
+
+
+## The class message when a hero can't use the item, or "".
+func equip_refusal(m: Member, def: Resource) -> String:
+	if not m.is_alive():
+		return "%s is dead." % m.def.display_name
+	if not can_equip(m, def):
+		return "The %s can't %s that." % [m.def.display_name.to_lower(), "wear" if def.type == ItemDef.Type.ARMOUR else "use"]
+	return ""
+
+
+## An armour piece or weapon on the cursor, clicked onto a hero's portrait: armour goes into the armour slot, a weapon into the
+## main hand. If the slot is taken the old piece goes onto the cursor. Returns {"done": bool, "message": String}.
+func equip_from_cursor(slot: int, cursor: Node) -> Dictionary:
+	var m := member(slot)
+	var held: RefCounted = cursor.held
+	var why := equip_refusal(m, held.def)
+	if why != "":
+		return {"done": false, "message": why}
+	var name: String = m.def.display_name
+	var item: String = held.def.display_name.to_lower()
+	var old: RefCounted
+	if held.def.type == ItemDef.Type.ARMOUR:
+		old = m.armour
+		m.armour = cursor.release()
+	else:
+		var refused := hand_refusal(held)
+		if refused != "":
+			return {"done": false, "message": refused}
+		old = m.hands[0]
+		var stay = m.hands[0]
+		if stay != null and stay.can_stack_with(held) and stay.room() > 0 and held.def.can_throw():
+			stay.merge_from(held)  # Darts onto darts: top up the stack instead of swapping.
+			if held.count <= 0:
+				cursor.release()
+			else:
+				cursor.refresh()
+			_cue("pickup")
+			return {"done": true, "message": "%s takes up the %s." % [name, item]}
+		m.hands[0] = cursor.release()
+	var text := "%s straps on the %s." % [name, item] if held.def.type == ItemDef.Type.ARMOUR else "%s takes up the %s." % [name, item]
+	if old != null:
+		cursor.hold(old)
+		text += " The %s goes onto the cursor." % old.def.display_name.to_lower()
+	_cue("pickup")
+	hp_changed.emit(slot)
+	_banter("equip", m, held.def)
+	return {"done": true, "message": text}
+
+
+## Armour lying on the floor, shift-clicked: it goes on the hero who gains the most defence (never one who can't wear it, or
+## whom it wouldn't help). The piece they were wearing goes into a backpack. Returns the message, or "" if nobody benefits
+## (the caller then stows it in a backpack as usual).
+func equip_best(stack: RefCounted) -> String:
+	if stack.def.type != ItemDef.Type.ARMOUR:
+		return ""
+	var best: Member = null
+	var best_gain := 0
+	for m in members:
+		if not m.is_alive() or not can_equip(m, stack.def):
+			continue
+		var gain: int = equip_change(m, stack.def).delta
+		if gain > best_gain:
+			best_gain = gain
+			best = m
+	if best == null:
+		return ""
+	var old: RefCounted = best.armour
+	if old != null:
+		var leftover := ItemStack.of(old.def, old.count)
+		if stow_in_backpack(leftover) == "" or leftover.count > 0:
+			return ""  # Nowhere to put what they wear now: leave it alone.
+	best.armour = ItemStack.of(stack.def, 1)
+	stack.count -= 1
+	hp_changed.emit(best.slot)
+	_cue("pickup")
+	_banter("equip", best, stack.def)
+	return "%s straps on the %s." % [best.def.display_name, stack.def.display_name.to_lower()]
+
+
 ## Click a hand while holding an item on the cursor: same rules as a quick slot
 ## (place, top up a matching stack, or swap), for a hand. Returns "" or the reason.
 func place_in_hand(slot: int, hand: int, cursor: Node) -> String:
