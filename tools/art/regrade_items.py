@@ -65,6 +65,34 @@ def outlined(img):
     return add_outline(img, PAL["ink"])
 
 
+# Floor sprites of the items that were hard to see on a dark floor (under about 2.3:1 at two tiles): their dark pixels are lifted
+# one step and the lit top-left edge gets a pale rim just inside the outline.
+LIFT_FLOOR = {"mace", "key", "darts", "spellbook", "dried_meat", "withered_apple", "holy_symbol", "war_hammer", "leather_armour"}
+LIFT = {"stone_800": "stone_700", "stone_700": "stone_500", "stone_500": "stone_300", "wood_700": "wood_500", "wood_500": "leather_400",
+        "rust_700": "rust_500", "rust_500": "rust_300", "moss_700": "moss_500", "soil_900": "wood_700", "bruise_700": "bruise_500",
+        "blood_700": "blood_500", "curse_700": "curse_500"}
+
+
+def lift_and_rim(img):
+    px = img.load()
+    w, h = img.size
+    table = {PAL[a]: PAL[b] for a, b in LIFT.items()}
+    ink = PAL["ink"]
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = px[x, y]
+            if a and (r, g, b) in table:
+                px[x, y] = (*table[(r, g, b)], a)
+    rim = PAL["bone_500"]
+    for y in range(1, h):
+        for x in range(1, w):
+            if px[x, y][3] and px[x, y][:3] != ink:
+                up, left = px[x, y - 1], px[x - 1, y]
+                if (up[3] and up[:3] == ink) or (left[3] and left[:3] == ink):
+                    px[x, y] = (*rim, 255)
+    return img
+
+
 def build():
     written = []
     for path in sorted((ART / "items").glob("*.png")) + [ART / "sprites" / "key.png"]:
@@ -77,7 +105,10 @@ def build():
         img = source(rel)
         if name in REMAPS:
             remap(img, REMAPS[name])
-        outlined(img).save(path)
+        img = outlined(img)
+        if name in LIFT_FLOOR and (path.stem.endswith("_floor") or path.name == "key.png" and path.parent.name == "sprites"):
+            img = lift_and_rim(img)
+        img.save(path)
         written.append(rel)
     for name, count in MONSTERS.items():
         for path in sorted((ART / "monsters" / name).glob("*.png")):

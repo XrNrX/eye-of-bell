@@ -499,7 +499,7 @@ func _add_torch(cell: Vector2i, side: int) -> void:
 	var light := OmniLight3D.new()
 	light.set_script(TorchLight)
 	light.base_energy = TORCH_ENERGY
-	light.light_color = Color(1.0, 0.72, 0.48)
+	light.light_color = Color(1.0, 0.77, 0.56)
 	light.omni_range = 5.0
 	light.omni_attenuation = 1.5
 	light.position = wall_pos - dir * 0.4 + Vector3(0, 0.3, 0)

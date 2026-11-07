@@ -21,6 +21,46 @@ VARIANTS = 4
 BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]]
 
 
+ACCENTS = ("blood", "bruise", "curse", "moss", "slime")
+
+
+def lum(c):
+    return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+
+
+def match_tone(im, base, keep_accents=0.04):
+    """Give `im` the colour distribution of `base` (stone_1's cold grey): rank every pixel by brightness and hand out the base's
+    colours in the same order, so the block structure stays and the tone, mortar and tint match. A few accent pixels (dried
+    blood, moss) stay as they were, at most `keep_accents` of the tile, so no variant is flat grey."""
+    px = im.load()
+    w, h = im.size
+    import json
+    names = {tuple(int(c["hex"][i:i + 2], 16) for i in (1, 3, 5)): c["name"]
+             for c in json.load(open(Path(__file__).parent / "palette.json"))["colors"]}
+    cells = [(lum(px[x, y][:3]), x, y) for y in range(h) for x in range(w)]
+    accent = []
+    plain = []
+    for item in cells:
+        _, x, y = item
+        name = names.get(px[x, y][:3], "")
+        (accent if name.startswith(ACCENTS) else plain).append(item)
+    # Keep only the strongest-contrast accents, up to the cap; the rest turn grey with the stone.
+    accent.sort(key=lambda t: t[0])
+    cap = int(keep_accents * w * h)
+    kept, melt = accent[:cap], accent[cap:]
+    plain += melt
+    plain.sort()
+    bp = base.load()
+    ramp = sorted((lum(bp[x, y][:3]), bp[x, y][:3]) for y in range(h) for x in range(w))
+    out = Image.new("RGBA", im.size, (0, 0, 0, 255))
+    op = out.load()
+    for i, (_, x, y) in enumerate(plain):
+        op[x, y] = (*ramp[int(i * (len(ramp) - 1) / max(1, len(plain) - 1))][1], 255)
+    for _, x, y in kept:
+        op[x, y] = px[x, y]
+    return out
+
+
 def stone_variants():
     src = PIECES / "walls"
     base = Image.open(src / "stone_1.png").convert("RGBA")
@@ -29,7 +69,7 @@ def stone_variants():
     for n in range(2, VARIANTS + 1):
         piece = src / f"stone_{n}.png"
         if piece.exists():
-            out.append(Image.open(piece).convert("RGBA"))
+            out.append(match_tone(Image.open(piece).convert("RGBA"), base))  # Same cold grey as stone 1.
         else:  # A stand-in: the first stone, turned and shifted.
             im = base.transpose(Image.FLIP_LEFT_RIGHT) if n % 2 == 0 else base
             out.append(shift(im, 40 * n, 24 * n))
