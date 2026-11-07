@@ -359,6 +359,11 @@ func _on_spell_chosen(spell: Resource) -> void:
 
 ## A portrait was clicked: in target mode it picks the spell's target, otherwise it
 ## opens that hero's inventory.
+## Shift held (or `force_inventory`, for tests): a portrait click opens the inventory even with something on the cursor, instead of
+## equipping, feeding or reading it. Holding Shift is the way into the inventory while carrying armour, a weapon or food.
+var force_inventory := false
+
+
 func _on_portrait(slot: int) -> void:
 	if drag_just_ended:
 		return  # This release ended a drag; it isn't a click.
@@ -366,6 +371,10 @@ func _on_portrait(slot: int) -> void:
 		_revive_from_quick(slot)
 		return
 	var cursor = get_tree().get_first_node_in_group("cursor")
+	var carrying: bool = cursor != null and cursor.is_holding()
+	if carrying and (force_inventory or Input.is_key_pressed(KEY_SHIFT)) and pending.is_empty():
+		get_tree().call_group("inventory", "show_screen", slot, true)
+		return
 	if cursor != null and cursor.is_holding() and cursor.held.def.revive_percent > 0:
 		_revive_from_cursor(slot, cursor)  # A Scroll of Resurrection on the cursor: read it on this portrait.
 		return
@@ -910,7 +919,7 @@ func _make_panel(m) -> Dictionary:
 	portrait.stretch_mode = TextureButton.STRETCH_SCALE
 	portrait.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	portrait.focus_mode = Control.FOCUS_NONE
-	portrait.tooltip_text = "Inventory and stats"
+	portrait.tooltip_text = "Inventory and stats (holding armour, a weapon or food: click to use it, Shift+click for the inventory)"
 	_make_hoverable(portrait, portrait)
 	portrait.pressed.connect(_on_portrait.bind(pos))
 	portrait.gui_input.connect(func(e):
