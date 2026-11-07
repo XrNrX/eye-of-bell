@@ -102,6 +102,7 @@ static func serialize(tree: SceneTree) -> Dictionary:
 			buffs.append({"spell": b.spell.resource_path, "left": b.left})
 		heroes.append({
 			"hero": m.hero_index, "hp": m.hp, "mana": m.mana, "shaken": m.shaken_left,
+			"food": {"left": m.food_left, "rate": m.food_rate, "sick_left": m.sick_left, "sick_rate": m.sick_rate},
 			"hands": m.hands.map(stack_to_data), "armour": stack_to_data(m.armour),
 			"backpack": m.backpack.map(stack_to_data), "quick": m.quick.map(stack_to_data),
 			"buffs": buffs,
@@ -201,6 +202,14 @@ static func apply(tree: SceneTree, data: Dictionary) -> String:
 		m.hp = clampi(int(h.hp), 0, m.def.max_hp)
 		m.mana = clampf(float(h.mana), 0.0, float(m.def.max_mana))
 		m.shaken_left = maxf(0.0, float(h.get("shaken", 0.0))) if m.hp > 0 else 0.0  # (An older save has none.)
+		var food: Dictionary = h.get("food", {})  # (So does an older save: no food or sickness running.)
+		var alive: bool = m.hp > 0
+		m.food_left = maxf(0.0, float(food.get("left", 0.0))) if alive else 0.0
+		m.food_rate = maxf(0.0, float(food.get("rate", 0.0)))
+		m.sick_left = maxf(0.0, float(food.get("sick_left", 0.0))) if alive else 0.0
+		m.sick_rate = maxf(0.0, float(food.get("sick_rate", 0.0)))
+		m.food_acc = 0.0
+		m.sick_acc = 0.0
 		m.cooldown_left = 0.0
 		for i in m.hands.size():
 			m.hands[i] = data_to_stack(h.hands[i]) if i < h.hands.size() else null

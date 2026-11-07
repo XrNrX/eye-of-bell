@@ -209,6 +209,31 @@ def holy_symbol():
     ]
 
 
+def stale_bread():
+    """Placeholder (replaced by PixelLab art): a dry loaf."""
+    return [(union(rect(5, 10, 19, 18), disc(12, 10, 7)), WOOD)]
+
+
+def dried_meat():
+    """Placeholder (replaced by PixelLab art): a strip of jerky."""
+    return [(seg((7, 17), (17, 7), 3.6), LEATHER)]
+
+
+def hard_cheese():
+    """Placeholder (replaced by PixelLab art): a wedge."""
+    return [(rect(5, 9, 19, 17), GOLD)]
+
+
+def withered_apple():
+    """Placeholder (replaced by PixelLab art): a shrivelled apple."""
+    return [(disc(12, 13, 6.5), LIQUID)]
+
+
+def mouldy_bread():
+    """Placeholder (replaced by PixelLab art): bread with a green tinge."""
+    return [(union(rect(5, 10, 19, 18), disc(12, 10, 7)), PAPER_DARK)]
+
+
 ITEMS = {
     "short_sword": short_sword,
     "mace": mace,
@@ -221,6 +246,11 @@ ITEMS = {
     "darts": darts,
     "spellbook": spellbook,
     "holy_symbol": holy_symbol,
+    "stale_bread": stale_bread,
+    "dried_meat": dried_meat,
+    "hard_cheese": hard_cheese,
+    "withered_apple": withered_apple,
+    "mouldy_bread": mouldy_bread,
 }
 
 

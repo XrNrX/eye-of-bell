@@ -41,6 +41,8 @@ signal hero_hit(slot: int, damage: int)  # damage 0 means the monster missed.
 signal holy_cast(slot: int, hand: int, spell: Resource)  # A Heal or Bless was cast from a holy symbol in this hand.
 signal revived(slot: int, shaken: bool)  # A fallen hero was raised (shaken: a divine caster, who returns rattled).
 signal revive_requested(slot: int, index: int)  # A Scroll of Resurrection was used from this quick slot: the HUD asks "Raise whom?".
+signal food_tick(slot: int, amount: int)  # Food healed this much just now (the HUD shows a warm tick on the HP bar).
+signal sick_tick(slot: int, amount: int)  # Sickness took this much just now.
 signal wiped
 
 ## Hero definitions (CharacterDef .tres), in slot order.
@@ -78,6 +80,13 @@ class Member:
 	# each {"spell": SpellDef, "left": seconds}.
 	var mana := 0.0
 	var buffs: Array = []
+	# Food: HP a second while eating (replaced, never stacked, by eating again) and sickness from bad food.
+	var food_left := 0.0
+	var food_rate := 0.0
+	var food_acc := 0.0
+	var sick_left := 0.0
+	var sick_rate := 0.0
+	var sick_acc := 0.0
 	var shaken_left := 0.0  # A resurrected Cleric: seconds until their faith steadies (no mana, no prayer until then).
 
 	func is_alive() -> bool:
@@ -131,6 +140,7 @@ func _process(delta: float) -> void:
 		m.cooldown_left = maxf(0.0, m.cooldown_left - delta)
 		for i in QUICK_SLOTS:
 			m.quick_cooldown[i] = maxf(0.0, m.quick_cooldown[i] - delta)
+		_tick_food(m, delta)
 		if not m.is_alive():
 			m.shaken_left = 0.0  # Dying ends it.
 		elif m.shaken_left > 0.0:
@@ -143,6 +153,65 @@ func _process(delta: float) -> void:
 		for b in m.buffs:
 			b.left -= delta
 		m.buffs = m.buffs.filter(func(b): return b.left > 0.0)
+
+
+## Food heals and sickness hurts a little at a time: the rate is HP a second, the whole points are applied as they
+## add up (so a 10 HP heal over 10 s is about 1 HP a second). Sickness never takes the last HP. Dying ends both.
+func _tick_food(m: Member, delta: float) -> void:
+	if not m.is_alive():
+		m.food_left = 0.0
+		m.sick_left = 0.0
+		return
+	if m.food_left > 0.0:
+		m.food_acc += m.food_rate * minf(delta, m.food_left)
+		m.food_left = maxf(0.0, m.food_left - delta)
+		var whole := int(m.food_acc)
+		if whole > 0:
+			m.food_acc -= whole
+			var healed := mini(whole, m.def.max_hp - m.hp)
+			if healed > 0:
+				m.hp += healed
+				hp_changed.emit(m.slot)
+				food_tick.emit(m.slot, healed)
+		if m.food_left <= 0.0:
+			m.food_acc = 0.0
+	if m.sick_left > 0.0:
+		m.sick_acc += m.sick_rate * minf(delta, m.sick_left)
+		m.sick_left = maxf(0.0, m.sick_left - delta)
+		var lost := mini(int(m.sick_acc), m.hp - 1)
+		if int(m.sick_acc) > 0:
+			m.sick_acc -= int(m.sick_acc)
+		if lost > 0:
+			m.hp -= lost
+			hp_changed.emit(m.slot)
+			sick_tick.emit(m.slot, lost)
+		if m.sick_left <= 0.0:
+			m.sick_acc = 0.0
+			_say("%s feels better." % m.def.display_name)
+
+
+## Eat a food (ItemDef.is_food): it heals over time, replacing any food heal already running. Refused for the dead
+## and at full health ("is not hungry"). Bad food may make the eater sick. Returns {used, message, close}; the caller
+## spends one from the stack when `used`.
+func eat(slot: int, def: Resource) -> Dictionary:
+	var m := member(slot)
+	if m == null or def == null or not def.is_food():
+		return {"used": false, "message": "", "close": false}
+	if not m.is_alive():
+		return {"used": false, "message": "%s is dead." % m.def.display_name, "close": false}
+	if m.hp >= m.def.max_hp:
+		return {"used": false, "message": "%s is not hungry." % m.def.display_name, "close": false}
+	m.food_left = def.food_seconds
+	m.food_rate = float(def.food_heal) / def.food_seconds
+	m.food_acc = 0.0
+	var text := "%s eats the %s." % [m.def.display_name, def.display_name.to_lower()]
+	if def.food_sick_chance > 0.0 and def.food_sick_seconds > 0.0 and CombatRules.rng().randf() < def.food_sick_chance:
+		m.sick_left = def.food_sick_seconds
+		m.sick_rate = float(def.food_sick_damage) / def.food_sick_seconds
+		m.sick_acc = 0.0
+		text += " It tastes foul: %s feels sick." % m.def.display_name
+	_cue("potion")
+	return {"used": true, "message": text, "close": false}
 
 
 ## Swap two positions (e.g. drag one portrait onto another). Whole characters move:
@@ -754,6 +823,8 @@ func use_item(slot: int, def: Resource) -> Dictionary:
 				else "Click a fallen hero's portrait with it."}
 	if not m.is_alive():
 		return {"used": false, "message": "%s is dead." % m.def.display_name, "close": false}
+	if def.is_food():
+		return eat(slot, def)
 	if def.heal_amount > 0:
 		return _drink(m, def)
 	if def.spell_damage_max > 0:
@@ -785,6 +856,8 @@ func revive(slot: int, def: Resource) -> Dictionary:
 	m.cooldown_left = 0.0
 	m.quick_cooldown = [0.0, 0.0]
 	m.shaken_left = def.shaken_seconds if divine else 0.0
+	m.food_left = 0.0
+	m.sick_left = 0.0
 	hp_changed.emit(m.slot)
 	_cue("bless")
 	get_tree().call_group("spell_effects", "holy_pulse", 1.6 if divine else 1.0)

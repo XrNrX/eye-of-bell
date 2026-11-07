@@ -103,6 +103,8 @@ func _ready() -> void:
 	add_to_group("party_hud")
 	party.holy_cast.connect(_on_holy_cast)
 	party.revive_requested.connect(_on_revive_requested)
+	party.food_tick.connect(_on_food_tick.bind(false))
+	party.sick_tick.connect(_on_food_tick.bind(true))
 	party.revived.connect(_on_revived)
 
 	_first_time_hint()
@@ -157,6 +159,8 @@ func _process(_delta: float) -> void:
 		p.mana_bar.value = m.mana
 		p.buff_ring.visible = not m.buffs.is_empty()
 		p.shaken.visible = m.shaken_left > 0.0 and m.is_alive()  # A dimmed holy symbol: too shaken to pray.
+		p.food_mark.visible = m.is_alive() and (m.food_left > 0.0 or m.sick_left > 0.0)
+		p.food_mark.color = SICK_TICK if m.sick_left > 0.0 else FOOD_TICK
 	if not revive_pending.is_empty():  # The scroll left its quick slot (or its hero died): drop target mode.
 		var src = party.member(revive_pending.slot)
 		var held = src.quick[revive_pending.index] if src != null else null
@@ -356,6 +360,9 @@ func _on_portrait(slot: int) -> void:
 	if cursor != null and cursor.is_holding() and cursor.held.def.revive_percent > 0:
 		_revive_from_cursor(slot, cursor)  # A Scroll of Resurrection on the cursor: read it on this portrait.
 		return
+	if cursor != null and cursor.is_holding() and cursor.held.def.is_food():
+		_feed_from_cursor(slot, cursor)  # Food on the cursor: feed this hero.
+		return
 	if pending.is_empty():
 		get_tree().call_group("inventory", "show_screen", slot, true)  # The stat sheet opens alongside the inventory.
 		return
@@ -400,6 +407,53 @@ func _input(event: InputEvent) -> void:
 # --------------------------------------------------------------------------
 # Scroll of Resurrection
 # --------------------------------------------------------------------------
+
+# --------------------------------------------------------------------------
+# Food
+# --------------------------------------------------------------------------
+
+const FOOD_TICK := Color(0.961, 0.812, 0.502)   # Palette torch_300: a warm tick, never the curse green.
+const SICK_TICK := Color(0.498, 0.722, 0.541)   # Palette curse_500: sickness is the curse.
+
+
+## Food on the cursor, clicked onto a hero's portrait: they eat it (one from the stack).
+func _feed_from_cursor(target: int, cursor: Node) -> void:
+	var result: Dictionary = party.eat(target, cursor.held.def)
+	if result.message != "":
+		get_tree().call_group("hud", "show_message", result.message)
+	if not result.used:
+		return  # It stays on the cursor.
+	cursor.held.count -= 1
+	if cursor.held.count <= 0:
+		cursor.release()
+	else:
+		cursor.refresh()
+
+
+## Each point food heals (or sickness takes): the hero's HP bar flares a warm gold (a sickly green for sickness) and a small
+## "+1" (or "-1") rises off it. While food works a thin warm line runs along the bar's foot (see _process).
+func _on_food_tick(slot: int, amount: int, sick: bool) -> void:
+	if not panels.has(slot):
+		return
+	var bar: ProgressBar = panels[slot].hp_bar
+	var tint: Color = SICK_TICK if sick else FOOD_TICK
+	bar.modulate = Color(1.0 + tint.r * 0.6, 1.0 + tint.g * 0.6, 1.0 + tint.b * 0.6)
+	create_tween().tween_property(bar, "modulate", Color.WHITE, 0.35)
+	var label := Label.new()
+	label.text = "%s%d" % ["-" if sick else "+", amount]
+	label.add_theme_font_size_override("font_size", 8)
+	label.add_theme_color_override("font_color", tint)
+	label.add_theme_color_override("font_outline_color", HP_BACK)
+	label.add_theme_constant_override("outline_size", 2)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(label)
+	var r: Rect2 = bar.get_global_rect()
+	label.position = Vector2(r.position.x + r.size.x - 18.0, r.position.y - 9.0)
+	var tween := create_tween().set_parallel()
+	tween.tween_property(label, "position:y", label.position.y - 8.0, 0.7)
+	tween.tween_property(label, "modulate:a", 0.0, 0.7).set_delay(0.25)
+	tween.chain().tween_callback(label.queue_free)
+
 
 ## From a quick slot: wait for the portrait click that says who to raise.
 func _on_revive_requested(slot: int, index: int) -> void:
@@ -873,6 +927,16 @@ func _make_panel(m) -> Dictionary:
 
 	var hp_bar := _bar(HP_FILL, Vector2(0, HP_HEIGHT), m.def.max_hp)
 	col.add_child(hp_bar)
+	# A thin line along the foot of the HP bar while food is working (warm) or sickness is (green): it overlays the
+	# bar, so the panel does not grow.
+	var food_mark := ColorRect.new()
+	food_mark.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	food_mark.anchor_right = 1.0
+	food_mark.anchor_top = 1.0
+	food_mark.anchor_bottom = 1.0
+	food_mark.offset_top = -2.0
+	food_mark.visible = false
+	hp_bar.add_child(food_mark)
 
 	# Mana, for casters. Every panel keeps the row (invisible without mana) so the
 	# hand buttons line up across a row of panels.
@@ -895,7 +959,7 @@ func _make_panel(m) -> Dictionary:
 	var cool_bar := _bar(COOL_FILL, Vector2(0, COOL_HEIGHT), 100)
 	col.add_child(cool_bar)
 
-	return {"root": root, "box": box, "name_label": name_label, "portrait": portrait, "buff_ring": buff_ring, "shaken": shaken, "hands": hands,
+	return {"root": root, "box": box, "name_label": name_label, "portrait": portrait, "buff_ring": buff_ring, "shaken": shaken, "food_mark": food_mark, "hands": hands,
 		"cool_bar": cool_bar, "hp_bar": hp_bar, "mana_bar": mana_bar, "quick": quick_slots}
 
 

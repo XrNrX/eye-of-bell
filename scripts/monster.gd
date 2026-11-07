@@ -7,6 +7,8 @@ extends Node3D
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const FloatingText := preload("res://scripts/floating_text.gd")
+const CombatRules := preload("res://scripts/combat_rules.gd")
+const ItemStack := preload("res://scripts/item_stack.gd")
 const FeelConfigScript := preload("res://scripts/combat_feel_config.gd")
 
 const AI_TICK := 0.8      # Seconds between actions at speed 1.0.
@@ -270,6 +272,7 @@ func take_hit(result: Dictionary) -> void:
 ## Free the tile at once (so the player can walk in), then sink into the floor.
 func _die() -> void:
 	dying = true
+	_drop_loot()
 	_end_feel()  # Back to normal first: the sink below tweens the sprite's scale and height.
 	_release_tiles()
 	get_tree().call_group("dungeon", "refresh")
@@ -278,6 +281,18 @@ func _die() -> void:
 	tween.tween_property(sprite, "scale:y", 0.0, 0.3).set_ease(Tween.EASE_IN)
 	tween.parallel().tween_property(sprite, "position:y", 0.0, 0.3).set_ease(Tween.EASE_IN)
 	tween.tween_callback(queue_free)
+
+
+## Maybe leave something on this tile (MonsterDef.drop_item, drop_chance), rolled with the combat dice so tests
+## can seed it. The dungeon puts it on the floor (a pile if something is already there).
+func _drop_loot() -> void:
+	if def.drop_item == null or def.drop_chance <= 0.0 or CombatRules.rng().randf() >= def.drop_chance:
+		return
+	var dungeon := get_tree().get_first_node_in_group("dungeon")
+	if dungeon == null:
+		return
+	dungeon.place_item(cell, ItemStack.wrap(def.drop_item))
+	get_tree().call_group("hud", "show_message", "The %s leaves %s." % [def.display_name.to_lower(), def.drop_item.display_name.to_lower()])
 
 
 ## Remove every tile this monster holds (it can hold two while mid-step).

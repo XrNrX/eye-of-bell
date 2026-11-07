@@ -1,6 +1,7 @@
-[gd_resource type="Resource" load_steps=3 format=3]
+[gd_resource type="Resource" load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/monster_def.gd" id="1_def"]
+[ext_resource type="Resource" path="res://data/items/dried_meat.tres" id="95_drop"]
 [ext_resource type="Texture2D" path="res://art/monsters/skeleton_guard/skeleton_guard_sheet.png" id="2_sheet"]
 
 [resource]
@@ -22,3 +23,5 @@ walk_frames = PackedInt32Array(7, 8, 9, 10)
 hurt_frames = PackedInt32Array(5, 6)
 idle_fps = 2.0
 pixel_size = 0.014
+drop_item = ExtResource("95_drop")
+drop_chance = 0.3

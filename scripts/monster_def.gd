@@ -14,6 +14,11 @@ extends Resource
 ## How many tiles away (steps along the grid) it notices the player.
 @export var sight_range := 4
 
+@export_group("Drops")
+## What it leaves on its tile when it dies, and how often (0..1): a skeleton guard may leave its rations.
+@export var drop_item: Resource
+@export var drop_chance := 0.0
+
 @export_group("Sprite")
 ## Sprite sheet: one row of equally sized frames, side by side. Nothing in the code assumes how
 ## many: the frame count is `hframes`, and each animation is the list of frame numbers below,

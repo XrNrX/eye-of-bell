@@ -39,6 +39,17 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export var throw_damage_max := 0
 @export var melee := true            # False for thrown-only weapons (darts).
 
+@export_group("Food")
+## Food heals slowly: `food_heal` HP in total, spread evenly over `food_seconds` (potions heal at once, so they stay the
+## emergency option). Eating again while a food heal is running replaces it, never stacks. Bad food has a
+## `food_sick_chance` (0..1) of making the eater sick: `food_sick_damage` HP in total over `food_sick_seconds`
+## (a short damage over time that never kills: it stops at 1 HP). See Party.eat.
+@export var food_heal := 0
+@export var food_seconds := 0.0
+@export var food_sick_chance := 0.0
+@export var food_sick_damage := 0
+@export var food_sick_seconds := 0.0
+
 @export_group("Resurrection")
 ## A Scroll of Resurrection: read on a fallen hero's portrait. revive_percent is the share of max HP
 ## they return with (a divine caster, the Cleric, returns with full HP but is shaken: no mana and no
@@ -63,6 +74,11 @@ static func allowed_in_hand(item_type: Type) -> bool:
 ## The icon for the party panel's hand and quick slots.
 func hud_texture() -> Texture2D:
 	return hud_icon if hud_icon else icon
+
+
+## A food (see the Food group): eaten, it heals over time.
+func is_food() -> bool:
+	return food_seconds > 0.0
 
 
 func can_throw() -> bool:

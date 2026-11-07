@@ -32,6 +32,14 @@
       "imported": "2026-11-05 22:29:57",
       "source": "darts_hud.png"
     },
+    "items/dried_meat.png": {
+      "imported": "2026-11-07 04:31:36",
+      "source": "dried_meat.png"
+    },
+    "items/hard_cheese.png": {
+      "imported": "2026-11-07 04:31:36",
+      "source": "hard_cheese.png"
+    },
     "items/healing_potion.png": {
       "imported": "2026-11-05 22:29:57",
       "source": "healing_potion.png"
@@ -84,6 +92,10 @@
       "imported": "2026-11-05 22:29:57",
       "source": "mace_hud.png"
     },
+    "items/mouldy_bread.png": {
+      "imported": "2026-11-07 04:31:36",
+      "source": "mouldy_bread.png"
+    },
     "items/scroll.png": {
       "imported": "2026-11-05 22:29:57",
       "source": "scroll.png"
@@ -132,6 +144,10 @@
       "imported": "2026-11-05 22:29:57",
       "source": "spellbook_hud.png"
     },
+    "items/stale_bread.png": {
+      "imported": "2026-11-07 04:31:36",
+      "source": "stale_bread.png"
+    },
     "items/war_hammer.png": {
       "imported": "2026-11-05 22:29:57",
       "source": "war_hammer.png"
@@ -143,6 +159,10 @@
     "items/war_hammer_hud.png": {
       "imported": "2026-11-05 22:29:57",
       "source": "war_hammer_hud.png"
+    },
+    "items/withered_apple.png": {
+      "imported": "2026-11-07 04:31:36",
+      "source": "withered_apple.png"
     },
     "monsters/skeleton/attack_0.png": {
       "imported": "2026-11-05 18:32:37",

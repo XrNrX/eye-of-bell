@@ -163,6 +163,15 @@ const ITEMS := [
 	{"cell": Vector2i(2, 5), "def": "res://data/items/darts.tres", "count": 8},
 	{"cell": Vector2i(2, 5), "def": "res://data/items/scroll_resurrection.tres"},  # Rare: the secret closet.
 	{"cell": Vector2i(2, 3), "def": "res://data/items/leather_armour.tres"},
+	# Food: scavenged rations (heal slowly; the mouldy bread is a gamble).
+	{"cell": Vector2i(6, 9), "def": "res://data/items/stale_bread.tres"},  # Near the start.
+	{"cell": Vector2i(10, 11), "def": "res://data/items/withered_apple.tres"},  # Room 5.
+	{"cell": Vector2i(16, 10), "def": "res://data/items/hard_cheese.tres"},  # Room 3.
+	{"cell": Vector2i(20, 8), "def": "res://data/items/mouldy_bread.tres"},  # Room 2: tempting, and risky.
+	{"cell": Vector2i(14, 18), "def": "res://data/items/dried_meat.tres"},  # Room 4.
+	{"cell": Vector2i(7, 16), "def": "res://data/items/mouldy_bread.tres"},  # The cave.
+	{"cell": Vector2i(20, 1), "def": "res://data/items/dried_meat.tres", "count": 2},  # The locked closet.
+	{"cell": Vector2i(2, 4), "def": "res://data/items/hard_cheese.tres"},  # The secret closet.
 ]
 
 # Monsters: the floor cell they start on and their definition resource (see
