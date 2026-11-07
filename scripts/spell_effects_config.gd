@@ -32,6 +32,8 @@ static func apply_environment(env: Environment, fog_on: bool) -> void:
 	env.glow_hdr_threshold = c.glow_hdr_threshold
 	env.glow_hdr_scale = c.glow_hdr_scale
 	env.glow_blend_mode = c.glow_blend_mode
+	for i in c.glow_levels.size():  # Which blur sizes feed the glow: small ones give a tight halo, big ones a wide haze.
+		env.set_glow_level(i, c.glow_levels[i])
 	env.volumetric_fog_enabled = fog_on and c.fog_density > 0.0
 	if env.volumetric_fog_enabled:
 		env.volumetric_fog_density = c.fog_density
@@ -283,12 +285,15 @@ func glow(kind: String) -> Dictionary:
 ## Only pixels brighter than glow_hdr_threshold bloom, so the torches' own light stays put while
 ## the HDR bolt and sparks pop. Lower the threshold (or raise intensity) for more bloom everywhere.
 @export var glow_enabled := true
-@export var glow_intensity := 0.7
+@export var glow_intensity := 0.6
 @export var glow_strength := 1.0
 @export var glow_bloom := 0.0
-@export var glow_hdr_threshold := 1.4
+@export var glow_hdr_threshold := 1.6
 @export var glow_hdr_scale := 2.0
 @export_enum("Additive", "Screen", "Softlight", "Replace", "Mix") var glow_blend_mode := 1
+## Strength of each of Godot's 7 glow levels, from the tightest blur (first) to the widest (last). Pixel art wants a tight halo
+## round the bright core, not a wide soft haze, so the two smallest levels carry it. (Wider levels, [0, 0, 1, 0, 1, 0, 0], gave the old soft haze.)
+@export var glow_levels := PackedFloat32Array([1.0, 0.6, 0.0, 0.0, 0.0, 0.0, 0.0])
 
 @export_group("Volumetric fog")
 ## Subtle haze that catches the torchlight. Switched on and off in Options. A density of 0 turns it off.
