@@ -95,10 +95,12 @@ def scorch():
 
 def build(scale=None):
     written = []
-    for name in ("cast", "projectile", "impact"):
-        if (PIECES / "fireball" / f"{name}.png").exists():
-            (ART_DIR / "spells" / "fireball").mkdir(parents=True, exist_ok=True)
-            written += build_sheet("fireball", name)
+    # Fireball: fire colours. Magic Missile: neutral grey and bone only; the game tints it cold pale blue (the palette has no blue).
+    for spell in ("fireball", "magic_missile"):
+        for name in ("cast", "projectile", "impact"):
+            if (PIECES / spell / f"{name}.png").exists():
+                (ART_DIR / "spells" / spell).mkdir(parents=True, exist_ok=True)
+                written += build_sheet(spell, name)
     written.append(save_png(scorch(), "spells/scorch.png"))
     return written
 

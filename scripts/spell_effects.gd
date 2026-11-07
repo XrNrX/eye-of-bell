@@ -67,6 +67,9 @@ func missile(from_cell: Vector2i, to_cell: Vector2i) -> void:
 	var c := Config.get_config()
 	if not c.bolt_enabled:
 		return
+	if not _sheet("magic_missile", "projectile").is_empty():
+		_missile_flipbook(from_cell, to_cell)
+		return
 	live += 1
 	var forward := Vector3(to_cell.x - from_cell.x, 0, to_cell.y - from_cell.y).normalized()
 	var start := _cell_pos(from_cell, c.bolt_height) + forward * 0.6
@@ -102,6 +105,65 @@ func missile(from_cell: Vector2i, to_cell: Vector2i) -> void:
 
 
 # --------------------------------------------------------------------------
+# Magic Missile: flipbooks (cold pale blue), light synced to them, a small scorch
+# --------------------------------------------------------------------------
+
+## The missile with sprite art: a cast flash at the hands, a looping orb that flies to the target, and a burst there, each with a
+## cold pale-blue light that follows its animation.
+func _missile_flipbook(from_cell: Vector2i, to_cell: Vector2i) -> void:
+	var c := Config.get_config()
+	live += 1
+	var forward := Vector3(to_cell.x - from_cell.x, 0, to_cell.y - from_cell.y).normalized()
+	var cast := _sheet("magic_missile", "cast")
+	if not cast.is_empty():
+		var at: Vector3 = _cell_pos(from_cell, c.fb_cast_height) + forward * c.fb_cast_distance
+		var flash := _flipbook(cast, false, c.mm_cast_scale, c.mm_tint)
+		flash.position = at
+		add_child(flash)
+		var cast_light := _fx_light(flash, c.mm_cast_light_energy, c.mm_cast_light_colors, c.mm_cast_light_range, false, 0.0)
+		cast_light.position = at - forward * 0.3
+		add_child(cast_light)
+	var proj := _sheet("magic_missile", "projectile")
+	var start := _cell_pos(from_cell, c.bolt_height) + forward * 0.7
+	var end := _cell_pos(to_cell, c.bolt_height)
+	var bolt := Node3D.new()
+	bolt.position = start
+	add_child(bolt)
+	var flip := _flipbook(proj, true, c.mm_projectile_scale, c.mm_tint)
+	bolt.add_child(flip)
+	bolt.add_child(_fx_light(flip, c.mm_flight_light_energy, c.mm_flight_light_colors, c.mm_flight_light_range, true, c.mm_flight_flicker))
+	var tiles := maxf(1.0, (to_cell - from_cell).length())
+	var tween := bolt.create_tween()
+	tween.tween_property(bolt, "position", end, tiles * c.bolt_seconds_per_tile)
+	tween.tween_callback(func():
+		_missile_impact(to_cell)
+		bolt.queue_free()
+		live -= 1)
+
+
+## The burst where the missile lands: a flipbook with a bright cold light that dies with it, and a faint scorch.
+func _missile_impact(cell: Vector2i) -> void:
+	var c := Config.get_config()
+	var sheet := _sheet("magic_missile", "impact")
+	if sheet.is_empty():
+		impact(cell)
+		return
+	live += 1
+	var at := _cell_pos(cell, c.bolt_height)
+	var flip := _flipbook(sheet, false, c.mm_impact_scale, c.mm_tint)
+	flip.position = at
+	add_child(flip)
+	flip.finished.connect(func():
+		live -= 1)
+	var light := _fx_light(flip, c.mm_impact_light_energy, c.mm_impact_light_colors, c.mm_impact_light_range, false, 0.0)
+	light.position = at
+	add_child(light)
+	if _scorch_tex == null and ResourceLoader.exists(SCORCH):
+		_scorch_tex = load(SCORCH)
+	_decal(DungeonMap.cell_to_world(cell) + Vector3(0, 0.02, 0), Basis.IDENTITY, Vector3(c.mm_scorch_size, 0.8, c.mm_scorch_size), c.mm_scorch_strength, c)
+
+
+# --------------------------------------------------------------------------
 # Fireball: PixelLab flipbooks + synced light + pixel particles + aftermath
 # --------------------------------------------------------------------------
 
@@ -132,10 +194,10 @@ func _sheet(spell: String, name: String) -> Dictionary:
 	return entry
 
 
-func _flipbook(sheet: Dictionary, looping: bool, scale_by: float) -> MeshInstance3D:
+func _flipbook(sheet: Dictionary, looping: bool, scale_by: float, tint := Color(-1, 0, 0)) -> MeshInstance3D:
 	var c := Config.get_config()
 	var flip: MeshInstance3D = Flipbook.new()
-	flip.setup(sheet.texture, sheet.frames, sheet.fps, looping, c.fb_pixel_size, c.fb_sprite_tint, c.fb_additive, scale_by)
+	flip.setup(sheet.texture, sheet.frames, sheet.fps, looping, c.fb_pixel_size, c.fb_sprite_tint if tint.r < 0.0 else tint, c.fb_additive, scale_by)
 	return flip
 
 

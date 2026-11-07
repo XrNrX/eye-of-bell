@@ -195,6 +195,26 @@ func glow(kind: String) -> Dictionary:
 @export var fb_projectile_scale := 1.0
 @export var fb_impact_scale := 2.1                   # The explosion is 96 art pixels across; this makes it fill the corridor.
 
+@export_group("Magic Missile sprites and light")
+## Arcane magic is cold pale blue (fire orange, holy gold, curse green: green stays the curse's, so green reads as danger). The art in
+## art/spells/magic_missile/ is neutral grey and bone, because the palette has no blue: this tint, above 1.0 so it blooms, makes it blue.
+@export var mm_tint := Color(0.9, 1.25, 2.0)
+@export var mm_cast_scale := 1.0
+@export var mm_projectile_scale := 1.0
+@export var mm_impact_scale := 1.8
+@export var mm_cast_light_energy := PackedFloat32Array([2.2, 3.0, 2.0, 1.0, 0.3])
+@export var mm_cast_light_colors := PackedColorArray([Color(0.75, 0.9, 1.0), Color(0.6, 0.8, 1.0), Color(0.55, 0.75, 1.0), Color(0.5, 0.7, 1.0), Color(0.45, 0.6, 0.95)])
+@export var mm_cast_light_range := 5.0
+@export var mm_flight_light_energy := PackedFloat32Array([1.6, 2.0, 1.4, 1.9, 1.3, 2.0, 1.5, 1.8])  # A loop: it flickers in flight.
+@export var mm_flight_light_colors := PackedColorArray([Color(0.6, 0.8, 1.0), Color(0.7, 0.85, 1.0), Color(0.55, 0.75, 1.0), Color(0.65, 0.82, 1.0)])
+@export var mm_flight_light_range := 6.0
+@export var mm_flight_flicker := 0.15
+@export var mm_impact_light_energy := PackedFloat32Array([6.0, 9.0, 7.0, 5.0, 3.0, 1.5, 0.6, 0.2, 0.0])  # A bright cold spike, gone in under half a second.
+@export var mm_impact_light_colors := PackedColorArray([Color(0.9, 0.95, 1.0), Color(0.75, 0.88, 1.0), Color(0.6, 0.8, 1.0), Color(0.5, 0.72, 1.0), Color(0.45, 0.65, 0.95)])
+@export var mm_impact_light_range := 12.0
+@export var mm_scorch_size := 0.7
+@export var mm_scorch_strength := 0.45
+
 @export_group("Fireball light (synced to the animation)")
 ## One value for each animation frame (the light is blended between frames), so the walls catch what the sprite is doing.
 @export var fb_cast_light_energy := PackedFloat32Array([3.0, 5.0, 3.5, 1.5, 0.4])

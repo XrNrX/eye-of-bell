@@ -42,6 +42,21 @@ curse green if "green" is in the prompt (ask for grey, blackened bones and put t
 the eyes, runes and cracks), and "rusted chains" can come back as amber or gold specks (warm
 colours are for torchlight only: ask for dark iron chains).
 
+## Spell colour language
+
+Every kind of magic has one colour, so players read a spell at a glance. These are fixed:
+
+| Magic | Colour | Where it shows |
+|---|---|---|
+| Fire | **orange** (torch and rust tones, white-hot core) | Fireball, embers, scorch |
+| Holy | **gold** (torch_300 / torch_500) | Heal, Bless, the holy symbol, Resurrection |
+| Arcane | **cold pale blue** | Magic Missile, the Mage's other spells |
+| Curse | **sickly green** (curse_500 / curse_300) | cracks, veins, the dead: **never used for a spell**, so green always reads as danger |
+
+The palette has no blue, so arcane art is drawn in neutral grey and bone (stone_100 / bone_300 for the bright parts) and the game
+tints it blue at run time (a tint above 1.0 so it blooms), with a pale blue light. Draw spell flipbooks with those greys, not with
+blue pixels, or the palette snap turns them green or purple.
+
 ## Light
 
 - Light comes from **one side or above** and falls off quickly into darkness: a small pool of
