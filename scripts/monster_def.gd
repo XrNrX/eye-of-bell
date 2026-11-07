@@ -14,6 +14,9 @@ extends Resource
 ## How many tiles away (steps along the grid) it notices the player.
 @export var sight_range := 4
 
+## Percent of its landed hits that are crits (x1.5, and never enough to kill a hero at half HP or more).
+@export var crit_chance := 0
+
 @export_group("Drops")
 ## What it leaves on its tile when it dies, and how often (0..1): a skeleton guard may leave its rations.
 @export var drop_item: Resource

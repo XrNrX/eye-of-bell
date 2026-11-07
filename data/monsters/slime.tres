@@ -22,3 +22,4 @@ walk_frames = PackedInt32Array(8, 9, 10, 11)
 hurt_frames = PackedInt32Array(6, 7)
 idle_fps = 3.0
 pixel_size = 0.02
+crit_chance = 2

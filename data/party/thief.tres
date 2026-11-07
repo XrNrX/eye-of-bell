@@ -23,3 +23,7 @@ portrait_hurt = ExtResource("4_hurt")
 portrait_dead = ExtResource("5_dead")
 start_hands = Array[Resource]([ExtResource("20_kit"), ExtResource("21_kit")])
 start_hand_counts = Array[int]([6, 1])
+dexterity = 16
+crit_base = 8
+finesse_crit = 8
+spell_crit = 0

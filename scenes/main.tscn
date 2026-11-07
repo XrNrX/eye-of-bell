@@ -1,7 +1,8 @@
-[gd_scene load_steps=17 format=3]
+[gd_scene load_steps=18 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/cursor_item.tscn" id="14_cursor"]
 [ext_resource type="Script" path="res://scripts/combat_feel.gd" id="20_feel"]
+[ext_resource type="Script" path="res://scripts/banter.gd" id="29_banter"]
 [ext_resource type="Script" path="res://scripts/save_manager.gd" id="21_save"]
 [ext_resource type="Script" path="res://scripts/pause_menu.gd" id="27_pause"]
 [ext_resource type="Script" path="res://scripts/spell_effects.gd" id="28_fx"]
@@ -102,6 +103,9 @@ player_path = NodePath("../View/GameView/Port/Player")
 
 [node name="CombatFeel" type="Node" parent="."]
 script = ExtResource("20_feel")
+
+[node name="Banter" type="Node" parent="."]
+script = ExtResource("29_banter")
 
 [node name="PartyHud" parent="." instance=ExtResource("9_party_hud")]
 

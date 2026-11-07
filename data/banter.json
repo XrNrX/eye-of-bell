@@ -1,0 +1,35 @@
+{
+	"crit": {
+		"chance": 0.15,
+		"cooldown": 20,
+		"lines": [
+			{"speaker": "Fighter", "text": "Aye."},
+			{"speaker": "Thief", "text": "Right in the everything."},
+			{"speaker": "Cleric", "about": "self", "holding": "mace", "text": "The Light guides my mace."},
+			{"speaker": "Cleric", "about": "self", "not_holding": "mace", "text": "The Light guides my hand."},
+			{"speaker": "Mage", "about": "self", "text": "Was that me? That was me."},
+			{"speaker": "Grudge", "holding": "Grudge", "priority": 3, "text": "MORE."}
+		]
+	},
+	"fail": {
+		"chance": 1.0,
+		"cooldown": 0,
+		"lines": [
+			{"speaker": "Cleric", "about": "other", "text": "I knew you were useless."},
+			{"speaker": "Fighter", "about": "other", "text": "Embarrassing."},
+			{"speaker": "Thief", "about": "other", "slipped": true, "text": "Want me to hold that for you?"},
+			{"speaker": "Thief", "about": "other", "slipped": false, "text": "Saw that. Everyone saw that."},
+			{"speaker": "Mage", "about": "other", "text": "That was... unlikely."},
+			{"speaker": "Cleric", "about": "other", "actor": "Fighter", "priority": 2, "text": "The Light laughed at that."},
+			{"speaker": "Grudge", "holding": "Grudge", "always": true, "text": "Still here. Pity."},
+			{"speaker": "$actor", "alone": true, "priority": 1, "text": "Nobody saw that."}
+		]
+	},
+	"eat": {
+		"chance": 0.5,
+		"cooldown": 30,
+		"lines": [
+			{"speaker": "Fighter", "about": "self", "text": "Tastes like the floor. Still good."}
+		]
+	}
+}

@@ -17,3 +17,4 @@ damage_min = 1
 damage_max = 4
 throw_damage_min = 1
 throw_damage_max = 4
+finesse = true

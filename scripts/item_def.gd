@@ -38,6 +38,9 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export var throw_damage_min := 0    # Damage when thrown; 0 max means it can't be thrown.
 @export var throw_damage_max := 0
 @export var melee := true            # False for thrown-only weapons (darts).
+@export var crit_bonus := 0          # Points added to the wielder's crit chance.
+@export var finesse := false         # A light weapon: the wielder's finesse_crit counts (daggers).
+@export var never_slips := false     # A critical fail can't knock it out of the hand (Grudge refuses to let go).
 
 @export_group("Food")
 ## Food heals slowly: `food_heal` HP in total, spread evenly over `food_seconds` (potions heal at once, so they stay the

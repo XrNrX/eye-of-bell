@@ -189,6 +189,7 @@ func _build_flash_button() -> void:
 	flash_button.unique_name_in_owner = false
 	options_box.add_child(flash_button)
 	options_box.move_child(flash_button, back_button.get_index())
+	flash_button.tooltip_text = "Reduced: softer flashes and no screen shake"
 	flash_button.pressed.connect(func():
 		Settings.set_reduce_flashing(not Settings.reduce_flashing)
 		_refresh_display())

@@ -253,31 +253,56 @@ func take_hit(result: Dictionary) -> void:
 	if dying:
 		return
 	if not result.hit:
-		_float_text("Miss", MISS_COLOUR)
+		if result.get("fail", false) and feel_cfg.fail_text_enabled:
+			_float_text("CRITICAL FAIL!", feel_cfg.fail_colour, 0.4, feel_cfg.fail_text_size)
+		else:
+			_float_text("Miss", MISS_COLOUR)
 		return
+	var crit: bool = result.get("crit", false)
 	hp -= result.damage
-	_float_text(str(result.damage), DAMAGE_COLOUR)
-	get_tree().call_group("combat_feel", "monster_hit", result.damage, hp <= 0)
+	if crit and feel_cfg.crit_text_enabled:
+		_float_text(str(result.damage), feel_cfg.crit_colour, 0.0, feel_cfg.crit_number_size, true)
+		_float_text("CRITICAL!", feel_cfg.crit_colour, 0.5, feel_cfg.crit_text_size, true)
+	else:
+		_float_text(str(result.damage), DAMAGE_COLOUR)
+	if crit:
+		get_tree().call_group("combat_feel", "monster_crit", hp <= 0)
+		get_tree().call_group("audio", "play", "crit_hit")
+	else:
+		get_tree().call_group("combat_feel", "monster_hit", result.damage, hp <= 0)
 	get_tree().call_group("audio", "play", "monster_die" if hp <= 0 else "monster_hurt")
+	var hold: int = feel_cfg.crit_hurt_hold_frames if crit and feel_cfg.crit_hold_enabled else 0
 	if def.hurt_frames.size() == 2:  # [hurt, flash]: alternate the white frame with the hurt frame.
 		var hurt: int = def.hurt_frames[0]
 		var flash: int = def.hurt_frames[1]
-		_play(PackedInt32Array([flash, hurt, flash, hurt]), def.hurt_fps)
+		_play(_held(PackedInt32Array([flash, hurt, flash, hurt]), hold), def.hurt_fps)
 	elif not def.hurt_frames.is_empty():  # Any other number of frames: play them as drawn.
-		_play(def.hurt_frames, def.hurt_fps)
+		_play(_held(def.hurt_frames, hold), def.hurt_fps)
 	if hp <= 0:
-		_die()
+		_die(crit and feel_cfg.crit_death_enabled)
+
+
+## These frames with the last one repeated `extra` more times: a crit holds the hurt frame a moment longer.
+func _held(frames: PackedInt32Array, extra: int) -> PackedInt32Array:
+	var out := frames.duplicate()
+	for i in extra:
+		out.append(frames[frames.size() - 1])
+	return out
 
 
 ## Free the tile at once (so the player can walk in), then sink into the floor.
-func _die() -> void:
+func _die(big := false) -> void:
 	dying = true
 	_drop_loot()
 	_end_feel()  # Back to normal first: the sink below tweens the sprite's scale and height.
 	_release_tiles()
 	get_tree().call_group("dungeon", "refresh")
 	var tween := create_tween()
-	tween.tween_interval(0.3)  # Let the hurt flash play first.
+	if big:  # A crit that kills: it swells a little and hangs there before it goes down.
+		tween.tween_property(sprite, "scale", sprite.scale * feel_cfg.crit_death_swell, 0.08).set_ease(Tween.EASE_OUT)
+		tween.tween_interval(feel_cfg.crit_death_hold)
+	else:
+		tween.tween_interval(0.3)  # Let the hurt flash play first.
 	tween.tween_property(sprite, "scale:y", 0.0, 0.3).set_ease(Tween.EASE_IN)
 	tween.parallel().tween_property(sprite, "position:y", 0.0, 0.3).set_ease(Tween.EASE_IN)
 	tween.tween_callback(queue_free)
@@ -302,11 +327,12 @@ func _release_tiles() -> void:
 			DungeonMap.occupied.erase(c)
 
 
-func _float_text(value: String, colour: Color) -> void:
+func _float_text(value: String, colour: Color, above := 0.0, size := 0, linger := false) -> void:
 	var label := FloatingText.new()
-	label.setup(value, colour)
+	label.setup(value, colour, size, linger)
 	# Parented to the dungeon, not the monster, so it outlives a monster that dies.
-	label.position = position + Vector3(randf_range(-0.25, 0.25), _sprite_height() * 0.75, 0.0)
+	var sideways := 0.0 if size > 0 else randf_range(-0.25, 0.25)  # Big text stays centred, where it fits the view.
+	label.position = position + Vector3(sideways, _sprite_height() * 0.75 + above, 0.0)
 	get_parent().add_child(label)
 
 

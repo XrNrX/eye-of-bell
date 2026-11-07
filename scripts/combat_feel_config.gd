@@ -51,6 +51,44 @@ static func get_config() -> Resource:
 @export var miss_prefix := "Miss! "
 @export var miss_colour := Color(0.482, 0.478, 0.533)  # Palette stone_300: muted, a whiff.
 
+@export_group("Critical hits")
+## What a party crit adds. Reduce flashing (Settings) removes the shake and softens the portrait flash.
+@export var crit_text_enabled := true
+@export var crit_number_size := 128          # Font size of the number (a normal one is 64).
+@export var crit_text_size := 48             # "CRITICAL!" above it.
+@export var crit_colour := Color(1.7, 1.4, 0.85)  # Palette torch_300 pushed above 1, so it blooms: brighter than a normal number.
+@export var crit_pause_enabled := true
+@export var crit_pause_seconds := 0.1
+@export var crit_kill_pause_seconds := 0.16
+@export var crit_shake_enabled := true
+@export var crit_shake_strength := 0.04
+@export var crit_shake_seconds := 0.25
+@export var crit_kill_shake_strength := 0.07
+@export var crit_kill_shake_seconds := 0.35
+@export var crit_hold_enabled := true
+@export var crit_hurt_hold_frames := 3       # Extra frames the hurt frame is held (at the monster's hurt_fps).
+@export var crit_death_enabled := true       # A crit that kills: the monster swells, hangs, then goes down.
+@export var crit_death_swell := 1.12
+@export var crit_death_hold := 0.4
+@export var crit_log_colour := Color(0.961, 0.812, 0.502)  # Palette torch_300.
+
+@export_group("Monster crits")
+## A monster's crit: a red flash on the portrait of the hero it hit.
+@export var portrait_crit_flash_enabled := true
+@export var portrait_crit_flash_colour := Color(1.9, 0.4, 0.38)     # Above 1: it glows, not only tints.
+@export var portrait_crit_flash_reduced := Color(0.95, 0.5, 0.48)   # With Reduce flashing: one steady, dimmer tint.
+@export var portrait_crit_flash_seconds := 0.5
+@export var portrait_crit_flash_pulses := 2
+@export var crit_taken_log_colour := Color(0.659, 0.404, 0.227)     # Palette rust_300 (blood_500 is too dark to read on the log).
+
+@export_group("Critical fails")
+@export var fail_text_enabled := true
+@export var fail_text_size := 40
+@export var fail_colour := Color(0.498, 0.722, 0.541)  # Palette curse_500: sickly.
+
+@export_group("Banter")
+@export var banter_log_colour := Color(0.788, 0.753, 0.643)  # Palette bone_300.
+
 @export_group("Portrait shake")
 ## The portrait of the hero who was hit shakes sideways.
 @export var portrait_shake_enabled := true

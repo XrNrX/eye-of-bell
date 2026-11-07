@@ -23,3 +23,7 @@ portrait_dead = ExtResource("5_dead")
 max_mana = 10
 magic = 2
 start_hands = Array[Resource]([null, ExtResource("21_kit")])
+dexterity = 10
+crit_base = 3
+finesse_crit = 0
+spell_crit = 0

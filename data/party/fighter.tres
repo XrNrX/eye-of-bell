@@ -19,3 +19,7 @@ hand_icon = ExtResource("2_hand")
 portrait = ExtResource("3_portrait")
 portrait_hurt = ExtResource("4_hurt")
 portrait_dead = ExtResource("5_dead")
+dexterity = 11
+crit_base = 4
+finesse_crit = 0
+spell_crit = 0

@@ -25,3 +25,4 @@ idle_fps = 2.0
 pixel_size = 0.014
 drop_item = ExtResource("95_drop")
 drop_chance = 0.25
+crit_chance = 3

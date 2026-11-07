@@ -232,6 +232,19 @@ def hit():
     return finish(mix(thud(180, 55, 0.06, 0.28, 18, 0.9, 1500)), 0.85)
 
 
+def crit_hit():
+    return finish(mix(thud(140, 40, 0.1, 0.42, 40, 1.0, 2000), gain(decay(highpass(noise(0.1, 41), 1500), 0.02), 0.6)), 0.88)
+
+
+def crit_hurt():
+    return finish(mix(decay(osc(glide(420, 90, 0.35), 0.36, "saw"), 0.14), gain(decay(bandpass(noise(0.3, 42), 300, 2200), 0.09), 0.7)), 0.8)
+
+
+def fumble():
+    """Something metal hits the floor, bounces, and settles: clumsy, not painful."""
+    return finish(mix(metal_click(43), (gain(metal_click(44), 0.7), 0.11), (gain(metal_click(45), 0.45), 0.19), (thud(120, 80, 0.05, 0.12, 46, 0.4, 700), 0.02)), 0.55)
+
+
 def throw():
     return finish(mix(swell(highpass(noise(0.2, 19), 800), 0.03, 0.12), gain(decay(osc(1800, 0.12), 0.05), 0.2)), 0.5)
 
@@ -339,6 +352,7 @@ SOUNDS = {
     "unlock": (unlock, None), "lever": (lever, None), "plate": (plate, None),
     "pickup": (pickup, None), "drop": (drop, None),
     "swing": (swing, None), "whiff": (whiff, None), "hit": (hit, None), "throw": (throw, None),
+    "crit_hit": (crit_hit, None), "crit_hurt": (crit_hurt, None), "fumble": (fumble, None),
     "monster_attack": (monster_attack, None), "monster_hurt": (monster_hurt, None), "monster_die": (monster_die, None),
     "hero_hurt": (hero_hurt, None), "hero_die": (hero_die, None),
     "potion": (potion, None), "zap": (zap, None), "heal": (heal, None), "shield": (shield, None), "bless": (bless, None), "rumble": (rumble, None), "portcullis": (portcullis, None), "fireball": (fireball, None), "explosion": (explosion, None),

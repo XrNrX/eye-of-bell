@@ -9,6 +9,7 @@ extends Node
 ## and through Party.hero_hit, for blows the party takes.
 
 const FeelConfigScript := preload("res://scripts/combat_feel_config.gd")
+const Settings := preload("res://scripts/settings.gd")
 
 var feel_cfg: Resource = FeelConfigScript.get_config()  # data/combat_feel.tres
 var camera: Camera3D
@@ -49,23 +50,35 @@ func _on_hero_hit(_slot: int, damage: int) -> void:
 	shake(damage)
 
 
+## A hero's crit landed: a short pause and a small shake, more if it killed.
+func monster_crit(killed: bool) -> void:
+	if feel_cfg.crit_pause_enabled:
+		hit_pause(feel_cfg.crit_kill_pause_seconds if killed else feel_cfg.crit_pause_seconds)
+	if feel_cfg.crit_shake_enabled:
+		if killed:
+			shake_by(feel_cfg.crit_kill_shake_strength, feel_cfg.crit_kill_shake_seconds)
+		else:
+			shake_by(feel_cfg.crit_shake_strength, feel_cfg.crit_shake_seconds)
+
+
 ## Freeze the game for a moment. A timer that ignores time scale brings it back; a
-## newer pause supersedes an older one instead of stacking.
-func hit_pause() -> void:
+## newer pause supersedes an older one instead of stacking. seconds < 0: the usual length.
+func hit_pause(seconds := -1.0) -> void:
 	if not feel_cfg.hit_pause_enabled or get_tree().paused:
 		return
 	pause_id += 1
 	var id := pause_id
 	Engine.time_scale = feel_cfg.hit_pause_time_scale
 	# process_always, not in physics, ignore_time_scale.
-	await get_tree().create_timer(feel_cfg.hit_pause_seconds, true, false, true).timeout
+	var length: float = seconds if seconds >= 0.0 else feel_cfg.hit_pause_seconds
+	await get_tree().create_timer(length, true, false, true).timeout
 	if id == pause_id:
 		Engine.time_scale = 1.0
 
 
 ## Shake the 3D view for a hit of this size.
 func shake(damage: int) -> void:
-	if not feel_cfg.screen_shake_enabled or damage < feel_cfg.screen_shake_min_damage:
+	if not feel_cfg.screen_shake_enabled or Settings.reduce_flashing or damage < feel_cfg.screen_shake_min_damage:
 		return
 	var full := maxf(1.0, float(feel_cfg.screen_shake_full_damage))
 	var fresh: float = feel_cfg.screen_shake_strength * clampf(damage / full, 0.3, 1.0)
@@ -76,9 +89,9 @@ func shake(damage: int) -> void:
 
 
 ## Shake the 3D view by a given strength (camera offset in world units) for `seconds`; used by
-## spells (the Fireball blast). Respects the same on/off switch as the hit shake.
+## spells (the Fireball blast). Respects the same on/off switch as the hit shake, and Reduce flashing stops all of it.
 func shake_by(strength: float, seconds: float) -> void:
-	if not feel_cfg.screen_shake_enabled or strength <= 0.0:
+	if not feel_cfg.screen_shake_enabled or Settings.reduce_flashing or strength <= 0.0:
 		return
 	var running := shake_strength * (shake_left / maxf(shake_total, 0.001))
 	shake_strength = maxf(running, strength)

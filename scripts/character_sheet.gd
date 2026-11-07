@@ -35,6 +35,7 @@ var rows := {}          # stat key -> {name, value, delta} labels
 var buff_label: Label
 var gear_labels := []   # One per hand slot, then armour.
 var mana_row: Control
+var spell_crit_row: Control
 
 
 func _ready() -> void:
@@ -79,6 +80,8 @@ func _ready() -> void:
 	_stat_row(col, "defence", "Defence")
 	_stat_row(col, "damage", "Damage")
 	_stat_row(col, "swing", "Swing")
+	_stat_row(col, "crit", "Crit")
+	spell_crit_row = _stat_row(col, "spell_crit", "Sp. crit")
 
 	col.add_child(_heading("Equipped"))
 	for i in 3:
@@ -153,6 +156,17 @@ func refresh(a_party: Node, slot: int) -> void:
 	var swing := CombatRules.hero_cooldown(m.def.speed)
 	_show(rows.swing, "%.2fs" % swing, "", TEXT,
 			"Speed %d: one action every %.2f s (swing, throw or cast)" % [m.def.speed, swing])
+
+	# Crit: the better of the two hands, as a share of landed hits; the tooltip gives each hand.
+	var base_crit := CombatRules.crit_chance(m.def)
+	var left: int = party.crit_in_hand(m, 0)
+	var right: int = party.crit_in_hand(m, 1)
+	var crit := maxi(left, right)
+	var crit_diff := crit - base_crit
+	_show(rows.crit, "%d%%" % crit, "%+d" % crit_diff if crit_diff != 0 else "", _colour_for(crit_diff),
+			"Chance a landed hit is critical. Left hand %d%%, right hand %d%%" % [left, right])
+	spell_crit_row.visible = m.def.spell_crit > 0
+	_show(rows.spell_crit, "%d%%" % m.def.spell_crit, "", TEXT, "Chance a damage spell is critical")
 
 	var hands: Array = m.hands
 	gear_labels[0].text = "L " + _item_name(hands[0])

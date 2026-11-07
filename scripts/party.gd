@@ -43,6 +43,8 @@ signal revived(slot: int, shaken: bool)  # A fallen hero was raised (shaken: a d
 signal revive_requested(slot: int, index: int)  # A Scroll of Resurrection was used from this quick slot: the HUD asks "Raise whom?".
 signal food_tick(slot: int, amount: int)  # Food healed this much just now (the HUD shows a warm tick on the HP bar).
 signal sick_tick(slot: int, amount: int)  # Sickness took this much just now.
+signal hero_crit(slot: int, damage: int)  # A monster's crit landed on this hero (the HUD flashes the portrait red).
+signal critical_fail(slot: int, slipped: bool)  # A hero's attack went badly wrong (slipped: they dropped their weapon).
 signal wiped
 
 ## Hero definitions (CharacterDef .tres), in slot order.
@@ -211,6 +213,7 @@ func eat(slot: int, def: Resource) -> Dictionary:
 		m.sick_acc = 0.0
 		text += " It tastes foul: %s feels sick." % m.def.display_name
 	_cue("potion")
+	_banter.call_deferred("eat", m)  # After the "eats" line the caller shows.
 	return {"used": true, "message": text, "close": false}
 
 
@@ -315,8 +318,8 @@ func _melee_weapon_in(m: Member, hand: int) -> Resource:
 	return null
 
 
-func _start_cooldown(m: Member) -> void:
-	var duration := CombatRules.hero_cooldown(m.def.speed)
+func _start_cooldown(m: Member, factor := 1.0) -> void:
+	var duration := CombatRules.hero_cooldown(m.def.speed) * factor
 	m.cooldown_left = duration
 	cooldown_started.emit(m.slot, duration)
 
@@ -422,14 +425,17 @@ func _do_throw(m: Member, source: Dictionary) -> bool:
 		s.attack += buff.spell.buff_attack
 	s.damage_min = def.throw_damage_min
 	s.damage_max = def.throw_damage_max
-	var result := CombatRules.resolve_attack(s, target.def)
+	var result := CombatRules.resolve_attack(s, target.def, CombatRules.crit_chance(m.def, def))
+	result.fail = not result.hit and CombatRules.roll_fumble()
 	target.take_hit(result)
-	if not result.hit:
+	if result.fail:
+		_critical_fail(m, source.index, def, true, land)  # It has already left the hand: a stumble.
+	elif not result.hit:
 		_say("%s's %s misses the %s." % [m.def.display_name, def.display_name, target.def.display_name], "miss")
 	elif target.hp <= 0:
-		_say("%s kills the %s with the %s!" % [m.def.display_name, target.def.display_name, def.display_name])
+		_say_hit("%s kills the %s with the %s!" % [m.def.display_name, target.def.display_name, def.display_name], m, def, result.crit)
 	else:
-		_say("%s hits the %s with the %s for %d." % [m.def.display_name, target.def.display_name, def.display_name, result.damage])
+		_say_hit("%s hits the %s with the %s for %d." % [m.def.display_name, target.def.display_name, def.display_name, result.damage], m, def, result.crit)
 	return true
 
 
@@ -488,6 +494,7 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 		return false
 	var who: String = m.def.display_name
 	var text := ""
+	var spell_crit := false
 	match spell.target:
 		SpellDef.Target.AHEAD:
 			var monster = _first_monster_ahead()
@@ -505,15 +512,19 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 				text = "%s casts %s: the cracked wall explodes!" % [who, spell.display_name]
 			else:
 				var damage := CombatRules.roll_damage(spell.damage_min, spell.damage_max)
-				monster.take_hit({"hit": true, "damage": damage, "chance": 100})
-				var caught := 0
+				var crit := CombatRules.roll_crit(m.def.spell_crit)
+				var dealt := CombatRules.crit_damage(damage, CombatRules.SPELL_CRIT_MULT) if crit else damage
+				monster.take_hit({"hit": true, "damage": dealt, "chance": 100, "crit": crit})
+				if crit:
+					spell_crit = true
+				var caught := 0  # (The splash below is half the plain roll: a crit is for the main target alone.)
 				if spell.splash_radius > 0:
 					caught = _splash(monster, spell.splash_radius, maxi(1, ceili(damage * spell.splash_percent / 100.0)))
 				var opened := 0
 				if spell.breaks_walls:  # The shockwave cracks open any cracked wall beside the target.
 					opened = _break_walls_near(monster.cell, maxi(1, spell.splash_radius))
 				_fx(spell.effect, monster.cell)
-				text = "%s casts %s: it hits the %s for %d!" % [who, spell.display_name, monster.def.display_name, damage]
+				text = "%s casts %s: it hits the %s for %d!" % [who, spell.display_name, monster.def.display_name, dealt]
 				if monster.hp <= 0:
 					text += " It dies!"
 				if caught > 0:
@@ -551,7 +562,7 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 	if focus != null and focus.def.magic == ItemDef.Magic.DIVINE and spell.effect in ["heal", "bless"]:
 		get_tree().call_group("spell_effects", "holy_pulse")  # The one pure warm light in a cursed land.
 		holy_cast.emit(slot, hand, spell)
-	_say(text)
+	_say_hit(text, m, null, spell_crit)
 	return true
 
 
@@ -1008,16 +1019,78 @@ func _melee(m: Member, hand: int) -> void:
 	if target == null or not is_instance_valid(target) or target.dying:
 		_swing_at_wall(m, hand, front)
 		return
-	var result := CombatRules.resolve_attack(effective_stats(m, hand), target.def)
+	var weapon: Resource = equipped_weapon(m) if hand < 0 else _melee_weapon_in(m, hand)
+	var result := CombatRules.resolve_attack(effective_stats(m, hand), target.def, CombatRules.crit_chance(m.def, weapon))
+	result.fail = not result.hit and CombatRules.roll_fumble()
 	target.take_hit(result)
-	if result.hit:
+	if result.hit and not result.crit:
 		_cue("hit")
-	if not result.hit:
+	if result.fail:
+		_critical_fail(m, hand, weapon, false, front)
+	elif not result.hit:
 		_say("%s swings at the %s and misses." % [m.def.display_name, target.def.display_name], "miss")
 	elif target.hp <= 0:
-		_say("%s kills the %s!" % [m.def.display_name, target.def.display_name])
+		_say_hit("%s kills the %s!" % [m.def.display_name, target.def.display_name], m, weapon, result.crit)
 	else:
-		_say("%s hits the %s for %d." % [m.def.display_name, target.def.display_name, result.damage])
+		_say_hit("%s hits the %s for %d." % [m.def.display_name, target.def.display_name, result.damage], m, weapon, result.crit)
+
+
+## The line for a landed attack; a crit gets the CRITICAL! prefix and colour, and maybe a remark.
+func _say_hit(text: String, m: Member, weapon: Resource, crit: bool) -> void:
+	if not crit:
+		_say(text)
+		return
+	_say("CRITICAL! " + text, "crit")
+	_banter("crit", m, weapon)
+
+
+## A missed attack went badly wrong: never harms an ally. Either the hero stumbles and loses their next attack (the
+## cooldown runs twice as long), or a melee weapon slips onto the tile in front, from where picking it up sends it back
+## to this hand (ItemStack.origin, as for a thrown weapon). A thrown item or fists can only stumble; so can a weapon that
+## never_slips. Someone always rubs it in.
+func _critical_fail(m: Member, hand: int, weapon: Resource, thrown: bool, cell: Vector2i) -> void:
+	var who: String = m.def.display_name
+	var index := hand if hand >= 0 else _hand_holding(m, weapon)
+	var slip: bool = weapon != null and not thrown and not weapon.never_slips and index >= 0 \
+			and m.hands[index] != null and CombatRules.rng().randf() < CombatRules.SLIP_CHANCE
+	var text := "%s stumbles." % who
+	if slip:
+		var stack: RefCounted = m.hands[index]
+		m.hands[index] = null
+		stack.origin = {"hero": m.hero_index, "where": "hand", "index": index}
+		var dungeon := get_tree().get_first_node_in_group("dungeon")
+		if dungeon != null:
+			dungeon.place_item(cell, stack)
+		text = "The %s slips from %s's hand!" % [weapon.display_name, who]
+	else:
+		_start_cooldown(m, 2.0)
+		if weapon != null and weapon.never_slips:
+			text = "%s stumbles. The %s refuses to let go." % [who, weapon.display_name]
+	_cue("fumble")
+	_say("CRITICAL FAIL! " + text, "fail")
+	critical_fail.emit(m.slot, slip)
+	_banter("fail", m, weapon, {"slipped": slip})
+
+
+func _hand_holding(m: Member, def: Resource) -> int:
+	for i in HAND_SLOTS:
+		if m.hands[i] != null and m.hands[i].def == def:
+			return i
+	return -1
+
+
+## The crit chance with the item in this hand, what the character sheet shows.
+func crit_in_hand(m: Member, hand: int) -> int:
+	var stack = m.hands[hand]
+	var weapon: Resource = stack.def if stack != null and stack.def.type == ItemDef.Type.WEAPON else null
+	return CombatRules.crit_chance(m.def, weapon)
+
+
+## Ask for a line of banter (group "banter"; a scene without the node is just quiet).
+func _banter(event_name: String, m: Member, weapon: Resource = null, extra := {}) -> void:
+	var context := {"actor": m.def.display_name, "weapon": weapon.display_name if weapon != null else ""}
+	context.merge(extra)
+	get_tree().call_group("banter", "event", event_name, context)
 
 
 ## A monster next to the party attacks. Who it can reach depends on which side it
@@ -1028,16 +1101,22 @@ func take_hit_from(monster: Node) -> void:
 		return
 	var m: Member = targets[CombatRules.rng().randi_range(0, targets.size() - 1)]
 	# The hero's effective stats, so Shield (and later armour) counts.
-	var result := CombatRules.resolve_attack(monster.def, effective_stats(m))
+	var result := CombatRules.resolve_attack(monster.def, effective_stats(m), monster.def.crit_chance, CombatRules.MONSTER_CRIT_MULT)
 	if result.hit:
+		if result.crit:
+			result.damage = CombatRules.cap_monster_crit(result.damage, m.hp, m.def.max_hp)
 		m.hp = maxi(0, m.hp - result.damage)
 		if m.hp == 0:
 			m.buffs.clear()
 			_cue("hero_die")
 		else:
-			_cue("hero_hurt")
+			_cue("crit_hurt" if result.crit else "hero_hurt")
 		hp_changed.emit(m.slot)
-		_say("The %s hits %s for %d." % [monster.def.display_name, m.def.display_name, result.damage])
+		if result.crit:
+			_say("CRITICAL! The %s hits %s for %d." % [monster.def.display_name, m.def.display_name, result.damage], "hurt")
+			hero_crit.emit(m.slot, result.damage)
+		else:
+			_say("The %s hits %s for %d." % [monster.def.display_name, m.def.display_name, result.damage])
 	else:
 		_cue("whiff")
 		_say("The %s misses %s." % [monster.def.display_name, m.def.display_name], "miss")

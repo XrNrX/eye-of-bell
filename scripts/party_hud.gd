@@ -99,6 +99,7 @@ func _ready() -> void:
 		_update_hp(m.slot)
 	party.hp_changed.connect(_update_hp)
 	party.hero_hit.connect(_on_hero_hit)
+	party.hero_crit.connect(_on_hero_crit)
 	party.formation_changed.connect(_on_formation_changed)
 	add_to_group("party_hud")
 	party.holy_cast.connect(_on_holy_cast)
@@ -766,10 +767,31 @@ func _on_formation_changed() -> void:
 			portrait.position.x = portrait.get_meta("rest_x")  # Cancel a shake that was in progress.
 
 
+## A monster's crit: the hero's portrait flashes red, so it's felt (two pulses, or with Reduce flashing one steady, dimmer tint).
+func _on_hero_crit(slot: int, _damage: int) -> void:
+	if not feel_cfg.portrait_crit_flash_enabled or not panels.has(slot):
+		return
+	var portrait: Control = panels[slot].portrait
+	if portrait.has_meta("crit_tween"):
+		portrait.get_meta("crit_tween").kill()
+	var tween := create_tween()
+	portrait.set_meta("crit_tween", tween)
+	var seconds: float = feel_cfg.portrait_crit_flash_seconds
+	if Settings.reduce_flashing:
+		portrait.modulate = feel_cfg.portrait_crit_flash_reduced
+		tween.tween_interval(seconds * 0.5)
+		tween.tween_property(portrait, "modulate", Color.WHITE, seconds * 0.5)
+		return
+	var pulses: int = maxi(1, feel_cfg.portrait_crit_flash_pulses)
+	for i in pulses:
+		tween.tween_callback(func(): portrait.modulate = feel_cfg.portrait_crit_flash_colour)
+		tween.tween_property(portrait, "modulate", Color.WHITE, seconds / pulses)
+
+
 ## The portrait of a hero who was hit jolts sideways and settles (a bigger hit shakes
-## a little harder). Pure feedback; see data/combat_feel.tres.
+## a little harder). Pure feedback; see data/combat_feel.tres. Reduce flashing stops it.
 func _shake_portrait(portrait: Control, damage: int) -> void:
-	if not feel_cfg.portrait_shake_enabled or damage < feel_cfg.portrait_shake_min_damage:
+	if not feel_cfg.portrait_shake_enabled or Settings.reduce_flashing or damage < feel_cfg.portrait_shake_min_damage:
 		return
 	var amp: float = feel_cfg.portrait_shake_pixels * (1.0 + minf(damage, 8) / 8.0)
 	var t: float = feel_cfg.portrait_shake_seconds

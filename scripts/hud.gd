@@ -55,6 +55,14 @@ func show_message(text: String, hold := false, tone := "") -> void:
 	if tone == "miss" and feel_cfg.miss_message_enabled:
 		text = feel_cfg.miss_prefix + text
 		colour = feel_cfg.miss_colour
+	elif tone == "crit":
+		colour = feel_cfg.crit_log_colour
+	elif tone == "hurt":
+		colour = feel_cfg.crit_taken_log_colour
+	elif tone == "fail":
+		colour = feel_cfg.fail_colour
+	elif tone == "banter":
+		colour = feel_cfg.banter_log_colour
 	last_message = text
 	last_tone = tone
 	lines.append({"text": text, "colour": colour})

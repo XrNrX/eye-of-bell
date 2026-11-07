@@ -15,6 +15,14 @@ extends Resource
 @export var start_hands: Array[Resource] = []  # ItemDef per hand (null for empty), at the start of a run.
 @export var start_hand_counts: Array[int] = []  # Stack size per hand (missing or 0 means 1), e.g. 6 darts.
 
+@export_group("Crits")
+## Crit chance (CombatRules.crit_chance) = crit_base + (dexterity - 10) + weapon bonus + finesse_crit with a finesse
+## weapon. Dexterity does nothing else yet. spell_crit is the chance for damage spells instead (0: their spells never crit).
+@export var dexterity := 10
+@export var crit_base := 0
+@export var finesse_crit := 0
+@export var spell_crit := 0
+
 @export_group("Portrait")
 @export var portrait: Texture2D        # Shown while alive.
 @export var portrait_hurt: Texture2D   # Briefly shown (red tint) when hit.
