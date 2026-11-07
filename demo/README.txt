@@ -35,7 +35,7 @@ RAISING THE FALLEN
   shown by a dimmed holy symbol on the portrait.
 
 OTHER KEYS
-  Tab            minimap
+  Tab            show / hide the minimap (on by default)
   Esc            pause menu (Resume, Save, Load, Quit)
   F5 or K        save          L   load
 

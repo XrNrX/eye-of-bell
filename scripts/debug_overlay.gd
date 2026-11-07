@@ -1,5 +1,5 @@
 extends CanvasLayer
-## Debug overlay: Tab toggles a minimap plus tile coordinates and facing.
+## The minimap and tile coordinates overlay: shown from the start; Tab toggles it.
 ## Self-contained: to remove it, delete the DebugOverlay node from main.tscn
 ## (and optionally this script, minimap.gd and debug_overlay.tscn).
 
@@ -14,7 +14,7 @@ const FACING_NAMES: Array[String] = ["N", "W", "S", "E"]  # Same order as player
 
 
 func _ready() -> void:
-	visible = false  # Hidden until Tab is pressed.
+	visible = true  # On by default (Tab hides and shows it).
 	minimap.player = player
 
 
