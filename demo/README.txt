@@ -20,7 +20,9 @@ THE PARTY
   Click a portrait or name   open that hero's inventory / character sheet
   C              character sheet          Shift+1 - 4   that hero's sheet
   Drag a portrait onto another   swap their places in the formation
-  Right-click a stack to split it; Shift+right-click uses one
+  Right-click    split a stack (one goes onto your cursor), lift an item out of a quick slot,
+                 or cancel (a spell target, a "Raise whom?", a portrait drag; Esc does too)
+  Shift+right-click   use one item from a stack
 
 CASTING
   The Mage casts from a spellbook (Magic Missile, Shield, Fireball); the Cleric from a holy
