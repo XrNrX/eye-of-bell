@@ -14,6 +14,11 @@ A first-person, grid-based dungeon crawler in the style of Eye of the Beholder, 
 - **Display modes** (`display_manager.gd`, the `DisplayManager` autoload in `project.godot`; `Settings.fullscreen`, saved under `[display]` in `user://settings.cfg`): the game starts in **borderless fullscreen** (`Window.MODE_FULLSCREEN`, not exclusive) unless the saved choice is windowed. Alt+Enter toggles at any time (the autoload runs while paused), as does the Options button, which listens to `mode_changed`. Windowed opens at the largest whole multiple of 640x360 that fits the screen's usable area including the title bar (`DisplayManager.best_scale(usable, extra)`, measured after a frame because the decorations only exist then), centred. Leftover screen is black bars in both modes (integer scale; the engine's own transform maps clicks, bars included, so no input code was needed). Nothing happens under `--headless`. In a `-s` SceneTree test, autoloads join the tree *after* `_init`, so `await process_frame` before using `root.get_node("DisplayManager")`; tests of display switching must set `Settings.path` to a temp file first, and run windowed (not headless).
 - Mouse positions are in the 640x360 space everywhere. The 3D view's clicks come from the `SubViewportContainer`'s `gui_input` (`game_view.gd`, which calls `Player.world_click`), not from input forwarded into the SubViewport, so they too are screen coordinates (tested pixel by pixel at the view's corners and edges, with and without black bars). Clicks pick up or put down the item on the tile in front wherever they land in the view; monsters are not clickable (heroes attack through their hand buttons).
 
+## Working rules
+
+- **Before starting any new task, run `git status`.** If there are uncommitted changes, stop and ask whether to commit them first, so each feature gets its own commit.
+- Commit and push only when the user says so.
+
 ## Project map
 
 Where things really are (scripts are in one flat folder, `scripts/`, not subfolders):
