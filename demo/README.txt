@@ -17,6 +17,7 @@ THE PARTY
   Click a hero's hand button to attack, throw, or cast (see below)
   1 - 8          the quick slots under the portraits (potions, scrolls, darts, daggers)
   Click a portrait or name   open that hero's inventory / character sheet
+  C              character sheet          Shift+1 - 4   that hero's sheet
   Drag a portrait onto another   swap their places in the formation
   Right-click a stack to split it; Shift+right-click uses one
 
@@ -34,11 +35,25 @@ RAISING THE FALLEN
   A raised Cleric returns at full health but shaken: no mana and no spells for 20 seconds,
   shown by a dimmed holy symbol on the portrait.
 
+FOOD
+  Food heals slowly, potions at once. Click a hero's portrait with food on your cursor to feed
+  them, or use it from a quick slot. Eating again replaces a meal still working. Mouldy bread is
+  the green one: it heals a little and may make the eater sick for a few seconds.
+  Some monsters leave food behind when they die.
+
+CRITICAL HITS AND FAILS
+  A landed hit can be a CRITICAL! for double damage (spells: half as much again). The Thief crits
+  most, above all with a dagger; a hero's chance is on their character sheet. Monsters can crit
+  too, rarely, but a crit won't kill a hero at half health or more.
+  A miss can be a CRITICAL FAIL!: the hero stumbles and loses their next attack, or their weapon
+  lands on the tile in front. Picking it up puts it back in their hand. Someone will comment.
+
 OTHER KEYS
   Tab            show / hide the minimap (on by default)
   Esc            pause menu (Resume, Save, Load, Quit)
   F5 or K        save          L   load
 
 OPTIONS (main menu)
-  Master / Music / Effects volume, SCREEN (fullscreen or windowed), FOG on/off, and
-  REDUCE FLASHING, which makes the holy light a gentler steady glow.
+  Master / Music / Effects volume, SCREEN (fullscreen or windowed), FOG on/off, HINTS on/off,
+  PALETTE (snaps the 3D view to the game's 32 colours; applies when a game starts), and
+  FLASHING: REDUCED, which softens the flashes and stops all screen shake.

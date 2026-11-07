@@ -36,9 +36,25 @@
       "imported": "2026-11-07 04:31:36",
       "source": "dried_meat.png"
     },
+    "items/dried_meat_floor.png": {
+      "imported": "2026-11-07 05:42:34",
+      "source": "dried_meat_floor.png"
+    },
+    "items/dried_meat_hud.png": {
+      "imported": "2026-11-07 05:42:34",
+      "source": "dried_meat_hud.png"
+    },
     "items/hard_cheese.png": {
       "imported": "2026-11-07 04:31:36",
       "source": "hard_cheese.png"
+    },
+    "items/hard_cheese_floor.png": {
+      "imported": "2026-11-07 05:42:34",
+      "source": "hard_cheese_floor.png"
+    },
+    "items/hard_cheese_hud.png": {
+      "imported": "2026-11-07 05:42:34",
+      "source": "hard_cheese_hud.png"
     },
     "items/healing_potion.png": {
       "imported": "2026-11-05 22:29:57",
@@ -96,6 +112,14 @@
       "imported": "2026-11-07 04:31:36",
       "source": "mouldy_bread.png"
     },
+    "items/mouldy_bread_floor.png": {
+      "imported": "2026-11-07 05:42:34",
+      "source": "mouldy_bread_floor.png"
+    },
+    "items/mouldy_bread_hud.png": {
+      "imported": "2026-11-07 05:42:34",
+      "source": "mouldy_bread_hud.png"
+    },
     "items/scroll.png": {
       "imported": "2026-11-05 22:29:57",
       "source": "scroll.png"
@@ -148,6 +172,14 @@
       "imported": "2026-11-07 04:31:36",
       "source": "stale_bread.png"
     },
+    "items/stale_bread_floor.png": {
+      "imported": "2026-11-07 05:42:34",
+      "source": "stale_bread_floor.png"
+    },
+    "items/stale_bread_hud.png": {
+      "imported": "2026-11-07 05:42:34",
+      "source": "stale_bread_hud.png"
+    },
     "items/war_hammer.png": {
       "imported": "2026-11-05 22:29:57",
       "source": "war_hammer.png"
@@ -163,6 +195,14 @@
     "items/withered_apple.png": {
       "imported": "2026-11-07 04:31:36",
       "source": "withered_apple.png"
+    },
+    "items/withered_apple_floor.png": {
+      "imported": "2026-11-07 05:42:34",
+      "source": "withered_apple_floor.png"
+    },
+    "items/withered_apple_hud.png": {
+      "imported": "2026-11-07 05:42:34",
+      "source": "withered_apple_hud.png"
     },
     "monsters/skeleton/attack_0.png": {
       "imported": "2026-11-05 18:32:37",
