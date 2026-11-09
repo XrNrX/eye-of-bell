@@ -37,13 +37,26 @@ def slice_atlas(name):
     return frames, round(1000.0 / (sum(durations) / len(durations)), 2)
 
 
+def no_purple(img):
+    """The palette snap sends some blended mid-greys of the translucent dust to bruise purple (violet is the nearest palette
+    colour to a cold grey). These effects have no purple in them, so each bruise colour goes to the grey of its brightness."""
+    swap = {tuple(PAL[b]): tuple(PAL[g]) for b, g in (("bruise_900", "stone_900"), ("bruise_700", "stone_700"), ("bruise_500", "stone_500"))}
+    px = img.load()
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = px[x, y]
+            if a and (r, g, b) in swap:
+                px[x, y] = (*swap[(r, g, b)], a)
+    return img
+
+
 def build_sheet(name):
     frames, fps = slice_atlas(name)
     w, h = frames[0].size
     sheet = Image.new("RGBA", (w * len(frames), h), (0, 0, 0, 0))
     for i, f in enumerate(frames):
         sheet.paste(f, (i * w, 0))
-    written = [save_png(PAL.snap(sheet), f"corruption/{name}_sheet.png")]
+    written = [save_png(no_purple(PAL.snap(sheet)), f"corruption/{name}_sheet.png")]
     path = ART_DIR / "corruption" / f"{name}_sheet.json"
     path.write_text(json.dumps({"frames": len(frames), "fps": fps, "frame_w": w, "frame_h": h}, indent=2))
     return written + [path]

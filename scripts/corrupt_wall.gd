@@ -33,8 +33,8 @@ const ASH_SECONDS := 1.6
 const LIGHT_COLOUR := Color(0.45, 0.95, 0.6)
 const LIGHT_ENERGY := 0.55          # The faint glow's strongest beat. Reduce flashing: a third of it.
 const LIGHT_RANGE := 3.2
-## How strong the heartbeat light is on each of the veins' 12 frames (the lub-dub of the animation).
-const HEARTBEAT := [0.3, 1.0, 0.6, 0.9, 0.35, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3, 0.3]
+## How strong the heartbeat light is on each of the veins' 12 frames (the lub-dub of the animation: the first pulse runs out along the roots on frames 2-5, the second on 6-9).
+const HEARTBEAT := [0.3, 0.7, 1.0, 1.0, 0.8, 0.6, 0.9, 0.9, 0.6, 0.35, 0.3, 0.3]
 
 static var _sheets := {}   # name -> {texture, frames, fps}
 
