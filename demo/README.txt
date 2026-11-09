@@ -26,7 +26,10 @@ THE PARTY
 
 CASTING
   The Mage casts from a spellbook (Magic Missile, Shield, Fireball); the Cleric from a holy
-  symbol (Heal, Bless). Click the hand holding it, pick a spell, then a hero if it needs one.
+  symbol (Heal, Bless). Click the hand holding it and a spell list opens: each spell has its own
+  icon and mana cost, the hero's mana is at the top, and spells you cannot afford are greyed.
+  Pick a spell, then a hero if it needs one. The list always opens on top of everything and keeps
+  clear of the map (below it for the top row of heroes).
   The symbol must be in a hand, not the backpack: "You need your holy symbol."
   When the Cleric casts Heal or Bless the symbol glows and a gold light sweeps the corridor.
 
@@ -58,12 +61,26 @@ HITS FROM BEHIND AND THE SIDES
   behind you!" Turn to face it: you can only strike forwards. Drag a portrait onto another to
   swap who stands where.
 
+THE MAP
+  The party sketches the dungeon as it goes: a small map on stained parchment sits in the top
+  right of the 3D view (floors are an ink wash, walls thin ink lines, doors drawn as bars across
+  the gap, red dot = locked, stairs / levers / found secrets as small symbols, a red arrow for
+  where you face). The torchlight flickers faintly over it.
+  M              full-screen map of the whole level, with a legend (M or Esc closes it)
+  Tab            show / hide the small map        Shift+Tab   show / hide coordinates (debug)
+  This demo has no fog of war yet, so the map shows the whole level around you.
+
+ENEMY HEALTH BARS
+  A small bar hangs over a monster once you hurt it, and over the one right in front of you;
+  it fades away a few seconds after the last hit. The monster in front is also named in a strip
+  at the top of the view. The lost chunk flashes, then drains. Options: ENEMY BARS ON / BOSS ONLY /
+  OFF, for the old-school feel.
+
 OTHER KEYS
-  Tab            show / hide the minimap (on by default)
   Esc            pause menu (Resume, Save, Load, Quit)
   F5 or K        save          L   load
 
 OPTIONS (main menu)
   Master / Music / Effects volume, SCREEN (fullscreen or windowed), FOG on/off, HINTS on/off,
-  PALETTE (snaps the 3D view to the game's 32 colours; applies when a game starts), and
-  FLASHING: REDUCED, which softens the flashes and stops all screen shake.
+  PALETTE (snaps the 3D view to the game's 32 colours; applies when a game starts), ENEMY BARS
+  (on, boss only, off), and FLASHING: REDUCED, which softens the flashes and stops all screen shake.
