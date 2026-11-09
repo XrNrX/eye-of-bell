@@ -18,6 +18,8 @@ extends Node3D
 ## a palette-coloured drop shadow. All colours are the game's palette.
 
 const MAIN_SCENE := "res://scenes/main.tscn"
+const INTRO_SCENE := "res://scenes/intro.tscn"
+const INTRO_SEEN := "intro_played"  # In Settings' hints_seen: the intro has played once on this machine.
 const TITLE_ART := "res://art/ui/title.png"
 const SaveGame := preload("res://scripts/save_game.gd")
 const Settings := preload("res://scripts/settings.gd")
@@ -78,6 +80,11 @@ var base_position: Vector3
 
 func _ready() -> void:
 	Settings.apply()
+	if not Settings.hint_seen(INTRO_SEEN):  # The very first launch plays the intro, which comes back here.
+		Settings.mark_hint(INTRO_SEEN)
+		set_process(false)
+		get_tree().change_scene_to_file.call_deferred(INTRO_SCENE)
+		return
 	_show_title_art()
 	root_ui.theme = _make_theme()
 	options_title.add_theme_color_override("font_color", TORCH_300)
@@ -101,6 +108,14 @@ func _ready() -> void:
 	options_button.pressed.connect(_show_options.bind(true))
 	quit_button.pressed.connect(func(): get_tree().quit())
 	back_button.pressed.connect(_show_options.bind(false))
+	var intro_button: Button = options_button.duplicate()  # Watch the intro again, between Options and Quit.
+	intro_button.unique_name_in_owner = false
+	intro_button.name = "IntroButton"
+	intro_button.text = "INTRO"
+	menu_box.add_child(intro_button)
+	menu_box.move_child(intro_button, quit_button.get_index())
+	intro_button.pressed.connect(func(): get_tree().change_scene_to_file(INTRO_SCENE))
+	intro_button.pressed.connect(_click)
 
 	load_button.disabled = not SaveGame.has_save()  # Nothing to load yet: greyed out.
 	_refresh_volume()

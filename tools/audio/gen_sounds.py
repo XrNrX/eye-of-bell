@@ -187,6 +187,14 @@ def rumble():
     return finish(mix(gain(low, 0.9), gain(boom, 0.8), *[(s, t) for s, t in stones]), 0.8)
 
 
+def thunder():
+    """A placeholder for the intro's storm: a sharp crack, then a long low roll that dies away."""
+    crack = decay(bandpass(noise(0.25, 301), 900, 5000), 0.06)
+    body = decay(lowpass(noise(1.9, 302), 240), 0.8)
+    roll = decay(lowpass(noise(1.7, 303), 110), 1.0)
+    return finish(mix(gain(crack, 0.8), (gain(body, 0.9), 0.04), (gain(roll, 1.0), 0.25)), 0.85)
+
+
 def door_close():
     return finish(thud(80, 38, 0.12, 0.38, 6, 0.6, 700), 0.7)
 
@@ -355,7 +363,7 @@ SOUNDS = {
     "crit_hit": (crit_hit, None), "crit_hurt": (crit_hurt, None), "fumble": (fumble, None),
     "monster_attack": (monster_attack, None), "monster_hurt": (monster_hurt, None), "monster_die": (monster_die, None),
     "hero_hurt": (hero_hurt, None), "hero_die": (hero_die, None),
-    "potion": (potion, None), "zap": (zap, None), "heal": (heal, None), "shield": (shield, None), "bless": (bless, None), "rumble": (rumble, None), "portcullis": (portcullis, None), "fireball": (fireball, None), "explosion": (explosion, None),
+    "potion": (potion, None), "zap": (zap, None), "heal": (heal, None), "shield": (shield, None), "bless": (bless, None), "rumble": (rumble, None), "thunder": (thunder, None),"portcullis": (portcullis, None), "fireball": (fireball, None), "explosion": (explosion, None),
     "ui_click": (ui_click, None), "ui_swap": (ui_swap, None), "save": (save, None), "load": (load, None),
     "level_complete": (level_complete, None), "game_over": (game_over, None),
 }

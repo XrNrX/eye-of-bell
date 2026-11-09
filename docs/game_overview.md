@@ -23,6 +23,7 @@ Dark, desaturated, cursed (`docs/art_style.md`). Sickly green means the curse an
 - Inventory, stacks, equipping, character sheet, food and sickness, potions, scrolls, resurrection.
 - Spells (Magic Missile, Fireball, Heal, Bless, Shield) with synced lighting and pixel particles, holy light.
 - Banter system (crit, fail, hit from behind, eat, equip events).
+- Intro cutscene: 14 painted shots with fog, rain, lightning and thunder, played once on first launch and from the menu.
 - Ancient walls (stone variants, decals, structures), menus, pause, save and load, audio, display modes, options.
 - Art pipeline: Python generators plus PixelLab imports (`tools/art/`).
 

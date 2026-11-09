@@ -34,6 +34,7 @@ const CUES := {
 	"explosion": {"db": -1.0, "pitch": 0.05},
 	"portcullis": {"db": -2.0, "pitch": 0.05},
 	"rumble": {"db": -1.0, "pitch": 0.05},
+	"thunder": {"db": -2.0, "pitch": 0.08},
 	"door_open": {"db": -3.0},
 	"door_close": {"db": -4.0},
 	"hit": {"db": -2.0, "pitch": 0.1},

@@ -8,6 +8,62 @@
       "imported": "2026-11-05 21:30:13",
       "source": "rune_panel.png"
     },
+    "intro/shot_01_road.png": {
+      "imported": "2026-11-07 14:19:49",
+      "source": "shot_01_road.png"
+    },
+    "intro/shot_02_travellers.png": {
+      "imported": "2026-11-07 14:19:51",
+      "source": "shot_02_travellers.png"
+    },
+    "intro/shot_03_crow.png": {
+      "imported": "2026-11-07 14:57:50",
+      "source": "shot_03_crow.png"
+    },
+    "intro/shot_04_trees.png": {
+      "imported": "2026-11-07 14:57:52",
+      "source": "shot_04_trees.png"
+    },
+    "intro/shot_05_boots.png": {
+      "imported": "2026-11-07 14:57:54",
+      "source": "shot_05_boots.png"
+    },
+    "intro/shot_06_ruins.png": {
+      "imported": "2026-11-07 14:57:55",
+      "source": "shot_06_ruins.png"
+    },
+    "intro/shot_07_silhouette.png": {
+      "imported": "2026-11-07 14:59:03",
+      "source": "shot_07_silhouette.png"
+    },
+    "intro/shot_08_holy_symbol.png": {
+      "imported": "2026-11-07 14:57:59",
+      "source": "shot_08_holy_symbol.png"
+    },
+    "intro/shot_09_sword.png": {
+      "imported": "2026-11-07 14:59:04",
+      "source": "shot_09_sword.png"
+    },
+    "intro/shot_10_entrance.png": {
+      "imported": "2026-11-07 14:58:02",
+      "source": "shot_10_entrance.png"
+    },
+    "intro/shot_11_archway.png": {
+      "imported": "2026-11-07 14:58:04",
+      "source": "shot_11_archway.png"
+    },
+    "intro/shot_12_tunnel.png": {
+      "imported": "2026-11-07 14:58:05",
+      "source": "shot_12_tunnel.png"
+    },
+    "intro/shot_13_inside.png": {
+      "imported": "2026-11-07 14:58:07",
+      "source": "shot_13_inside.png"
+    },
+    "intro/shot_14_looking_out.png": {
+      "imported": "2026-11-07 14:59:06",
+      "source": "shot_14_looking_out.png"
+    },
     "items/dagger.png": {
       "imported": "2026-11-05 22:29:57",
       "source": "dagger.png"

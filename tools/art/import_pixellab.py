@@ -569,8 +569,25 @@ def derive_portrait_variants(ctx, singles, catalog):
             ctx.replaced.append(f"{vkey} ({what}, derived from the living portrait)")
 
 
+def grey_out_bruise(img):
+    """PixelLab's night greys lean slightly violet, and the nearest-colour snap turns them into the bruised-purple accent
+    (16 to 32% of an intro shot; the style guide allows a few percent in all). Intro shots have no purple in them on
+    purpose, so each bruise colour goes to the grey of about the same brightness."""
+    swap = {tuple(PAL[b]): tuple(PAL[s]) for b, s in
+            (("bruise_900", "stone_800"), ("bruise_700", "stone_700"), ("bruise_500", "stone_500"))}
+    px = img.load()
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = px[x, y]
+            if (r, g, b) in swap:
+                px[x, y] = (*swap[(r, g, b)], a)
+    return img
+
+
 def process_image(ctx, asset, path):
     img = ctx.convert(Image.open(path), asset.size, asset.ui, asset.key)
+    if asset.key.startswith("intro/"):
+        img = grey_out_bruise(img)
     ctx.write_image(img, asset.rel, path.name)
     note = f" ({Image.open(path).size[0]}x{Image.open(path).size[1]} -> {asset.size[0]}x{asset.size[1]})" if Image.open(path).size != asset.size else ""
     ctx.replaced.append(asset.key + note)
