@@ -72,13 +72,13 @@ func _draw() -> void:
 	# Traps and ambushes are not drawn either.)
 	for row in ROWS:
 		for col in COLS:
-			var icon := MapSymbols.icon_for(origin + Vector2i(col, row))
-			if icon != "":
-				draw_texture(icons[icon], Vector2(col, row) * CELL_PX)
+			var poi := MapSymbols.poi_for(origin + Vector2i(col, row))
+			if poi != "":
+				MapSymbols.draw_poi(self, icons[poi], Vector2(col, row) * CELL_PX, CELL_PX, true)
 	for lever in DungeonMap.LEVERS:
 		var at: Vector2i = lever.cell - origin
 		if at.x >= 0 and at.y >= 0 and at.x < COLS and at.y < ROWS:
-			draw_texture(icons["lever"], Vector2(at) * CELL_PX)
+			MapSymbols.draw_poi(self, icons["lever"], Vector2(at) * CELL_PX, CELL_PX, true)
 
 	# The party: the arrow, turned to the way they face (the art points north; facing 1 is west = a quarter turn left).
 	var centre := (Vector2(COLS / 2, ROWS / 2) + Vector2(0.5, 0.5)) * CELL_PX

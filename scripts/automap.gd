@@ -100,11 +100,11 @@ func _draw_map() -> void:
 			MapSymbols.draw_cell(canvas, c, at, CELL, wash)
 	for y in rows:
 		for x in DungeonMap.MAP[y].size():
-			var icon := MapSymbols.icon_for(Vector2i(x, y))
-			if icon != "":
-				canvas.draw_texture(icons[icon], origin + Vector2(x, y) * CELL + Vector2(CELL, CELL) / 2.0 - Vector2(8, 8))
+			var poi := MapSymbols.poi_for(Vector2i(x, y))
+			if poi != "":
+				MapSymbols.draw_poi(canvas, icons[poi], origin + Vector2(x, y) * CELL, CELL, false)
 	for lever in DungeonMap.LEVERS:
-		canvas.draw_texture(icons["lever"], origin + Vector2(lever.cell) * CELL + Vector2(CELL, CELL) / 2.0 - Vector2(8, 8))
+		MapSymbols.draw_poi(canvas, icons["lever"], origin + Vector2(lever.cell) * CELL, CELL, false)
 	if player != null:  # The party: the arrow, turned to face the way they face (the art points north).
 		var centre := origin + (Vector2(player.cell) + Vector2(0.5, 0.5)) * CELL
 		canvas.draw_set_transform(centre, -player.facing * PI / 2.0)
@@ -124,18 +124,25 @@ func _draw_legend() -> void:
 	y += 10.0
 	var rows := [
 		["arrow", "YOU"], ["door_closed", "DOOR"], ["door_open", "OPEN DOOR"], ["door_locked", "LOCKED"],
-		["stairs", "STAIRS"], ["lever", "LEVER"], ["secret", "SECRET FOUND"],
+		["portcullis_closed", "GATE"], ["stairs", "STAIRS"], ["lever", "LEVER"], ["secret", "SECRET FOUND"],
 	]
 	for row in rows:
-		canvas.draw_texture(icons[row[0]], Vector2(x, y))
+		var kind: String = row[0]
+		if kind.begins_with("door_") or kind.begins_with("portcullis"):
+			# Doors are drawn in code: a 16 px sample, a passage running up the page with a wall line each side.
+			canvas.draw_rect(Rect2(x, y, 2, 16), INK)
+			canvas.draw_rect(Rect2(x + 14, y, 2, 16), INK)
+			MapSymbols.draw_door(canvas, Vector2(x, y), 16, kind, false)
+		else:
+			canvas.draw_texture(icons[kind], Vector2(x, y))
 		_text(font, row[1], Vector2(x + 24, y + 12), INK)
-		y += 22.0
-	canvas.draw_rect(Rect2(x + 2, y + 2, 12, 12), INK)
+		y += 20.0
+	canvas.draw_rect(Rect2(x + 6, y + 2, 2, 12), INK)
 	_text(font, "WALL", Vector2(x + 24, y + 12), INK)
-	y += 22.0
+	y += 20.0
 	canvas.draw_texture(wash, Vector2(x + 2, y + 2))
 	_text(font, "EXPLORED", Vector2(x + 24, y + 12), INK)
-	y += 34.0
+	y += 30.0
 	_text(font, "M OR ESC", Vector2(x, y), BLOOD_700)
 	_text(font, "CLOSES", Vector2(x, y + 12), BLOOD_700)
 
