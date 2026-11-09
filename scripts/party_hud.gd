@@ -373,9 +373,13 @@ func _on_spell_chosen(spell: Resource) -> void:
 
 ## A portrait was clicked: in target mode it picks the spell's target, otherwise it
 ## opens that hero's inventory.
-## Shift held (or `force_inventory`, for tests): a portrait click opens the inventory even with something on the cursor, instead of
-## equipping, feeding or reading it. Holding Shift is the way into the inventory while carrying armour, a weapon or food.
+## `force_inventory` (for tests): a portrait click opens the inventory even with something on the cursor. In play, the way into it
+## while carrying something is the hero's name (or the scroll beside it).
 var force_inventory := false
+## Shift held (or `force_equip`, for tests): a portrait click with armour or a weapon on the cursor puts it on that hero. A plain
+## click puts it in their backpack, so a swap can never trap the item in a loop.
+var force_equip := false
+var told_about_equip := false  # The "Shift+click to equip" tip is said once a run, with the first stowing.
 
 
 func _on_portrait(slot: int) -> void:
@@ -386,7 +390,7 @@ func _on_portrait(slot: int) -> void:
 		return
 	var cursor = get_tree().get_first_node_in_group("cursor")
 	var carrying: bool = cursor != null and cursor.is_holding()
-	if carrying and (force_inventory or Input.is_key_pressed(KEY_SHIFT)) and pending.is_empty():
+	if carrying and force_inventory and pending.is_empty():
 		get_tree().call_group("inventory", "show_screen", slot, true)
 		return
 	if cursor != null and cursor.is_holding() and cursor.held.def.revive_percent > 0:
@@ -395,9 +399,14 @@ func _on_portrait(slot: int) -> void:
 	if cursor != null and cursor.is_holding() and cursor.held.def.is_food():
 		_feed_from_cursor(slot, cursor)  # Food on the cursor: feed this hero.
 		return
-	if cursor != null and cursor.is_holding() and party.is_equippable(cursor.held.def):
-		var result: Dictionary = party.equip_from_cursor(slot, cursor)  # Armour or a weapon: put it on this hero.
-		get_tree().call_group("hud", "show_message", result.message)
+	if cursor != null and cursor.is_holding() and party.is_equippable(cursor.held.def) and pending.is_empty():
+		var equip: bool = force_equip or Input.is_key_pressed(KEY_SHIFT)
+		var result: Dictionary = party.equip_from_cursor(slot, cursor) if equip else party.stow_from_cursor(slot, cursor)
+		var text: String = result.message
+		if not equip and result.done and not told_about_equip:
+			told_about_equip = true
+			text += " (Shift+click a portrait to equip it instead.)"
+		get_tree().call_group("hud", "show_message", text)
 		return
 	if pending.is_empty():
 		get_tree().call_group("inventory", "show_screen", slot, true)  # The stat sheet opens alongside the inventory.
@@ -407,11 +416,12 @@ func _on_portrait(slot: int) -> void:
 	party.cast(p.caster, p.hand, p.spell, slot)
 
 
-## While armour or a weapon is on the cursor, each portrait shows what it would change: an arrow and the number (defence for
-## armour, average damage for a weapon), in torch-free colours, or the portrait greys out if that class can't use it.
+## While armour or a weapon is on the cursor AND Shift is held (the click that would equip it), each portrait shows what it would
+## change: an arrow and the number (defence for armour, average damage for a weapon), in torch-free colours, or the portrait greys
+## out if that class can't use it. Without Shift a click stows the item, so nothing is promised.
 func _update_equip_hint(m, p: Dictionary, cursor: Node) -> void:
 	var hint: Control = p.equip_hint
-	var show: bool = cursor != null and cursor.is_holding() and party.is_equippable(cursor.held.def)
+	var show: bool = cursor != null and cursor.is_holding() and party.is_equippable(cursor.held.def) 			and (force_equip or Input.is_key_pressed(KEY_SHIFT))
 	hint.visible = show
 	var portrait: Control = p.portrait
 	if not show:

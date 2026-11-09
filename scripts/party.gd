@@ -751,6 +751,19 @@ func equip_refusal(m: Member, def: Resource) -> String:
 	return ""
 
 
+## The item on the cursor, clicked onto a hero's portrait: it goes into that hero's backpack (matching stacks first). What does not fit
+## stays on the cursor. Returns {"done": bool, "message": String}. (Equipping it instead is Shift+click: equip_from_cursor.)
+func stow_from_cursor(slot: int, cursor: Node) -> Dictionary:
+	var m := member(slot)
+	var stack: RefCounted = cursor.release()
+	var item: String = stack.def.display_name.to_lower()
+	if add_to_backpack(slot, stack):
+		_cue("pickup")
+		return {"done": true, "message": "%s stows the %s." % [m.def.display_name, item]}
+	cursor.hold(stack)  # The pack is full (or only part of a stack fitted): the rest stays in hand.
+	return {"done": false, "message": "%s's backpack is full." % m.def.display_name}
+
+
 ## An armour piece or weapon on the cursor, clicked onto a hero's portrait: armour goes into the armour slot, a weapon into the
 ## main hand. If the slot is taken the old piece goes onto the cursor. Returns {"done": bool, "message": String}.
 func equip_from_cursor(slot: int, cursor: Node) -> Dictionary:
