@@ -1,12 +1,16 @@
 extends Node3D
 ## One corrupted wall (MAP tile 7): a dark, rotted block overgrown with the curse. Everything that moves on it is a PixelLab
 ## effect (docs/asset_log.md), laid on each face that can be seen:
-##   veins   art/corruption/veins_sheet.png   green curse veins that pulse with a heartbeat (looping), plus a faint green light
-##                                            that beats with them
+##   veins   art/corruption/veins_sheet.png   green curse veins that pulse with a heartbeat (looping)
+##   halo    art/corruption/halo_sheet.png    a soft green halo that breathes with them (looping, under the veins). The faint green
+##                                            LIGHT is a real light, but its strength each frame is read from this sheet's own
+##                                            brightness, so the art sets the beat
 ##   purge   art/corruption/purge_sheet.png   the gold holy light that a Bless sends into it
-##   ash     art/corruption/ash_sheet.png     the wall crumbling to ash and dust
+##   rot     art/corruption/rot_sheet.png     black rot creeping over the face from the centre, then crumbling away in grain and
+##                                            flecks: it covers the block, which is removed under it
+##   ash     art/corruption/ash_sheet.png     the dust and falling ash as it goes
 ## The veins burn away from the centre outward as the gold light spreads (the `burn` uniform of shaders/corruption_add.gdshader),
-## the block blackens, then sinks into a cloud of ash: no stone cubes, so it looks nothing like a cracked wall breaking.
+## the rot covers the block and crumbles away over a cloud of ash: no stone cubes, so it looks nothing like a cracked wall breaking.
 ## dungeon_builder.gd owns the state (DungeonMap.corrupted_left / purified); this node is only the show.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
@@ -19,24 +23,24 @@ const SHEET := "res://art/corruption/%s_sheet"
 const VEIN_GAIN := 1.5             # How bright the veins glow (above 1.4 the brightest pixels bloom with the heartbeat).
 const VEIN_OFFSET := 0.012         # How far each overlay stands off the wall, so it does not fight the block for depth.
 const PURGE_OFFSET := 0.016
-const ASH_OFFSET := 0.02
+const HALO_OFFSET := 0.008         # Under the veins.
+const HALO_GAIN := 0.9
+const ROT_OFFSET := 0.024          # Over the gold light and the veins.
+const ASH_OFFSET := 0.03           # Over the rot, so the dust drifts in front of it.
 const PURGE_GAIN := 1.15
 const PURGE_REDUCED := 0.6          # Reduce flashing: the gold light is dimmer.
 const PARTIAL_FRAMES := 5           # A Bless that does not finish the job plays only this many frames of the burn...
 const PARTIAL_BURN := 0.5           # ...and burns the veins away this far out (0..1, the corners being 1).
 const FULL_BURN := 1.1
 const BURN_SECONDS := 1.0           # Matches the gold ring reaching the edge of the face.
-const BLACKEN_TO := Color(0.12, 0.12, 0.13)
-const CRUMBLE_AT := 1.0             # Seconds in, the ash starts and the block sinks.
-const CRUMBLE_SECONDS := 1.3
-const ASH_SECONDS := 1.6
+const ROT_START := 0.35             # Seconds in, the rot starts to creep over the face (the gold light is still burning the veins).
+const COVER_FRAME := 8              # The rot sheet frame by which the face is completely covered: the block goes then, unseen.
 const LIGHT_COLOUR := Color(0.45, 0.95, 0.6)
 const LIGHT_ENERGY := 0.55          # The faint glow's strongest beat. Reduce flashing: a third of it.
 const LIGHT_RANGE := 3.2
-## How strong the heartbeat light is on each of the veins' 12 frames (the lub-dub of the animation: the first pulse runs out along the roots on frames 2-5, the second on 6-9).
-const HEARTBEAT := [0.3, 0.7, 1.0, 1.0, 0.8, 0.6, 0.9, 0.9, 0.6, 0.35, 0.3, 0.3]
 
 static var _sheets := {}   # name -> {texture, frames, fps}
+static var _beat := []     # The halo sheet's brightness on each frame, 0..1, read from the art itself (see beat_curve)
 
 var cell := Vector2i.ZERO
 var strength := 1
@@ -44,6 +48,7 @@ var block: MeshInstance3D
 var block_material: StandardMaterial3D
 var light: OmniLight3D
 var vein_material: ShaderMaterial          # Shared by every face, so one burn value burns them all.
+var halo_material: ShaderMaterial          # The breathing halo, likewise shared; it thins out as the veins burn back.
 var faces: Array = []                       # {"dir": Vector2i, "out": Vector3, "rot": Vector3, "veins": MeshInstance3D}
 var overlays: Array = []                    # Running one-shots: {"mesh", "material", "frames", "fps", "t", "last"}
 var burn := 0.0
@@ -63,6 +68,38 @@ static func sheet(name: String) -> Dictionary:
 			entry = {"texture": load(base + ".png"), "frames": int(info.frames), "fps": float(info.fps)}
 	_sheets[name] = entry
 	return entry
+
+
+## How bright the halo sheet is on each of its frames, 0..1 (the frame's summed colour weighted by its alpha, over the brightest
+## frame's). The heartbeat light follows this, so the lub-dub is whatever the animation draws. Flat 0.5 if the sheet is missing.
+static func beat_curve() -> Array:
+	if not _beat.is_empty():
+		return _beat
+	var halo := sheet("halo")
+	if halo.is_empty():
+		_beat = [0.5]
+		return _beat
+	var image: Image = halo.texture.get_image()
+	if image == null:
+		_beat = [0.5]
+		return _beat
+	image.decompress()
+	image.convert(Image.FORMAT_RGBA8)
+	var frames: int = int(halo.frames)
+	var frame_w: int = image.get_width() / frames
+	var totals := []
+	var best := 0.0
+	for f in frames:
+		var sum := 0.0
+		for y in image.get_height():
+			for x in frame_w:
+				var c := image.get_pixel(f * frame_w + x, y)
+				sum += c.a * (c.r + c.g + c.b) / 3.0
+		totals.append(sum)
+		best = maxf(best, sum)
+	for f in frames:
+		_beat.append(totals[f] / best if best > 0.0 else 0.5)
+	return _beat
 
 
 ## Build the block and its veins. `box` is the wall mesh (one whole picture per face, see the builder's _wall_box).
@@ -85,6 +122,14 @@ func setup(owner_cell: Vector2i, box: Mesh, blessings: int) -> void:
 		vein_material.set_shader_parameter("sheet", veins.texture)
 		vein_material.set_shader_parameter("frames", float(veins.frames))
 		vein_material.set_shader_parameter("gain", VEIN_GAIN)
+	var halo := sheet("halo")
+	halo_material = null
+	if not halo.is_empty():
+		halo_material = ShaderMaterial.new()
+		halo_material.shader = ADD_SHADER
+		halo_material.set_shader_parameter("sheet", halo.texture)
+		halo_material.set_shader_parameter("frames", float(halo.frames))
+		halo_material.set_shader_parameter("gain", HALO_GAIN * (0.5 if Settings.reduce_flashing else 1.0))
 	var first_open := Vector2i.ZERO
 	for side in 4:
 		var dir: Vector2i = _dir(side)
@@ -94,7 +139,9 @@ func setup(owner_cell: Vector2i, box: Mesh, blessings: int) -> void:
 			first_open = dir
 		var out := Vector3(dir.x, 0, dir.y)
 		var rot := Vector3(0, atan2(dir.x, dir.y), 0)
-		var face := {"dir": dir, "out": out, "rot": rot, "veins": null}
+		var face := {"dir": dir, "out": out, "rot": rot, "veins": null, "halo": null}
+		if halo_material != null:
+			face.halo = _quad(halo_material, out * (s / 2.0 + HALO_OFFSET), rot)
 		if vein_material != null:
 			face.veins = _quad(vein_material, out * (s / 2.0 + VEIN_OFFSET), rot)
 		faces.append(face)
@@ -146,7 +193,14 @@ func _process(delta: float) -> void:
 		var frame: int = int(clock * veins.fps) % int(veins.frames)
 		if vein_material != null:
 			vein_material.set_shader_parameter("frame", float(frame))
-		beat = HEARTBEAT[mini(frame, HEARTBEAT.size() - 1)]
+	var halo := sheet("halo")
+	if not halo.is_empty():
+		var halo_frame: int = int(clock * halo.fps) % int(halo.frames)
+		beat = beat_curve()[mini(halo_frame, beat_curve().size() - 1)]
+		if halo_material != null:
+			halo_material.set_shader_parameter("frame", float(halo_frame))
+			# The halo thins out as the veins burn back, like the light.
+			halo_material.set_shader_parameter("tint", Color(1, 1, 1, 1) * clampf(1.0 - burn / FULL_BURN, 0.0, 1.0))
 	if light != null and not _gone:
 		var strength_scale := (1.0 / 3.0) if Settings.reduce_flashing else 1.0
 		# The light weakens as the veins burn back: a wall with no veins left has nothing to glow.
@@ -191,27 +245,33 @@ func bless_partial() -> void:
 func purify(open_cell: Callable, done: Callable) -> void:
 	_play("purge", true, PURGE_OFFSET, -1, _purge_gain())
 	_burn_to(FULL_BURN, BURN_SECONDS)
+	var rot := sheet("rot")
+	var rot_fps: float = float(rot.fps) if not rot.is_empty() else 12.0
+	var rot_seconds: float = float(rot.frames) / rot_fps if not rot.is_empty() else 1.9
+	var cover_at: float = ROT_START + float(COVER_FRAME) / rot_fps
 	var tween := create_tween()
-	tween.tween_property(block_material, "albedo_color", BLACKEN_TO, BURN_SECONDS)  # The stone goes black.
-	tween.tween_interval(maxf(0.0, CRUMBLE_AT - BURN_SECONDS))
+	tween.tween_interval(ROT_START)
+	tween.tween_callback(func(): _play("rot", false, ROT_OFFSET))  # Black rot creeps out from the centre over the whole face.
+	tween.tween_interval(cover_at - ROT_START)
 	tween.tween_callback(func():
+		# The face is covered: the block goes, unseen, and the dust starts as the rot crumbles away.
+		block.visible = false
 		open_cell.call()
 		_play("ash", false, ASH_OFFSET)
 		get_tree().call_group("audio", "play", "rumble")
-		get_tree().call_group("combat_feel", "shake_by", 0.04, 0.5))
-	# Sink into the floor while the ash hides it.
-	tween.tween_property(block, "scale", Vector3(1.0, 0.02, 1.0), CRUMBLE_SECONDS).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.parallel().tween_property(block, "position:y", 0.0, CRUMBLE_SECONDS).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_callback(func():
-		_gone = true
-		block.visible = false
-		if light != null:
-			light.light_energy = 0.0
+		get_tree().call_group("combat_feel", "shake_by", 0.04, 0.5)
 		for face in faces:
 			if face.veins != null:
 				face.veins.queue_free()
+			if face.halo != null:
+				face.halo.queue_free())
+	tween.tween_interval(maxf(0.05, ROT_START + rot_seconds - cover_at))
+	tween.tween_callback(func():
+		_gone = true
+		if light != null:
+			light.light_energy = 0.0
 		done.call())
-	tween.tween_interval(maxf(0.0, ASH_SECONDS - CRUMBLE_SECONDS) + 0.1)
+	tween.tween_interval(0.2)
 	tween.tween_callback(queue_free)
 
 

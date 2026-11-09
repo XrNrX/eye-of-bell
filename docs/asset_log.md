@@ -16,6 +16,8 @@ Entries before 2026-11-09 were filled in afterwards from the git history and the
 | `art/corruption/veins_sheet.png` (source `tools/art/pieces/corruption/veins.png`): the pulsing green curse veins, a 12-frame loop. Redone 2026-11-09 as curved, tapering roots with side-branches and a pulse that runs outward from the heart (the first version was jagged lightning-like `bolt` layers) | `vfx_workbench` (own layers: smooth `shape` strokes with `reveal` for the travelling pulse, plus a `glow`; effect "eye-of-bell-corruption-veins", exported with `--replace`) | 2026-11-09 | 0 (free tool) |
 | `art/corruption/purge_sheet.png` (source `.../purge.png`): the gold holy light burning the veins away from the centre outward, 14 frames. Redone 2026-11-09: a second, slower ring, gold cracks that race outward along the same roots as the green veins (so it reads as burning along them) and then cool and fade, instead of one plain ring | `vfx_workbench` (own layers: `glow`, two `ring`s, `shape` strokes with `reveal` on the veins' own paths, `rays`, `particles`; "eye-of-bell-holy-purge", exported with `--replace`) | 2026-11-09 | 0 (free tool) |
 | `art/corruption/ash_sheet.png` (source `.../ash.png`): the wall crumbling to ash and dust, 17 frames. Redone 2026-11-09: the dust is now two ragged, drifting layers that thin to a haze (the first version was one flat blob) | `vfx_workbench` (own layers: two `noise` discs on a dark ramp with growing radius and fading opacity, falling `particles`; "eye-of-bell-ash-crumble", exported with `--replace`) | 2026-11-09 | 0 (free tool) |
+| `art/corruption/halo_sheet.png` (source `tools/art/pieces/corruption/halo.png`): a soft green halo that breathes with the veins' heartbeat, with drifting spores, a 12-frame loop. It replaced the hand-typed heartbeat table: the light's strength is now read from this sheet's own brightness | `vfx_workbench` (own layers: `glow` with lub-dub keys, a `noise` mist, rising `particles`; "eye-of-bell-corruption-halo") | 2026-11-09 | 0 (free tool) |
+| `art/corruption/rot_sheet.png` (source `.../rot.png`): black rot creeping over the face from the centre, covering it, then crumbling away in grain and falling flecks, 23 frames. It replaced the code tweens that blackened the block and sank it into the floor | `vfx_workbench` (own layers: a growing `noise` disc with `blocks` breakup and dissolve, falling `droplet` and `chunk` `particles`; "eye-of-bell-rot-crumble") | 2026-11-09 | 0 (free tool) |
 | `art/intro/shot_01_road.png` | `create_image_pro` | 2026-11-07 | 25 |
 | `art/intro/shot_02_travellers.png` | `create_image_pro` | 2026-11-07 | 50 (one rejected try) |
 | `art/intro/shot_03_crow.png` | `create_image_pro` | 2026-11-07 | 25 |
@@ -56,9 +58,8 @@ None of these were made with the VFX suite, so they should be replaced.
 - Monster hurt flashes and telegraph glow (`monster.gd`) and the party panel's buff rings and food flares (`party_hud.gd`).
 - Ambush bursts and legendary item glows: none exist yet; when they do they must be made with the VFX suite.
 
-**Corrupted walls** (everything that moves on them is in the table above; these parts are code)
-- The heartbeat light (`corrupt_wall.gd`): a faint green `OmniLight3D` whose strength follows the veins' pulse. A light, not a drawn effect.
-- The stone blackening and sinking into the floor as it crumbles (`corrupt_wall.gd`): tweens on the wall block.
+**Corrupted walls** (everything that moves on them is in the table above; what is left in code)
+- The heartbeat light (`corrupt_wall.gd`): a faint green `OmniLight3D`. A real light cannot be art, but its strength each frame is read from the PixelLab halo sheet's own brightness (`beat_curve`), so the animation sets the beat.
 - The burn-away mask (`shaders/corruption_add.gdshader`): hides the veins from the centre outward to follow the PixelLab ring. It reveals PixelLab art, it draws none.
 - The camera shake and the `rumble` sound when it crumbles.
 

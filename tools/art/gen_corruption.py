@@ -5,6 +5,10 @@
     corruption/veins_sheet.png    the pulsing green curse veins, a looping row of frames (+ .json {frames, fps, ...})
     corruption/purge_sheet.png    the gold holy light that burns the veins away from the centre outward (one-shot)
     corruption/ash_sheet.png      the wall crumbling to ash and dust (one-shot)
+    corruption/halo_sheet.png     a soft green halo that breathes with the veins' heartbeat, with drifting spores (looping); the
+                                  heartbeat LIGHT's strength is read from this sheet's own brightness, frame by frame
+    corruption/rot_sheet.png      black rot creeping over the face from the centre, then crumbling away in grain and flecks
+                                  (one-shot); it hides the wall block while that is removed
 
 The three animations were made with PixelLab's effects tool (vfx_workbench) and exported as atlases; the source pieces are
 in tools/art/pieces/corruption/ (<name>.png + <name>.json, as exported; docs/asset_log.md has the details). Like the spell
@@ -20,7 +24,7 @@ from artio import save_png
 from palette import ART_DIR, PAL
 
 PIECES = Path(__file__).parent / "pieces" / "corruption"
-SHEETS = ("veins", "purge", "ash")
+SHEETS = ("veins", "purge", "ash", "halo", "rot")
 
 
 def slice_atlas(name):
