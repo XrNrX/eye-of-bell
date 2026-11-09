@@ -593,7 +593,9 @@ def rot_from_bruise(img):
             (("bruise_900", "moss_900"), ("bruise_700", "moss_700"), ("bruise_500", "moss_500"),
              ("stone_100", "stone_300"), ("stone_300", "stone_500"), ("bone_500", "stone_500"), ("bone_700", "stone_500"),
              ("bone_300", "stone_300"), ("blood_500", "moss_500"), ("blood_700", "moss_700"), ("wood_500", "stone_700"),
-             ("wood_700", "stone_800"), ("rust_500", "moss_700"), ("rust_700", "moss_900"))}
+             ("wood_700", "stone_800"), ("rust_500", "moss_700"), ("rust_700", "moss_900"),
+             ("torch_700", "moss_700"), ("torch_500", "moss_500"), ("torch_300", "curse_700"), ("leather_400", "moss_500"),
+             ("soil_900", "moss_900"))}  # (Warm tendrils and berries become dead green rot: torchlight is the only warm colour.)
     px = img.load()
     for y in range(img.height):
         for x in range(img.width):
