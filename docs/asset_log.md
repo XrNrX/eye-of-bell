@@ -1,6 +1,6 @@
 # PixelLab asset log
 
-One line for every PixelLab asset: file path, PixelLab tool, date, generations used. **Add a line after generating any asset** (rule in `CLAUDE.md`). Spell effects must come from the VFX suite (`vfx_workbench`); code-drawn ones are placeholders and are listed at the bottom.
+One line for every PixelLab asset: file path, PixelLab tool, date, generations used. **Add a line after generating any asset** (rule in `CLAUDE.md`). All animated effects (spells, fire, glows, smoke, dust, sparks, curse effects, bursts) must come from the VFX suite (`vfx_workbench`); code-drawn ones are placeholders and are listed at the bottom.
 
 Entries before 2026-11-09 were filled in afterwards from the git history and the session records. A `?` means it wasn't recorded.
 
@@ -29,14 +29,28 @@ Entries before 2026-11-09 were filled in afterwards from the git history and the
 
 Older PixelLab art (items, monsters, portraits, walls, decals, the title screen, UI pieces) predates this log and isn't listed.
 
-## Code-drawn spell effects: placeholders
+## Code-drawn effects: placeholders
 
-These are not made with the VFX suite, so they should be replaced:
+None of these were made with the VFX suite, so they should be replaced.
 
+**Spells**
 - `art/spells/scorch.png`: soot decal drawn by `tools/art/gen_spell_fx.py`.
 - Magic Missile fallback bolt: a 7x7 sprite built in `scripts/spell_effects.gd` (used only if the flipbooks are missing).
+- Fireball fallback orb and explosion (`_fireball_basic`, `_explosion_basic`): square orbs built in code, used only if the sheets are missing.
 - Pixel particles (embers, sparks, smoke, and the Heal, Bless and Shield motes): 1x1 squares emitted by `scripts/pixel_particles.gd`.
 - Heal, Bless and Shield: light pulses and motes only, no flipbook.
 - `art/items/holy_symbol_glow.png`: three frames drawn by `gen_items.holy_symbol_glow`, the holy burst on the party panel.
 - Resurrection gold column and the burning-icon effect: built in code in `party_hud.gd` (`_revive_column_texture`).
-- Intro effects: `art/intro/fx/` lightning, flash, fog and rain, and the glow layers, drawn by `tools/art/gen_intro.py`. They are not spell effects, but they are code-drawn too.
+- Wall debris dust puff when a cracked wall breaks (`wall_debris.gd`) and its rubble cubes.
+
+**Fire, glows, auras, curse**
+- Wall torch flame: `art/sprites/torch_sheet.png`, 4 frames drawn by `tools/art/gen_sprites.py`, plus the flickering torch lights in `dungeon_builder.gd` and `main.tscn`.
+- Alcove candle flicker (`wall_decor.gd`): a light that flutters in code.
+- Curse veins on walls: a pulsing emissive decal (`wall_decor.gd`, `start_pulse`).
+- The cracked wall's green crack glow and its dimming (`Dungeon.dim_curse`).
+- Volumetric fog and bloom (`SpellEffectsConfig.apply_environment`): an engine effect, not art.
+- Monster hurt flashes and telegraph glow (`monster.gd`) and the party panel's buff rings and food flares (`party_hud.gd`).
+- Ambush bursts and legendary item glows: none exist yet; when they do they must be made with the VFX suite.
+
+**Intro**
+- `art/intro/fx/`: lightning, flash, fog and rain, and the three `<shot>_glow.png` layers, drawn by `tools/art/gen_intro.py`.
