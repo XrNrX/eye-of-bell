@@ -6,6 +6,7 @@ Drawn at native pixels (1 art pixel = 1 screen pixel, like the party panel), not
 
   art/ui/map_parchment.png   104x80, torn edges are transparent
   art/ui/map_frame.png       112x88, the iron frame only: its middle is transparent (the map shows through)
+  art/ui/map_sheet.png       474x298, the stained sheet behind the full-screen map (scripts/automap.gd), opaque
 """
 import random
 from pathlib import Path
@@ -151,10 +152,35 @@ def frame():
     return img
 
 
+SHEET_W, SHEET_H = 474, 298
+
+
+def sheet():
+    """The full-screen map's paper, 474x298. PixelLab's picture (pieces/map/sheet_raw.png, 584x328) has a scroll roller across
+    it, so the clean paper left of the roller (for the legend) and the clean block right of it (for the map) are joined, the
+    roller cut out: the join reads as a fold in the paper."""
+    raw = _snap(PIECES / "sheet_raw.png")
+    out = Image.new("RGBA", (SHEET_W, SHEET_H))
+    out.paste(raw.crop((4, 16, 184, 16 + SHEET_H)), (0, 0))
+    out.paste(raw.crop((244, 16, 538, 16 + SHEET_H)), (180, 0))
+    # The roller's dark end caps poke into the top and bottom rows: paint them out with the paper just inside, reflected.
+    px = out.load()
+    band = 40
+    def dark(c):
+        return sum(c[:3]) / 3 < 45
+    for x in range(SHEET_W):
+        for y in list(range(band)) + list(range(SHEET_H - band, SHEET_H)):
+            if dark(px[x, y]):
+                ry = 2 * band - y if y < band else 2 * (SHEET_H - band) - 2 - y
+                px[x, y] = px[x, ry] if not dark(px[x, ry]) else (*PAL["bone_700"], 255)
+    return out
+
+
 def build():
     return [
         save_png(parchment(), "ui/map_parchment.png"),
         save_png(frame(), "ui/map_frame.png"),
+        save_png(sheet(), "ui/map_sheet.png"),
     ]
 
 

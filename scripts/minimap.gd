@@ -2,17 +2,14 @@ extends Control
 ## The in-world map: the cells around the player, with the player always in the middle (north is up) and a
 ## triangle for the way they face, inked on a torn parchment inside a small rusted iron frame
 ## (art/ui/map_parchment.png and map_frame.png from tools/art/gen_map_art.py, native pixels).
-## STAGE 1 (frame and parchment only): the cells are still the plain ones, drawn as ink; fog of war, the icons
-## and the full-screen map come next. Drawn by debug_overlay.gd on Tab. Everything is palette colours.
+## Every cell near the party is drawn (there is no fog of war: a first version was shelved). Drawn by debug_overlay.gd on Tab. Everything is palette colours.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const Settings := preload("res://scripts/settings.gd")
+const MapSymbols := preload("res://scripts/map_symbols.gd")
 
 const PARCHMENT := preload("res://art/ui/map_parchment.png")
 const FRAME := preload("res://art/ui/map_frame.png")
-const ICON_DIR := "res://art/ui/map/icon_%s_s.png"  # 8x8 reductions of the 16x16 PixelLab symbols (gen_map_icons.py).
-const ARROW := "res://art/ui/map/icon_arrow.png"  # The party arrow is drawn full size (16x16): it is the one mark that must not get lost.
-const ICON_NAMES := ["door_closed", "door_open", "door_locked", "stairs", "lever", "secret"]
 const TORCH_SHEET := preload("res://art/ui/map/torchlight_sheet.png")  # 4x3 frames of 104x80 (gen_map_torchlight.py).
 const TORCH_FRAMES := 12
 const TORCH_FPS := 10.0
@@ -57,9 +54,7 @@ func _ready() -> void:
 	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	add_child(torch)
 	_set_torch_frame(0)
-	for n in ICON_NAMES:
-		icons[n] = load(ICON_DIR % n)
-	icons["arrow"] = load(ARROW)
+	icons = MapSymbols.load_icons(true)
 	custom_minimum_size = FRAME.get_size()
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	clip_contents = true
@@ -90,7 +85,7 @@ func _draw() -> void:
 	# Traps and ambushes are not drawn either.)
 	for row in ROWS:
 		for col in COLS:
-			var icon := _cell_icon(origin + Vector2i(col, row))
+			var icon := MapSymbols.icon_for(origin + Vector2i(col, row))
 			if icon != "":
 				draw_texture(icons[icon], Vector2(col, row) * CELL_PX)
 	for lever in DungeonMap.LEVERS:
@@ -117,20 +112,6 @@ func _cell_color(c: Vector2i) -> Color:
 	if DungeonMap.is_stairs(c) or DungeonMap.is_door(c):
 		return Color(0, 0, 0, 0)  # Drawn as symbols instead (_cell_icon).
 	return Color(0, 0, 0, 0)
-
-
-## The symbol for what stands on a cell, or "" for none: doors (closed, open, locked), stairs, and a secret that
-## has been found (a cracked wall broken open, or a corrupted one purified).
-func _cell_icon(c: Vector2i) -> String:
-	if DungeonMap.is_door(c):
-		if DungeonMap.is_locked(c):
-			return "door_locked"
-		return "door_open" if DungeonMap.open_doors.has(c) else "door_closed"
-	if DungeonMap.is_stairs(c):
-		return "stairs"
-	if DungeonMap.broken_walls.has(c) or DungeonMap.purified.has(c):
-		return "secret"
-	return ""
 
 
 ## Which frame of the flicker shows. Reduce flashing holds one still frame, dimmer.

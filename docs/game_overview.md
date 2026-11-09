@@ -19,6 +19,7 @@ Dark, desaturated, cursed (`docs/art_style.md`). Sickly green means the curse an
 - Real-time grid movement, first-person 3D view at 416x260 inside a stone frame, 640x360 integer-scaled.
 - Level 1: doors, locked doors and keys, levers, plates, portcullises, cracked walls, two exits, 15 monsters of four kinds.
 - Real-time combat with crits and fails, hit direction (hits from behind and the sides), monster telegraphs, combat feel.
+- Map: a parchment corner map with PixelLab symbols and torchlight flicker, and a full-screen map on M with a legend (no fog of war yet).
 - Enemy health bars (small bar over damaged or front monsters, name strip, wide boss bar; Options: On / Boss only / Off).
 - Party: four heroes, front and back row, formation swapping, hands, throwing, quick slots.
 - Inventory, stacks, equipping, character sheet, food and sickness, potions, scrolls, resurrection.

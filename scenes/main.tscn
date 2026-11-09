@@ -1,4 +1,4 @@
-[gd_scene load_steps=19 format=3]
+[gd_scene load_steps=20 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/cursor_item.tscn" id="14_cursor"]
 [ext_resource type="Script" path="res://scripts/combat_feel.gd" id="20_feel"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/direction_warning.gd" id="30_dir"]
 [ext_resource type="Script" path="res://scripts/save_manager.gd" id="21_save"]
 [ext_resource type="Script" path="res://scripts/pause_menu.gd" id="27_pause"]
+[ext_resource type="Script" path="res://scripts/automap.gd" id="28_automap"]
 [ext_resource type="Script" path="res://scripts/spell_effects.gd" id="28_fx"]
 [ext_resource type="Script" path="res://scripts/audio.gd" id="26_audio"]
 [ext_resource type="Script" path="res://scripts/game_view.gd" id="25_view"]
@@ -121,6 +122,9 @@ script = ExtResource("30_dir")
 
 [node name="PauseMenu" type="CanvasLayer" parent="."]
 script = ExtResource("27_pause")
+
+[node name="Automap" type="CanvasLayer" parent="."]
+script = ExtResource("28_automap")
 
 [node name="Audio" type="Node" parent="."]
 script = ExtResource("26_audio")
