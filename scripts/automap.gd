@@ -35,7 +35,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	icons = MapSymbols.load_icons(false)
-	wash = _make_wash()
+	wash = MapSymbols.make_wash(CELL)
 	frame_box.texture = FRAME
 	frame_box.set_texture_margin_all(BORDER)
 	frame_box.draw_center = false
@@ -47,15 +47,6 @@ func _ready() -> void:
 	canvas.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	canvas.draw.connect(_draw_map)
 	add_child(canvas)
-
-
-func _make_wash() -> Texture2D:
-	var img := Image.create(CELL, CELL, false, Image.FORMAT_RGBA8)
-	for y in CELL:
-		for x in CELL:
-			if (x + y) % 2 == 0:
-				img.set_pixel(x, y, BONE_700)
-	return ImageTexture.create_from_image(img)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -106,15 +97,7 @@ func _draw_map() -> void:
 		for x in DungeonMap.MAP[y].size():
 			var c := Vector2i(x, y)
 			var at := origin + Vector2(x, y) * CELL
-			if DungeonMap.is_wall(c):
-				if _borders_open(c):
-					canvas.draw_rect(Rect2(at, Vector2(CELL, CELL)), INK)  # A wall that faces floor: inked.
-					if DungeonMap.is_corrupted(c):
-						canvas.draw_rect(Rect2(at + Vector2(3, 3), Vector2(CELL - 6, CELL - 6)), Color("3a6b4c"))  # curse_700
-					elif DungeonMap.is_destructible(c):
-						canvas.draw_rect(Rect2(at + Vector2(3, 3), Vector2(CELL - 6, CELL - 6)), RUST_700)
-			else:
-				canvas.draw_texture(wash, at)  # Floor, doors, stairs: a light ink wash.
+			MapSymbols.draw_cell(canvas, c, at, CELL, wash)
 	for y in rows:
 		for x in DungeonMap.MAP[y].size():
 			var icon := MapSymbols.icon_for(Vector2i(x, y))
@@ -129,17 +112,6 @@ func _draw_map() -> void:
 		canvas.draw_set_transform(Vector2.ZERO)
 	canvas.draw_style_box(frame_box, PANEL)
 	_draw_legend()
-
-
-## A wall is inked only if one of the four cells beside it is not a wall (so it borders floor, a door or a gap).
-func _borders_open(c: Vector2i) -> bool:
-	for d in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
-		for _once in 1:
-			var n: Vector2i = c + d
-			if n.y >= 0 and n.y < DungeonMap.MAP.size() and n.x >= 0 and n.x < DungeonMap.MAP[n.y].size() \
-					and not DungeonMap.is_wall(n):
-				return true
-	return false
 
 
 func _draw_legend() -> void:

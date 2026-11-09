@@ -2,7 +2,9 @@ extends Control
 ## The in-world map: the cells around the player, with the player always in the middle (north is up) and a
 ## triangle for the way they face, inked on a torn parchment inside a small rusted iron frame
 ## (art/ui/map_parchment.png and map_frame.png from tools/art/gen_map_art.py, native pixels).
-## Every cell near the party is drawn (there is no fog of war: a first version was shelved). Drawn by debug_overlay.gd on Tab. Everything is palette colours.
+## Cells are drawn as on the full-screen map (automap.gd, via map_symbols.gd): floor an ink wash, walls inked where they
+## touch floor. Every cell near the party is drawn (there is no fog of war: a first version was shelved).
+## Drawn by debug_overlay.gd on Tab. Everything is palette colours.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const Settings := preload("res://scripts/settings.gd")
@@ -20,25 +22,15 @@ const BORDER := 4                  # Thickness of the iron frame, in pixels.
 const CELL_PX := 8                 # One map cell, in 640x360 pixels.
 const COLS := 13                   # How many cells wide and tall the window shows (odd: the player is in the middle).
 const ROWS := 10
-const ALPHA := 0.85                # Ink is slightly thinned so the paper shows through.
 
 const INK := Color("0b0a10")
-const STONE_700 := Color("31303c")
-const STONE_300 := Color("7b7a88")
-const WOOD_500 := Color("4f3a28")
-const RUST_300 := Color("a8673a")
-const RUST_500 := Color("7c4426")
-const TORCH_500 := Color("d99a36")
-const CURSE_700 := Color("3a6b4c")  # Palette curse_700: a corrupted wall.
-const RUST_700 := Color("4e2a1a")
-const BLOOD_500 := Color("7a2224")
-const TORCH_300 := Color("f5cf80")
 
 var player: Node3D  # Assigned by debug_overlay.gd.
 var torch: TextureRect        # The torchlight flicker laid over the parchment.
 var torch_frame := AtlasTexture.new()
 var clock := 0.0
 var icons := {}     # name -> Texture2D, loaded once.
+var wash: Texture2D # One cell of floor wash.
 
 
 func _ready() -> void:
@@ -55,13 +47,10 @@ func _ready() -> void:
 	add_child(torch)
 	_set_torch_frame(0)
 	icons = MapSymbols.load_icons(true)
+	wash = MapSymbols.make_wash(CELL_PX)
 	custom_minimum_size = FRAME.get_size()
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	clip_contents = true
-
-
-func _a(c: Color) -> Color:
-	return Color(c, ALPHA)
 
 
 func _draw() -> void:
@@ -77,9 +66,7 @@ func _draw() -> void:
 			var c := origin + Vector2i(col, row)
 			if c.y < 0 or c.y >= DungeonMap.MAP.size() or c.x < 0 or c.x >= DungeonMap.MAP[c.y].size():
 				continue  # Off the edge of the level: empty.
-			var color := _cell_color(c)
-			if color.a > 0.0:
-				draw_rect(Rect2(Vector2(col, row) * CELL_PX, Vector2.ONE * CELL_PX), color)
+			MapSymbols.draw_cell(self, c, Vector2(col, row) * CELL_PX, CELL_PX, wash)  # The same cells as the M map.
 
 	# (Monsters are not drawn: the map is the party's own sketch, and shows nothing it has not met.
 	# Traps and ambushes are not drawn either.)
@@ -99,19 +86,6 @@ func _draw() -> void:
 	draw_texture(icons["arrow"], -icons["arrow"].get_size() / 2.0)
 	draw_set_transform(Vector2.ZERO)
 	draw_texture(FRAME, Vector2.ZERO)
-
-
-## Floor is left to the dark background (alpha 0 = nothing drawn).
-func _cell_color(c: Vector2i) -> Color:
-	if DungeonMap.is_destructible(c):
-		return _a(RUST_700)  # The crack shows on the map too.
-	if DungeonMap.is_corrupted(c):
-		return _a(CURSE_700)  # So does the green rot.
-	if DungeonMap.is_wall(c):
-		return _a(INK)  # Walls are inked in.
-	if DungeonMap.is_stairs(c) or DungeonMap.is_door(c):
-		return Color(0, 0, 0, 0)  # Drawn as symbols instead (_cell_icon).
-	return Color(0, 0, 0, 0)
 
 
 ## Which frame of the flicker shows. Reduce flashing holds one still frame, dimmer.
