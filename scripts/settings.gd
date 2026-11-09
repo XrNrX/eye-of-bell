@@ -32,6 +32,7 @@ static var fog := true          # The subtle volumetric fog; off on weak machine
 static var reduce_flashing := false  # Softer spell, holy-light and crit flashes: steady glows, no flicker, and no screen or portrait shake at all.
 static var palette_filter := false  # Snap the 3D view to the palette with a light dither (palette_filter.gd). Off by default.
 static var show_hints := true   # First-time hints ("Click a portrait to see their inventory and stats."). Options: HINTS.
+static var enemy_bars := 0      # Enemy health bars: 0 On, 1 Boss only, 2 Off (enemy_bars.gd). Options: ENEMY BARS.
 static var hints_seen := {}     # hint id -> true once it has been shown (saved, so a hint shows only once ever).
 static var loaded := false
 
@@ -83,6 +84,11 @@ static func set_fog(value: bool) -> void:
 
 static func set_palette_filter(value: bool) -> void:
 	palette_filter = value
+	_changed()
+
+
+static func set_enemy_bars(value: int) -> void:
+	enemy_bars = clampi(value, 0, 2)
 	_changed()
 
 

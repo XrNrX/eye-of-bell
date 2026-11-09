@@ -17,6 +17,11 @@ extends Resource
 ## Percent of its landed hits that are crits (x1.5, and never enough to kill a hero at half HP or more).
 @export var crit_chance := 0
 
+## A boss, or a monster that is part of a wall (giant hand, tentacles): it gets the wide named bar
+## across the top of the view, not a small bar over its sprite (enemy_bars.gd). Needs no other change.
+@export var boss := false
+@export var wall_monster := false
+
 @export_group("Drops")
 ## What it leaves on its tile when it dies, and how often (0..1): a skeleton guard may leave its rations.
 @export var drop_item: Resource

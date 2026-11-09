@@ -14,6 +14,7 @@ extends SubViewportContainer
 
 const UiLayout := preload("res://scripts/ui_layout.gd")
 const PaletteFilter := preload("res://scripts/palette_filter.gd")
+const EnemyBars := preload("res://scripts/enemy_bars.gd")
 
 var player: Node
 
@@ -30,6 +31,11 @@ func _ready() -> void:
 		var filter := PaletteFilter.new()  # Hidden unless Options: PALETTE FILTER is on.
 		filter.name = "PaletteFilter"
 		port.add_child(filter)
+		var bars_layer := CanvasLayer.new()  # Inside the view, so bars are clipped to it and drawn at its 1:1 pixels.
+		bars_layer.name = "EnemyBarsLayer"
+		bars_layer.layer = 1
+		bars_layer.add_child(EnemyBars.new())
+		port.add_child(bars_layer)
 
 
 func _gui_input(event: InputEvent) -> void:

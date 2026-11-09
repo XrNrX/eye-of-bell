@@ -54,6 +54,7 @@ func setup(monster_def: Resource, start_cell: Vector2i) -> void:
 
 func _ready() -> void:
 	position = DungeonMap.cell_to_world(cell)
+	add_to_group("monsters")
 	DungeonMap.occupied[cell] = self
 	attack_cooldown = def.attack_interval * WIND_UP
 
@@ -260,6 +261,7 @@ func take_hit(result: Dictionary) -> void:
 		return
 	var crit: bool = result.get("crit", false)
 	hp -= result.damage
+	get_tree().call_group("enemy_bars", "monster_hit", self, result.damage, crit)
 	if crit and feel_cfg.crit_text_enabled:
 		_float_text(str(result.damage), feel_cfg.crit_colour, 0.0, feel_cfg.crit_number_size, true)
 		_float_text("CRITICAL!", feel_cfg.crit_colour, 0.5, feel_cfg.crit_text_size, true)
@@ -334,6 +336,11 @@ func _float_text(value: String, colour: Color, above := 0.0, size := 0, linger :
 	var sideways := 0.0 if size > 0 else randf_range(-0.25, 0.25)  # Big text stays centred, where it fits the view.
 	label.position = position + Vector3(sideways, _sprite_height() * 0.75 + above, 0.0)
 	get_parent().add_child(label)
+
+
+## A point just above the sprite's head, in world space: where its health bar hangs.
+func bar_anchor() -> Vector3:
+	return global_position + Vector3(0.0, _sprite_height() + 0.08, 0.0)
 
 
 func _sprite_height() -> float:

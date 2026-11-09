@@ -70,6 +70,7 @@ var current_kind := "master"
 var fog_button: Button      # "FOG: ON" / "FOG: OFF".
 var flash_button: Button    # "FLASHING: REDUCED" / "FLASHING: NORMAL".
 var hints_button: Button    # "HINTS: ON" / "HINTS: OFF".
+var bars_button: Button     # "ENEMY HEALTH BARS: ON / BOSS ONLY / OFF".
 var palette_button: Button  # "PALETTE: ON" / "PALETTE: OFF" (the optional palette filter on the 3D view).
 var options_panel: Panel    # The dark panel behind the Options screen.
 var display_button: Button  # "SCREEN: FULLSCREEN" / "SCREEN: WINDOWED", built in _build_display_button.
@@ -102,6 +103,7 @@ func _ready() -> void:
 	_build_flash_button()
 	_build_hints_button()
 	_build_palette_button()
+	_build_bars_button()
 	_arrange_options()
 	new_game_button.pressed.connect(_on_new_game_pressed)
 	load_button.pressed.connect(_on_load_pressed)
@@ -224,7 +226,7 @@ func _arrange_options() -> void:
 	grid.add_theme_constant_override("v_separation", 2)
 	options_box.add_child(grid)
 	options_box.move_child(grid, back_button.get_index())
-	for b in [display_button, fog_button, flash_button, hints_button, palette_button]:
+	for b in [display_button, fog_button, flash_button, hints_button, palette_button, bars_button]:
 		b.reparent(grid)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.custom_minimum_size = Vector2(0, 26)  # Shorter, so five switches in two columns still fit.
@@ -254,6 +256,19 @@ func _build_palette_button() -> void:
 		Settings.set_palette_filter(not Settings.palette_filter)
 		_refresh_display())
 	palette_button.pressed.connect(_click)
+
+
+## Enemy health bars: On / Boss only / Off (cycles).
+func _build_bars_button() -> void:
+	bars_button = back_button.duplicate()
+	bars_button.unique_name_in_owner = false
+	options_box.add_child(bars_button)
+	options_box.move_child(bars_button, back_button.get_index())
+	bars_button.tooltip_text = "Boss only, or Off, for the old-school feel"
+	bars_button.pressed.connect(func():
+		Settings.set_enemy_bars((Settings.enemy_bars + 1) % 3)
+		_refresh_display())
+	bars_button.pressed.connect(_click)
 
 
 ## The "show hints" switch: first-time tips such as how to open the character sheet.
@@ -302,6 +317,7 @@ func _refresh_display() -> void:
 	flash_button.text = "FLASHING: REDUCED" if Settings.reduce_flashing else "FLASHING: NORMAL"
 	hints_button.text = "HINTS: ON" if Settings.show_hints else "HINTS: OFF"
 	palette_button.text = "PALETTE: ON" if Settings.palette_filter else "PALETTE: OFF"
+	bars_button.text = "ENEMY BARS: " + ["ON", "BOSS ONLY", "OFF"][Settings.enemy_bars]
 	display_button.text = "SCREEN: FULLSCREEN" if Settings.fullscreen else "SCREEN: WINDOWED"
 
 
