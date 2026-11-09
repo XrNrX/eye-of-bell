@@ -1,0 +1,339 @@
+{
+ "frames": [
+  {
+   "filename": "eye-of-bell-map-torchlight 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-map-torchlight 1.png",
+   "frame": {
+    "x": 104,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-map-torchlight 2.png",
+   "frame": {
+    "x": 208,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-map-torchlight 3.png",
+   "frame": {
+    "x": 312,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-map-torchlight 4.png",
+   "frame": {
+    "x": 0,
+    "y": 80,
+    "w": 104,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-map-torchlight 5.png",
+   "frame": {
+    "x": 104,
+    "y": 80,
+    "w": 104,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-map-torchlight 6.png",
+   "frame": {
+    "x": 208,
+    "y": 80,
+    "w": 104,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-map-torchlight 7.png",
+   "frame": {
+    "x": 312,
+    "y": 80,
+    "w": 104,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-map-torchlight 8.png",
+   "frame": {
+    "x": 0,
+    "y": 160,
+    "w": 104,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-map-torchlight 9.png",
+   "frame": {
+    "x": 104,
+    "y": 160,
+    "w": 104,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-map-torchlight 10.png",
+   "frame": {
+    "x": 208,
+    "y": 160,
+    "w": 104,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-map-torchlight 11.png",
+   "frame": {
+    "x": 312,
+    "y": 160,
+    "w": 104,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 104,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 104,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "eye-of-bell-map-torchlight.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 416,
+   "h": 240
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 52,
+   "y": 40
+  },
+  "frameTags": [
+   {
+    "name": "eye-of-bell-map-torchlight",
+    "from": 0,
+    "to": 11,
+    "direction": "forward"
+   }
+  ]
+ }
+}

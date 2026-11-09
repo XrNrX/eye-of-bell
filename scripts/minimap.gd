@@ -6,12 +6,18 @@ extends Control
 ## and the full-screen map come next. Drawn by debug_overlay.gd on Tab. Everything is palette colours.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
+const Settings := preload("res://scripts/settings.gd")
 
 const PARCHMENT := preload("res://art/ui/map_parchment.png")
 const FRAME := preload("res://art/ui/map_frame.png")
 const ICON_DIR := "res://art/ui/map/icon_%s_s.png"  # 8x8 reductions of the 16x16 PixelLab symbols (gen_map_icons.py).
 const ARROW := "res://art/ui/map/icon_arrow.png"  # The party arrow is drawn full size (16x16): it is the one mark that must not get lost.
 const ICON_NAMES := ["door_closed", "door_open", "door_locked", "stairs", "lever", "secret"]
+const TORCH_SHEET := preload("res://art/ui/map/torchlight_sheet.png")  # 4x3 frames of 104x80 (gen_map_torchlight.py).
+const TORCH_FRAMES := 12
+const TORCH_FPS := 10.0
+const TORCH_STRENGTH := 0.16   # Additive, so this stays a faint warmth on the paper.
+const TORCH_STEADY := 0.08     # With Reduce flashing: one still frame, dimmer.
 const BORDER := 4                  # Thickness of the iron frame, in pixels.
 
 const CELL_PX := 8                 # One map cell, in 640x360 pixels.
@@ -32,10 +38,25 @@ const BLOOD_500 := Color("7a2224")
 const TORCH_300 := Color("f5cf80")
 
 var player: Node3D  # Assigned by debug_overlay.gd.
+var torch: TextureRect        # The torchlight flicker laid over the parchment.
+var torch_frame := AtlasTexture.new()
+var clock := 0.0
 var icons := {}     # name -> Texture2D, loaded once.
 
 
 func _ready() -> void:
+	torch_frame.atlas = TORCH_SHEET
+	torch = TextureRect.new()
+	torch.texture = torch_frame
+	torch.position = Vector2(BORDER, BORDER)
+	torch.size = Vector2(TORCH_SHEET.get_width() / 4, TORCH_SHEET.get_height() / 3)
+	torch.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var add := CanvasItemMaterial.new()
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	torch.material = add
+	add.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	add_child(torch)
+	_set_torch_frame(0)
 	for n in ICON_NAMES:
 		icons[n] = load(ICON_DIR % n)
 	icons["arrow"] = load(ARROW)
@@ -110,3 +131,17 @@ func _cell_icon(c: Vector2i) -> String:
 	if DungeonMap.broken_walls.has(c) or DungeonMap.purified.has(c):
 		return "secret"
 	return ""
+
+
+## Which frame of the flicker shows. Reduce flashing holds one still frame, dimmer.
+func _process(delta: float) -> void:
+	clock += delta
+	var steady: bool = Settings.reduce_flashing
+	_set_torch_frame(0 if steady else int(clock * TORCH_FPS) % TORCH_FRAMES)
+	torch.modulate.a = TORCH_STEADY if steady else TORCH_STRENGTH
+
+
+func _set_torch_frame(i: int) -> void:
+	var w := TORCH_SHEET.get_width() / 4
+	var h := TORCH_SHEET.get_height() / 3
+	torch_frame.region = Rect2((i % 4) * w, (i / 4) * h, w, h)
