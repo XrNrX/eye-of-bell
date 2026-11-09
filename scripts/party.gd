@@ -31,7 +31,7 @@ const QUICK_COOLDOWN := 1.0   # Seconds a quick slot is unusable after an item i
 const MANA_REGEN_TIME := 2.5  # Seconds per point of mana regained (always; there's no resting yet).
 
 ## What clicking a hand does (see action_for).
-enum Act { NOTHING, MELEE, THROW, SPELLS, CANT_REACH }
+enum Act { NOTHING, MELEE, THROW, SPELLS, CANT_REACH, USE }  # USE: a potion, food or scroll held in a hand.
 
 signal hp_changed(slot: int)
 signal formation_changed  # The party was rearranged (see set_formation); HUDs redraw every panel.
@@ -351,6 +351,8 @@ func action_for(slot: int, hand: int) -> int:
 	var def: Resource = stack.def
 	if def.type == ItemDef.Type.FOCUS:
 		return Act.SPELLS
+	if def.type == ItemDef.Type.CONSUMABLE:
+		return Act.USE
 	if def.type != ItemDef.Type.WEAPON:
 		return Act.NOTHING
 	if def.can_throw() and (not def.melee or not can_melee(slot)):
@@ -374,6 +376,36 @@ func act(slot: int, hand: int) -> void:
 			_throw(m, hand)
 		Act.CANT_REACH:
 			_say("%s can't reach." % m.def.display_name)
+		Act.USE:
+			_use_from_hand(m, hand)
+
+
+## A potion, food or scroll held in a hand is used by clicking the hand: one is spent only if it worked, and
+## the hero's action cooldown runs (a quick slot has its own, shorter one).
+func _use_from_hand(m: Member, hand: int) -> void:
+	var stack = m.hands[hand]
+	var result := use_item(m.slot, stack.def)
+	if result.used:
+		stack.count -= 1
+		if stack.count <= 0:
+			m.hands[hand] = null
+		_start_cooldown(m)
+	if result.message != "":
+		_say(result.message)
+
+
+## Right-click on a hand: lift what is in it onto the cursor (joining a matching stack already held), so nothing
+## can be stuck in a hand. Works for a dead hero too. Returns a message, "" if all is well.
+func lift_from_hand(slot: int, hand: int, cursor: Node) -> String:
+	var m := member(slot)
+	if m == null or hand < 0 or hand >= HAND_SLOTS or m.hands[hand] == null:
+		return ""
+	var here = m.hands[hand]
+	if not cursor.accepts_more(here):
+		return "Your hand is full."
+	m.hands[hand] = null
+	cursor.add(here)
+	return ""
 
 
 ## Throw one item from this hand straight ahead (see the blueprint): it hits the first

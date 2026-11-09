@@ -299,12 +299,26 @@ func _show_hand(m, i: int, hand: TextureButton) -> void:
 		party.Act.THROW: hand.tooltip_text = "Throw"
 		party.Act.SPELLS: hand.tooltip_text = "Cast"
 		party.Act.CANT_REACH: hand.tooltip_text = "Can't reach"
+		party.Act.USE: hand.tooltip_text = "Use (right-click to take it out)"
 		_: hand.tooltip_text = ""
 
 
 # --------------------------------------------------------------------------
 # Hands and casting
 # --------------------------------------------------------------------------
+
+func _on_hand_input(event: InputEvent, slot: int, hand: int) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+		var cursor = get_tree().get_first_node_in_group("cursor")
+		if cursor == null or party.member(slot).hands[hand] == null:
+			return
+		cancel_casting()
+		var refused: String = party.lift_from_hand(slot, hand, cursor)
+		if refused != "":
+			get_tree().call_group("hud", "show_message", refused)
+		else:
+			get_tree().call_group("audio", "play", "pickup")
+
 
 func _on_hand(slot: int, hand: int) -> void:
 	# An item on the cursor: put it in this hand (top up, or swap) instead of acting.
@@ -1114,6 +1128,7 @@ func _make_hand(m, i: int) -> TextureButton:
 	hand.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	hand.focus_mode = Control.FOCUS_NONE  # Space/Enter shouldn't trigger it.
 	hand.pressed.connect(_on_hand.bind(m.slot, i))
+	hand.gui_input.connect(_on_hand_input.bind(m.slot, i))  # Right-click lifts the item out onto the cursor.
 	hand.add_child(StackCount.new())  # How many darts are left (child 0; see _show_hand).
 	var frame := TextureRect.new()  # The iron bevel behind the icon, at the portraits' pixel density.
 	frame.texture = HAND_FRAME
