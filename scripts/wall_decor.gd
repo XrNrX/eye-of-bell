@@ -30,38 +30,44 @@ func active() -> bool:
 
 ## Build every visible face of this wall cell into `builder` (a Node3D with `_add_mesh`).
 func add_faces(builder: Node3D, cell: Vector2i) -> void:
+	for side in 4:
+		if DungeonMap.is_wall(cell + _dir(side)):
+			continue  # Nothing can see this face.
+		add_face(builder, cell, side)
+
+
+## One face of a wall cell (side 0 north, 1 west, 2 south, 3 east), whether or not it is seen right now: the builder calls this
+## for the walls beside a cell that has just opened (a broken or purified wall), whose faces were never built.
+func add_face(builder: Node3D, cell: Vector2i, side: int) -> void:
 	var s := DungeonMap.TILE_SIZE
 	var h := DungeonMap.WALL_HEIGHT
 	var centre := DungeonMap.cell_to_world(cell) + Vector3(0, h / 2.0, 0)
-	for side in 4:
-		var dir: Vector2i = _dir(side)
-		if DungeonMap.is_wall(cell + dir):
-			continue  # Nothing can see this face.
-		var rng := RandomNumberGenerator.new()
-		rng.seed = face_seed(cell, side)
-		var out := Vector3(dir.x, 0, dir.y)
-		var rot := Vector3(0, atan2(dir.x, dir.y), 0)  # A QuadMesh faces +Z; turn it to face out of the wall.
-		var base := centre + out * (s / 2.0)
-		var texture: String = cfg.wall_textures[rng.randi() % cfg.wall_textures.size()]
-		builder._add_mesh(_quad(Vector2(s, h), texture, false), base, rot)
-		if cfg.grime_enabled:
-			builder._add_mesh(_quad(Vector2(s, h), cfg.grime_texture, true), base + out * cfg.grime_offset, rot)
-		if cfg.alcove_texture != "" and rng.randf() < cfg.alcove_chance:
-			add_alcove(builder, cell + dir, (side + 2) % 4)  # From the open tile's side: the wall faces back at it.
-			continue  # The niche is the feature of this face.
-		for decal in decals_for(rng):
-			var tex: Texture2D = load(decal)
-			var size := Vector2(tex.get_width(), tex.get_height()) * PIXEL
-			var at := _spot(decal, size, rng, s, h)
-			var pos: Vector3 = base + out * cfg.decal_offset + _along(rot) * at.x + Vector3(0, at.y, 0)
-			builder._add_mesh(_quad(size, decal, true), pos, rot)
-		if cfg.vein_textures.size() > 0 and rng.randf() < cfg.vein_chance:
-			var vein: String = cfg.vein_textures[rng.randi() % cfg.vein_textures.size()]
-			var vtex: Texture2D = load(vein)
-			var vsize := Vector2(vtex.get_width(), vtex.get_height()) * PIXEL
-			var vat := _spot("vein", vsize, rng, s, h)
-			var vpos: Vector3 = base + out * (cfg.decal_offset + 0.004) + _along(rot) * vat.x + Vector3(0, vat.y, 0)
-			builder._add_mesh(_quad(vsize, vein, true, true), vpos, rot)
+	var dir: Vector2i = _dir(side)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = face_seed(cell, side)
+	var out := Vector3(dir.x, 0, dir.y)
+	var rot := Vector3(0, atan2(dir.x, dir.y), 0)  # A QuadMesh faces +Z; turn it to face out of the wall.
+	var base := centre + out * (s / 2.0)
+	var texture: String = cfg.wall_textures[rng.randi() % cfg.wall_textures.size()]
+	builder._add_mesh(_quad(Vector2(s, h), texture, false), base, rot)
+	if cfg.grime_enabled:
+		builder._add_mesh(_quad(Vector2(s, h), cfg.grime_texture, true), base + out * cfg.grime_offset, rot)
+	if cfg.alcove_texture != "" and rng.randf() < cfg.alcove_chance:
+		add_alcove(builder, cell + dir, (side + 2) % 4)  # From the open tile's side: the wall faces back at it.
+		return  # The niche is the feature of this face.
+	for decal in decals_for(rng):
+		var tex: Texture2D = load(decal)
+		var size := Vector2(tex.get_width(), tex.get_height()) * PIXEL
+		var at := _spot(decal, size, rng, s, h)
+		var pos: Vector3 = base + out * cfg.decal_offset + _along(rot) * at.x + Vector3(0, at.y, 0)
+		builder._add_mesh(_quad(size, decal, true), pos, rot)
+	if cfg.vein_textures.size() > 0 and rng.randf() < cfg.vein_chance:
+		var vein: String = cfg.vein_textures[rng.randi() % cfg.vein_textures.size()]
+		var vtex: Texture2D = load(vein)
+		var vsize := Vector2(vtex.get_width(), vtex.get_height()) * PIXEL
+		var vat := _spot("vein", vsize, rng, s, h)
+		var vpos: Vector3 = base + out * (cfg.decal_offset + 0.004) + _along(rot) * vat.x + Vector3(0, vat.y, 0)
+		builder._add_mesh(_quad(vsize, vein, true, true), vpos, rot)
 
 
 ## The decal textures this face gets (0, 1 or 2, in the config's chances), drawn from the face's own random stream.

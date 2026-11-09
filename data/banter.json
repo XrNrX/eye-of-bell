@@ -43,6 +43,35 @@
 			{"speaker": "Mage", "about": "self", "holding": "armour", "text": "I can't feel my legs."}
 		]
 	},
+	"corruption_bounce": {
+		"chance": 1.0,
+		"cooldown": 20,
+		"lines": [
+			{"speaker": "Cleric", "actor": "Fighter", "always": true, "text": "Some doors open to faith, my son. Not to swinging."},
+			{"speaker": "Fighter", "actor": "Fighter", "always": true, "text": "Just do your glowy thing."},
+			{"speaker": "Cleric", "about": "other", "actor": "Mage", "always": true, "text": "Fire. Against rot. Truly, a scholar."},
+			{"speaker": "Mage", "actor": "Mage", "always": true, "text": "It ATE it. The wall ate my fireball."},
+			{"speaker": "Thief", "about": "self", "actor": "Thief", "always": true, "text": "It's alive. I don't like stabbing things that are alive."},
+			{"speaker": "Fighter", "about": "other", "actor": "Cleric", "always": true, "text": "Don't look at me. You do the praying."}
+		]
+	},
+	"corruption_resists": {
+		"chance": 1.0,
+		"cooldown": 0,
+		"lines": [
+			{"speaker": "Cleric", "about": "self", "always": true, "text": "It resists. The Light is patient."},
+			{"speaker": "Fighter", "always": true, "text": "Again. Faster."}
+		]
+	},
+	"corruption_purified": {
+		"chance": 1.0,
+		"cooldown": 0,
+		"lines": [
+			{"speaker": "Cleric", "about": "self", "always": true, "text": "Ashes to ashes. You're welcome."},
+			{"speaker": "Fighter", "always": true, "text": "Told you. Glowy."},
+			{"speaker": "Thief", "always": true, "text": "Anything valuable in the ashes?"}
+		]
+	},
 	"eat": {
 		"chance": 0.5,
 		"cooldown": 30,

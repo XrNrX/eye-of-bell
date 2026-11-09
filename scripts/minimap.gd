@@ -17,6 +17,7 @@ const WOOD_500 := Color("4f3a28")
 const RUST_300 := Color("a8673a")
 const RUST_500 := Color("7c4426")
 const TORCH_500 := Color("d99a36")
+const CURSE_500 := Color("7fb88a")  # Palette curse_500: a corrupted wall.
 const TORCH_300 := Color("f5cf80")
 
 var player: Node3D  # Assigned by debug_overlay.gd.
@@ -67,6 +68,8 @@ func _draw() -> void:
 func _cell_color(c: Vector2i) -> Color:
 	if DungeonMap.is_destructible(c):
 		return _a(STONE_300)  # The crack shows on the map too.
+	if DungeonMap.is_corrupted(c):
+		return _a(CURSE_500)  # So does the green rot.
 	if DungeonMap.is_wall(c):
 		return _a(STONE_700)
 	if DungeonMap.is_stairs(c):

@@ -67,6 +67,9 @@ func world_click(shift := false) -> void:
 	if DungeonMap.is_destructible(front):
 		_say("The wall is cracked.")  # A hint: something heavy, or a blast, might break it.
 		return
+	if DungeonMap.is_corrupted(front):
+		_say("The stone is alive with pulsing green veins.")
+		return
 	_click_item(shift)
 
 
@@ -232,6 +235,9 @@ func _interact() -> void:
 	var front := cell + DIRS[facing]
 	if DungeonMap.is_destructible(front):
 		_say("The wall is cracked.")
+		return
+	if DungeonMap.is_corrupted(front):
+		_say("The stone is alive with pulsing green veins.")
 		return
 	if not DungeonMap.is_door(front) or DungeonMap.open_doors.has(front):
 		return

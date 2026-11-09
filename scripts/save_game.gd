@@ -114,6 +114,16 @@ static func serialize(tree: SceneTree) -> Dictionary:
 	var broken := []
 	for cell in DungeonMap.broken_walls:
 		broken.append(cell_to_data(cell))
+	var purified := []  # (A wall whose purifying show is still running counts as burned away.)
+	for cell in DungeonMap.purified:
+		purified.append(cell_to_data(cell))
+	for cell in DungeonMap.purify_pending:
+		if not DungeonMap.purified.has(cell):
+			purified.append(cell_to_data(cell))
+	var corruption := []  # The corrupted walls still standing and the Blesses each still needs.
+	for cell in DungeonMap.corrupted_left:
+		if int(DungeonMap.corrupted_left[cell]) > 0 and not DungeonMap.purify_pending.has(cell):
+			corruption.append({"cell": cell_to_data(cell), "left": int(DungeonMap.corrupted_left[cell])})
 	var open_doors := []
 	for cell in DungeonMap.open_doors:
 		open_doors.append(cell_to_data(cell))
@@ -135,7 +145,9 @@ static func serialize(tree: SceneTree) -> Dictionary:
 		"party": {"formation": party.formation.duplicate(), "heroes": heroes},
 		"player": {"cell": cell_to_data(player.cell), "facing": player.facing},
 		"dungeon": {"items": piles, "open_doors": open_doors, "unlocked_doors": unlocked,
-				"levers": levers, "monsters": monsters, "broken_walls": broken},
+				"levers": levers, "monsters": monsters, "broken_walls": broken,
+				"purified_walls": purified, "corruption": corruption,
+				"puzzles_done": DungeonMap.puzzles_done.keys(), "puzzle_doors": DungeonMap.puzzle_doors.keys()},
 		"cursor": stack_to_data(cursor.held) if cursor else null,
 	}
 
@@ -239,6 +251,19 @@ static func apply(tree: SceneTree, data: Dictionary) -> String:
 	for c in d.get("broken_walls", []):  # (An older save has none.)
 		broken_cells.append(data_to_cell(c))
 	dungeon.restore_broken_walls(broken_cells)
+	var left := {}
+	for entry in d.get("corruption", []):  # (An older save has none: every corrupted wall starts fresh.)
+		left[data_to_cell(entry.cell)] = int(entry.left)
+	var purified_cells := []
+	for c in d.get("purified_walls", []):
+		purified_cells.append(data_to_cell(c))
+	DungeonMap.puzzles_done.clear()
+	for id in d.get("puzzles_done", []):
+		DungeonMap.puzzles_done[str(id)] = true
+	DungeonMap.puzzle_doors.clear()
+	for id in d.get("puzzle_doors", []):
+		DungeonMap.puzzle_doors[str(id)] = true
+	dungeon.restore_corruption(left, purified_cells)
 	dungeon.restore_doors(open)
 	var on := {}
 	for l in d.levers:

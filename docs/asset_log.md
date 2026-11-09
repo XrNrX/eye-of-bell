@@ -12,6 +12,10 @@ Entries before 2026-11-09 were filled in afterwards from the git history and the
 | `art/spells/magic_missile/cast_sheet.png`, `projectile_sheet.png`, `impact_sheet.png` | `vfx_workbench` (inferred: the sources carry the "PixelLab VFX Creator" tag) | before 2026-11-07 | ? (free tool) |
 | `tools/art/pieces/ui/ruin_stone.png` (stone for `art/ui/arrow_*.png`) | `create_image_pixflux` | 2026-11-07 | 1 |
 | `art/ui/arrow_*.png` first attempts (shaded and ruined arrows, replaced by the script version) | `edit_image_pixen` | 2026-11-07 | 17 (1 + 1 + 1 + 12 + 2 rejected tries; discarded) |
+| `art/tiles/wall_corrupted.png` (kept; source `tools/art/pieces/corruption/wall_raw.png`) | `create_image_pixflux` | 2026-11-09 | 1 (3 tries: 1 kept; the other 2, a dark brick and an archway, are discarded) |
+| `art/corruption/veins_sheet.png` (source `tools/art/pieces/corruption/veins.png`): the pulsing green curse veins, a 12-frame loop | `vfx_workbench` (own layers: branching `bolt` veins with a heartbeat pulse, plus a `glow`; effect "eye-of-bell-corruption-veins") | 2026-11-09 | 0 (free tool) |
+| `art/corruption/purge_sheet.png` (source `.../purge.png`): the gold holy light burning the veins away from the centre outward, 14 frames | `vfx_workbench` (own layers: `glow`, `ring`, `rays`, `particles`; "eye-of-bell-holy-purge") | 2026-11-09 | 0 (free tool) |
+| `art/corruption/ash_sheet.png` (source `.../ash.png`): the wall crumbling to ash and dust, 17 frames | `vfx_workbench` (own layers: `puffs`, falling `particles`; "eye-of-bell-ash-crumble") | 2026-11-09 | 0 (free tool) |
 | `art/intro/shot_01_road.png` | `create_image_pro` | 2026-11-07 | 25 |
 | `art/intro/shot_02_travellers.png` | `create_image_pro` | 2026-11-07 | 50 (one rejected try) |
 | `art/intro/shot_03_crow.png` | `create_image_pro` | 2026-11-07 | 25 |
@@ -51,6 +55,12 @@ None of these were made with the VFX suite, so they should be replaced.
 - Volumetric fog and bloom (`SpellEffectsConfig.apply_environment`): an engine effect, not art.
 - Monster hurt flashes and telegraph glow (`monster.gd`) and the party panel's buff rings and food flares (`party_hud.gd`).
 - Ambush bursts and legendary item glows: none exist yet; when they do they must be made with the VFX suite.
+
+**Corrupted walls** (everything that moves on them is in the table above; these parts are code)
+- The heartbeat light (`corrupt_wall.gd`): a faint green `OmniLight3D` whose strength follows the veins' pulse. A light, not a drawn effect.
+- The stone blackening and sinking into the floor as it crumbles (`corrupt_wall.gd`): tweens on the wall block.
+- The burn-away mask (`shaders/corruption_add.gdshader`): hides the veins from the centre outward to follow the PixelLab ring. It reveals PixelLab art, it draws none.
+- The camera shake and the `rumble` sound when it crumbles.
 
 **Intro**
 - `art/intro/fx/`: lightning, flash, fog and rain, and the three `<shot>_glow.png` layers, drawn by `tools/art/gen_intro.py`.

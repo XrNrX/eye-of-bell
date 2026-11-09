@@ -560,6 +560,10 @@
       "imported": "2026-11-07 08:33:32",
       "source": "wall_3.png"
     },
+    "tiles/wall_corrupted.png": {
+      "imported": "2026-11-09 12:25:37",
+      "source": "wall_corrupted.png"
+    },
     "tiles/wall_cracked.png": {
       "imported": "2026-11-05 21:30:13",
       "source": "wall_cracked.png"

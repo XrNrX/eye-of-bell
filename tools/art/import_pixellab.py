@@ -584,10 +584,31 @@ def grey_out_bruise(img):
     return img
 
 
+def rot_from_bruise(img):
+    """The corrupted wall's texture: PixelLab's mottled stone came out violet, which the palette snap turned into bruise
+    purple. Purple is an accent colour (a few percent of a picture), so the rot is moss instead: dark green-grey mottling."""
+    # It also came out lighter and warmer than the other walls, and a corrupted wall must be darker than any of them: lit
+    # stone steps down one band, tan goes grey, and the stray red and brown specks become rot.
+    swap = {tuple(PAL[b]): tuple(PAL[m]) for b, m in
+            (("bruise_900", "moss_900"), ("bruise_700", "moss_700"), ("bruise_500", "moss_500"),
+             ("stone_100", "stone_300"), ("stone_300", "stone_500"), ("bone_500", "stone_500"), ("bone_700", "stone_500"),
+             ("bone_300", "stone_300"), ("blood_500", "moss_500"), ("blood_700", "moss_700"), ("wood_500", "stone_700"),
+             ("wood_700", "stone_800"), ("rust_500", "moss_700"), ("rust_700", "moss_900"))}
+    px = img.load()
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = px[x, y]
+            if (r, g, b) in swap:
+                px[x, y] = (*swap[(r, g, b)], a)
+    return img
+
+
 def process_image(ctx, asset, path):
     img = ctx.convert(Image.open(path), asset.size, asset.ui, asset.key)
     if asset.key.startswith("intro/"):
         img = grey_out_bruise(img)
+    elif asset.key == "tiles/wall_corrupted":
+        img = rot_from_bruise(img)
     ctx.write_image(img, asset.rel, path.name)
     note = f" ({Image.open(path).size[0]}x{Image.open(path).size[1]} -> {asset.size[0]}x{asset.size[1]})" if Image.open(path).size != asset.size else ""
     ctx.replaced.append(asset.key + note)

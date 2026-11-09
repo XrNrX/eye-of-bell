@@ -539,12 +539,20 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 		SpellDef.Target.AHEAD:
 			var monster = _first_monster_ahead()
 			var wall := NO_CELL
+			var swallowed := NO_CELL
 			if monster == null and spell.breaks_walls:
 				wall = _cracked_wall_ahead()  # A blast can also be aimed at a cracked wall.
-			if monster == null and wall == NO_CELL:
+				if wall == NO_CELL:
+					swallowed = _corrupted_wall_ahead()  # ...and a corrupted one swallows it.
+			if monster == null and wall == NO_CELL and swallowed == NO_CELL:
 				_say("There is nothing to target.")
 				return false
-			if monster == null:
+			if swallowed != NO_CELL:
+				var along: Vector2i = player.DIRS[player.facing]
+				_fx(spell.effect, swallowed - along if swallowed - along != player.cell else swallowed)
+				text = "%s casts %s: the corruption swallows the blast." % [who, spell.display_name]
+				_corruption_bounced(m)
+			elif monster == null:
 				var dir: Vector2i = player.DIRS[player.facing]
 				var burst_at: Vector2i = wall - dir if wall - dir != player.cell else wall
 				_fx(spell.effect, burst_at)
@@ -592,6 +600,8 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 				if other.is_alive():
 					_add_buff(other, spell)
 			text = "%s casts %s." % [who, spell.display_name]
+	if spell.purifies_corruption and m.def.magic == ItemDef.Magic.DIVINE:
+		text += _bless_corruption(m)
 	m.mana -= spell.mana_cost
 	_start_cooldown(m)
 	if spell.sound != "":
@@ -1098,6 +1108,41 @@ func _cracked_wall_ahead() -> Vector2i:
 	return NO_CELL
 
 
+## The corrupted wall straight ahead if nothing else is in the way within missile range, else NO_CELL.
+func _corrupted_wall_ahead() -> Vector2i:
+	var dir: Vector2i = player.DIRS[player.facing]
+	for i in range(1, MISSILE_RANGE + 1):
+		var c: Vector2i = player.cell + dir * i
+		if DungeonMap.is_blocked(c):
+			return c if DungeonMap.is_corrupted(c) else NO_CELL
+	return NO_CELL
+
+
+## A blow or a blast bounced off a corrupted wall: the party remarks on it (data/banter.json, event corruption_bounce).
+func _corruption_bounced(m: Member) -> void:
+	get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED, "banter", "event", "corruption_bounce", {"actor": m.def.display_name})  # After the cast's own line.
+
+
+## A Bless from a divine caster also goes into a corrupted wall one tile ahead. Returns the sentence to add to the cast's
+## message ("" if there is no such wall). One Bless takes a thin wall, two a thick one (DungeonMap.CORRUPTION); the mana is
+## spent either way. A shaken cleric never gets here: she cannot cast at all.
+func _bless_corruption(m: Member) -> String:
+	var front: Vector2i = player.cell + player.DIRS[player.facing]
+	if not DungeonMap.is_corrupted(front):
+		return ""
+	var dungeon := get_tree().get_first_node_in_group("dungeon")
+	if dungeon == null:
+		return ""
+	var result: Dictionary = dungeon.bless_wall(front)
+	if not result.get("ok", false):
+		return ""
+	var event := "corruption_purified" if result.purified else "corruption_resists"
+	get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED, "banter", "event", event, {"actor": m.def.display_name})
+	if result.purified:
+		return " The gold light pours into the corrupted wall: the veins burn away, the stone blackens and crumbles to ash!"
+	return " The gold light sinks into the corrupted wall: the veins burn back, but it holds. It needs another blessing."
+
+
 ## Break a cracked wall, timed to land with a projectile that flies from `from` to `at`.
 func _break_wall(wall: Vector2i, from: Vector2i, at: Vector2i) -> void:
 	var dungeon := get_tree().get_first_node_in_group("dungeon")
@@ -1144,6 +1189,11 @@ func attack(slot: int) -> void:
 ## A swing that hit no monster: if the tile in front is a cracked wall, a heavy weapon (the war
 ## hammer) breaks it; anything else just rings off it.
 func _swing_at_wall(m: Member, hand: int, front: Vector2i) -> void:
+	if DungeonMap.is_corrupted(front):
+		_say("The corruption swallows the blow.")  # No weapon does anything to it: only a Bless.
+		_cue("bump")
+		_corruption_bounced(m)
+		return
 	if not DungeonMap.is_destructible(front):
 		return
 	var weapon: Resource = equipped_weapon(m) if hand < 0 else _melee_weapon_in(m, hand)

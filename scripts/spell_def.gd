@@ -12,6 +12,7 @@ enum Target { AHEAD, HERO, PARTY }  # First monster ahead / one hero you pick / 
 @export var target: Target = Target.AHEAD
 @export var damage_min := 0      # AHEAD: never misses, like the scroll.
 @export var damage_max := 0
+@export var purifies_corruption := false  # A divine caster's cast also sends its light into a corrupted wall in front (one tile): Bless.
 @export var breaks_walls := false  # AHEAD: can also be cast at a cracked wall, and its blast breaks cracked walls beside a target.
 @export var splash_radius := 0   # AHEAD: other monsters within this many tiles (8 around, so 1 = the ring) of the target also burn...
 @export var splash_percent := 0  # ...for this percent of the same roll (rounded up, at least 1); no second roll, never hits the party.

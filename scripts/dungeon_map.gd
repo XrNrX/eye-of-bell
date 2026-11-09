@@ -6,7 +6,9 @@ extends RefCounted
 ## 5 = portcullis (an iron grate: a door you can see through, never opened by hand; give it
 ## an ID in DOOR_IDS and only its linked lever or plate raises it),
 ## 6 = cracked wall (looks like a wall with an obvious crack; solid until a Fireball or a heavy
-## weapon like the war hammer breaks it, after which it is walkable floor with rubble).
+## weapon like the war hammer breaks it, after which it is walkable floor with rubble),
+## 7 = corrupted wall (overgrown with the curse: pulsing green veins; weapons and Fireball just bounce off, only a Bless from a
+## cleric purifies it, after which it is floor; CORRUPTION below says how many Blesses each one takes).
 ## Row index is Z (north at top), column index is X.
 
 const TILE_SIZE := 2.0   # World units per grid tile.
@@ -46,13 +48,13 @@ const MAP := [
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 0
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1],  # 1
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 3, 1],  # 2
-	[1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1],  # 3
-	[1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1],  # 4
+	[1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1],  # 3
+	[1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 7, 1, 0, 0, 0, 1],  # 4
 	[1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 0, 0, 0, 1],  # 5
 	[1, 1, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 5, 1],  # 6
 	[1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],  # 7
 	[1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],  # 8
-	[1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1],  # 9
+	[1, 1, 1, 1, 0, 0, 0, 7, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1],  # 9
 	[1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 2, 1, 1, 1],  # 10
 	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1],  # 11
 	[1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1],  # 12
@@ -93,7 +95,7 @@ const TORCHES: Array[Vector3i] = [
 	Vector3i(14, 7, 0),
 	Vector3i(12, 9, 1),
 	Vector3i(14, 11, 2),
-	Vector3i(16, 5, 0),
+	Vector3i(16, 5, 1),
 	Vector3i(19, 3, 0),
 	Vector3i(19, 9, 2),
 	Vector3i(13, 17, 0),
@@ -102,6 +104,27 @@ const TORCHES: Array[Vector3i] = [
 	Vector3i(9, 18, 3),
 	Vector3i(18, 1, 0),
 	Vector3i(20, 1, 0),
+]
+
+# Corrupted walls (tile 7): how many Blesses each takes to burn away (1 = thin, 2 = thick). Every tile 7 in MAP needs an entry.
+const CORRUPTION := {
+	Vector2i(7, 9): 1,   # Right in front of the fighter at the start: the first thing anyone tries to smash. Opens the way into room 5.
+	Vector2i(16, 4): 2,  # North of the nook above room 3 (a dead end that begs to be smashed): a closet of loot behind it.
+}
+
+# --- Puzzles ---
+# A puzzle is data: when every condition in "when" holds, its "then" effects run, once (scripts/puzzles.gd).
+#   conditions: {"kind": "wall_purified", "cell": Vector2i}   a corrupted wall has been burned away
+#               {"kind": "lever_on", "cell": Vector2i, "side": int}   a wall lever is switched on
+#   effects:    {"kind": "message", "text": String}           a line in the log
+#               {"kind": "open_door", "id": String}           a DOOR_IDS door stays open for good (as if a switch held it)
+#               {"kind": "break_wall", "cell": Vector2i}      a cracked wall breaks
+#               {"kind": "purify_wall", "cell": Vector2i}     a corrupted wall is purified (a lever or plate can do it)
+const PUZZLES := [
+	{"id": "nook_blessing", "when": [{"kind": "wall_purified", "cell": Vector2i(16, 4)}], "then": [
+		{"kind": "message", "text": "The curse bleeds out of the stone. Somewhere in the dark, a latch gives way."},
+		{"kind": "open_door", "id": "gate_n"},
+	]},
 ]
 
 # --- Switches and linked doors ---
@@ -170,6 +193,9 @@ const ITEMS := [
 	{"cell": Vector2i(2, 4), "def": "res://data/items/scroll.tres"},
 	{"cell": Vector2i(2, 5), "def": "res://data/items/darts.tres", "count": 8},
 	{"cell": Vector2i(2, 5), "def": "res://data/items/scroll_resurrection.tres"},  # Rare: the secret closet.
+	{"cell": Vector2i(16, 3), "def": "res://data/items/healing_potion.tres", "count": 3},  # The closet behind the thick corrupted wall.
+	{"cell": Vector2i(16, 3), "def": "res://data/items/scroll.tres"},
+	{"cell": Vector2i(16, 3), "def": "res://data/items/dried_meat.tres", "count": 2},
 	{"cell": Vector2i(2, 3), "def": "res://data/items/leather_armour.tres"},
 	# Food: scavenged rations (heal slowly; the mouldy bread is a gamble).
 	{"cell": Vector2i(6, 9), "def": "res://data/items/stale_bread.tres"},  # Near the start.
@@ -207,6 +233,11 @@ static var occupied := {}        # Tiles holding a monster (cell -> monster node
 static var open_doors := {}      # Doors that have finished opening (cell -> true).
 static var broken_walls := {}    # Cracked walls that have been broken (cell -> true); saved.
 static var unlocked_doors := {}  # Locked doors a key has been used on (cell -> true).
+static var corrupted_left := {}  # Corrupted walls still standing: cell -> Blesses they still need (from CORRUPTION); saved.
+static var purified := {}        # Corrupted walls that have been burned away (cell -> true); saved.
+static var purify_pending := {}  # Walls whose purifying show is still running: they stay solid until it ends (cell -> true).
+static var puzzles_done := {}    # Puzzles that have fired (id -> true); saved.
+static var puzzle_doors := {}    # DOOR_IDS doors a puzzle holds open (id -> true); saved.
 static var player_cell := Vector2i(-1, -1)  # Set by player.gd as it moves.
 
 
@@ -245,6 +276,11 @@ static func reset_run() -> void:
 	open_doors.clear()
 	unlocked_doors.clear()
 	broken_walls.clear()
+	corrupted_left = CORRUPTION.duplicate()
+	purified.clear()
+	purify_pending.clear()
+	puzzles_done.clear()
+	puzzle_doors.clear()
 
 
 ## True if the cell is a door of any kind (open, closed, locked or a portcullis).
@@ -288,7 +324,7 @@ static func is_wall(cell: Vector2i) -> bool:
 	if cell.x < 0 or cell.x >= MAP[cell.y].size():
 		return true
 	var tile: int = MAP[cell.y][cell.x]
-	return tile == 1 or (tile == 6 and not broken_walls.has(cell))
+	return tile == 1 or (tile == 6 and not broken_walls.has(cell)) or (tile == 7 and (not purified.has(cell) or purify_pending.has(cell)))
 
 
 ## True if the cell is a cracked wall that is still standing: the only kind that can break.
@@ -297,6 +333,13 @@ static func is_destructible(cell: Vector2i) -> bool:
 	if cell.y < 0 or cell.y >= MAP.size() or cell.x < 0 or cell.x >= MAP[cell.y].size():
 		return false
 	return MAP[cell.y][cell.x] == 6 and not broken_walls.has(cell)
+
+
+## True if the cell is a corrupted wall that has not been purified yet (one being purified still counts until the show ends).
+static func is_corrupted(cell: Vector2i) -> bool:
+	if cell.y < 0 or cell.y >= MAP.size() or cell.x < 0 or cell.x >= MAP[cell.y].size():
+		return false
+	return MAP[cell.y][cell.x] == 7 and (not purified.has(cell) or purify_pending.has(cell))
 
 
 ## World-space centre of a grid cell (at floor level).
