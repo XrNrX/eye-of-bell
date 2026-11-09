@@ -14,14 +14,18 @@ const FACING_NAMES: Array[String] = ["N", "W", "S", "E"]  # Same order as player
 
 
 func _ready() -> void:
-	visible = true  # On by default (Tab hides and shows it).
+	visible = true  # The map is on by default (Tab hides and shows it).
+	label.visible = false  # The coordinates are debug only: Shift+Tab.
 	minimap.player = player
 
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo \
 			and event.physical_keycode == KEY_TAB:
-		visible = not visible
+		if event.shift_pressed:
+			label.visible = not label.visible  # Coordinates and facing, for debugging.
+		else:
+			visible = not visible
 
 
 func _process(_delta: float) -> void:
