@@ -343,18 +343,23 @@ func _on_hand(slot: int, hand: int) -> void:
 	_open_menu(slot, hand)
 
 
-func _open_menu(slot: int, hand: int) -> void:
+## `spells` overrides the hero's spell list (for tests).
+func _open_menu(slot: int, hand: int, spells: Array = []) -> void:
 	menu = SpellMenu.new()
-	menu.setup(party, slot, party.spells_in(slot, hand))
+	menu.setup(party, slot, spells if not spells.is_empty() else party.spells_in(slot, hand))
 	menu.chosen.connect(_on_spell_chosen)
-	add_child(menu)
-	menu.size = menu.get_combined_minimum_size()
-	# Left of the whole party grid (so it never covers a panel), level with the
-	# caster's hands, kept inside the 320x200 view.
+	# Preferred: left of the whole party grid (so it never covers a panel), level with the caster's hands. The popup layer
+	# keeps it on screen and clear of the minimap, trying below and to the left of the map if that spot is covered.
 	var r: Rect2 = panels[slot].root.get_global_rect()
-	var view: Vector2 = get_viewport().get_visible_rect().size
-	menu.position = Vector2(panels_grid.get_global_rect().position.x - menu.size.x - 2,
-			clampf(r.position.y + 30, 2, view.y - menu.size.y - 2))
+	var preferred := func(size: Vector2) -> Vector2:
+		return Vector2(panels_grid.get_global_rect().position.x - size.x - 2, r.position.y + 30)
+	var popups := get_tree().get_first_node_in_group("popups")
+	if popups:
+		popups.open_popup(menu, preferred)
+	else:  # No popup layer (a bare test scene): the old behaviour.
+		add_child(menu)
+		menu.size = menu.get_combined_minimum_size()
+		menu.position = preferred.call(menu.size)
 	menu_owner = {"caster": slot, "hand": hand}
 	catcher.visible = true
 

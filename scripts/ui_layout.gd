@@ -37,3 +37,4 @@ const PARTY := Rect2(432, 8, 200, 344)  # The party panels.
 
 const FRAME_LAYER := 4
 const VIEW_LAYER := 1
+const POPUP_LAYER := 16  # Every pop-up and menu (popup_layer.gd): above the minimap overlay (10), inventory (11) and held item (15), below the full-screen map (18) and pause menu (19).

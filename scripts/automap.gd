@@ -66,6 +66,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func open() -> void:
+	get_tree().call_group("party_hud", "cancel_casting")  # No pop-up or target mode left open under the map.
 	player = get_tree().get_first_node_in_group("player")
 	visible = true
 	get_tree().paused = true

@@ -34,6 +34,7 @@ var wash: Texture2D # One cell of floor wash.
 
 
 func _ready() -> void:
+	add_to_group("popup_avoid")  # Pop-ups keep clear of the map and dim it (popup_layer.gd).
 	torch_frame.atlas = TORCH_SHEET
 	torch = TextureRect.new()
 	torch.texture = torch_frame
@@ -98,3 +99,8 @@ func _set_torch_frame(i: int) -> void:
 	var w := TORCH_SHEET.get_width() / 4
 	var h := TORCH_SHEET.get_height() / 3
 	torch_frame.region = Rect2((i % 4) * w, (i / 4) * h, w, h)
+
+
+## A pop-up is open (popup_layer.gd calls this on every node in group "popup_avoid"): dim the map so the pop-up is the focus.
+func set_dimmed(on: bool) -> void:
+	modulate = Color(0.55, 0.55, 0.55) if on else Color.WHITE
