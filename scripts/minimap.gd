@@ -80,11 +80,9 @@ func _draw() -> void:
 		if at.x >= 0 and at.y >= 0 and at.x < COLS and at.y < ROWS:
 			MapSymbols.draw_poi(self, icons["lever"], Vector2(at) * CELL_PX, CELL_PX, true)
 
-	# The party: the arrow, turned to the way they face (the art points north; facing 1 is west = a quarter turn left).
-	var centre := (Vector2(COLS / 2, ROWS / 2) + Vector2(0.5, 0.5)) * CELL_PX
-	draw_set_transform(Vector2(BORDER, BORDER) + centre, -player.facing * PI / 2.0)
-	draw_texture(icons["arrow"], -icons["arrow"].get_size() / 2.0)
-	draw_set_transform(Vector2.ZERO)
+	# The party: a small arrow in the middle cell, turned to the way they face.
+	MapSymbols.draw_arrow(self, Vector2(COLS / 2, ROWS / 2) * CELL_PX, CELL_PX, player.facing)
+	draw_set_transform(Vector2.ZERO)  # Back to the panel's own corner for the frame.
 	draw_texture(FRAME, Vector2.ZERO)
 
 

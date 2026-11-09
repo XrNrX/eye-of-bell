@@ -105,11 +105,8 @@ func _draw_map() -> void:
 				MapSymbols.draw_poi(canvas, icons[poi], origin + Vector2(x, y) * CELL, CELL, false)
 	for lever in DungeonMap.LEVERS:
 		MapSymbols.draw_poi(canvas, icons["lever"], origin + Vector2(lever.cell) * CELL, CELL, false)
-	if player != null:  # The party: the arrow, turned to face the way they face (the art points north).
-		var centre := origin + (Vector2(player.cell) + Vector2(0.5, 0.5)) * CELL
-		canvas.draw_set_transform(centre, -player.facing * PI / 2.0)
-		canvas.draw_texture(icons["arrow"], -icons["arrow"].get_size() / 2.0)
-		canvas.draw_set_transform(Vector2.ZERO)
+	if player != null:  # The party: a small arrow in its cell, turned to face the way it faces.
+		MapSymbols.draw_arrow(canvas, origin + Vector2(player.cell) * CELL, CELL, player.facing)
 	canvas.draw_style_box(frame_box, PANEL)
 	_draw_legend()
 
@@ -133,6 +130,8 @@ func _draw_legend() -> void:
 			canvas.draw_rect(Rect2(x, y, 2, 16), INK)
 			canvas.draw_rect(Rect2(x + 14, y, 2, 16), INK)
 			MapSymbols.draw_door(canvas, Vector2(x, y), 16, kind, false)
+		elif kind == "arrow":
+			MapSymbols.draw_arrow(canvas, Vector2(x, y), 16, 0)
 		else:
 			canvas.draw_texture(icons[kind], Vector2(x, y))
 		_text(font, row[1], Vector2(x + 24, y + 12), INK)

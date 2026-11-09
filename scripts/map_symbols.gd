@@ -30,12 +30,11 @@ static func icon_for(c: Vector2i) -> String:
 	return ""
 
 
-## Load the symbols: small = the 8x8 ones. The party arrow is always the full 16x16 one.
+## Load the symbols: small = the 8x8 ones.
 static func load_icons(small: bool) -> Dictionary:
 	var icons := {}
 	for n in NAMES:
 		icons[n] = load("res://art/ui/map/icon_%s%s.png" % [n, "_s" if small else ""])
-	icons["arrow"] = load("res://art/ui/map/icon_arrow.png")
 	return icons
 
 
@@ -169,3 +168,64 @@ static func draw_poi(canvas: CanvasItem, icon: Texture2D, at: Vector2, cell: int
 		canvas.draw_rect(Rect2(pos - Vector2(1, 1), size + Vector2(2, 2)), INK)
 		canvas.draw_rect(Rect2(pos, size), BONE_300)
 	canvas.draw_texture(icon, pos)
+
+
+# The party marker: a small arrowhead drawn in code so that it fits inside one cell and never spills over the wall lines
+# (the 16x16 PixelLab arrow was bigger than a corner-map cell). K = ink outline, R = blood. Drawn pointing north.
+const ARROW_SMALL := [
+	"..KK..",
+	".KRRK.",
+	".KRRK.",
+	"KRRRRK",
+	"KRKKRK",
+	"KK..KK",
+]
+const ARROW_LARGE := [
+	"...K...",
+	"..KRK..",
+	"..KRK..",
+	".KRRRK.",
+	"KRRRRRK",
+	"KRKKKRK",
+	"KK...KK",
+]
+static var _arrows := {}  # "<size>_<facing>" -> Texture2D.
+
+
+## The arrow texture for a cell size (the small one fits a corner-map cell, the large one a cell of 10+ px) and a facing
+## (0 north, 1 west, 2 south, 3 east): the north-pointing pattern turned in whole quarter turns, so pixels stay square.
+static func arrow(cell: int, facing: int) -> Texture2D:
+	var large := cell >= 10
+	var key := "%s_%d" % ["L" if large else "S", facing]
+	if _arrows.has(key):
+		return _arrows[key]
+	var rows: Array = ARROW_LARGE if large else ARROW_SMALL
+	var n: int = rows.size()
+	var grid := []
+	for y in n:
+		grid.append(rows[y])
+	for _turn in facing:  # Each step is a quarter turn counter-clockwise: (x, y) moves to (y, n - 1 - x).
+		var next := []
+		for y in n:
+			var row := ""
+			for x in n:
+				row += grid[x][n - 1 - y]
+			next.append(row)
+		grid = next
+	var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
+	for y in n:
+		for x in n:
+			var ch: String = grid[y][x]
+			if ch == "K":
+				img.set_pixel(x, y, INK)
+			elif ch == "R":
+				img.set_pixel(x, y, BLOOD_500)
+	var tex := ImageTexture.create_from_image(img)
+	_arrows[key] = tex
+	return tex
+
+
+## Draw the party marker centred in the cell whose top-left is `at`.
+static func draw_arrow(canvas: CanvasItem, at: Vector2, cell: int, facing: int) -> void:
+	var tex := arrow(cell, facing)
+	canvas.draw_texture(tex, at + ((Vector2(cell, cell) - tex.get_size()) / 2.0).floor())
