@@ -94,7 +94,7 @@ func glow(kind: String) -> Dictionary:
 @export var fire_light_range := 6.0
 @export var fire_flicker := 0.35                         # How far the light flutters (fraction of its energy).
 @export var fire_size := 0.06                            # World units per pixel (7x7): about twice the missile.
-@export var fire_seconds_per_tile := 0.075               # Slower and heavier than the missile.
+@export var fire_seconds_per_tile := 0.13                # Slower and heavier than the missile.
 @export var ember_amount := 28                           # Embers it sheds on the way.
 @export var ember_color := Color(2.6, 0.7, 0.1)
 @export var ember_size := 0.04
@@ -113,8 +113,8 @@ func glow(kind: String) -> Dictionary:
 @export var blast_spark_size := 0.06
 @export var blast_spark_speed := 4.0
 @export var blast_spark_seconds := 0.7
-@export var blast_shake_strength := 0.12                 # Screen shake (camera offset, world units; a heavy hit is 0.05).
-@export var blast_shake_seconds := 0.45
+@export var blast_shake_strength := 0.2                  # Screen shake (camera offset, world units; a heavy hit is 0.05).
+@export var blast_shake_seconds := 0.6
 
 @export_group("Heal glow")
 @export var heal_color := Color(1.0, 0.85, 0.45)        # The light's colour.
@@ -194,7 +194,7 @@ func glow(kind: String) -> Dictionary:
 @export var fb_cast_scale := 1.0
 @export var fb_cast_distance := 1.2                  # How far ahead of the party the cast flash appears...
 @export var fb_cast_height := 0.78                   # ...and how high (the hands).
-@export var fb_projectile_scale := 1.0
+@export var fb_projectile_scale := 1.3
 @export var fb_impact_scale := 2.1                   # The explosion is 96 art pixels across; this makes it fill the corridor.
 
 @export_group("Magic Missile sprites and light")
@@ -217,7 +217,7 @@ func glow(kind: String) -> Dictionary:
 @export var mm_impact_shake_strength := 0.03
 @export var mm_impact_shake_seconds := 0.18
 @export var mm_impact_pause_seconds := 0.05
-@export var blast_pause_seconds := 0.09              # The Fireball's hit pause (its shake is blast_shake_strength).
+@export var blast_pause_seconds := 0.14              # The Fireball's hit pause (its shake is blast_shake_strength).
 @export var mm_impact_light_colors := PackedColorArray([Color(0.9, 0.95, 1.0), Color(0.75, 0.88, 1.0), Color(0.6, 0.8, 1.0), Color(0.5, 0.72, 1.0), Color(0.45, 0.65, 0.95)])
 @export var mm_impact_light_range := 12.0
 @export var px_arcane_ramp := PackedColorArray([Color(1.6, 1.9, 2.6), Color(0.8, 1.1, 1.8), Color(0.4, 0.6, 1.1), Color(0.2, 0.3, 0.6)])  # Cold pale blue, bright to dark, in steps.
