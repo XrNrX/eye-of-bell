@@ -6,6 +6,10 @@ Starts in borderless fullscreen; Alt+Enter switches to a window.
 Goal: find your way through the dungeon to the stairs down (one of the keys opens the locked
 door in front of them). Levers, a pressure plate and a cracked wall (War Hammer or Fireball) help.
 
+THE MONSTERS
+  Skeletons, skeleton guards, slimes and acid slimes all have new, more detailed art with full
+  animation: they idle, walk, attack (the acid slime spits) and react when hit.
+
 MOVING AND ACTING
   W / S          forward / back          A / D   sidestep        Q / E   turn
   (or the six on-screen arrows)
