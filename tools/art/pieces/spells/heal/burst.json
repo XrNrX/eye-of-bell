@@ -1,0 +1,339 @@
+{
+ "frames": [
+  {
+   "filename": "eye-of-bell-heal 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "sourceSize": {
+    "w": 108,
+    "h": 146
+   },
+   "pivot": {
+    "x": 0.49074074074074076,
+    "y": 0.5616438356164384
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-heal 1.png",
+   "frame": {
+    "x": 108,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "sourceSize": {
+    "w": 108,
+    "h": 146
+   },
+   "pivot": {
+    "x": 0.49074074074074076,
+    "y": 0.5616438356164384
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-heal 2.png",
+   "frame": {
+    "x": 216,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "sourceSize": {
+    "w": 108,
+    "h": 146
+   },
+   "pivot": {
+    "x": 0.49074074074074076,
+    "y": 0.5616438356164384
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-heal 3.png",
+   "frame": {
+    "x": 324,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "sourceSize": {
+    "w": 108,
+    "h": 146
+   },
+   "pivot": {
+    "x": 0.49074074074074076,
+    "y": 0.5616438356164384
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-heal 4.png",
+   "frame": {
+    "x": 0,
+    "y": 146,
+    "w": 108,
+    "h": 146
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "sourceSize": {
+    "w": 108,
+    "h": 146
+   },
+   "pivot": {
+    "x": 0.49074074074074076,
+    "y": 0.5616438356164384
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-heal 5.png",
+   "frame": {
+    "x": 108,
+    "y": 146,
+    "w": 108,
+    "h": 146
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "sourceSize": {
+    "w": 108,
+    "h": 146
+   },
+   "pivot": {
+    "x": 0.49074074074074076,
+    "y": 0.5616438356164384
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-heal 6.png",
+   "frame": {
+    "x": 216,
+    "y": 146,
+    "w": 108,
+    "h": 146
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "sourceSize": {
+    "w": 108,
+    "h": 146
+   },
+   "pivot": {
+    "x": 0.49074074074074076,
+    "y": 0.5616438356164384
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-heal 7.png",
+   "frame": {
+    "x": 324,
+    "y": 146,
+    "w": 108,
+    "h": 146
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "sourceSize": {
+    "w": 108,
+    "h": 146
+   },
+   "pivot": {
+    "x": 0.49074074074074076,
+    "y": 0.5616438356164384
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-heal 8.png",
+   "frame": {
+    "x": 0,
+    "y": 292,
+    "w": 108,
+    "h": 146
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "sourceSize": {
+    "w": 108,
+    "h": 146
+   },
+   "pivot": {
+    "x": 0.49074074074074076,
+    "y": 0.5616438356164384
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-heal 9.png",
+   "frame": {
+    "x": 108,
+    "y": 292,
+    "w": 108,
+    "h": 146
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "sourceSize": {
+    "w": 108,
+    "h": 146
+   },
+   "pivot": {
+    "x": 0.49074074074074076,
+    "y": 0.5616438356164384
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-heal 10.png",
+   "frame": {
+    "x": 216,
+    "y": 292,
+    "w": 108,
+    "h": 146
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "sourceSize": {
+    "w": 108,
+    "h": 146
+   },
+   "pivot": {
+    "x": 0.49074074074074076,
+    "y": 0.5616438356164384
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-heal 11.png",
+   "frame": {
+    "x": 324,
+    "y": 292,
+    "w": 108,
+    "h": 146
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 108,
+    "h": 146
+   },
+   "sourceSize": {
+    "w": 108,
+    "h": 146
+   },
+   "pivot": {
+    "x": 0.49074074074074076,
+    "y": 0.5616438356164384
+   },
+   "duration": 83
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "eye-of-bell-heal.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 432,
+   "h": 438
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 53,
+   "y": 82
+  },
+  "frameTags": [
+   {
+    "name": "eye-of-bell-heal",
+    "from": 0,
+    "to": 11,
+    "direction": "forward"
+   }
+  ]
+ }
+}

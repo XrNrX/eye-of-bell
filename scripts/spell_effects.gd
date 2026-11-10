@@ -572,6 +572,37 @@ func holy_pulse(scale := 1.0) -> void:
 	get_tree().call_group("dungeon", "dim_curse", c.holy_curse_dim, c.holy_curse_dim_in, c.holy_curse_dim_hold, c.holy_curse_dim_out)
 
 
+## The sheet each holy spell plays in front of the party (art/spells/<spell>/<name>_sheet.png), once the art exists.
+const HOLY_SHEETS := {"heal": "burst"}
+
+
+## A holy spell's PixelLab animation: an additive billboard hung in front of the party, a gold light that follows its frames and
+## palette-stepped gold pixels. False (and nothing played) if the art is missing, so the old light and motes play instead.
+func _party_sprite(kind: String) -> bool:
+	if not HOLY_SHEETS.has(kind):
+		return false
+	var sheet := _sheet(kind, HOLY_SHEETS[kind])
+	var player := get_tree().get_first_node_in_group("player")
+	if sheet.is_empty() or player == null:
+		return false
+	var c := Config.get_config()
+	_ensure_pixels()
+	live += 1
+	var forward := Vector3(player.DIRS[player.facing].x, 0, player.DIRS[player.facing].y)
+	var at: Vector3 = DungeonMap.cell_to_world(player.cell) + forward * c.holy_fx_distance + Vector3(0, c.holy_fx_height, 0)
+	var flip := _flipbook(sheet, false, c.get(kind + "_scale"), c.get(kind + "_tint"))
+	flip.position = at
+	add_child(flip)
+	flip.finished.connect(func():
+		live -= 1)
+	var light := _fx_light(flip, c.get(kind + "_fx_light_energy"), c.get(kind + "_fx_light_colors"), c.get(kind + "_fx_light_range"), false, 0.0)
+	light.position = at - forward * 0.4
+	add_child(light)
+	pixels.emit(at - Vector3(0, 0.5, 0), int(c.get(kind + "_particles")), {"ramp": c.px_gold_ramp, "speed": Vector2(0.6, 1.6), "spread": 0.35,
+			"gravity": -0.3, "life": Vector2(0.5, 1.0), "size": 2.0, "jitter": Vector3(0.5, 0.05, 0.3)})
+	return true
+
+
 func party_glow(kind: String) -> void:
 	var c := Config.get_config()
 	if not ["heal", "bless", "shield"].has(kind):
@@ -579,6 +610,8 @@ func party_glow(kind: String) -> void:
 	var g: Dictionary = c.glow(kind)
 	var player := get_tree().get_first_node_in_group("player")
 	if player == null:
+		return
+	if _party_sprite(kind):
 		return
 	live += 1
 	var forward := Vector3(player.DIRS[player.facing].x, 0, player.DIRS[player.facing].y)
