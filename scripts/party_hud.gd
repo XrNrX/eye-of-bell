@@ -652,7 +652,7 @@ func _burn_scroll(tex: Texture2D, at: Vector2) -> void:
 	tween.tween_callback(icon.queue_free)
 
 
-## Bless or Shield took hold: the PixelLab effect (art/spells/<spell>/portrait_sheet.png, the same animation shrunk to the portrait)
+## Heal, Bless or Shield took hold: the PixelLab effect (art/spells/<spell>/portrait_sheet.png, the same animation shrunk to the portrait)
 ## plays over each portrait that got it, so it reads as cast on the hero and not out at the monster.
 func _on_buff_cast(slots: Array, effect: String) -> void:
 	for slot in slots:

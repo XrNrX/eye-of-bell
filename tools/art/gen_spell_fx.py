@@ -3,7 +3,7 @@
 
 The Fireball's three animations were made with PixelLab's effects tool (vfx_workbench) and exported as
 atlases; the source pieces are in tools/art/pieces/spells/fireball/ (<name>.png + <name>.json, as exported):
-    bless/portrait 74x46 and shield/portrait 68x58: the same two effects shrunk to fit over a 64x64 party portrait (one-shot)
+    heal/portrait 58x74, bless/portrait 74x46 and shield/portrait 68x58: the same two effects shrunk to fit over a 64x64 party portrait (one-shot)
     resurrection/column   116x149, a column of gold light on a ring that fades in, sparkles rising, fades out (one-shot, 24 frames)
     shield/flash   94x80, a gold hex dome snapping up, shimmering and fading (one-shot)
     bless/ring   204x130, a gold ring sweeping out across the floor (one-shot)
