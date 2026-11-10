@@ -35,9 +35,27 @@ def rank_tone(img, ref):
     return Image.fromarray(out.reshape(a.shape[0], a.shape[1], 3), "RGB").convert("RGBA")
 
 
+def mirror_tile(img, box=(28, 28, 156, 156)):
+    """A seamless 256x256 tile from the clean middle of a PixelLab picture (its own edges are dark bands, so it does not tile): crop a 128x128
+    region and lay it out four times, mirrored, so every edge matches by construction. Pixels are not scaled."""
+    c = img.crop(box)
+    w, h = c.size
+    out = Image.new(img.mode, (2 * w, 2 * h))
+    out.paste(c, (0, 0))
+    out.paste(c.transpose(Image.FLIP_LEFT_RIGHT), (w, 0))
+    out.paste(c.transpose(Image.FLIP_TOP_BOTTOM), (0, h))
+    out.paste(c.transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.FLIP_TOP_BOTTOM), (w, h))
+    return out
+
+
 def build(ceiling_gain=1.0):
     os.environ["ART_OVERWRITE_IMPORTED"] = "1"  # floor.png and ceiling.png are listed as imported art; this replaces them on purpose.
-    floor = rank_tone(Image.open(PIECES / "floor.png"), Image.open(PIECES / "floor_tone_ref.png"))
+    large = PIECES / "floor_large_raw.png"  # Big slabs (seed 8002); the older small-stone floor.png is used if this is missing.
+    if large.exists():
+        source = mirror_tile(Image.open(large).convert("RGB"))
+    else:
+        source = Image.open(PIECES / "floor.png")
+    floor = rank_tone(source, Image.open(PIECES / "floor_tone_ref.png"))
     # The ceiling: ranked onto a dim ramp (ink, stone 900/800/700 in 30/30/25/15 %), so its beams and stones show but it stays as dark as a ceiling
     # in a torch-lit dungeon should; `ceiling_gain` stretches the ramp (1 = as dark as that, 2 = brighter).
     ramp = [("ink", 30), ("stone_900", 30), ("stone_800", 25), ("stone_700", 15)]
