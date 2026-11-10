@@ -603,7 +603,8 @@ func _party_sprite(kind: String) -> bool:
 	return true
 
 
-## A hero is raised (Party.revive): a column of gold light stands ahead of the party for as long as the one over the portrait
+## NOT CALLED any more (the column plays over the portrait only, party_hud._on_revived); kept in case it is wanted back: call it from
+## Party.revive. A hero is raised (Party.revive): a column of gold light stands ahead of the party for as long as the one over the portrait
 ## (party_hud._on_revived), with a gold light that follows its frames and gold pixels lifted off its ring. `divine` is the Cleric's:
 ## taller and brighter. False and nothing played if the sheet is missing (the plain holy_pulse still happens).
 func revive_column(divine: bool) -> void:
