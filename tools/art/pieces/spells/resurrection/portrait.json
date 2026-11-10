@@ -1,0 +1,651 @@
+{
+ "frames": [
+  {
+   "filename": "eye-of-bell-resurrection-portrait 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 1.png",
+   "frame": {
+    "x": 62,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 2.png",
+   "frame": {
+    "x": 124,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 3.png",
+   "frame": {
+    "x": 186,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 4.png",
+   "frame": {
+    "x": 248,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 5.png",
+   "frame": {
+    "x": 0,
+    "y": 78,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 6.png",
+   "frame": {
+    "x": 62,
+    "y": 78,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 7.png",
+   "frame": {
+    "x": 124,
+    "y": 78,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 8.png",
+   "frame": {
+    "x": 186,
+    "y": 78,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 9.png",
+   "frame": {
+    "x": 248,
+    "y": 78,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 10.png",
+   "frame": {
+    "x": 0,
+    "y": 156,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 11.png",
+   "frame": {
+    "x": 62,
+    "y": 156,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 12.png",
+   "frame": {
+    "x": 124,
+    "y": 156,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 13.png",
+   "frame": {
+    "x": 186,
+    "y": 156,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 14.png",
+   "frame": {
+    "x": 248,
+    "y": 156,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 15.png",
+   "frame": {
+    "x": 0,
+    "y": 234,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 16.png",
+   "frame": {
+    "x": 62,
+    "y": 234,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 17.png",
+   "frame": {
+    "x": 124,
+    "y": 234,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 18.png",
+   "frame": {
+    "x": 186,
+    "y": 234,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 19.png",
+   "frame": {
+    "x": 248,
+    "y": 234,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 20.png",
+   "frame": {
+    "x": 0,
+    "y": 312,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 21.png",
+   "frame": {
+    "x": 62,
+    "y": 312,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 22.png",
+   "frame": {
+    "x": 124,
+    "y": 312,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection-portrait 23.png",
+   "frame": {
+    "x": 186,
+    "y": 312,
+    "w": 62,
+    "h": 78
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 62,
+    "h": 78
+   },
+   "sourceSize": {
+    "w": 62,
+    "h": 78
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8205128205128205
+   },
+   "duration": 83
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "eye-of-bell-resurrection-portrait.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 310,
+   "h": 390
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 31,
+   "y": 64
+  },
+  "frameTags": [
+   {
+    "name": "eye-of-bell-resurrection-portrait",
+    "from": 0,
+    "to": 23,
+    "direction": "forward"
+   }
+  ]
+ }
+}

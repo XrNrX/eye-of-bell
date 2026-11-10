@@ -659,11 +659,13 @@ func _on_buff_cast(slots: Array, effect: String) -> void:
 		_play_portrait_fx(slot, effect)
 
 
-func _play_portrait_fx(slot: int, effect: String) -> void:
+## `opts`: "sheet" (the file name part, default "portrait"), "seconds" (stretch the animation to this long), "foot" (stand its foot on
+## the portrait's foot, for a column), "brightness" (additive strength, default 1).
+func _play_portrait_fx(slot: int, effect: String, opts := {}) -> void:
 	if not panels.has(slot):
 		return
-	var png := "res://art/spells/%s/portrait_sheet.png" % effect
-	var json_path := "res://art/spells/%s/portrait_sheet.json" % effect
+	var png := "res://art/spells/%s/%s_sheet.png" % [effect, opts.get("sheet", "portrait")]
+	var json_path := "res://art/spells/%s/%s_sheet.json" % [effect, opts.get("sheet", "portrait")]
 	if not ResourceLoader.exists(png) or not FileAccess.file_exists(json_path):
 		return
 	var info = JSON.parse_string(FileAccess.get_file_as_string(json_path))
@@ -685,16 +687,20 @@ func _play_portrait_fx(slot: int, effect: String) -> void:
 	var mat := CanvasItemMaterial.new()
 	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	fx.material = mat
-	if Settings.reduce_flashing:
-		fx.modulate = Color(0.65, 0.65, 0.65, 1.0)  # Dimmer, never an alpha fade.
+	var bright: float = opts.get("brightness", 1.0) * (0.65 if Settings.reduce_flashing else 1.0)  # Dimmer, never an alpha fade.
+	fx.modulate = Color(bright, bright, bright, 1.0)
 	var rect: Rect2 = panels[slot].portrait.get_global_rect()
 	var lower: float = 14.0 if effect == "bless" else 0.0  # The ring spreads over the portrait's lower half.
-	fx.global_position = (rect.get_center() + Vector2(0, lower) - size / 2.0).round()
+	if opts.get("foot", false):
+		fx.global_position = Vector2(rect.get_center().x - size.x / 2.0, rect.end.y + 6.0 - size.y).round()  # Its foot at the portrait's foot.
+	else:
+		fx.global_position = (rect.get_center() + Vector2(0, lower) - size / 2.0).round()
 	panels[slot].root.add_child(fx)
-	var seconds: float = frames / float(info.fps)
+	var seconds: float = opts.get("seconds", frames / float(info.fps))
+	var fps: float = frames / seconds
 	var tween := create_tween()
 	tween.tween_method(func(t: float) -> void:
-		atlas.region = Rect2(Vector2(minf(floorf(t * info.fps), frames - 1.0) * size.x, 0.0), size), 0.0, seconds, seconds)
+		atlas.region = Rect2(Vector2(minf(floorf(t * fps), frames - 1.0) * size.x, 0.0), size), 0.0, seconds, seconds)
 	tween.tween_callback(fx.queue_free)
 
 
@@ -706,6 +712,11 @@ func _on_revived(slot: int, shaken: bool) -> void:
 	var c := SpellEffectsConfig.get_config()
 	var reduced: bool = Settings.reduce_flashing
 	var portrait: TextureButton = panels[slot].portrait
+	if ResourceLoader.exists("res://art/spells/resurrection/portrait_sheet.png"):  # The PixelLab column (a bigger one for the Cleric), timed like the old one.
+		_play_portrait_fx(slot, "resurrection", {"sheet": "portrait_large" if shaken else "portrait", "foot": true,
+				"seconds": c.revive_column_seconds * (1.4 if reduced else 1.0),
+				"brightness": minf(1.0, c.revive_column_brightness) * (c.revive_reduced_scale if reduced else 1.0)})  # (The Cleric's is bigger, not brighter: brighter hid the face.)
+		return
 	var scale: float = c.revive_column_scale * (c.revive_cleric_scale if shaken else 1.0)
 	var bright: float = c.revive_column_brightness * (c.revive_cleric_brightness if shaken else 1.0) * (c.revive_reduced_scale if reduced else 1.0)
 	var column := TextureRect.new()
