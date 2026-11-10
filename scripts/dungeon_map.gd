@@ -167,6 +167,10 @@ static var ITEMS := [
 	{"cell": Vector2i(10, 16), "def": "res://data/items/stone.tres", "count": 10},
 	{"cell": Vector2i(6, 7), "def": "res://data/items/stone.tres", "count": 6},  # ...and more stones near the start and in room 3.
 	{"cell": Vector2i(14, 9), "def": "res://data/items/stone.tres", "count": 8},
+	{"cell": Vector2i(19, 9), "def": "res://data/items/bow.tres"},  # Room 2: a better launcher than the slingshot, with its arrows.
+	{"cell": Vector2i(18, 9), "def": "res://data/items/arrow.tres", "count": 8},
+	{"cell": Vector2i(13, 7), "def": "res://data/items/arrow.tres", "count": 6},  # Room 3.
+	{"cell": Vector2i(18, 19), "def": "res://data/items/arrow.tres", "count": 6},  # The corridor to the far stairs.
 	{"cell": Vector2i(15, 19), "def": "res://data/items/flail.tres"},  # The passage into room 6: a wild, heavy weapon.
 	{"cell": Vector2i(7, 17), "def": "res://data/items/scroll.tres"},  # The cave.
 	{"cell": Vector2i(7, 18), "def": "res://data/items/healing_potion.tres", "count": 2},

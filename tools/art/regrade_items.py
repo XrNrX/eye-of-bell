@@ -34,15 +34,18 @@ PLAIN_STEEL = {"curse_300": "stone_100", "curse_500": "stone_300", "curse_700": 
 # The flail's iron ball came out bruise purple: grey it too (purple is the curse's).
 FLAIL_STEEL = {**PLAIN_STEEL, "bruise_500": "stone_300", "bruise_700": "stone_500", "bruise_900": "stone_700"}
 
+# The bow came out bruise purple and blood red: back to wood and leather.
+BOW_WOOD = {"bruise_900": "soil_900", "bruise_700": "wood_700", "bruise_500": "wood_500", "blood_700": "wood_700", "blood_500": "leather_400"}
+
 REMAPS = {
     "stale_bread": GRIM_FOOD, "hard_cheese": GRIM_CHEESE,
-    "short_sword": PLAIN_STEEL, "long_sword": PLAIN_STEEL, "flail": FLAIL_STEEL, "dagger": PLAIN_STEEL, "mace": PLAIN_STEEL, "war_hammer": PLAIN_STEEL, "darts": PLAIN_STEEL,
+    "short_sword": PLAIN_STEEL, "long_sword": PLAIN_STEEL, "flail": FLAIL_STEEL, "bow": BOW_WOOD, "arrow": PLAIN_STEEL, "dagger": PLAIN_STEEL, "mace": PLAIN_STEEL, "war_hammer": PLAIN_STEEL, "darts": PLAIN_STEEL,
 }
 # No monsters: all four now use PixelLab animation sets with their own outline (gen_monster_sheets.py), and a second ring would
 # double it. (The skeletons used to be listed here; their untouched copies in pieces/regrade_src/monsters are gone.)
 MONSTERS = {}
 # Hand and quick-slot icons made natively at 32x32 (tools/art/pieces/items32/): already outlined and steel-grey, so left alone.
-NATIVE32 = {"short_sword", "long_sword", "flail", "slingshot", "stone", "war_hammer", "mace", "dagger", "darts"}
+NATIVE32 = {"short_sword", "long_sword", "flail", "slingshot", "stone", "bow", "arrow", "war_hammer", "mace", "dagger", "darts"}
 
 
 def source(rel):

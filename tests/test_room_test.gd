@@ -188,17 +188,31 @@ func _check_game() -> void:
 	party.act(0, 0)
 	check("a shot spends one stone", hero.backpack[0].count == 2)
 	check("a shot starts the cooldown", hero.cooldown_left > 0.0)
-	for i in 12:
+	hero.backpack[0].count = 40  # Enough that misses cannot decide the test.
+	for i in 40:
 		hero.cooldown_left = 0.0
-		if hero.backpack[0] == null:
+		if not is_instance_valid(target) or target.dying or target.hp < hp_before:
 			break
 		party.act(0, 0)
 	check("shots hurt the monster ahead", not is_instance_valid(target) or target.hp < hp_before or target.dying)
+	hero.backpack[0].count = 1
+	hero.cooldown_left = 0.0
+	party.act(0, 0)
 	check("the stones run out", hero.backpack[0] == null)
 	hero.cooldown_left = 0.0
 	party.act(0, 0)
 	check("no stones, no shot, no cooldown", hero.cooldown_left == 0.0)
+	# The bow shoots arrows, not stones: stones in the pack are no use to it.
+	hero.hands[0] = preload("res://scripts/item_stack.gd").of(load("res://data/items/bow.tres"), 1)
+	hero.backpack[0] = preload("res://scripts/item_stack.gd").of(stone, 2)
+	hero.cooldown_left = 0.0
+	party.act(0, 0)
+	check("a bow does not shoot stones", hero.backpack[0].count == 2 and hero.cooldown_left == 0.0)
+	hero.backpack[0] = preload("res://scripts/item_stack.gd").of(load("res://data/items/arrow.tres"), 2)
+	party.act(0, 0)
+	check("a bow shoots an arrow", hero.backpack[0].count == 1 and hero.cooldown_left > 0.0)
 	hero.hands[0] = null
+	hero.backpack[0] = null
 	var shadows_before: bool = Settings.spell_shadows
 	press.call(KEY_P)
 	check("P toggles every shadow light", Settings.spell_shadows != shadows_before and get_nodes_in_group("shadow_lights").size() > 0 and get_nodes_in_group("shadow_lights").all(func(l): return l.shadow_enabled == Settings.spell_shadows))
