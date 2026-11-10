@@ -163,6 +163,7 @@ static var ITEMS := [
 	{"cell": Vector2i(14, 17), "def": "res://data/items/healing_potion.tres"},
 	{"cell": Vector2i(16, 21), "def": "res://data/items/darts.tres", "count": 5},  # Room 6.
 	{"cell": Vector2i(17, 21), "def": "res://data/items/dagger.tres"},
+	{"cell": Vector2i(15, 19), "def": "res://data/items/flail.tres"},  # The passage into room 6: a wild, heavy weapon.
 	{"cell": Vector2i(7, 17), "def": "res://data/items/scroll.tres"},  # The cave.
 	{"cell": Vector2i(7, 18), "def": "res://data/items/healing_potion.tres", "count": 2},
 	{"cell": Vector2i(8, 15), "def": "res://data/items/leather_armour.tres"},
