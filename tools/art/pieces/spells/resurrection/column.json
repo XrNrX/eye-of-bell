@@ -1,0 +1,651 @@
+{
+ "frames": [
+  {
+   "filename": "eye-of-bell-resurrection 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 1.png",
+   "frame": {
+    "x": 116,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 2.png",
+   "frame": {
+    "x": 232,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 3.png",
+   "frame": {
+    "x": 348,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 4.png",
+   "frame": {
+    "x": 464,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 5.png",
+   "frame": {
+    "x": 0,
+    "y": 149,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 6.png",
+   "frame": {
+    "x": 116,
+    "y": 149,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 7.png",
+   "frame": {
+    "x": 232,
+    "y": 149,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 8.png",
+   "frame": {
+    "x": 348,
+    "y": 149,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 9.png",
+   "frame": {
+    "x": 464,
+    "y": 149,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 10.png",
+   "frame": {
+    "x": 0,
+    "y": 298,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 11.png",
+   "frame": {
+    "x": 116,
+    "y": 298,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 12.png",
+   "frame": {
+    "x": 232,
+    "y": 298,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 13.png",
+   "frame": {
+    "x": 348,
+    "y": 298,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 14.png",
+   "frame": {
+    "x": 464,
+    "y": 298,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 15.png",
+   "frame": {
+    "x": 0,
+    "y": 447,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 16.png",
+   "frame": {
+    "x": 116,
+    "y": 447,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 17.png",
+   "frame": {
+    "x": 232,
+    "y": 447,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 18.png",
+   "frame": {
+    "x": 348,
+    "y": 447,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 19.png",
+   "frame": {
+    "x": 464,
+    "y": 447,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 20.png",
+   "frame": {
+    "x": 0,
+    "y": 596,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 21.png",
+   "frame": {
+    "x": 116,
+    "y": 596,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 22.png",
+   "frame": {
+    "x": 232,
+    "y": 596,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-resurrection 23.png",
+   "frame": {
+    "x": 348,
+    "y": 596,
+    "w": 116,
+    "h": 149
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 116,
+    "h": 149
+   },
+   "sourceSize": {
+    "w": 116,
+    "h": 149
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8322147651006712
+   },
+   "duration": 83
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "eye-of-bell-resurrection.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 580,
+   "h": 745
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 58,
+   "y": 124
+  },
+  "frameTags": [
+   {
+    "name": "eye-of-bell-resurrection",
+    "from": 0,
+    "to": 23,
+    "direction": "forward"
+   }
+  ]
+ }
+}

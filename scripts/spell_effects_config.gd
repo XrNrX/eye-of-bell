@@ -340,6 +340,15 @@ func glow(kind: String) -> Dictionary:
 @export var shield_fx_light_range := 6.5
 @export var shield_particles := 8
 
+@export var resurrection_distance := 2.0             # The column of gold light standing ahead of the party (it plays for revive_column_seconds, like the one over the portrait).
+@export var resurrection_height := 0.85
+@export var resurrection_scale := 1.0                # A Cleric's is multiplied by revive_cleric_scale and its light by revive_cleric_brightness.
+@export var resurrection_tint := Color(1.0, 0.9, 0.72)
+@export var resurrection_fx_light_energy := PackedFloat32Array([0.2, 0.8, 1.6, 2.4, 3.0, 3.4, 3.6, 3.6, 3.5, 3.4, 3.3, 3.2, 3.1, 3.0, 2.8, 2.5, 2.2, 1.8, 1.4, 1.0, 0.6, 0.3, 0.1, 0.0])  # Swells with the column, holds, fades with it.
+@export var resurrection_fx_light_colors := PackedColorArray([Color(1.0, 0.95, 0.75), Color(1.0, 0.85, 0.5), Color(1.0, 0.8, 0.42), Color(1.0, 0.78, 0.38)])
+@export var resurrection_fx_light_range := 8.0
+@export var resurrection_particles := 14             # Gold pixels lifted off the ring three times while it burns.
+
 @export_group("Glow (bloom)")
 ## Only pixels brighter than glow_hdr_threshold bloom, so the torches' own light stays put while
 ## the HDR bolt and sparks pop. Lower the threshold (or raise intensity) for more bloom everywhere.

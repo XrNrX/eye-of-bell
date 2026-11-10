@@ -603,6 +603,39 @@ func _party_sprite(kind: String) -> bool:
 	return true
 
 
+## A hero is raised (Party.revive): a column of gold light stands ahead of the party for as long as the one over the portrait
+## (party_hud._on_revived), with a gold light that follows its frames and gold pixels lifted off its ring. `divine` is the Cleric's:
+## taller and brighter. False and nothing played if the sheet is missing (the plain holy_pulse still happens).
+func revive_column(divine: bool) -> void:
+	var sheet := _sheet("resurrection", "column")
+	var player := get_tree().get_first_node_in_group("player")
+	if sheet.is_empty() or player == null:
+		return
+	var c := Config.get_config()
+	_ensure_pixels()
+	live += 1
+	var seconds: float = c.revive_column_seconds * (1.4 if Settings.reduce_flashing else 1.0)
+	var timed: Dictionary = sheet.duplicate()
+	timed.fps = float(sheet.frames) / seconds  # In step with the portrait's column.
+	var forward := Vector3(player.DIRS[player.facing].x, 0, player.DIRS[player.facing].y)
+	var at: Vector3 = DungeonMap.cell_to_world(player.cell) + forward * c.resurrection_distance + Vector3(0, c.resurrection_height, 0)
+	var flip := _flipbook(timed, false, c.resurrection_scale * (c.revive_cleric_scale if divine else 1.0), c.resurrection_tint)
+	flip.position = at
+	add_child(flip)
+	flip.finished.connect(func():
+		live -= 1)
+	var light := _fx_light(flip, c.resurrection_fx_light_energy, c.resurrection_fx_light_colors, c.resurrection_fx_light_range, false, 0.0,
+			c.revive_cleric_brightness if divine else 1.0)
+	light.position = at - forward * 0.5
+	add_child(light)
+	if not Settings.reduce_flashing:
+		for k in 3:
+			get_tree().create_timer(seconds * (0.2 + 0.2 * k)).timeout.connect(func():
+				if is_inside_tree():
+					pixels.emit(Vector3(at.x, 0.1, at.z), int(c.resurrection_particles), {"ramp": c.px_gold_ramp, "speed": Vector2(0.8, 2.0),
+							"spread": 0.15, "gravity": -0.2, "life": Vector2(0.6, 1.1), "size": 2.0, "jitter": Vector3(0.35, 0.0, 0.1)}))
+
+
 func party_glow(kind: String) -> void:
 	var c := Config.get_config()
 	if not ["heal", "bless", "shield"].has(kind):

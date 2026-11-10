@@ -1043,6 +1043,7 @@ func revive(slot: int, def: Resource) -> Dictionary:
 	hp_changed.emit(m.slot)
 	_cue("bless")
 	get_tree().call_group("spell_effects", "holy_pulse", 1.6 if divine else 1.0)
+	get_tree().call_group("spell_effects", "revive_column", divine)  # The column in the dungeon view, in step with the one over the portrait.
 	revived.emit(m.slot, divine)
 	var text := "%s returns, whole in body but too shaken to pray." % m.def.display_name if divine \
 			else "%s returns from the dead." % m.def.display_name
