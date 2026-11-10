@@ -342,16 +342,16 @@ func _aftermath(cell: Vector2i, c: Resource) -> void:
 
 
 ## A soot mark projected onto whatever surface lies inside its box (nearest filtering, so it stays pixel art).
-## Solid for the first 40% of its time, then it fades away.
+## Solid for the first part of its time, then it dissolves in whole steps: each step takes more of its pixels away (an ordered
+## dither), so every pixel left is a full palette colour and nothing is ever a half-transparent blend.
 func _decal(at: Vector3, basis: Basis, size: Vector3, strength: float, c: Resource) -> void:
 	if _scorch_tex == null:
 		return
 	var decal := Decal.new()
-	decal.texture_albedo = _scorch_tex
+	decal.texture_albedo = _scorch_variant(strength)
 	decal.size = size
 	decal.position = at
 	decal.basis = basis
-	decal.modulate = Color(1, 1, 1, strength)
 	decal.normal_fade = 0.15
 	decal.upper_fade = 0.05
 	decal.lower_fade = 0.05
@@ -359,10 +359,33 @@ func _decal(at: Vector3, basis: Basis, size: Vector3, strength: float, c: Resour
 	var tween := decal.create_tween()
 	tween.tween_interval(c.scorch_seconds * c.scorch_hold)
 	var steps := maxi(1, int(c.scorch_steps))
-	for i in steps:  # Lighter in whole steps, so it stays pixel art rather than a smooth fade.
-		tween.tween_callback(func(): decal.modulate = Color(1, 1, 1, strength * (1.0 - float(i + 1) / steps)))
+	for i in steps:
+		tween.tween_callback(func(): decal.texture_albedo = _scorch_variant(strength * (1.0 - float(i + 1) / steps)))
 		tween.tween_interval(c.scorch_seconds * (1.0 - c.scorch_hold) / steps)
 	tween.tween_callback(decal.queue_free)
+
+
+const BAYER4 := [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5]
+var _scorch_variants := {}  # kept sixteenths -> the scorch with only that share of its pixels (alpha 0 or 1)
+
+
+## The scorch picture with `keep` (0..1) of its pixels left, chosen by a 4x4 Bayer pattern. Cached in sixteenths.
+func _scorch_variant(keep: float) -> Texture2D:
+	var sixteenths := clampi(roundi(keep * 16.0), 0, 16)
+	if _scorch_variants.has(sixteenths):
+		return _scorch_variants[sixteenths]
+	var img: Image = _scorch_tex.get_image()
+	if img.is_compressed():
+		img.decompress()
+	img.convert(Image.FORMAT_RGBA8)
+	for y in img.get_height():
+		for x in img.get_width():
+			var px := img.get_pixel(x, y)
+			var on: bool = px.a > 0.5 and BAYER4[(y & 3) * 4 + (x & 3)] < sixteenths
+			img.set_pixel(x, y, Color(px.r, px.g, px.b, 1.0) if on else Color(0, 0, 0, 0))
+	var tex := ImageTexture.create_from_image(img)
+	_scorch_variants[sixteenths] = tex
+	return tex
 
 
 ## The old fireball (a flat orange orb): used only when the flipbooks are missing.

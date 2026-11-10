@@ -255,7 +255,18 @@ func _set_holy_glow(hand: TextureButton, glow: TextureRect, k: float) -> void:
 	var frames: Array = glow.get_meta("frames")
 	glow.global_position = hand.global_position
 	glow.texture = frames[0 if k < 0.45 else (1 if k < 0.75 else 2)]
-	glow.modulate = Color(1, 1, 1, clampf(k * 1.3, 0.0, 1.0))
+	glow.visible = k >= 0.2  # The frames carry the strength (weak, medium, strong); below the weakest it is simply gone: no alpha fade.
+	glow.modulate = Color.WHITE
+
+
+## Square specks that step down the gold palette ramp (torch 300, 500, 700) over their life and then vanish: alpha stays 1.
+func _step_motes(motes: CPUParticles2D) -> void:
+	var ramp := Gradient.new()
+	ramp.interpolation_mode = Gradient.GRADIENT_INTERPOLATE_CONSTANT
+	ramp.offsets = PackedFloat32Array([0.0, 0.4, 0.75])
+	ramp.colors = PackedColorArray([Color("f5cf80"), Color("d99a36"), Color("9a5f1c")])
+	motes.color = Color.WHITE
+	motes.color_ramp = ramp
 
 
 func _holy_motes(glow: Control, c: Resource, seconds: float) -> void:
@@ -272,7 +283,7 @@ func _holy_motes(glow: Control, c: Resource, seconds: float) -> void:
 	motes.initial_velocity_max = c.holy_hud_mote_rise
 	motes.scale_amount_min = 2.0  # 2x2 pixel specks, like the art.
 	motes.scale_amount_max = 2.0
-	motes.color = c.holy_hud_mote_color
+	_step_motes(motes)
 	motes.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	glow.add_child(motes)
 	motes.emitting = true
@@ -621,10 +632,18 @@ func _burn_scroll(tex: Texture2D, at: Vector2) -> void:
 	add_child(icon)
 	var seconds: float = c.revive_burn_seconds * (1.5 if Settings.reduce_flashing else 1.0)
 	var bright: float = 1.0 if Settings.reduce_flashing else 2.2
-	var tween := create_tween().set_parallel(true)
-	tween.tween_property(icon, "modulate", Color(bright, bright * 0.75, bright * 0.3, 0.0), seconds).from(Color(1.2, 1.0, 0.6, 1.0))
-	tween.tween_property(icon, "position:y", icon.position.y - 10.0, seconds)
-	tween.chain().tween_callback(icon.queue_free)
+	# Three steps down in brightness (it is additive, so darker is fainter) and up 4 px each: alpha stays 1.
+	icon.modulate = Color(1.2, 1.0, 0.6, 1.0)
+	var tween := create_tween()
+	var levels := [1.0, 0.55, 0.25]
+	var rest_y := icon.position.y
+	for i in levels.size():
+		var l: float = levels[i]
+		tween.tween_callback(func():
+			icon.modulate = Color(bright * l, bright * 0.75 * l, bright * 0.3 * l, 1.0)
+			icon.position.y = rest_y - 4.0 * (i + 1))
+		tween.tween_interval(seconds / levels.size())
+	tween.tween_callback(icon.queue_free)
 
 
 ## A hero was raised: a column of warm holy light rises over their portrait (taller, wider and
@@ -651,14 +670,20 @@ func _on_revived(slot: int, shaken: bool) -> void:
 	var rect: Rect2 = portrait.get_global_rect()
 	var base := Vector2(rect.get_center().x - column.size.x / 2.0, rect.end.y + 6.0 - column.size.y)  # Its foot at the portrait's foot.
 	column.global_position = base
-	column.modulate = Color(bright, bright, bright, 0.0)
+	column.modulate = Color(0, 0, 0, 1.0)  # Additive: black is nothing. It steps up and down in brightness, alpha stays 1.
 	panels[slot].root.add_child(column)
 	var seconds: float = c.revive_column_seconds * (1.4 if reduced else 1.0)
-	var tween := create_tween().set_parallel(true)
-	tween.tween_property(column, "modulate:a", 1.0, seconds * 0.3)
-	tween.tween_property(column, "global_position:y", base.y - c.revive_column_rise, seconds)
-	tween.chain().tween_property(column, "modulate:a", 0.0, seconds * 0.7)
-	tween.chain().tween_callback(column.queue_free)
+	var rise := create_tween()
+	rise.tween_method(func(y: float) -> void: column.global_position.y = roundf(y / 2.0) * 2.0, base.y, base.y - c.revive_column_rise, seconds)
+	var tween := create_tween()
+	for l in [0.35, 0.7, 1.0]:  # Up in three steps over the first 30%.
+		tween.tween_callback(func(): column.modulate = Color(bright * l, bright * l, bright * l, 1.0))
+		tween.tween_interval(seconds * 0.1)
+	tween.tween_interval(seconds * 0.7)
+	for l in [0.65, 0.35, 0.15]:  # Down in three steps over the last 70%.
+		tween.tween_callback(func(): column.modulate = Color(bright * l, bright * l, bright * l, 1.0))
+		tween.tween_interval(seconds * 0.7 / 3.0)
+	tween.tween_callback(column.queue_free)
 	if not reduced:
 		_revive_motes(portrait, column, c.revive_cleric_motes if shaken else c.revive_motes, seconds)
 
@@ -678,7 +703,7 @@ func _revive_motes(portrait: Control, parent: Control, amount: int, seconds: flo
 	motes.initial_velocity_max = 48.0
 	motes.scale_amount_min = 2.0
 	motes.scale_amount_max = 2.0
-	motes.color = c.holy_hud_mote_color
+	_step_motes(motes)
 	motes.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	parent.add_child(motes)
 	motes.emitting = true
