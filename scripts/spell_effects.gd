@@ -573,7 +573,7 @@ func holy_pulse(scale := 1.0) -> void:
 
 
 ## The sheet each holy spell plays in front of the party (art/spells/<spell>/<name>_sheet.png), once the art exists.
-const HOLY_SHEETS := {"heal": "burst", "bless": "ring"}
+const HOLY_SHEETS := {"heal": "burst", "bless": "ring", "shield": "flash"}
 
 
 ## A holy spell's PixelLab animation: an additive billboard hung in front of the party, a gold light that follows its frames and

@@ -1,0 +1,443 @@
+{
+ "frames": [
+  {
+   "filename": "eye-of-bell-shield 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 1.png",
+   "frame": {
+    "x": 94,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 2.png",
+   "frame": {
+    "x": 188,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 3.png",
+   "frame": {
+    "x": 282,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 4.png",
+   "frame": {
+    "x": 0,
+    "y": 80,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 5.png",
+   "frame": {
+    "x": 94,
+    "y": 80,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 6.png",
+   "frame": {
+    "x": 188,
+    "y": 80,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 7.png",
+   "frame": {
+    "x": 282,
+    "y": 80,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 8.png",
+   "frame": {
+    "x": 0,
+    "y": 160,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 9.png",
+   "frame": {
+    "x": 94,
+    "y": 160,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 10.png",
+   "frame": {
+    "x": 188,
+    "y": 160,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 11.png",
+   "frame": {
+    "x": 282,
+    "y": 160,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 12.png",
+   "frame": {
+    "x": 0,
+    "y": 240,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 13.png",
+   "frame": {
+    "x": 94,
+    "y": 240,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 14.png",
+   "frame": {
+    "x": 188,
+    "y": 240,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-shield 15.png",
+   "frame": {
+    "x": 282,
+    "y": 240,
+    "w": 94,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 94,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 94,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5875
+   },
+   "duration": 83
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "eye-of-bell-shield.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 376,
+   "h": 320
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 47,
+   "y": 47
+  },
+  "frameTags": [
+   {
+    "name": "eye-of-bell-shield",
+    "from": 0,
+    "to": 15,
+    "direction": "forward"
+   }
+  ]
+ }
+}

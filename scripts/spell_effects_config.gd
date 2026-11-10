@@ -331,6 +331,15 @@ func glow(kind: String) -> Dictionary:
 @export var bless_fx_light_range := 7.5
 @export var bless_particles := 18
 
+@export var shield_distance := 1.9                   # A shimmering gold dome hung in front of the party.
+@export var shield_height := 0.7
+@export var shield_scale := 1.6
+@export var shield_tint := Color(1.0, 0.9, 0.7)
+@export var shield_fx_light_energy := PackedFloat32Array([1.0, 2.6, 3.4, 3.0, 2.6, 2.4, 2.6, 2.4, 2.2, 2.4, 2.0, 1.5, 1.0, 0.6, 0.2, 0.0])  # Snaps up, shimmers, fades with the barrier.
+@export var shield_fx_light_colors := PackedColorArray([Color(1.0, 0.95, 0.75), Color(1.0, 0.85, 0.5), Color(1.0, 0.8, 0.42), Color(1.0, 0.78, 0.38)])
+@export var shield_fx_light_range := 6.5
+@export var shield_particles := 8
+
 @export_group("Glow (bloom)")
 ## Only pixels brighter than glow_hdr_threshold bloom, so the torches' own light stays put while
 ## the HDR bolt and sparks pop. Lower the threshold (or raise intensity) for more bloom everywhere.
