@@ -125,8 +125,10 @@ FIXES = {"roots": fix_roots, "blood": fix_blood, "niche": fix_niche}
 
 
 def cobweb(left=True, size=40):
-    """A web across a top corner: radial threads and a few sagging arcs, thin bone-grey lines."""
+    """A web across a top corner: radial threads and a few sagging arcs, thin bone-grey lines. `size` 80 draws it at the hires
+    density: radii and sag scale with the size, the lines stay 1 px, so it is a finer web."""
     import math
+    sc = size / 40.0
     img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
     px = img.load()
     cx, cy = (0, 0) if left else (size - 1, 0)
@@ -139,12 +141,13 @@ def cobweb(left=True, size=40):
         for t in range(size):
             x = cx + (t * math.cos(ang) if left else -t * math.cos(ang))
             put(round(x), round(t * math.sin(ang)), PAL["stone_500"])
-    for r in (10, 19, 28):  # Sagging arcs between the threads.
-        for k in range(0, 91, 2):
-            ang = math.radians(k)
-            sag = 2 if 18 < k < 72 else 0
+    for r in (10 * sc, 19 * sc, 28 * sc):  # Sagging arcs between the threads.
+        for k in range(0, int(91 * sc), 1 if sc > 1 else 2):
+            deg = k / sc
+            ang = math.radians(deg)
+            sag = 2 * sc if 18 < deg < 72 else 0
             x = cx + (r * math.cos(ang) if left else -r * math.cos(ang))
-            put(round(x), round(r * math.sin(ang)) + sag, PAL["stone_700"])
+            put(round(x), round(r * math.sin(ang) + sag), PAL["stone_700"])
     return img
 
 
@@ -196,18 +199,27 @@ def build():
     variants = stone_variants()
     for i, im in enumerate(variants, 1):
         written.append(save_png(im, f"tiles/wall_stone_{i}.png"))
+    hd = PIECES / "decals256"  # The hires-720 decals (PixelLab, 2x the pixels). A decal without one is its 128 piece doubled.
+    hires = {p.stem for p in hd.glob("*.png")} if hd.exists() else set()
+    up = lambda im: im.resize((im.width * 2, im.height * 2), Image.NEAREST)
     for piece in sorted((PIECES / "decals").glob("*.png")):
         im = Image.open(piece).convert("RGBA")
         name = piece.stem
         if name.endswith("_raw"):
             name = name[:-4]
-            im = FIXES[name](im)
+        if name in hires:
+            im = PAL.snap(Image.open(hd / f"{name}.png").convert("RGBA"))
+        else:
+            if piece.stem.endswith("_raw"):
+                im = FIXES[name](im)
+            im = up(im) if hires else im
         written.append(save_png(im, f"decals/{name}.png"))
-    written.append(save_png(cobweb(True), "decals/web_l.png"))
-    written.append(save_png(cobweb(False), "decals/web_r.png"))
-    written.append(save_png(tally(), "decals/tally.png"))
+    scale = 2 if hires else 1  # (Everything on a wall face is drawn at the density of the 256 stone.)
+    written.append(save_png(cobweb(True, 40 * scale), "decals/web_l.png"))
+    written.append(save_png(cobweb(False, 40 * scale), "decals/web_r.png"))
+    written.append(save_png(up(tally()) if hires else tally(), "decals/tally.png"))
     for i in range(1, 4):
-        written.append(save_png(vein(100 + i), f"decals/vein_{i}.png"))
+        written.append(save_png(up(vein(100 + i)) if hires else vein(100 + i), f"decals/vein_{i}.png"))
     written.append(save_png(grime(variants[0].width), "decals/grime.png"))  # As fine as the stone under it.
     return written
 

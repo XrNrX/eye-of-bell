@@ -15,7 +15,7 @@ const Config := preload("res://scripts/wall_decor_config.gd")
 const TorchLight := preload("res://scripts/torch.gd")
 const NormalMaps := preload("res://scripts/normal_maps.gd")
 
-const PIXEL := 2.0 / 128.0  # World units per wall-texture pixel (a 128 px face is one tile, 2 units, wide).
+const PIXEL := 2.0 / 256.0  # World units per wall-texture pixel (a 256 px face is one tile, 2 units, wide; on main it was 128).
 const PLACEMENT := {"roots": "top", "stain": "top", "blood": "low", "tally": "mid", "web_l": "corner_l", "web_r": "corner_r"}
 
 var cfg: Resource = Config.get_config()
