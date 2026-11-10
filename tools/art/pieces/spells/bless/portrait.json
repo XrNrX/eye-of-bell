@@ -1,0 +1,339 @@
+{
+ "frames": [
+  {
+   "filename": "eye-of-bell-bless-portrait 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 46
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-bless-portrait 1.png",
+   "frame": {
+    "x": 74,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 46
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-bless-portrait 2.png",
+   "frame": {
+    "x": 148,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 46
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-bless-portrait 3.png",
+   "frame": {
+    "x": 222,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 46
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-bless-portrait 4.png",
+   "frame": {
+    "x": 0,
+    "y": 46,
+    "w": 74,
+    "h": 46
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 46
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-bless-portrait 5.png",
+   "frame": {
+    "x": 74,
+    "y": 46,
+    "w": 74,
+    "h": 46
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 46
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-bless-portrait 6.png",
+   "frame": {
+    "x": 148,
+    "y": 46,
+    "w": 74,
+    "h": 46
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 46
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-bless-portrait 7.png",
+   "frame": {
+    "x": 222,
+    "y": 46,
+    "w": 74,
+    "h": 46
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 46
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-bless-portrait 8.png",
+   "frame": {
+    "x": 0,
+    "y": 92,
+    "w": 74,
+    "h": 46
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 46
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-bless-portrait 9.png",
+   "frame": {
+    "x": 74,
+    "y": 92,
+    "w": 74,
+    "h": 46
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 46
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-bless-portrait 10.png",
+   "frame": {
+    "x": 148,
+    "y": 92,
+    "w": 74,
+    "h": 46
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 46
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-bless-portrait 11.png",
+   "frame": {
+    "x": 222,
+    "y": 92,
+    "w": 74,
+    "h": 46
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 46
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 46
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "eye-of-bell-bless-portrait.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 296,
+   "h": 138
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 37,
+   "y": 23
+  },
+  "frameTags": [
+   {
+    "name": "eye-of-bell-bless-portrait",
+    "from": 0,
+    "to": 11,
+    "direction": "forward"
+   }
+  ]
+ }
+}

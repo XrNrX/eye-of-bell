@@ -58,7 +58,9 @@ const SWEEP_TINT := Color(1, 1, 1, 0.65)
 const HIT_COLOUR := Color(0.659, 0.404, 0.227)          # Palette rust_300.
 const MISS_COLOUR := Color(0.667, 0.663, 0.706)         # Palette stone_100.
 const MANA_FILL := Color(0.851, 0.604, 0.212)        # Palette torch_500 (the palette has no blue).
-const BUFF_EDGE := MANA_FILL                         # Outline on a buffed hero's portrait.
+const BUFF_EDGE := Color(0.961, 0.812, 0.502)        # Palette torch_300: the outline on a buffed hero's portrait, 3 px, ...
+const BUFF_EDGE_DIM := MANA_FILL                     # ...stepping to torch_500 and back twice a second (steady torch_300 with Reduce flashing).
+const BUFF_PULSE := 0.45
 const HURT_FLASH_TIME := 0.3  # How long the portrait shows its red-tinted variant.
 
 var feel_cfg: Resource = FeelConfigScript.get_config()  # data/combat_feel.tres
@@ -107,6 +109,7 @@ func _ready() -> void:
 	party.formation_changed.connect(_on_formation_changed)
 	add_to_group("party_hud")
 	party.holy_cast.connect(_on_holy_cast)
+	party.buff_cast.connect(_on_buff_cast)
 	party.revive_requested.connect(_on_revive_requested)
 	party.food_tick.connect(_on_food_tick.bind(false))
 	party.sick_tick.connect(_on_food_tick.bind(true))
@@ -167,6 +170,9 @@ func _process(_delta: float) -> void:
 		p.mana_bar.value = m.mana
 		_update_equip_hint(m, p, cursor)
 		p.buff_ring.visible = not m.buffs.is_empty()
+		if p.buff_ring.visible:
+			var bright: bool = Settings.reduce_flashing or int(Time.get_ticks_msec() / (BUFF_PULSE * 1000.0)) % 2 == 0
+			p.ring_style.border_color = BUFF_EDGE if bright else BUFF_EDGE_DIM
 		p.shaken.visible = m.shaken_left > 0.0 and m.is_alive()  # A dimmed holy symbol: too shaken to pray.
 		p.food_mark.visible = m.is_alive() and (m.food_left > 0.0 or m.sick_left > 0.0)
 		p.food_mark.color = SICK_TICK if m.sick_left > 0.0 else FOOD_TICK
@@ -646,6 +652,52 @@ func _burn_scroll(tex: Texture2D, at: Vector2) -> void:
 	tween.tween_callback(icon.queue_free)
 
 
+## Bless or Shield took hold: the PixelLab effect (art/spells/<spell>/portrait_sheet.png, the same animation shrunk to the portrait)
+## plays over each portrait that got it, so it reads as cast on the hero and not out at the monster.
+func _on_buff_cast(slots: Array, effect: String) -> void:
+	for slot in slots:
+		_play_portrait_fx(slot, effect)
+
+
+func _play_portrait_fx(slot: int, effect: String) -> void:
+	if not panels.has(slot):
+		return
+	var png := "res://art/spells/%s/portrait_sheet.png" % effect
+	var json_path := "res://art/spells/%s/portrait_sheet.json" % effect
+	if not ResourceLoader.exists(png) or not FileAccess.file_exists(json_path):
+		return
+	var info = JSON.parse_string(FileAccess.get_file_as_string(json_path))
+	if not info is Dictionary:
+		return
+	var sheet: Texture2D = load(png)
+	var frames := int(info.frames)
+	var size := Vector2(int(info.frame_w), int(info.frame_h))
+	var atlas := AtlasTexture.new()
+	atlas.atlas = sheet
+	atlas.region = Rect2(Vector2.ZERO, size)
+	var fx := TextureRect.new()
+	fx.top_level = true
+	fx.texture = atlas
+	fx.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	fx.size = size
+	fx.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	fx.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+	fx.material = mat
+	if Settings.reduce_flashing:
+		fx.modulate = Color(0.65, 0.65, 0.65, 1.0)  # Dimmer, never an alpha fade.
+	var rect: Rect2 = panels[slot].portrait.get_global_rect()
+	var lower: float = 14.0 if effect == "bless" else 0.0  # The ring spreads over the portrait's lower half.
+	fx.global_position = (rect.get_center() + Vector2(0, lower) - size / 2.0).round()
+	panels[slot].root.add_child(fx)
+	var seconds: float = frames / float(info.fps)
+	var tween := create_tween()
+	tween.tween_method(func(t: float) -> void:
+		atlas.region = Rect2(Vector2(minf(floorf(t * info.fps), frames - 1.0) * size.x, 0.0), size), 0.0, seconds, seconds)
+	tween.tween_callback(fx.queue_free)
+
+
 ## A hero was raised: a column of warm holy light rises over their portrait (taller, wider and
 ## brighter for a Cleric) with light motes, all steadier and dimmer with "Reduce flashing".
 func _on_revived(slot: int, shaken: bool) -> void:
@@ -1018,7 +1070,7 @@ func _make_panel(m) -> Dictionary:
 	var ring := StyleBoxFlat.new()
 	ring.draw_center = false
 	ring.border_color = BUFF_EDGE
-	ring.set_border_width_all(2)
+	ring.set_border_width_all(3)
 	buff_ring.add_theme_stylebox_override("panel", ring)
 	buff_ring.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	buff_ring.visible = false
@@ -1126,7 +1178,7 @@ func _make_panel(m) -> Dictionary:
 		hands_row.add_child(hand)
 		hands.append(hand)
 
-	return {"root": root, "box": box, "name_label": name_label, "portrait": portrait, "buff_ring": buff_ring, "shaken": shaken, "food_mark": food_mark, "hands": hands,
+	return {"root": root, "box": box, "name_label": name_label, "portrait": portrait, "buff_ring": buff_ring, "ring_style": ring, "shaken": shaken, "food_mark": food_mark, "hands": hands,
 		"equip_hint": equip_hint, "hp_bar": hp_bar, "mana_bar": mana_bar, "quick": quick_slots}
 
 

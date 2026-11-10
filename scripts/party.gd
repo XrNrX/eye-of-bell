@@ -38,6 +38,7 @@ signal formation_changed  # The party was rearranged (see set_formation); HUDs r
 signal quick_changed(slot: int)  # A member's quick slots changed (contents or cooldown started).
 signal cooldown_started(slot: int, duration: float)
 signal hero_hit(slot: int, damage: int)  # damage 0 means the monster missed.
+signal buff_cast(slots: Array, effect: String)  # Bless or Shield took hold on these party positions: the HUD plays the spell over their portraits.
 signal holy_cast(slot: int, hand: int, spell: Resource)  # A Heal or Bless was cast from a holy symbol in this hand.
 signal revived(slot: int, shaken: bool)  # A fallen hero was raised (shaken: a divine caster, who returns rattled).
 signal revive_requested(slot: int, index: int)  # A Scroll of Resurrection was used from this quick slot: the HUD asks "Raise whom?".
@@ -608,7 +609,16 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 	_start_cooldown(m)
 	if spell.sound != "":
 		_cue(spell.sound)
-	if spell.target != SpellDef.Target.AHEAD:
+	if spell.effect in ["bless", "shield"]:  # Played over the portraits that got it (party_hud), not out in the dungeon where it looks aimed at the monster.
+		var slots := []
+		if spell.target == SpellDef.Target.HERO:
+			slots.append(target_slot)
+		else:
+			for other in members:
+				if other.is_alive():
+					slots.append(other.slot)
+		buff_cast.emit(slots, spell.effect)
+	elif spell.target != SpellDef.Target.AHEAD:
 		_fx(spell.effect)
 	var focus = m.hands[hand]
 	if focus != null and focus.def.magic == ItemDef.Magic.DIVINE and spell.effect in ["heal", "bless"]:

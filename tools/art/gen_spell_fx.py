@@ -3,6 +3,7 @@
 
 The Fireball's three animations were made with PixelLab's effects tool (vfx_workbench) and exported as
 atlases; the source pieces are in tools/art/pieces/spells/fireball/ (<name>.png + <name>.json, as exported):
+    bless/portrait 74x46 and shield/portrait 68x58: the same two effects shrunk to fit over a 64x64 party portrait (one-shot)
     resurrection/column   116x149, a column of gold light on a ring that fades in, sparkles rising, fades out (one-shot, 24 frames)
     shield/flash   94x80, a gold hex dome snapping up, shimmering and fading (one-shot)
     bless/ring   204x130, a gold ring sweeping out across the floor (one-shot)
@@ -102,7 +103,7 @@ def build(scale=None):
     # Fireball: fire colours. Magic Missile: neutral grey and bone only; the game tints it cold pale blue (the palette has no blue).
     # The holy spells (heal, bless, shield, resurrection): gold, one animation each (see HOLY_SHEETS).
     for spell in ("fireball", "magic_missile", "heal", "bless", "shield", "resurrection"):
-        for name in ("cast", "projectile", "impact", "burst", "ring", "flash", "column"):
+        for name in ("cast", "projectile", "impact", "burst", "ring", "flash", "column", "portrait"):
             if (PIECES / spell / f"{name}.png").exists():
                 (ART_DIR / "spells" / spell).mkdir(parents=True, exist_ok=True)
                 written += build_sheet(spell, name)
