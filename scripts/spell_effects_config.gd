@@ -247,9 +247,9 @@ func glow(kind: String) -> Dictionary:
 @export var px_ember_ramp := PackedColorArray([Color("f5cf80"), Color("d99a36"), Color("7c4426"), Color("4e2a1a")])
 @export var px_spark_ramp := PackedColorArray([Color("c9c0a4"), Color("f5cf80"), Color("d99a36")])
 @export var px_smoke_ramp := PackedColorArray([Color("7b7a88"), Color("504f5e"), Color("31303c")])
-@export var px_flight_embers_per_second := 40.0      # Shed behind the fireball as it flies.
-@export var px_flight_ember_size := 2.0              # Art pixels across.
-@export var px_flight_ember_life := Vector2(0.3, 0.6)
+@export var px_flight_embers_per_second := 220.0      # Shed behind the fireball as it flies.
+@export var px_flight_ember_size := 4.0              # Art pixels across.
+@export var px_flight_ember_life := Vector2(0.5, 1.0)
 @export var px_impact_embers := 38
 @export var px_impact_sparks := 24
 @export var px_impact_speed := Vector2(1.5, 5.0)

@@ -266,7 +266,7 @@ func fireball(from_cell: Vector2i, to_cell: Vector2i) -> void:
 		owed[0] -= n
 		if n > 0 and is_instance_valid(ball):
 			pixels.emit(ball.position - forward * 0.15, n, {"ramp": c.px_ember_ramp, "speed": c.px_flight_ember_speed, "spread": 1.0,
-					"gravity": 1.5, "life": c.px_flight_ember_life, "size": c.px_flight_ember_size, "jitter": Vector3(0.12, 0.12, 0.12)}),
+					"gravity": 1.5, "life": c.px_flight_ember_life, "size": c.px_flight_ember_size, "jitter": Vector3(0.2, 0.2, 0.2)}),
 			0.0, 1.0, flight)
 	tween.tween_callback(func():
 		explosion(to_cell)
