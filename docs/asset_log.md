@@ -75,3 +75,6 @@ None of these were made with the VFX suite, so they should be replaced.
 
 **Debug**
 - Wall signs (`scripts/wall_signs.gd`, used by the test room): a flat dark quad and a Press Start 2P `Label3D` in palette colours, not drawn art. Replace with a PixelLab sign if a real level needs one.
+
+**Monster animation sets (existing Creator gallery images, 0 new generations)**
+- `art/monsters/slime_acid/slime_acid_sheet.png` (28 frames of 96x96: idle 5, attack 9, hurt 5, walk 9), built by `tools/art/gen_monster_sheets.py` from the grids in `tools/art/pieces/monsters/slime_acid/` (PixelLab Creator gallery `b4c8d36e` attack, `3d82c59d` idle, `0505e2a8` hurt, `118c63a4` walk; 2026-11-10). Replaces the single-image, script-animated 12-frame sheet. The skeletons, skeleton guard and plain slime still use the older sheets.
