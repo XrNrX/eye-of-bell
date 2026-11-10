@@ -142,7 +142,8 @@ func _can_see(m: Node, max_tiles := -1) -> bool:
 
 func _draw() -> void:
 	var camera := get_viewport().get_camera_3d()
-	var view := get_viewport_rect().size
+	var k := float(get_viewport().get_meta("view_scale", 1))  # The view renders k times larger; the layer is scaled by k, so draw in logical units.
+	var view := get_viewport_rect().size / k
 	var boss := boss_monster()
 	var top := 0
 	if boss != null:
@@ -158,7 +159,7 @@ func _draw() -> void:
 		var anchor: Vector3 = m.bar_anchor()
 		if camera.is_position_behind(anchor):
 			continue
-		var p := camera.unproject_position(anchor)
+		var p := camera.unproject_position(anchor) / k
 		var size := Vector2i(cfg.bar_width, cfg.bar_height)
 		var origin := Vector2i(floori(p.x) - size.x / 2, floori(p.y) - size.y - 1)
 		origin.x = clampi(origin.x, 2, int(view.x) - size.x - 2)
