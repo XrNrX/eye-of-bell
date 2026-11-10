@@ -161,7 +161,8 @@ func _missile_impact(cell: Vector2i) -> void:
 		return
 	live += 1
 	var at := _cell_pos(cell, c.bolt_height)
-	get_tree().call_group("combat_feel", "shake_by", c.mm_impact_shake_strength, c.mm_impact_shake_seconds, Vector2.UP)  # A kick, up and back.
+	get_tree().call_group("combat_feel", "shake_by", c.mm_impact_shake_strength, c.mm_impact_shake_seconds, Vector2.UP)
+	get_tree().call_group("combat_feel", "jolt", Vector3(0, 0, c.mm_impact_kick_distance), c.mm_impact_kick_seconds)  # The camera is knocked back, away from the impact.
 	if c.mm_impact_pause_seconds > 0.0:
 		get_tree().call_group("combat_feel", "hit_pause", c.mm_impact_pause_seconds)
 	var flip := _flipbook(sheet, false, c.mm_impact_scale, c.mm_tint)
@@ -169,7 +170,7 @@ func _missile_impact(cell: Vector2i) -> void:
 	add_child(flip)
 	flip.finished.connect(func():
 		live -= 1)
-	var light := _fx_light(flip, c.mm_impact_light_energy, c.mm_impact_light_colors, c.mm_impact_light_range, false, 0.0)
+	var light := _fx_light(flip, c.mm_impact_light_energy, c.mm_impact_light_colors, c.mm_impact_light_range, false, 0.0, c.mm_impact_flash_scale, c.mm_impact_flash_speed)
 	light.position = at
 	add_child(light)
 	_ensure_pixels()
@@ -223,9 +224,10 @@ func _light_strength() -> float:
 	return Config.get_config().holy_reduced_scale if Settings.reduce_flashing else 1.0
 
 
-func _fx_light(flip: Node, energy: PackedFloat32Array, colours: PackedColorArray, range_: float, looping: bool, flutter: float) -> OmniLight3D:
+func _fx_light(flip: Node, energy: PackedFloat32Array, colours: PackedColorArray, range_: float, looping: bool, flutter: float, boost := 1.0, speed := 1.0) -> OmniLight3D:
 	var light: OmniLight3D = FxLight.new()
-	light.setup(flip, energy, colours, range_, looping, 0.0 if Settings.reduce_flashing else flutter, _light_strength())
+	var calm: bool = Settings.reduce_flashing  # Reduce flashing: no extra brightness and no faster flash.
+	light.setup(flip, energy, colours, range_, looping, 0.0 if calm else flutter, _light_strength() * (1.0 if calm else boost), 1.0 if calm else speed)
 	return light
 
 
@@ -302,6 +304,7 @@ func explosion(cell: Vector2i) -> void:
 	var at := _cell_pos(cell, c.bolt_height)
 	get_tree().call_group("audio", "play", "explosion")
 	get_tree().call_group("combat_feel", "shake_by", c.blast_shake_strength * (_light_strength() if Settings.reduce_flashing else 1.0), c.blast_shake_seconds)
+	get_tree().call_group("combat_feel", "jolt", Vector3(0, 0, c.blast_kick_distance), c.blast_kick_seconds)  # Knocked back, away from the blast.
 	if c.blast_pause_seconds > 0.0:
 		get_tree().call_group("combat_feel", "hit_pause", c.blast_pause_seconds)
 	var flip := _flipbook(sheet, false, c.fb_impact_scale)
@@ -309,7 +312,7 @@ func explosion(cell: Vector2i) -> void:
 	add_child(flip)
 	flip.finished.connect(func():
 		live -= 1)
-	var light := _fx_light(flip, c.fb_impact_light_energy, c.fb_impact_light_colors, c.fb_impact_light_range, false, 0.0)
+	var light := _fx_light(flip, c.fb_impact_light_energy, c.fb_impact_light_colors, c.fb_impact_light_range, false, 0.0, c.blast_flash_scale, c.blast_flash_speed)
 	light.position = at
 	add_child(light)
 	pixels.emit(at, c.px_impact_embers, {"ramp": c.px_ember_ramp, "speed": c.px_impact_speed, "spread": 1.0, "gravity": c.px_gravity,

@@ -217,6 +217,14 @@ func glow(kind: String) -> Dictionary:
 @export var mm_impact_shake_strength := 0.03
 @export var mm_impact_shake_seconds := 0.18
 @export var mm_impact_pause_seconds := 0.05
+@export var mm_impact_kick_distance := 0.07          # The camera is knocked straight back this far (world units) and settles: small and snappy.
+@export var mm_impact_kick_seconds := 0.12
+@export var mm_impact_flash_scale := 1.5             # The impact light is this much brighter...
+@export var mm_impact_flash_speed := 1.8             # ...and plays this many times faster, so the flash is short.
+@export var blast_kick_distance := 0.3               # The Fireball knocks the camera back much harder than the missile (0.07).
+@export var blast_kick_seconds := 0.3
+@export var blast_flash_scale := 1.8                 # Impact light brighter than the art's own curve...
+@export var blast_flash_speed := 1.4                 # ...and shorter. (Reduce flashing turns both off; the kick and shake stop too.)
 @export var blast_pause_seconds := 0.14              # The Fireball's hit pause (its shake is blast_shake_strength).
 @export var mm_impact_light_colors := PackedColorArray([Color(0.9, 0.95, 1.0), Color(0.75, 0.88, 1.0), Color(0.6, 0.8, 1.0), Color(0.5, 0.72, 1.0), Color(0.45, 0.65, 0.95)])
 @export var mm_impact_light_range := 12.0

@@ -10,10 +10,11 @@ var colours := PackedColorArray()
 var loops := false
 var flicker := 0.0       # Random flutter, a fraction of the energy (a flame never burns evenly).
 var strength := 1.0      # Everything multiplied by this (Reduce flashing, spell scale).
+var speed := 1.0         # Plays the curve this much faster than the sprite (an impact flash that is shorter than its picture).
 
 
 func setup(flipbook: Node, energy_by_frame: PackedFloat32Array, colour_by_frame: PackedColorArray, range_: float,
-		looping := false, flutter := 0.0, scale_by := 1.0) -> void:
+		looping := false, flutter := 0.0, scale_by := 1.0, play_speed := 1.0) -> void:
 	flip = flipbook
 	energies = energy_by_frame
 	colours = colour_by_frame
@@ -21,6 +22,7 @@ func setup(flipbook: Node, energy_by_frame: PackedFloat32Array, colour_by_frame:
 	loops = looping
 	flicker = flutter
 	strength = scale_by
+	speed = play_speed
 	shadow_enabled = false
 	_apply()
 
@@ -33,7 +35,7 @@ func _process(_delta: float) -> void:
 
 
 func _apply() -> void:
-	var pos: float = flip.position_in_frames()
+	var pos: float = flip.position_in_frames() * (1.0 if loops else speed)
 	light_energy = _sample_f(pos) * strength * (1.0 + flicker * randf_range(-1.0, 1.0))
 	if colours.size() > 0:
 		light_color = _sample_c(pos)
