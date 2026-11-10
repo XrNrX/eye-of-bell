@@ -573,7 +573,7 @@ func holy_pulse(scale := 1.0) -> void:
 
 
 ## The sheet each holy spell plays in front of the party (art/spells/<spell>/<name>_sheet.png), once the art exists.
-const HOLY_SHEETS := {"heal": "burst"}
+const HOLY_SHEETS := {"heal": "burst", "bless": "ring"}
 
 
 ## A holy spell's PixelLab animation: an additive billboard hung in front of the party, a gold light that follows its frames and
@@ -589,7 +589,7 @@ func _party_sprite(kind: String) -> bool:
 	_ensure_pixels()
 	live += 1
 	var forward := Vector3(player.DIRS[player.facing].x, 0, player.DIRS[player.facing].y)
-	var at: Vector3 = DungeonMap.cell_to_world(player.cell) + forward * c.holy_fx_distance + Vector3(0, c.holy_fx_height, 0)
+	var at: Vector3 = DungeonMap.cell_to_world(player.cell) + forward * c.get(kind + "_distance") + Vector3(0, c.get(kind + "_height"), 0)
 	var flip := _flipbook(sheet, false, c.get(kind + "_scale"), c.get(kind + "_tint"))
 	flip.position = at
 	add_child(flip)
@@ -598,7 +598,7 @@ func _party_sprite(kind: String) -> bool:
 	var light := _fx_light(flip, c.get(kind + "_fx_light_energy"), c.get(kind + "_fx_light_colors"), c.get(kind + "_fx_light_range"), false, 0.0)
 	light.position = at - forward * 0.4
 	add_child(light)
-	pixels.emit(at - Vector3(0, 0.5, 0), int(c.get(kind + "_particles")), {"ramp": c.px_gold_ramp, "speed": Vector2(0.6, 1.6), "spread": 0.35,
+	pixels.emit(Vector3(at.x, 0.1, at.z) if kind == "bless" else at - Vector3(0, 0.5, 0), int(c.get(kind + "_particles")), {"ramp": c.px_gold_ramp, "speed": Vector2(0.6, 1.6), "spread": 0.35,
 			"gravity": -0.3, "life": Vector2(0.5, 1.0), "size": 2.0, "jitter": Vector3(0.5, 0.05, 0.3)})
 	return true
 

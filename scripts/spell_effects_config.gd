@@ -312,15 +312,24 @@ func glow(kind: String) -> Dictionary:
 @export_group("Holy sprites")
 ## Heal, Bless, Shield and Resurrection are PixelLab effects (art/spells/<spell>/*_sheet.png, gold, via vfx_workbench), laid as unshaded,
 ## additive billboards in front of the party with a gold light that follows each frame. The tint is above 1.0 so they bloom a little.
-@export var holy_fx_distance := 0.9                  # How far ahead of the party the picture hangs.
-@export var holy_fx_height := 0.85                   # Its centre above the floor.
 @export var px_gold_ramp := PackedColorArray([Color("f5cf80"), Color("d99a36"), Color("9a5f1c"), Color("4e2a1a")])  # Gold, bright to dark, in steps.
+@export var heal_distance := 0.9                    # How far ahead of the party the picture hangs...
+@export var heal_height := 0.85                      # ...and its centre above the floor.
 @export var heal_scale := 1.0
 @export var heal_tint := Color(1.3, 1.15, 0.9)
 @export var heal_fx_light_energy := PackedFloat32Array([3.4, 3.0, 2.6, 2.4, 2.2, 1.8, 1.5, 1.2, 0.9, 0.6, 0.3, 0.0])  # A bright pop with the flash, then a warm glow that dies with the sparkles.
 @export var heal_fx_light_colors := PackedColorArray([Color(1.0, 0.95, 0.75), Color(1.0, 0.88, 0.55), Color(1.0, 0.8, 0.42), Color(1.0, 0.78, 0.38)])
 @export var heal_fx_light_range := 6.0
 @export var heal_particles := 16                     # Gold pixels thrown up with the burst.
+
+@export var bless_distance := 2.6                    # A ring on the floor ahead of the party, sweeping outward.
+@export var bless_height := 0.25
+@export var bless_scale := 1.0
+@export var bless_tint := Color(1.3, 1.15, 0.9)
+@export var bless_fx_light_energy := PackedFloat32Array([1.4, 2.0, 2.6, 3.0, 3.2, 3.0, 2.6, 2.0, 1.4, 0.8, 0.3, 0.0])  # Swells as the ring spreads, then fades with it.
+@export var bless_fx_light_colors := PackedColorArray([Color(1.0, 0.95, 0.75), Color(1.0, 0.88, 0.55), Color(1.0, 0.8, 0.42), Color(1.0, 0.78, 0.38)])
+@export var bless_fx_light_range := 7.5
+@export var bless_particles := 18
 
 @export_group("Glow (bloom)")
 ## Only pixels brighter than glow_hdr_threshold bloom, so the torches' own light stays put while

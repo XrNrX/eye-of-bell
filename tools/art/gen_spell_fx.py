@@ -3,6 +3,7 @@
 
 The Fireball's three animations were made with PixelLab's effects tool (vfx_workbench) and exported as
 atlases; the source pieces are in tools/art/pieces/spells/fireball/ (<name>.png + <name>.json, as exported):
+    bless/ring   204x130, a gold ring sweeping out across the floor (one-shot)
     heal/burst   108x146, a gold flash and ring, then plus signs and sparkles rising round the party (one-shot)
     cast         48x48, a fiery flash at the party's hands (one-shot)
     projectile   56x56, a burning ball with flame licks (a loop)
