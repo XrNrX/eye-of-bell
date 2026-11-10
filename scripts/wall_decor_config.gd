@@ -12,6 +12,13 @@ static func get_config() -> Resource:
 	return load(PATH)
 
 
+@export_group("Normal maps")
+## art/normals/ (tools/art/gen_normal_maps.py) makes light rake across the stone. normal_scale multiplies the slopes baked into the
+## pictures: 0 flat, 1 as made, above 1 craggier. Re-run the generator (--blur, --strength) to change how they are derived.
+@export var normal_enabled := true
+@export var normal_strength := 1.5          # Walls, floor, ceiling, doors.
+@export var normal_decal_strength := 0.9    # Cracks, stains, blood, roots and the rest laid on the walls.
+
 @export_group("Wall stone")
 @export var enabled := true
 ## One of these is picked for each wall face, from a seed made of the tile position and which side it is: random but the

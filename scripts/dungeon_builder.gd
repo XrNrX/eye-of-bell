@@ -6,6 +6,7 @@ extends Node3D
 const WallSigns := preload("res://scripts/wall_signs.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const TorchLight := preload("res://scripts/torch.gd")
+const NormalMaps := preload("res://scripts/normal_maps.gd")
 const SpellEffectsConfigScript := preload("res://scripts/spell_effects_config.gd")
 const MonsterScript := preload("res://scripts/monster.gd")
 const WallDebris := preload("res://scripts/wall_debris.gd")
@@ -698,14 +699,16 @@ func _wall_box(size: Vector3, material: Material) -> ArrayMesh:
 	var hy := size.y / 2.0
 	var hz := size.z / 2.0
 	# Each face: four corners (bottom-left, bottom-right, top-right, top-left seen from outside) and its normal.
+	# The last two entries: the face's normal and its tangent (the way U runs along it), for normal maps.
 	var faces := [
-		[Vector3(-hx, -hy, hz), Vector3(hx, -hy, hz), Vector3(hx, hy, hz), Vector3(-hx, hy, hz), Vector3(0, 0, 1)],
-		[Vector3(hx, -hy, hz), Vector3(hx, -hy, -hz), Vector3(hx, hy, -hz), Vector3(hx, hy, hz), Vector3(1, 0, 0)],
-		[Vector3(hx, -hy, -hz), Vector3(-hx, -hy, -hz), Vector3(-hx, hy, -hz), Vector3(hx, hy, -hz), Vector3(0, 0, -1)],
-		[Vector3(-hx, -hy, -hz), Vector3(-hx, -hy, hz), Vector3(-hx, hy, hz), Vector3(-hx, hy, -hz), Vector3(-1, 0, 0)],
+		[Vector3(-hx, -hy, hz), Vector3(hx, -hy, hz), Vector3(hx, hy, hz), Vector3(-hx, hy, hz), Vector3(0, 0, 1), Vector3(1, 0, 0)],
+		[Vector3(hx, -hy, hz), Vector3(hx, -hy, -hz), Vector3(hx, hy, -hz), Vector3(hx, hy, hz), Vector3(1, 0, 0), Vector3(0, 0, -1)],
+		[Vector3(hx, -hy, -hz), Vector3(-hx, -hy, -hz), Vector3(-hx, hy, -hz), Vector3(hx, hy, -hz), Vector3(0, 0, -1), Vector3(-1, 0, 0)],
+		[Vector3(-hx, -hy, -hz), Vector3(-hx, -hy, hz), Vector3(-hx, hy, hz), Vector3(-hx, hy, -hz), Vector3(-1, 0, 0), Vector3(0, 0, 1)],
 	]
 	var verts := PackedVector3Array()
 	var norms := PackedVector3Array()
+	var tangents := PackedFloat32Array()
 	var uvs := PackedVector2Array()
 	var idx := PackedInt32Array()
 	for f in faces:
@@ -713,12 +716,14 @@ func _wall_box(size: Vector3, material: Material) -> ArrayMesh:
 		for k in 4:
 			verts.append(f[k])
 			norms.append(f[4])
+			tangents.append_array([f[5].x, f[5].y, f[5].z, 1.0])
 		uvs.append_array([Vector2(0, 1), Vector2(1, 1), Vector2(1, 0), Vector2(0, 0)])
 		idx.append_array([base, base + 2, base + 1, base, base + 3, base + 2])
 	var arrays := []
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = verts
 	arrays[Mesh.ARRAY_NORMAL] = norms
+	arrays[Mesh.ARRAY_TANGENT] = tangents
 	arrays[Mesh.ARRAY_TEX_UV] = uvs
 	arrays[Mesh.ARRAY_INDEX] = idx
 	var mesh := ArrayMesh.new()
@@ -734,4 +739,5 @@ func _make_material(color: Color, texture_path: String) -> StandardMaterial3D:
 	else:
 		mat.albedo_color = color
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	NormalMaps.apply(mat, texture_path)
 	return mat

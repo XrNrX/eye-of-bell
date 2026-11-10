@@ -13,6 +13,7 @@ extends RefCounted
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const Config := preload("res://scripts/wall_decor_config.gd")
 const TorchLight := preload("res://scripts/torch.gd")
+const NormalMaps := preload("res://scripts/normal_maps.gd")
 
 const PIXEL := 2.0 / 128.0  # World units per wall-texture pixel (a 128 px face is one tile, 2 units, wide).
 const PLACEMENT := {"roots": "top", "stain": "top", "blood": "low", "tally": "mid", "web_l": "corner_l", "web_r": "corner_r"}
@@ -262,6 +263,7 @@ func _material(texture: String, cutout: bool, glow := false) -> StandardMaterial
 		var m := StandardMaterial3D.new()
 		m.albedo_texture = load(texture)
 		m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+		NormalMaps.apply(m, texture, cutout)  # (A cut-out is a decal; a stone face is not.)
 		if cutout:  # Hard pixel edges, no sorting trouble.
 			m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
 			m.alpha_scissor_threshold = 0.5

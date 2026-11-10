@@ -49,6 +49,9 @@ Entries before 2026-11-09 were filled in afterwards from the git history and the
 
 Older PixelLab art (items, monsters, portraits, walls, decals, the title screen, UI pieces) predates this log and isn't listed.
 
+## Derived by script (no PixelLab)
+`art/normals/tiles/*_n.png` and `art/normals/decals/*_n.png`: normal maps made from the textures' own brightness by `tools/art/gen_normal_maps.py` (2026-11-10, 0 generations). Lighting data, not palette art, so they are not palette-checked.
+
 ## Code-drawn effects: placeholders
 
 None of these were made with the VFX suite, so they should be replaced.
