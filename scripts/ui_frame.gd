@@ -8,16 +8,22 @@ extends CanvasLayer
 
 const UiLayout := preload("res://scripts/ui_layout.gd")
 const FRAME := preload("res://art/ui/frame.png")
+const WOOD := preload("res://art/ui/frame_wood.png")  # The carved wooden ring (skulls, tentacles, slime) round the 3D view, over the stone frame; gen_frame_wood.py.
 
 
 func _ready() -> void:
 	layer = UiLayout.FRAME_LAYER
+	add_child(_picture(FRAME))
+	add_child(_picture(WOOD))
+
+
+func _picture(texture: Texture2D) -> TextureRect:
 	var picture := TextureRect.new()
-	picture.texture = FRAME
+	picture.texture = texture
 	picture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE  # The picture has more pixels than the canvas has units: scale it to fit.
 	picture.stretch_mode = TextureRect.STRETCH_SCALE
 	picture.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	picture.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	picture.position = Vector2.ZERO
 	picture.size = UiLayout.SCREEN
-	add_child(picture)
+	return picture

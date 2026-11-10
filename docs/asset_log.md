@@ -70,6 +70,11 @@ Entries before 2026-11-09 were filled in afterwards from the git history and the
 
 Older PixelLab art (items, monsters, portraits, walls, decals, the title screen, UI pieces) predates this log and isn't listed.
 
+**Wooden frame round the 3D view (2026-11-10, about 125 generations incl. mockups and discarded tries)**
+- Mockups (`create_image_pro`, 640x360, 5 of them, 25 generations each) to pick the look: tentacles, skulls and green slime on carved dark wood; slime kept off the party panels. Not in the repo. A first try from separate corner pieces and a knotwork strip (`create_image_pro` and `create_image_pixflux`, about 15 generations) looked wrong and was dropped.
+- `tools/art/pieces/frame_wood/ring.png` (`create_image_pro`, 432x276, 25 generations, one candidate kept of two; style reference: a crop of the approved mockup, opening flat magenta): the whole frame in one picture, four different skulls with tentacles through the eye sockets, random tentacles and slime.
+- `art/ui/frame_wood.png` (1280x720) built by `tools/art/gen_frame_wood.py`: magenta opening keyed out, colours mapped onto the palette (slime to `curse_*`, wood to the wood ramp, skulls to bone, tentacles to stone), enlarged 2x.
+
 ## Derived by script (no PixelLab)
 `art/normals/tiles/*_n.png` and `art/normals/decals/*_n.png`: normal maps made from the textures' own brightness by `tools/art/gen_normal_maps.py` (2026-11-10, 0 generations). Lighting data, not palette art, so they are not palette-checked.
 
