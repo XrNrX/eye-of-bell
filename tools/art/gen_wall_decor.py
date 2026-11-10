@@ -1,6 +1,6 @@
 """Ancient wall art: the stone-block wall variants, the wall decals, and the grime overlay.
 
-PixelLab pieces live in tools/art/pieces/walls/stone_<n>.png (128x128, n = 1..) and
+PixelLab pieces live in tools/art/pieces/walls/stone_<n>.png (128x128, n = 1..) or, on the hires-720 branch, walls256/stone_<n>.png (256x256) and
 tools/art/pieces/decals/<name>.png (transparent). This turns them into game art:
   art/tiles/wall_stone_1..4.png  stone variants. Any stone_<n> piece that exists is used as it is; the rest
                                  are made from stone_1 by flipping and shifting (a stand-in until more are generated)
@@ -62,14 +62,15 @@ def match_tone(im, base, keep_accents=0.04):
 
 
 def stone_variants():
-    src = PIECES / "walls"
-    base = Image.open(src / "stone_1.png").convert("RGBA")
+    hd = PIECES / "walls256"  # The hires-720 pieces (256x256): used instead of the 128 ones when all four are there.
+    src = hd if all((hd / f"stone_{n}.png").exists() for n in range(1, VARIANTS + 1)) else PIECES / "walls"
+    base = PAL.snap(Image.open(src / "stone_1.png").convert("RGBA"))  # (Straight from PixelLab: snap to the palette.)
     shift = lambda im, dx, dy: Image.fromarray(__import__("numpy").roll(__import__("numpy").array(im), (dy, dx), axis=(0, 1)))
     out = [base]
     for n in range(2, VARIANTS + 1):
         piece = src / f"stone_{n}.png"
         if piece.exists():
-            out.append(match_tone(Image.open(piece).convert("RGBA"), base))  # Same cold grey as stone 1.
+            out.append(match_tone(PAL.snap(Image.open(piece).convert("RGBA")), base))  # Same cold grey as stone 1.
         else:  # A stand-in: the first stone, turned and shifted.
             im = base.transpose(Image.FLIP_LEFT_RIGHT) if n % 2 == 0 else base
             out.append(shift(im, 40 * n, 24 * n))
@@ -192,7 +193,8 @@ def vein(seed, size=96):
 
 def build():
     written = []
-    for i, im in enumerate(stone_variants(), 1):
+    variants = stone_variants()
+    for i, im in enumerate(variants, 1):
         written.append(save_png(im, f"tiles/wall_stone_{i}.png"))
     for piece in sorted((PIECES / "decals").glob("*.png")):
         im = Image.open(piece).convert("RGBA")
@@ -206,7 +208,7 @@ def build():
     written.append(save_png(tally(), "decals/tally.png"))
     for i in range(1, 4):
         written.append(save_png(vein(100 + i), f"decals/vein_{i}.png"))
-    written.append(save_png(grime(), "decals/grime.png"))
+    written.append(save_png(grime(variants[0].width), "decals/grime.png"))  # As fine as the stone under it.
     return written
 
 
