@@ -85,6 +85,7 @@ light_energy = 1.6
 omni_range = 9.0
 omni_attenuation = 1.5
 script = ExtResource("3_torch")
+shadow_kind = "party_torch"
 
 [node name="DebugOverlay" parent="." instance=ExtResource("4_debug")]
 player_path = NodePath("../View/GameView/Port/Player")

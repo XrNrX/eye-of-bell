@@ -5,7 +5,7 @@ extends CanvasLayer
 ##
 ## Keys (only inside the test room, so they never clash with play): H help, G god mode, R refill HP and mana, X +500 XP,
 ## U level up the party, Z kill all monsters, V spawn a monster in front (a pop-up list), T teleport to a station (a pop-up
-## list), B banter, N fog, J screen shake. X and U wait for an XP system: they call Party.add_xp / Party.level_up_party when
+## list), B banter, N fog, J screen shake, P spell and torch shadows. X and U wait for an XP system: they call Party.add_xp / Party.level_up_party when
 ## those exist and say so in the log until then. A new system gets a station in levels/test_room.gd and, if it needs one, a key here.
 ##
 ## The ambush corridor is a stand-in: stepping on a trigger tile in DungeonMap.AMBUSHES spawns its monsters.
@@ -125,6 +125,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			shake_on = not shake_on
 			_feel().screen_shake_enabled = shake_on
 			_say("Screen shake %s." % ("on" if shake_on else "off"))
+		KEY_P:
+			Settings.spell_shadows = not Settings.spell_shadows  # (Not saved.)
+			SpellEffectsConfigScript.refresh_shadows(get_tree())
+			_say("Shadows %s." % ("on" if Settings.spell_shadows else "off"))
 		_:
 			handled = false
 	if handled:
@@ -289,6 +293,7 @@ func _refresh_help() -> void:
 		"B   BANTER        %s" % _on(banter_on),
 		"N   FOG           %s" % _on(fog_on),
 		"J   SCREEN SHAKE  %s" % _on(shake_on),
+		"P   SHADOWS       %s" % _on(Settings.spell_shadows),
 		"F12 LEAVE (FLOOR 1)",
 	])
 	help.reset_size()

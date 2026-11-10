@@ -68,6 +68,7 @@ const VOLUME_STEP := 0.1
 var rows := {}
 var current_kind := "master"
 var fog_button: Button      # "FOG: ON" / "FOG: OFF".
+var shadows_button: Button  # "SPELL SHADOWS: ON" / "SPELL SHADOWS: OFF".
 var flash_button: Button    # "FLASHING: REDUCED" / "FLASHING: NORMAL".
 var hints_button: Button    # "HINTS: ON" / "HINTS: OFF".
 var bars_button: Button     # "ENEMY HEALTH BARS: ON / BOSS ONLY / OFF".
@@ -100,6 +101,7 @@ func _ready() -> void:
 	_build_volume_rows()
 	_build_display_button()
 	_build_fog_button()
+	_build_shadows_button()
 	_build_flash_button()
 	_build_hints_button()
 	_build_palette_button()
@@ -220,6 +222,19 @@ func _build_fog_button() -> void:
 	fog_button.pressed.connect(_click)
 
 
+## The shadows switch, for weaker machines: read when a level is built.
+func _build_shadows_button() -> void:
+	shadows_button = back_button.duplicate()
+	shadows_button.unique_name_in_owner = false
+	options_box.add_child(shadows_button)
+	options_box.move_child(shadows_button, back_button.get_index())
+	shadows_button.tooltip_text = "Off: spells and torches cast no shadows (for weaker machines)"
+	shadows_button.pressed.connect(func():
+		Settings.set_spell_shadows(not Settings.spell_shadows)
+		_refresh_display())
+	shadows_button.pressed.connect(_click)
+
+
 ## The "reduce flashing" switch: holy light and spell glows become steady and gentle.
 func _build_flash_button() -> void:
 	flash_button = back_button.duplicate()
@@ -236,17 +251,17 @@ func _build_flash_button() -> void:
 ## Lay the Options screen out so it fits 640x360 with all its switches: the four toggles (screen, fog, flashing,
 ## hints) sit in two columns, and a dark panel behind makes the text readable over the title picture.
 func _arrange_options() -> void:
-	options_box.offset_left = 48.0
-	options_box.offset_top = 24.0
-	options_box.offset_right = 592.0
-	options_box.offset_bottom = 348.0
+	options_box.offset_left = 16.0
+	options_box.offset_top = 16.0
+	options_box.offset_right = 624.0
+	options_box.offset_bottom = 356.0
 	var grid := GridContainer.new()
 	grid.columns = 2
 	grid.add_theme_constant_override("h_separation", 8)
 	grid.add_theme_constant_override("v_separation", 2)
 	options_box.add_child(grid)
 	options_box.move_child(grid, back_button.get_index())
-	for b in [display_button, fog_button, flash_button, hints_button, palette_button, bars_button]:
+	for b in [display_button, fog_button, shadows_button, flash_button, hints_button, palette_button, bars_button]:
 		b.reparent(grid)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.custom_minimum_size = Vector2(0, 26)  # Shorter, so five switches in two columns still fit.
@@ -257,8 +272,8 @@ func _arrange_options() -> void:
 	box.set_border_width_all(2)
 	panel.add_theme_stylebox_override("panel", box)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.position = Vector2(32, 8)
-	panel.size = Vector2(576, 344)
+	panel.position = Vector2(8, 8)
+	panel.size = Vector2(624, 350)
 	panel.visible = false
 	root_ui.add_child(panel)
 	root_ui.move_child(panel, options_box.get_index())  # Behind the options.
@@ -334,6 +349,7 @@ func _apply_look() -> void:
 
 func _refresh_display() -> void:
 	fog_button.text = "FOG: ON" if Settings.fog else "FOG: OFF"
+	shadows_button.text = "SPELL SHADOWS: ON" if Settings.spell_shadows else "SPELL SHADOWS: OFF"
 	flash_button.text = "FLASHING: REDUCED" if Settings.reduce_flashing else "FLASHING: NORMAL"
 	hints_button.text = "HINTS: ON" if Settings.show_hints else "HINTS: OFF"
 	palette_button.text = "PALETTE: ON" if Settings.palette_filter else "PALETTE: OFF"

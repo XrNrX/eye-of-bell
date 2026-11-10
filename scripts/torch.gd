@@ -3,9 +3,16 @@ extends OmniLight3D
 ## (a child of the Player node, so it follows them) and for wall torches.
 
 @export var base_energy := 1.6
+@export var shadow_kind := ""  # "torches" or "party_torch": casts shadows when spell_effects_config says so. Empty: never (candles).
+const SpellEffectsConfigScript := preload("res://scripts/spell_effects_config.gd")
 const FLICKER := 0.15  # Fraction of energy the flicker can add/remove.
 
 var time := randf() * 100.0
+
+
+func _ready() -> void:
+	if shadow_kind != "":
+		SpellEffectsConfigScript.apply_shadow(self, shadow_kind)
 
 
 func _process(delta: float) -> void:

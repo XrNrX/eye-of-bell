@@ -59,6 +59,7 @@ func _ready() -> void:
 	attack_cooldown = def.attack_interval * WIND_UP
 
 	sprite = Sprite3D.new()
+	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	sprite.texture = def.sheet
 	sprite.hframes = def.hframes
 	sprite.pixel_size = def.pixel_size

@@ -4,6 +4,8 @@ extends OmniLight3D
 ## flight, a spike on the impact, a fade over about half a second. The curves are lists with one value per
 ## animation frame, kept in data/spell_effects.tres. It frees itself when its flipbook is gone.
 
+const SpellEffectsConfigScript := preload("res://scripts/spell_effects_config.gd")
+
 var flip: Node
 var energies := PackedFloat32Array()
 var colours := PackedColorArray()
@@ -23,7 +25,7 @@ func setup(flipbook: Node, energy_by_frame: PackedFloat32Array, colour_by_frame:
 	flicker = flutter
 	strength = scale_by
 	speed = play_speed
-	shadow_enabled = false
+	SpellEffectsConfigScript.apply_shadow(self, "spells")
 	_apply()
 
 

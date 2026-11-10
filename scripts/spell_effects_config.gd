@@ -15,8 +15,28 @@ extends Resource
 const PATH := "res://data/spell_effects.tres"
 
 
+const Settings := preload("res://scripts/settings.gd")
+
+
 static func get_config() -> Resource:
 	return load(PATH)
+
+
+## Make `light` cast shadows if its kind ("spells", "torches" or "party_torch") is on here and the Options switch is on.
+static func apply_shadow(light: Light3D, kind: String) -> void:
+	var c := get_config()
+	light.set_meta("shadow_kind", kind)
+	light.add_to_group("shadow_lights")
+	light.shadow_enabled = Settings.spell_shadows and bool(c.get("shadow_" + kind))
+	light.shadow_bias = c.shadow_bias
+	light.shadow_normal_bias = c.shadow_normal_bias
+	light.shadow_reverse_cull_face = c.shadow_reverse_cull
+
+
+## Re-apply the switches to every light already built (the test room's P key; Options only reaches a level built afterwards).
+static func refresh_shadows(tree: SceneTree) -> void:
+	for light in tree.get_nodes_in_group("shadow_lights"):
+		apply_shadow(light, light.get_meta("shadow_kind"))
 
 
 ## Put the glow (bloom) and, if wanted, the volumetric fog on an Environment. Used by the game
@@ -305,6 +325,18 @@ func glow(kind: String) -> Dictionary:
 ## gently. Walls, monsters and the UI stay below it (the UI is not in the 3D view at all). White (1,1,1) gives the torches no glow.
 @export var glow_torch_tint := Color(2.4, 2.0, 1.4)
 @export var glow_levels := PackedFloat32Array([1.0, 0.6, 0.0, 0.0, 0.0, 0.0, 0.0])
+
+@export_group("Shadows")
+## Real shadows, so light stops at walls and pillars and arches throw moving shadows. Settings.spell_shadows (Options) turns them all off.
+## Only the base wall quads, pillars, arches and doors cast: sprites, particles, grime and decals do not.
+@export var shadow_spells := true        # Magic Missile, Fireball, Heal, Bless, Shield and the holy light.
+@export var shadow_torches := true       # The wall torches.
+@export var shadow_party_torch := true   # The light the party carries.
+## Reverse culling makes the far side of each wall the shadow caster, so a lit wall can never shadow itself: no acne, whatever the angle.
+@export var shadow_reverse_cull := true
+@export var shadow_bias := 0.0   # Measured against an unshadowed render: 0 is closest; the lit faces do not cast, so nothing needs pushing apart.
+@export var shadow_normal_bias := 0.0
+@export var shadow_atlas_size := 4096    # The dungeon view's shadow atlas.
 
 @export_group("Volumetric fog")
 ## Subtle haze that catches the torchlight. Switched on and off in Options. A density of 0 turns it off.

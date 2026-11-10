@@ -51,7 +51,7 @@ func add_face(builder: Node3D, cell: Vector2i, side: int) -> void:
 	var texture: String = cfg.wall_textures[rng.randi() % cfg.wall_textures.size()]
 	builder._add_mesh(_quad(Vector2(s, h), texture, false), base, rot)
 	if cfg.grime_enabled:
-		builder._add_mesh(_quad(Vector2(s, h), cfg.grime_texture, true), base + out * cfg.grime_offset, rot)
+		_overlay(builder, _quad(Vector2(s, h), cfg.grime_texture, true), base + out * cfg.grime_offset, rot)
 	if cfg.alcove_texture != "" and rng.randf() < cfg.alcove_chance:
 		add_alcove(builder, cell + dir, (side + 2) % 4)  # From the open tile's side: the wall faces back at it.
 		return  # The niche is the feature of this face.
@@ -60,14 +60,19 @@ func add_face(builder: Node3D, cell: Vector2i, side: int) -> void:
 		var size := Vector2(tex.get_width(), tex.get_height()) * PIXEL
 		var at := _spot(decal, size, rng, s, h)
 		var pos: Vector3 = base + out * cfg.decal_offset + _along(rot) * at.x + Vector3(0, at.y, 0)
-		builder._add_mesh(_quad(size, decal, true), pos, rot)
+		_overlay(builder, _quad(size, decal, true), pos, rot)
 	if cfg.vein_textures.size() > 0 and rng.randf() < cfg.vein_chance:
 		var vein: String = cfg.vein_textures[rng.randi() % cfg.vein_textures.size()]
 		var vtex: Texture2D = load(vein)
 		var vsize := Vector2(vtex.get_width(), vtex.get_height()) * PIXEL
 		var vat := _spot("vein", vsize, rng, s, h)
 		var vpos: Vector3 = base + out * (cfg.decal_offset + 0.004) + _along(rot) * vat.x + Vector3(0, vat.y, 0)
-		builder._add_mesh(_quad(vsize, vein, true, true), vpos, rot)
+		_overlay(builder, _quad(vsize, vein, true, true), vpos, rot)
+
+
+## A picture laid just over a wall face (grime, decal, vein, niche). It casts no shadow: only the wall itself does.
+func _overlay(builder: Node3D, mesh: Mesh, pos: Vector3, rot: Vector3) -> void:
+	builder._add_mesh(mesh, pos, rot).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
 ## The decal textures this face gets (0, 1 or 2, in the config's chances), drawn from the face's own random stream.
@@ -113,7 +118,7 @@ func add_alcove(builder: Node3D, cell: Vector2i, side: int) -> void:
 	var tex: Texture2D = load(cfg.alcove_texture)
 	var size := Vector2(tex.get_width(), tex.get_height()) * PIXEL * 1.5
 	var wall_point := DungeonMap.cell_to_world(cell) + Vector3(dir.x, 0, dir.y) * (s / 2.0) + Vector3(0, 0.95, 0)
-	builder._add_mesh(_quad(size, cfg.alcove_texture, true), wall_point + out * (cfg.decal_offset + 0.008), rot)
+	_overlay(builder, _quad(size, cfg.alcove_texture, true), wall_point + out * (cfg.decal_offset + 0.008), rot)
 	var light := OmniLight3D.new()
 	light.set_script(TorchLight)
 	light.base_energy = cfg.alcove_light_energy

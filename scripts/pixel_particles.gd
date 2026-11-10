@@ -42,6 +42,7 @@ func emit(at: Vector3, count: int, o: Dictionary) -> void:
 			if is_instance_valid(oldest.node):
 				oldest.node.queue_free()
 		var sprite := Sprite3D.new()
+		sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		sprite.texture = _texture
 		sprite.pixel_size = pixel_size * size
 		sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST

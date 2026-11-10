@@ -80,6 +80,7 @@ func _add_cube(centre: Vector3, toward: Vector3, rng: RandomNumberGenerator) -> 
 	shape.shape = box
 	cube.add_child(shape)
 	var mesh := MeshInstance3D.new()
+	mesh.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var box_mesh := BoxMesh.new()
 	box_mesh.size = Vector3.ONE * size
 	box_mesh.material = material
@@ -94,6 +95,7 @@ func _add_cube(centre: Vector3, toward: Vector3, rng: RandomNumberGenerator) -> 
 ## A soft grey puff that swells, drifts up and fades.
 func _add_dust(centre: Vector3) -> void:
 	var dust := CPUParticles3D.new()
+	dust.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	dust.position = centre + Vector3(0, 0.9, 0)
 	dust.amount = 36
 	dust.lifetime = 1.5

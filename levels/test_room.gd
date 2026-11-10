@@ -104,7 +104,9 @@ const LEVERS := [
 	{"cell": Vector2i(16, 19), "side": 3, "target": "puzzle_door"},
 ]
 
-const STRUCTURES := []
+const STRUCTURES := [
+	{"cell": Vector2i(3, 21), "kind": "arch", "axis": "z"},  # In the ambush corridor: cast a spell past it and press P to compare shadows.
+]
 
 # The item table: one of every item in data/items, two rows. (Add new items here when they exist.)
 const ITEMS := [

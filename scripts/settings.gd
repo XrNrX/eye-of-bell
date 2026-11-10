@@ -8,6 +8,7 @@ extends RefCounted
 ##     Settings.set_sfx_volume(0.8)    # sound effects
 ##     Settings.set_fullscreen(false)  # remember the display mode (display_manager.gd applies it)
 ##     Settings.set_fog(false)         # volumetric fog on or off (spell_effects_config.apply_environment)
+##     Settings.set_spell_shadows(false)  # shadows from spells and torches on or off (read when a level is built)
 ##     Settings.set_reduce_flashing(true)  # softer holy light and glows (spell_effects.gd, party_hud.gd)
 ##     Settings.set_show_hints(false)      # first-time hints on or off; Settings.hint_seen(id) / mark_hint(id)
 ##
@@ -29,6 +30,7 @@ static var music_volume := 0.7  # The ambient loop starts a little below full: i
 static var sfx_volume := 1.0
 static var fullscreen := true   # Borderless fullscreen by default; false = a window.
 static var fog := true          # The subtle volumetric fog; off on weak machines.
+static var spell_shadows := true  # Spells and torches cast real shadows (spell_effects_config.apply_shadow); off on weak machines. Options: SPELL SHADOWS.
 static var reduce_flashing := false  # Softer spell, holy-light and crit flashes: steady glows, no flicker, and no screen or portrait shake at all.
 static var palette_filter := false  # Snap the 3D view to the palette with a light dither (palette_filter.gd). Off by default.
 static var show_hints := true   # First-time hints ("Click a portrait to see their inventory and stats."). Options: HINTS.
@@ -48,6 +50,7 @@ static func apply() -> void:
 			sfx_volume = clampf(float(cfg.get_value(SECTION, "sfx_volume", sfx_volume)), 0.0, 1.0)
 			fullscreen = bool(cfg.get_value(DISPLAY_SECTION, "fullscreen", fullscreen))
 			fog = bool(cfg.get_value(DISPLAY_SECTION, "fog", fog))
+			spell_shadows = bool(cfg.get_value(DISPLAY_SECTION, "spell_shadows", spell_shadows))
 			reduce_flashing = bool(cfg.get_value(DISPLAY_SECTION, "reduce_flashing", reduce_flashing))
 			palette_filter = bool(cfg.get_value(DISPLAY_SECTION, "palette_filter", palette_filter))
 			show_hints = bool(cfg.get_value(HINTS_SECTION, "show", show_hints))
@@ -79,6 +82,11 @@ static func set_fullscreen(value: bool) -> void:
 
 static func set_fog(value: bool) -> void:
 	fog = value
+	_changed()
+
+
+static func set_spell_shadows(value: bool) -> void:
+	spell_shadows = value
 	_changed()
 
 
@@ -128,6 +136,7 @@ static func _changed() -> void:
 	cfg.set_value(SECTION, "sfx_volume", sfx_volume)
 	cfg.set_value(DISPLAY_SECTION, "fullscreen", fullscreen)
 	cfg.set_value(DISPLAY_SECTION, "fog", fog)
+	cfg.set_value(DISPLAY_SECTION, "spell_shadows", spell_shadows)
 	cfg.set_value(DISPLAY_SECTION, "reduce_flashing", reduce_flashing)
 	cfg.set_value(DISPLAY_SECTION, "palette_filter", palette_filter)
 	cfg.set_value(HINTS_SECTION, "show", show_hints)

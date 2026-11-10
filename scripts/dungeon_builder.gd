@@ -276,6 +276,7 @@ func _add_plate(cell: Vector2i) -> void:
 ## A wall lever: a 2-frame sprite (off / on) hung on one wall of a cell.
 func _add_lever(cell: Vector2i, side: int) -> void:
 	var sprite := Sprite3D.new()
+	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	if ResourceLoader.exists(LEVER_SHEET):
 		sprite.texture = load(LEVER_SHEET)
 	sprite.hframes = 2
@@ -343,6 +344,7 @@ func place_item(cell: Vector2i, item) -> void:
 		_show_top(entry)
 		return
 	var sprite := Sprite3D.new()
+	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	sprite.shaded = false
@@ -368,6 +370,7 @@ func _show_top(entry: Dictionary) -> void:
 ## Party has already resolved the hit and placed the item). Also called via the group.
 func show_throw(from_cell: Vector2i, to_cell: Vector2i, def: Resource) -> void:
 	var sprite := Sprite3D.new()
+	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	sprite.texture = def.floor_icon if def.floor_icon else def.icon
 	sprite.pixel_size = def.icon_pixel_size
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
@@ -582,6 +585,7 @@ func _add_torch(cell: Vector2i, side: int) -> void:
 	var wall_pos := _wall_point(cell, side, TORCH_HEIGHT)
 
 	var sprite := AnimatedSprite3D.new()
+	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	sprite.sprite_frames = _make_torch_frames()
 	sprite.pixel_size = TORCH_PIXEL_SIZE
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
@@ -595,6 +599,7 @@ func _add_torch(cell: Vector2i, side: int) -> void:
 
 	var light := OmniLight3D.new()
 	light.set_script(TorchLight)
+	light.shadow_kind = "torches"
 	light.base_energy = TORCH_ENERGY
 	light.light_color = Color(1.0, 0.77, 0.56)
 	light.omni_range = 5.0

@@ -38,6 +38,7 @@ static func add_sign(parent: Node3D, cell: Vector2i, side: int, text: String) ->
 	var w := widest * FONT_SIZE * PIXEL_SIZE + 0.16
 	var h := lines.size() * line_h + 0.1
 	var plaque := MeshInstance3D.new()
+	plaque.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var quad := QuadMesh.new()
 	quad.size = Vector2(w, h)
 	var mat := StandardMaterial3D.new()
@@ -50,6 +51,7 @@ static func add_sign(parent: Node3D, cell: Vector2i, side: int, text: String) ->
 	for l in lines:
 		var gold := l.begins_with("!")
 		var label := Label3D.new()
+		label.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		label.text = l.lstrip("!")
 		label.font = FONT
 		label.font_size = FONT_SIZE

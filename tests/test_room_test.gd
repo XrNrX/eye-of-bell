@@ -82,6 +82,7 @@ func _check_data() -> void:
 		for m in a.monsters:
 			amb_ok = amb_ok and seen.has(m.cell) and load(m.def) != null
 	check("ambush tile and spawns are floor", amb_ok)
+	check("an arch to test shadows against", DungeonMap.STRUCTURES.any(func(e): return e.kind == "arch" and seen.has(e.cell)))
 	check("puzzle door has a plate and a lever", DungeonMap.DOOR_IDS.values().has("puzzle_door") and DungeonMap.PLATES.size() == 1 and DungeonMap.LEVERS.size() == 1)
 
 
@@ -171,4 +172,8 @@ func _check_game() -> void:
 	player.restore(Vector2i(3, 22), 2)
 	await create_timer(0.2).timeout
 	check("the ambush tile spawns its monsters", get_nodes_in_group("monsters").size() == 2)
+	var shadows_before: bool = Settings.spell_shadows
+	press.call(KEY_P)
+	check("P toggles every shadow light", Settings.spell_shadows != shadows_before and get_nodes_in_group("shadow_lights").size() > 0 and get_nodes_in_group("shadow_lights").all(func(l): return l.shadow_enabled == Settings.spell_shadows))
+	press.call(KEY_P)
 	check("a test-room save is refused", preload("res://scripts/save_game.gd").save(self) != "")

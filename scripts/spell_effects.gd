@@ -23,6 +23,7 @@ var flickers := []  # [{light, base, seed}]: lights that flutter (the fireball),
 
 
 func _ready() -> void:
+	get_viewport().positional_shadow_atlas_size = Config.get_config().shadow_atlas_size
 	add_to_group("spell_effects")
 	orb = _make_orb()
 	RenderingServer.decals_set_filter(RenderingServer.DECAL_FILTER_NEAREST)  # Scorch marks stay pixel art.
@@ -78,6 +79,7 @@ func missile(from_cell: Vector2i, to_cell: Vector2i) -> void:
 	bolt.position = start
 	add_child(bolt)
 	var sprite := Sprite3D.new()
+	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	sprite.texture = orb
 	sprite.pixel_size = c.bolt_size
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
@@ -404,6 +406,7 @@ func _fireball_basic(from_cell: Vector2i, to_cell: Vector2i) -> void:
 	ball.position = start
 	add_child(ball)
 	var sprite := Sprite3D.new()
+	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	sprite.texture = orb
 	sprite.pixel_size = c.fire_size
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
@@ -458,6 +461,7 @@ func _explosion_basic(cell: Vector2i) -> void:
 	tween.tween_callback(func():
 		flash.queue_free())
 	var blast := Sprite3D.new()
+	blast.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	blast.texture = orb
 	blast.position = at
 	blast.pixel_size = c.fire_size
@@ -553,6 +557,7 @@ func holy_pulse(scale := 1.0) -> void:
 	light.light_color = c.holy_color
 	light.light_energy = 0.0
 	light.omni_range = c.holy_light_range * scale if reduced else c.holy_start_range
+	Config.apply_shadow(light, "spells")
 	add_child(light)
 	var strength: float = c.holy_light_energy * scale * (c.holy_reduced_scale if reduced else 1.0)
 	var seconds: float = c.holy_seconds * (1.5 if reduced else 1.0)
@@ -583,6 +588,7 @@ func party_glow(kind: String) -> void:
 	light.light_color = g.color
 	light.light_energy = 0.0
 	light.omni_range = g.light_range
+	Config.apply_shadow(light, "spells")
 	add_child(light)
 	var tween := light.create_tween()
 	tween.tween_property(light, "light_energy", g.light_energy, g.pulse_seconds * 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
@@ -612,6 +618,7 @@ func party_glow(kind: String) -> void:
 ## Little unshaded squares that step through darker colours (no alpha fade) and vanish: the common part of sparks, trails and motes.
 func _particles(amount: int, seconds: float, size: float, color: Color) -> CPUParticles3D:
 	var p := CPUParticles3D.new()
+	p.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	p.amount = amount
 	p.lifetime = seconds
 	p.emitting = false
