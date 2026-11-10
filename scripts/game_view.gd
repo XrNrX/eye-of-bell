@@ -15,6 +15,7 @@ extends SubViewportContainer
 const UiLayout := preload("res://scripts/ui_layout.gd")
 const PaletteFilter := preload("res://scripts/palette_filter.gd")
 const EnemyBars := preload("res://scripts/enemy_bars.gd")
+const DungeonMap := preload("res://scripts/dungeon_map.gd")
 
 var player: Node
 
@@ -36,6 +37,11 @@ func _ready() -> void:
 		bars_layer.layer = 1
 		bars_layer.add_child(EnemyBars.new())
 		port.add_child(bars_layer)
+	# Debug builds only: the test room's tools (F12, debug keys). The files are left out of a release export, so look them up
+	# by path instead of preloading them.
+	if DungeonMap.test_room_available():
+		var tools: Script = load(DungeonMap.TOOLS_PATH)
+		(owner if owner != null else get_tree().root).add_child.call_deferred(tools.new())
 
 
 func _gui_input(event: InputEvent) -> void:

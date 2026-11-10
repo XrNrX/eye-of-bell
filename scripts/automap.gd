@@ -12,7 +12,7 @@ const MapSymbols := preload("res://scripts/map_symbols.gd")
 const PARCHMENT := preload("res://art/ui/map_parchment.png")
 const FRAME := preload("res://art/ui/map_frame.png")
 
-const CELL := 11                       # One map cell, in screen pixels (symbols are 16x16 and overhang 2 px).
+const CELL := 11                       # One map cell, in screen pixels (symbols are 16x16 and overhang 2 px); a bigger level shrinks it (cell_px).
 const SHEET := preload("res://art/ui/map_sheet.png")  # 474x298: legend paper on the left, map paper on the right.
 const LEGEND_W := 180                  # The left part of the sheet (the legend); the map is the rest.
 const PANEL := Rect2(79, 27, 482, 306) # The framed sheet: the sheet plus the iron frame.
@@ -25,6 +25,7 @@ const BLOOD_700 := Color("4a1418")
 
 var icons := {}
 var wash: Texture2D    # One cell of floor wash.
+var cell_px := CELL    # This level's cell size: CELL, or smaller when the level would not fit the sheet (the test room).
 var canvas: Control
 var frame_box := StyleBoxTexture.new()  # The iron frame stretched round the whole sheet (a nine-patch of map_frame.png).
 var player: Node
@@ -35,7 +36,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
 	icons = MapSymbols.load_icons(false)
-	wash = MapSymbols.make_wash(CELL)
+	_fit_cells()
 	frame_box.texture = FRAME
 	frame_box.set_texture_margin_all(BORDER)
 	frame_box.draw_center = false
@@ -68,6 +69,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func open() -> void:
 	get_tree().call_group("party_hud", "cancel_casting")  # No pop-up or target mode left open under the map.
 	player = get_tree().get_first_node_in_group("player")
+	_fit_cells()
 	visible = true
 	get_tree().paused = true
 	get_tree().call_group("audio", "play", "ui_click")
@@ -80,12 +82,23 @@ func close() -> void:
 	get_tree().call_group("audio", "play", "ui_click")
 
 
+func _fit_cells() -> void:
+	var inner := PANEL.grow(-BORDER)
+	var rows: int = DungeonMap.MAP.size()
+	var cols: int = DungeonMap.MAP[0].size()
+	var fit := mini(int((inner.size.x - LEGEND_W - 8.0) / cols), int((inner.size.y - 8.0) / rows))
+	var want := clampi(fit, 4, CELL)
+	if want != cell_px or wash == null:
+		cell_px = want
+		wash = MapSymbols.make_wash(cell_px)
+
+
 func _origin() -> Vector2:
 	var rows: int = DungeonMap.MAP.size()
 	var cols: int = DungeonMap.MAP[0].size()
 	var inner := PANEL.grow(-BORDER)
-	return Vector2(inner.position.x + LEGEND_W + (inner.size.x - LEGEND_W - cols * CELL) / 2.0,
-			inner.position.y + (inner.size.y - rows * CELL) / 2.0)
+	return Vector2(inner.position.x + LEGEND_W + (inner.size.x - LEGEND_W - cols * cell_px) / 2.0,
+			inner.position.y + (inner.size.y - rows * cell_px) / 2.0)
 
 
 func _draw_map() -> void:
@@ -97,17 +110,17 @@ func _draw_map() -> void:
 	for y in rows:
 		for x in DungeonMap.MAP[y].size():
 			var c := Vector2i(x, y)
-			var at := origin + Vector2(x, y) * CELL
-			MapSymbols.draw_cell(canvas, c, at, CELL, wash)
+			var at := origin + Vector2(x, y) * cell_px
+			MapSymbols.draw_cell(canvas, c, at, cell_px, wash)
 	for y in rows:
 		for x in DungeonMap.MAP[y].size():
 			var poi := MapSymbols.poi_for(Vector2i(x, y))
 			if poi != "":
-				MapSymbols.draw_poi(canvas, icons[poi], origin + Vector2(x, y) * CELL, CELL, false)
+				MapSymbols.draw_poi(canvas, icons[poi], origin + Vector2(x, y) * cell_px, cell_px, false)
 	for lever in DungeonMap.LEVERS:
-		MapSymbols.draw_poi(canvas, icons["lever"], origin + Vector2(lever.cell) * CELL, CELL, false)
+		MapSymbols.draw_poi(canvas, icons["lever"], origin + Vector2(lever.cell) * cell_px, cell_px, false)
 	if player != null:  # The party: a small arrow in its cell, turned to face the way it faces.
-		MapSymbols.draw_arrow(canvas, origin + Vector2(player.cell) * CELL, CELL, player.facing)
+		MapSymbols.draw_arrow(canvas, origin + Vector2(player.cell) * cell_px, cell_px, player.facing)
 	canvas.draw_style_box(frame_box, PANEL)
 	_draw_legend()
 

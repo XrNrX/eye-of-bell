@@ -48,6 +48,8 @@ signal hit_from(side: String, slot: int, damage: int)  # A monster's blow landed
 signal critical_fail(slot: int, slipped: bool)  # A hero's attack went badly wrong (slipped: they dropped their weapon).
 signal wiped
 
+var god_mode := false  # Debug (the test room's G key): monsters' blows land on nobody.
+
 ## Hero definitions (CharacterDef .tres), in slot order.
 @export var hero_defs: Array[Resource] = []
 @export var player_path: NodePath
@@ -1306,7 +1308,7 @@ func _banter(event_name: String, m: Member, weapon: Resource = null, extra := {}
 ## is on: front -> front row, behind -> back row, left/right -> that column.
 func take_hit_from(monster: Node) -> void:
 	var targets := _reachable_from(monster.cell)
-	if targets.is_empty():
+	if targets.is_empty() or god_mode:
 		return
 	var side := side_of(monster.cell)
 	last_hit_side = side

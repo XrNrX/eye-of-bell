@@ -3,6 +3,7 @@ extends Node3D
 ## a cube per wall cell, a floor + ceiling plane per floor cell, a sliding
 ## panel per door cell, and a sprite + light per wall torch.
 
+const WallSigns := preload("res://scripts/wall_signs.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const TorchLight := preload("res://scripts/torch.gd")
 const MonsterScript := preload("res://scripts/monster.gd")
@@ -81,6 +82,8 @@ var lever_on := {}    # Vector3i (x, z, side) -> true if switched on
 
 func _ready() -> void:
 	add_to_group("dungeon")  # Lets the player find us (see player.gd _interact).
+	if not populate and DungeonMap.level_path != "":
+		DungeonMap.use_level("")  # The main menu's backdrop is floor 1's corridor, whatever level was played last.
 	DungeonMap.reset_run()
 
 	var s := DungeonMap.TILE_SIZE
@@ -152,6 +155,7 @@ func _ready() -> void:
 		decor.start_pulse(self)
 	for torch in DungeonMap.TORCHES:
 		_add_torch(Vector2i(torch.x, torch.y), torch.z)
+	WallSigns.build(self)
 	if populate:
 		for entry in DungeonMap.ITEMS:
 			place_item(entry.cell, ItemStack.of(load(entry.def), entry.get("count", 1)))

@@ -72,3 +72,6 @@ None of these were made with the VFX suite, so they should be replaced.
 
 **Intro**
 - `art/intro/fx/`: lightning, flash, fog and rain, and the three `<shot>_glow.png` layers, drawn by `tools/art/gen_intro.py`.
+
+**Debug**
+- Wall signs (`scripts/wall_signs.gd`, used by the test room): a flat dark quad and a Press Start 2P `Label3D` in palette colours, not drawn art. Replace with a PixelLab sign if a real level needs one.

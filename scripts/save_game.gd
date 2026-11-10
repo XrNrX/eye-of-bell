@@ -40,6 +40,8 @@ static func has_save() -> bool:
 
 ## Write the current run to disk. Returns "" on success or why it failed.
 static func save(tree: SceneTree) -> String:
+	if DungeonMap.level_path != "":
+		return "The test room can't be saved."
 	var data := serialize(tree)
 	if data.is_empty():
 		return "Nothing to save."
@@ -75,6 +77,7 @@ static func load_game(tree: SceneTree) -> String:
 	if data.has("error"):
 		return data.error
 	pending = data
+	DungeonMap.use_level("")  # Saves are floor 1's (the test room cannot be saved).
 	tree.paused = false
 	if tree.current_scene != null and tree.current_scene.scene_file_path == MAIN_SCENE:
 		tree.reload_current_scene()

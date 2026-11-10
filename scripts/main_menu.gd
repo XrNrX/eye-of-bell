@@ -119,6 +119,16 @@ func _ready() -> void:
 	intro_button.pressed.connect(func(): get_tree().change_scene_to_file(INTRO_SCENE))
 	intro_button.pressed.connect(_click)
 
+	if DungeonMap.test_room_available():  # Debug builds only (a release export leaves the test room out).
+		var room_button: Button = options_button.duplicate()
+		room_button.unique_name_in_owner = false
+		room_button.name = "TestRoomButton"
+		room_button.text = "TEST ROOM"
+		menu_box.add_child(room_button)
+		menu_box.move_child(room_button, quit_button.get_index())
+		room_button.pressed.connect(_click)
+		room_button.pressed.connect(_enter_test_room)
+
 	load_button.disabled = not SaveGame.has_save()  # Nothing to load yet: greyed out.
 	_refresh_volume()
 	_refresh_display()
@@ -136,6 +146,10 @@ func _process(delta: float) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F12 and DungeonMap.test_room_available():
+		get_viewport().set_input_as_handled()
+		_enter_test_room()
+		return
 	if not options_box.visible:
 		return
 	if event.is_action_pressed("ui_cancel"):
@@ -149,7 +163,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+func _enter_test_room() -> void:
+	DungeonMap.use_level(DungeonMap.TEST_ROOM_PATH)
+	get_tree().change_scene_to_file(MAIN_SCENE)
+
+
 func _on_new_game_pressed() -> void:
+	DungeonMap.use_level("")
 	get_tree().change_scene_to_file(MAIN_SCENE)
 
 

@@ -25,6 +25,7 @@ const PATH := "res://data/banter.json"
 var events := {}
 var ready_at := {}   # event -> Time.get_ticks_msec() when it may speak again.
 var said: Array = [] # Every line said this run, newest last, for tests.
+var enabled := true  # Debug (the test room's B key) switches it off.
 
 
 func _ready() -> void:
@@ -37,7 +38,7 @@ func _ready() -> void:
 ## Something happened: maybe say a line. Returns the lines said.
 func event(event_name: String, context := {}) -> Array:
 	var e: Dictionary = events.get(event_name, {})
-	if e.is_empty():
+	if e.is_empty() or not enabled:
 		return []
 	var now := Time.get_ticks_msec()
 	if now < int(ready_at.get(event_name, 0)):
