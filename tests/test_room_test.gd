@@ -172,6 +172,33 @@ func _check_game() -> void:
 	player.restore(Vector2i(3, 22), 2)
 	await create_timer(0.2).timeout
 	check("the ambush tile spawns its monsters", get_nodes_in_group("monsters").size() == 2)
+	# The slingshot: fires a stone from the backpack at the first monster in line, spends it, needs ammo.
+	for n in get_nodes_in_group("monsters"):
+		n.free()
+	player.restore(Vector2i(20, 14), 3)
+	var sling: Resource = load("res://data/items/slingshot.tres")
+	var stone: Resource = load("res://data/items/stone.tres")
+	var hero = party.members[0]
+	hero.hands[0] = preload("res://scripts/item_stack.gd").of(sling, 1)
+	hero.backpack[0] = preload("res://scripts/item_stack.gd").of(stone, 3)
+	hero.cooldown_left = 0.0
+	check("a slingshot is fired, not swung", party.action_for(0, 0) == party.Act.FIRE)
+	var target = get_first_node_in_group("dungeon").spawn_monster(load("res://data/monsters/skeleton.tres"), Vector2i(22, 14))
+	var hp_before: int = target.hp
+	party.act(0, 0)
+	check("a shot spends one stone", hero.backpack[0].count == 2)
+	check("a shot starts the cooldown", hero.cooldown_left > 0.0)
+	for i in 12:
+		hero.cooldown_left = 0.0
+		if hero.backpack[0] == null:
+			break
+		party.act(0, 0)
+	check("shots hurt the monster ahead", not is_instance_valid(target) or target.hp < hp_before or target.dying)
+	check("the stones run out", hero.backpack[0] == null)
+	hero.cooldown_left = 0.0
+	party.act(0, 0)
+	check("no stones, no shot, no cooldown", hero.cooldown_left == 0.0)
+	hero.hands[0] = null
 	var shadows_before: bool = Settings.spell_shadows
 	press.call(KEY_P)
 	check("P toggles every shadow light", Settings.spell_shadows != shadows_before and get_nodes_in_group("shadow_lights").size() > 0 and get_nodes_in_group("shadow_lights").all(func(l): return l.shadow_enabled == Settings.spell_shadows))

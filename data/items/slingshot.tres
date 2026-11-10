@@ -1,0 +1,21 @@
+[gd_resource type="Resource" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/item_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/items/slingshot.png" id="2_icon"]
+[ext_resource type="Texture2D" path="res://art/items/slingshot_floor.png" id="3_floor"]
+[ext_resource type="Texture2D" path="res://art/items/slingshot_hud.png" id="90_hud"]
+[ext_resource type="Resource" path="res://data/items/stone.tres" id="4_stone"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Slingshot"
+type = 0
+icon = ExtResource("2_icon")
+floor_icon = ExtResource("3_floor")
+hud_icon = ExtResource("90_hud")
+icon_pixel_size = 0.01
+attack_bonus = 0
+melee = false
+ammo = ExtResource("4_stone")
+shot_damage_min = 2
+shot_damage_max = 6

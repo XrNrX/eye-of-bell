@@ -31,7 +31,7 @@ const QUICK_COOLDOWN := 1.0   # Seconds a quick slot is unusable after an item i
 const MANA_REGEN_TIME := 2.5  # Seconds per point of mana regained (always; there's no resting yet).
 
 ## What clicking a hand does (see action_for).
-enum Act { NOTHING, MELEE, THROW, SPELLS, CANT_REACH, USE }  # USE: a potion, food or scroll held in a hand.
+enum Act { NOTHING, MELEE, THROW, SPELLS, CANT_REACH, USE, FIRE }  # USE: a potion, food or scroll held in a hand.
 
 signal hp_changed(slot: int)
 signal formation_changed  # The party was rearranged (see set_formation); HUDs redraw every panel.
@@ -358,6 +358,8 @@ func action_for(slot: int, hand: int) -> int:
 		return Act.USE
 	if def.type != ItemDef.Type.WEAPON:
 		return Act.NOTHING
+	if def.ammo != null:
+		return Act.FIRE
 	if def.can_throw() and (not def.melee or not can_melee(slot)):
 		return Act.THROW
 	if def.melee:
@@ -381,6 +383,8 @@ func act(slot: int, hand: int) -> void:
 			_say("%s can't reach." % m.def.display_name)
 		Act.USE:
 			_use_from_hand(m, hand)
+		Act.FIRE:
+			_fire(m, hand)
 
 
 ## A potion, food or scroll held in a hand is used by clicking the hand: one is spent only if it worked, and
@@ -415,6 +419,64 @@ func lift_from_hand(slot: int, hand: int, cursor: Node) -> String:
 ## monster within MISSILE_RANGE with a normal hit roll and lands on that monster's
 ## tile, hit or miss; with no monster it lands on the last open tile. A wall or closed
 ## door right in front means there's nowhere to throw: refused, no cooldown.
+## The slingshot (or any weapon with ItemDef.ammo): take one piece of its ammo from this hero's backpack and shoot the first monster in
+## line. Nothing happens, with no cooldown, if there is no ammo or no room.
+func _fire(m: Member, hand: int) -> void:
+	var weapon: Resource = m.hands[hand].def
+	var pack := -1
+	for i in m.backpack.size():
+		var held = m.backpack[i]
+		if held != null and held.def == weapon.ammo:
+			pack = i
+			break
+	if pack < 0:
+		_say("%s has no %s for the %s." % [m.def.display_name, weapon.ammo.display_name.to_lower(), weapon.display_name.to_lower()])
+		return
+	var dir: Vector2i = player.DIRS[player.facing]
+	if DungeonMap.is_blocked(player.cell + dir):
+		_say("There's no room to shoot.")
+		return
+	var land: Vector2i = player.cell
+	var target = null
+	for i in range(1, MISSILE_RANGE + 1):
+		var cell: Vector2i = player.cell + dir * i
+		if DungeonMap.is_blocked(cell):
+			break
+		land = cell
+		var monster = DungeonMap.occupied.get(cell)
+		if monster != null and is_instance_valid(monster) and not monster.dying:
+			target = monster
+			break
+	_start_cooldown(m)
+	var stack = m.backpack[pack]
+	stack.count -= 1
+	var left: int = stack.count
+	if stack.count <= 0:
+		m.backpack[pack] = null
+	_cue("throw")
+	var dungeon = get_tree().get_first_node_in_group("dungeon")
+	if dungeon:
+		dungeon.show_throw(player.cell, land, weapon.ammo)
+	var left_text := "%d left" % left if left > 0 else "that was the last"
+	if target == null:
+		_say("%s shoots a %s (%s)." % [m.def.display_name, weapon.ammo.display_name.to_lower(), left_text])
+		return
+	var s := Stats.new()
+	s.attack = m.def.attack + weapon.attack_bonus
+	for buff in m.buffs:
+		s.attack += buff.spell.buff_attack
+	s.damage_min = weapon.shot_damage_min
+	s.damage_max = weapon.shot_damage_max
+	var result := CombatRules.resolve_attack(s, target.def, CombatRules.crit_chance(m.def, weapon))
+	target.take_hit(result)
+	if not result.hit:
+		_say("%s's %s misses the %s (%s)." % [m.def.display_name, weapon.ammo.display_name.to_lower(), target.def.display_name, left_text], "miss")
+	elif target.hp <= 0:
+		_say_hit("%s kills the %s with the %s! (%s)" % [m.def.display_name, target.def.display_name, weapon.display_name.to_lower(), left_text], m, weapon, result.crit)
+	else:
+		_say_hit("%s hits the %s with the %s for %d. (%s)" % [m.def.display_name, target.def.display_name, weapon.display_name.to_lower(), result.damage, left_text], m, weapon, result.crit)
+
+
 func _throw(m: Member, hand: int) -> void:
 	_do_throw(m, {"where": "hand", "index": hand})
 

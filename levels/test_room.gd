@@ -129,6 +129,8 @@ const ITEMS := [
 	{"cell": Vector2i(31, 6), "def": "res://data/items/withered_apple.tres"},
 	{"cell": Vector2i(32, 6), "def": "res://data/items/long_sword.tres"},
 	{"cell": Vector2i(33, 6), "def": "res://data/items/flail.tres"},
+	{"cell": Vector2i(33, 4), "def": "res://data/items/slingshot.tres"},
+	{"cell": Vector2i(23, 4), "def": "res://data/items/stone.tres", "count": 20},
 	{"cell": Vector2i(11, 26), "def": "res://data/items/healing_potion.tres"},
 ]
 

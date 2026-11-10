@@ -14,7 +14,7 @@ extends Resource
 ## for a hero whose CharacterDef.magic matches.
 
 # New values go at the end: .tres files store the number.
-enum Type { WEAPON, ARMOUR, CONSUMABLE, KEY, FOCUS }
+enum Type { WEAPON, ARMOUR, CONSUMABLE, KEY, FOCUS, AMMO }
 enum Magic { NONE, ARCANE, DIVINE }
 
 @export var display_name := "Item"
@@ -42,6 +42,14 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export var crit_bonus := 0          # Points added to the wielder's crit chance.
 @export var finesse := false         # A light weapon: the wielder's finesse_crit counts (daggers).
 @export var never_slips := false     # A critical fail can't knock it out of the hand (Grudge refuses to let go).
+
+@export_group("Ammo")
+## A weapon with `ammo` set (the slingshot) is fired, not swung or thrown: a click on its hand takes one `ammo` item (type AMMO, e.g. a
+## stone) from that hero's backpack, spends it and shoots the first monster in line within MISSILE_RANGE for shot_damage_min..max plus
+## the usual hit roll (the weapon's attack_bonus counts). No ammo, no shot, no cooldown. The stone is lost, hit or miss. See Party._fire.
+@export var ammo: Resource                # The ItemDef this weapon shoots (null: not a launcher).
+@export var shot_damage_min := 0
+@export var shot_damage_max := 0
 
 @export_group("Food")
 ## Food heals slowly: `food_heal` HP in total, spread evenly over `food_seconds` (potions heal at once, so they stay the

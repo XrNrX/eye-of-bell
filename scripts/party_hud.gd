@@ -314,6 +314,7 @@ func _show_hand(m, i: int, hand: TextureButton) -> void:
 	match party.action_for(m.slot, i):
 		party.Act.MELEE: hand.tooltip_text = "Attack"
 		party.Act.THROW: hand.tooltip_text = "Throw"
+		party.Act.FIRE: hand.tooltip_text = "Fire"
 		party.Act.SPELLS: hand.tooltip_text = "Cast"
 		party.Act.CANT_REACH: hand.tooltip_text = "Can't reach"
 		party.Act.USE: hand.tooltip_text = "Use (right-click to take it out)"
