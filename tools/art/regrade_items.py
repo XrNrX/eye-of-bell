@@ -35,8 +35,9 @@ REMAPS = {
     "stale_bread": GRIM_FOOD, "hard_cheese": GRIM_CHEESE,
     "short_sword": PLAIN_STEEL, "dagger": PLAIN_STEEL, "mace": PLAIN_STEEL, "war_hammer": PLAIN_STEEL, "darts": PLAIN_STEEL,
 }
-# The slimes are left out: their current PixelLab art has its own outline (a second ring would double it).
-MONSTERS = {"skeleton": 11, "skeleton_guard": 11}
+# No monsters: all four now use PixelLab animation sets with their own outline (gen_monster_sheets.py), and a second ring would
+# double it. (The skeletons used to be listed here; their untouched copies in pieces/regrade_src/monsters are gone.)
+MONSTERS = {}
 # Hand and quick-slot icons made natively at 32x32 (tools/art/pieces/items32/): already outlined and steel-grey, so left alone.
 NATIVE32 = {"short_sword", "war_hammer", "mace", "dagger", "darts"}
 

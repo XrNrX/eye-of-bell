@@ -27,6 +27,24 @@ SPECS = {
         "idle_order": [0, 1, 2, 3, 4, 3, 2, 1],
         "fps": {"idle_fps": 5.0, "attack_fps": 14.0, "hurt_fps": 14.0, "walk_fps": 22.0},
     },
+    "slime": {
+        "size": (96, 96),
+        "anims": [("idle", 5), ("attack", 9), ("hurt", 5), ("walk", 9)],
+        "idle_order": [0, 1, 2, 3, 4, 3, 2, 1],
+        "fps": {"idle_fps": 5.0, "attack_fps": 14.0, "hurt_fps": 14.0, "walk_fps": 20.0},
+    },
+    "skeleton": {
+        "size": (96, 128),
+        "anims": [("idle", 5), ("attack", 9), ("hurt", 5), ("walk", 9)],
+        "idle_order": [0, 1, 2, 3, 4, 3, 2, 1],
+        "fps": {"idle_fps": 5.0, "attack_fps": 12.0, "hurt_fps": 14.0, "walk_fps": 20.0},
+    },
+    "skeleton_guard": {
+        "size": (96, 128),
+        "anims": [("idle", 5), ("attack", 9), ("hurt", 5), ("walk", 9)],
+        "idle_order": [0, 1, 2, 3, 4, 3, 2, 1],
+        "fps": {"idle_fps": 5.0, "attack_fps": 12.0, "hurt_fps": 14.0, "walk_fps": 20.0},
+    },
 }
 
 
