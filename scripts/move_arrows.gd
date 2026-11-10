@@ -10,7 +10,7 @@ extends CanvasLayer
 
 const UiLayout := preload("res://scripts/ui_layout.gd")
 
-const BUTTON := 36.0  # The art is a native 36x36 (PixelLab), three across fill the 112 px well.
+const BUTTON := 36.0  # Three across fill the 112 unit well. The art (72x72 on the hires-720 branch) is shown at this size.
 const GAP := 2.0
 # [command, art name] in reading order.
 const LAYOUT := [
@@ -33,6 +33,10 @@ func _ready() -> void:
 		var b := TextureButton.new()
 		b.texture_normal = load("res://art/ui/arrow_%s.png" % art)
 		b.texture_pressed = load("res://art/ui/arrow_%s_pressed.png" % art)
+		b.ignore_texture_size = true
+		b.stretch_mode = TextureButton.STRETCH_SCALE
+		b.custom_minimum_size = Vector2(BUTTON, BUTTON)
+		b.size = Vector2(BUTTON, BUTTON)
 		b.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		b.focus_mode = Control.FOCUS_NONE  # Space/Enter/F shouldn't press them.
 		b.position = origin + Vector2((i % 3) * (BUTTON + GAP), (i / 3) * (BUTTON + GAP))

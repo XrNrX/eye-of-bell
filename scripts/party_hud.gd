@@ -1236,6 +1236,8 @@ func _make_hand(m, i: int) -> TextureButton:
 	hand.add_child(StackCount.new())  # How many darts are left (child 0; see _show_hand).
 	var frame := TextureRect.new()  # The iron bevel behind the icon, at the portraits' pixel density.
 	frame.texture = HAND_FRAME
+	frame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE  # The art has more pixels than its 40 unit box (hires-720): scale it to fit.
+	frame.stretch_mode = TextureRect.STRETCH_SCALE
 	frame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	frame.show_behind_parent = true
