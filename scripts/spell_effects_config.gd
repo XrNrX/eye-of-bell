@@ -223,7 +223,7 @@ func glow(kind: String) -> Dictionary:
 @export var mm_impact_flash_speed := 1.8             # ...and plays this many times faster, so the flash is short.
 @export var blast_kick_distance := 0.3               # The Fireball knocks the camera back much harder than the missile (0.07).
 @export var blast_kick_seconds := 0.3
-@export var blast_flash_scale := 1.8                 # Impact light brighter than the art's own curve...
+@export var blast_flash_scale := 1.3                 # Impact light brighter than the art's own curve...
 @export var blast_flash_speed := 1.4                 # ...and shorter. (Reduce flashing turns both off; the kick and shake stop too.)
 @export var blast_pause_seconds := 0.14              # The Fireball's hit pause (its shake is blast_shake_strength).
 @export var mm_impact_light_colors := PackedColorArray([Color(0.9, 0.95, 1.0), Color(0.75, 0.88, 1.0), Color(0.6, 0.8, 1.0), Color(0.5, 0.72, 1.0), Color(0.45, 0.65, 0.95)])
@@ -296,11 +296,14 @@ func glow(kind: String) -> Dictionary:
 @export var glow_intensity := 0.6
 @export var glow_strength := 1.0
 @export var glow_bloom := 0.0
-@export var glow_hdr_threshold := 1.6
+@export var glow_hdr_threshold := 1.4
 @export var glow_hdr_scale := 2.0
 @export_enum("Additive", "Screen", "Softlight", "Replace", "Mix") var glow_blend_mode := 1
 ## Strength of each of Godot's 7 glow levels, from the tightest blur (first) to the widest (last). Pixel art wants a tight halo
 ## round the bright core, not a wide soft haze, so the two smallest levels carry it. (Wider levels, [0, 0, 1, 0, 1, 0, 0], gave the old soft haze.)
+## The wall torches' flame sprites are unshaded; this tint (above 1.0) lifts their brightest pixels over the threshold so they glow
+## gently. Walls, monsters and the UI stay below it (the UI is not in the 3D view at all). White (1,1,1) gives the torches no glow.
+@export var glow_torch_tint := Color(2.4, 2.0, 1.4)
 @export var glow_levels := PackedFloat32Array([1.0, 0.6, 0.0, 0.0, 0.0, 0.0, 0.0])
 
 @export_group("Volumetric fog")

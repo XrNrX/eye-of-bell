@@ -6,6 +6,7 @@ extends Node3D
 const WallSigns := preload("res://scripts/wall_signs.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const TorchLight := preload("res://scripts/torch.gd")
+const SpellEffectsConfigScript := preload("res://scripts/spell_effects_config.gd")
 const MonsterScript := preload("res://scripts/monster.gd")
 const WallDebris := preload("res://scripts/wall_debris.gd")
 const ItemStack := preload("res://scripts/item_stack.gd")
@@ -586,6 +587,7 @@ func _add_torch(cell: Vector2i, side: int) -> void:
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	sprite.shaded = false                               # Glows regardless of lights.
 	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD   # Hard pixel edges, no sorting issues.
+	sprite.modulate = SpellEffectsConfigScript.get_config().glow_torch_tint  # HDR: the flame blooms a little (see "Glow (bloom)").
 	sprite.position = wall_pos
 	sprite.rotation.y = _face_yaw(side)                 # Face into the room.
 	add_child(sprite)
