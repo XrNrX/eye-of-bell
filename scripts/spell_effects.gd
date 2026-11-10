@@ -144,7 +144,7 @@ func _missile_flipbook(from_cell: Vector2i, to_cell: Vector2i) -> void:
 		owed[0] -= n
 		if n > 0 and is_instance_valid(bolt):
 			pixels.emit(bolt.position - forward * 0.12, n, {"ramp": c.px_arcane_ramp, "speed": Vector2(0.1, 0.5), "spread": 1.0,
-					"gravity": 0.3, "life": c.mm_trail_life, "size": c.mm_trail_size, "jitter": Vector3(0.08, 0.08, 0.08)}),
+					"gravity": 0.3, "life": c.mm_trail_life, "size": c.mm_trail_size, "jitter": Vector3(0.16, 0.16, 0.16)}),
 			0.0, 1.0, flight)
 	tween.tween_callback(func():
 		_missile_impact(to_cell)

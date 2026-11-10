@@ -67,7 +67,7 @@ func glow(kind: String) -> Dictionary:
 @export var bolt_light_range := 4.5
 @export var bolt_size := 0.032                          # World units per bolt pixel (the bolt is 7x7 pixels).
 @export var bolt_height := 0.95                         # How high above the floor it flies.
-@export var bolt_seconds_per_tile := 0.045              # Speed: shorter is faster.
+@export var bolt_seconds_per_tile := 0.065              # Speed: shorter is faster.
 @export var bolt_trail_amount := 10                     # Little sparks it leaves behind (0 for none).
 @export var bolt_trail_seconds := 0.25
 
@@ -221,9 +221,9 @@ func glow(kind: String) -> Dictionary:
 @export var mm_impact_light_colors := PackedColorArray([Color(0.9, 0.95, 1.0), Color(0.75, 0.88, 1.0), Color(0.6, 0.8, 1.0), Color(0.5, 0.72, 1.0), Color(0.45, 0.65, 0.95)])
 @export var mm_impact_light_range := 12.0
 @export var px_arcane_ramp := PackedColorArray([Color(1.6, 1.9, 2.6), Color(0.8, 1.1, 1.8), Color(0.4, 0.6, 1.1), Color(0.2, 0.3, 0.6)])  # Cold pale blue, bright to dark, in steps.
-@export var mm_trail_per_second := 36.0     # Pixel sparks shed behind the bolt as it flies.
-@export var mm_trail_size := 2.0            # Art pixels across.
-@export var mm_trail_life := Vector2(0.25, 0.5)
+@export var mm_trail_per_second := 260.0     # Pixel sparks shed behind the bolt as it flies.
+@export var mm_trail_size := 4.0            # Art pixels across.
+@export var mm_trail_life := Vector2(0.45, 0.9)
 @export var mm_impact_sparks := 16
 @export var mm_scorch_size := 0.7
 @export var mm_scorch_strength := 0.45
