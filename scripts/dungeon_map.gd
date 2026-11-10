@@ -167,6 +167,7 @@ static var ITEMS := [
 	{"cell": Vector2i(7, 18), "def": "res://data/items/healing_potion.tres", "count": 2},
 	{"cell": Vector2i(8, 15), "def": "res://data/items/leather_armour.tres"},
 	{"cell": Vector2i(20, 19), "def": "res://data/items/healing_potion.tres"},  # The corridor to the far stairs.
+	{"cell": Vector2i(15, 9), "def": "res://data/items/long_sword.tres"},  # Room 3: a better sword than the short one, with the mace and hammer.
 	{"cell": Vector2i(12, 10), "def": "res://data/items/war_hammer.tres"},  # Room 3, by the mace: the heavy weapon that breaks a cracked wall.
 	{"cell": Vector2i(2, 3), "def": "res://data/items/healing_potion.tres", "count": 3},  # The secret closet behind the cracked wall.
 	{"cell": Vector2i(2, 4), "def": "res://data/items/scroll.tres"},
