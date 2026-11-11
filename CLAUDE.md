@@ -30,7 +30,7 @@ Where things really are (scripts are in one flat folder, `scripts/`, not subfold
 - **Levels:** `scripts/dungeon_map.gd` (floor 1's data, a script not a scene; other levels are consts-only scripts in `levels/`, swapped in with `DungeonMap.use_level`), built by `dungeon_builder.gd`. **The test room** is `levels/test_room.gd` with its tools in `scripts/debug/test_room_tools.gd` (see **Test room**).
 - **Art pipeline:** `tools/art/` (Python); the art itself in `art/`.
 - **Test room:** F12 (anywhere) or the main menu's TEST ROOM button, debug builds only.
-- **Design docs:** `docs/art_style.md`, `docs/tone.md` (the writing bible: read before writing any in-game text), `docs/banter_ideas.md`, `docs/combat_design.md`.
+- **Design docs:** `docs/art_style.md`, `docs/tone.md` (the writing bible: read before writing any in-game text), `docs/banter_ideas.md`, `docs/combat_design.md`, `docs/code_review.md` (the readiness review of 2026-11-11: what must be fixed before each expansion phase, and an ordered list of small refactor steps with a prompt and an in-game check each; read it before starting phase 7 or 8 work, and follow its step order).
 - **Banter:** `scripts/banter.gd`, `data/banter.json`.
 
 ## Keeping usage down
