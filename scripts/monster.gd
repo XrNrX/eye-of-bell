@@ -5,6 +5,7 @@ extends Node3D
 ## Next to the party it stops moving and attacks every attack_interval seconds.
 ## All stats and art come from a MonsterDef resource, so new monsters are data.
 
+const Events := preload("res://scripts/game_events.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const FloatingText := preload("res://scripts/floating_text.gd")
 const CombatRules := preload("res://scripts/combat_rules.gd")
@@ -282,7 +283,7 @@ func take_hit(result: Dictionary) -> void:
 	elif not def.hurt_frames.is_empty():  # Any other number of frames: play them as drawn.
 		_play(_held(def.hurt_frames, hold), def.hurt_fps)
 	if hp <= 0:
-		_die(crit and feel_cfg.crit_death_enabled)
+		_die(crit and feel_cfg.crit_death_enabled, int(result.get("by", -1)))
 
 
 ## These frames with the last one repeated `extra` more times: a crit holds the hurt frame a moment longer.
@@ -293,9 +294,11 @@ func _held(frames: PackedInt32Array, extra: int) -> PackedInt32Array:
 	return out
 
 
-## Free the tile at once (so the player can walk in), then sink into the floor.
-func _die(big := false) -> void:
+## Free the tile at once (so the player can walk in), then sink into the floor. killer: the hero_index that struck the
+## last blow (`by` in the result given to take_hit), or -1.
+func _die(big := false, killer := -1) -> void:
 	dying = true
+	Events.send(get_tree(), "monster_killed", [def, cell, killer])
 	_drop_loot()
 	_end_feel()  # Back to normal first: the sink below tweens the sprite's scale and height.
 	_release_tiles()

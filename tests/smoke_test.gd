@@ -2,7 +2,8 @@ extends SceneTree
 ## Smoke test of floor 1: the things every refactor must keep working (docs/code_review.md, step 0).
 ## Run: timeout 120 "$G" --headless --path . -s tests/smoke_test.gd      (exit code = number of failed checks)
 ##
-## Combat, the five spells, food, resurrection, and a save and load round trip. The combat dice are seeded. It uses its
+## Combat, the five spells, food, resurrection, a save and load round trip, and the GameEvents signals (each fires once
+## when its thing happens, and not at all while a save is loaded). The combat dice are seeded. It uses its
 ## own settings and save files, so a real save is never touched. It changes run state directly (hp, mana, cooldowns,
 ## where monsters stand) to set each check up; it never changes game code or data.
 
@@ -21,7 +22,14 @@ const CLOSETS: Array[Vector2i] = [Vector2i(18, 1), Vector2i(20, 1)]  # One-tile 
 const PLAIN_DOOR := Vector2i(16, 6)
 const LEVER := Vector3i(19, 7, 0)  # The north lever of gate_n: cell (19,7), side 0.
 
+const EVENTS := ["monster_killed", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
+		"wall_purified", "puzzle_solved", "level_completed"]
+const CRACKED_WALL := Vector2i(2, 6)
+const THICK_CORRUPTION := Vector2i(16, 4)  # Purifying it fires the puzzle "nook_blessing".
+const SWORD_TILE := Vector2i(6, 10)        # The short sword in front of the start.
+
 var fails := 0
+var events := {}  # GameEvents signal name -> the argument lists it was sent with, in order.
 var party: Node
 var player: Node
 var dungeon: Node
@@ -49,15 +57,19 @@ func _init() -> void:
 		_finish()
 		return
 	check("floor 1 is built with its four heroes", party.members.size() == 4 and get_nodes_in_group("monsters").size() == DungeonMap.MONSTERS.size())
+	check("the GameEvents autoload is there", _listen())
 
 	dungeon.clear_monsters()
 	player.restore(SPOT, EAST)
 	_check_kill()
 	_check_monster_hit()
+	_check_hero_death()
 	_check_spells()
 	await _check_food()
 	_check_resurrection()
+	await _check_world_events()
 	await _check_save_load()
+	_check_stairs()
 	_finish()
 
 
@@ -66,6 +78,34 @@ func _finish() -> void:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(SAVE_PATH))
 	print("DONE fails=", fails)
 	quit(fails)
+
+
+## Record every GameEvents signal. False if the autoload is missing.
+func _listen() -> bool:
+	var bus := root.get_node_or_null("GameEvents")
+	if bus == null:
+		return false
+	for event in EVENTS:
+		events[event] = []
+		if not bus.has_signal(event):
+			return false
+		bus.connect(event, func(a = null, b = null, c = null): events[event].append([a, b, c]))
+	return true
+
+
+## True if the signal has been sent exactly once so far, with these arguments (fewer than three are padded with null).
+func _sent_once(event: String, args: Array) -> bool:
+	var padded := args.duplicate()
+	while padded.size() < 3:
+		padded.append(null)
+	return events.get(event, []).size() == 1 and events[event][0] == padded
+
+
+func _event_counts() -> Dictionary:
+	var counts := {}
+	for event in EVENTS:
+		counts[event] = events.get(event, []).size()
+	return counts
 
 
 func _find_nodes() -> void:
@@ -111,6 +151,8 @@ func _check_kill() -> void:
 		swings += 1
 	check("a hero kills the monster in front (%d swings)" % swings, slime.dying and slime.hp <= 0)
 	check("the dead monster's tile is free", not DungeonMap.is_occupied(AHEAD_1))
+	check("event: monster_killed once, naming the monster, its tile and the hero",
+			_sent_once("monster_killed", [load("res://data/monsters/slime.tres"), AHEAD_1, party.members[0].hero_index]))
 	dungeon.clear_monsters()
 
 
@@ -129,6 +171,22 @@ func _check_monster_hit() -> void:
 			front_only = false
 	check("a monster in front hurts the front row only", front_only)
 	dungeon.clear_monsters()
+
+
+func _check_hero_death() -> void:
+	_rest_everyone()
+	party.members[0].hp = 1
+	party.members[1].hp = 1
+	var skeleton: Node = _monster("skeleton", AHEAD_1)
+	var blows := 0
+	while party.members[0].is_alive() and party.members[1].is_alive() and blows < 80:
+		party.take_hit_from(skeleton)
+		blows += 1
+	var dead: Array = party.members.filter(func(m): return not m.is_alive())
+	check("a monster can kill a hero (%d blows)" % blows, dead.size() == 1)
+	check("event: hero_died once, naming the hero", dead.size() == 1 and _sent_once("hero_died", [dead[0].hero_index]))
+	dungeon.clear_monsters()
+	_rest_everyone()
 
 
 # --------------------------------------------------------------------------
@@ -240,6 +298,86 @@ func _check_resurrection() -> void:
 	var expected: int = fallen.def.max_hp if fallen.def.magic == 2 else maxi(1, ceili(fallen.def.max_hp * scroll.revive_percent / 100.0))
 	check("a Scroll of Resurrection raises a dead hero", result.used and fallen.is_alive() and fallen.hp == expected)
 	check("the raised hero returns with no mana", is_zero_approx(fallen.mana))
+	check("event: hero_revived once, naming the hero", _sent_once("hero_revived", [fallen.hero_index, true]))
+
+
+# --------------------------------------------------------------------------
+# The world: items, levers, doors, walls, puzzles (and their GameEvents signals)
+# --------------------------------------------------------------------------
+
+## A locked door other than the closet used by the save test, and an open tile to stand on facing it: [door, stand, facing].
+func _a_locked_door() -> Array:
+	var dirs: Array = player.DIRS
+	for y in DungeonMap.MAP.size():
+		for x in DungeonMap.MAP[y].size():
+			var door := Vector2i(x, y)
+			if DungeonMap.MAP[y][x] != 3 or door == CLOSETS[1] + Vector2i(0, 1):
+				continue
+			for facing in 4:
+				var stand: Vector2i = door - dirs[facing]
+				if not DungeonMap.is_blocked(stand):
+					return [door, stand, facing]
+	return []
+
+
+func _check_world_events() -> void:
+	_rest_everyone()
+	dungeon.clear_monsters()
+	var cursor: Node = get_first_node_in_group("cursor")
+
+	# Picking an item up off the floor, then putting it back.
+	player.restore(SWORD_TILE - Vector2i(0, 1), 2)  # North of it, facing south.
+	var sword = dungeon.item_at(SWORD_TILE)
+	player._click_item()
+	check("a click picks the item in front up onto the cursor", sword != null and cursor.is_holding() and dungeon.item_at(SWORD_TILE) == null)
+	check("event: item_picked_up once, naming the item and how many", sword != null and _sent_once("item_picked_up", [sword.def, 1]))
+	player._click_item()
+	check("a second click puts it back, with no event", not cursor.is_holding() and dungeon.item_at(SWORD_TILE) != null and events.item_picked_up.size() == 1)
+
+	# A lever.
+	dungeon.pull_lever(Vector2i(LEVER.x, LEVER.y), LEVER.z)
+	check("event: lever_pulled once, naming the lever and that it is on", dungeon.lever_on.get(LEVER, false)
+			and _sent_once("lever_pulled", [Vector2i(LEVER.x, LEVER.y), LEVER.z, true]))
+
+	# A key on a locked door.
+	var spot := _a_locked_door()
+	check("setup: floor 1 has a second locked door", not spot.is_empty())
+	if not spot.is_empty():
+		party.add_to_backpack(0, ItemStack.of(load("res://data/items/key.tres"), 1))
+		player.restore(spot[1], spot[2])
+		player._interact()
+		check("a key unlocks the door", DungeonMap.unlocked_doors.has(spot[0]) and party.take_key() == null)
+		check("event: door_unlocked once, naming the door", _sent_once("door_unlocked", [spot[0]]))
+		player._interact()
+		check("the unlocked door sends no second event", events.door_unlocked.size() == 1)
+
+	# A cracked wall.
+	check("the cracked wall breaks", dungeon.break_wall(CRACKED_WALL, false) and not DungeonMap.is_wall(CRACKED_WALL))
+	check("event: wall_broken once, naming the wall", _sent_once("wall_broken", [CRACKED_WALL]))
+	check("a broken wall cannot break again", not dungeon.break_wall(CRACKED_WALL, false) and events.wall_broken.size() == 1)
+
+	# A corrupted wall, and the puzzle that hangs on it.
+	check("the corrupted wall starts to burn away", dungeon.purify_wall(THICK_CORRUPTION))
+	var waited := 0.0
+	while not DungeonMap.purified.has(THICK_CORRUPTION) and waited < 15.0:
+		await create_timer(0.25).timeout
+		waited += 0.25
+	check("the corrupted wall is gone (%.1f s)" % waited, not DungeonMap.is_wall(THICK_CORRUPTION))
+	check("event: wall_purified once, naming the wall", _sent_once("wall_purified", [THICK_CORRUPTION]))
+	check("event: puzzle_solved once, naming the puzzle", DungeonMap.puzzles_done.has("nook_blessing") and _sent_once("puzzle_solved", ["nook_blessing"]))
+	player.restore(SPOT, EAST)
+
+
+func _check_stairs() -> void:
+	var stairs := Vector2i(-1, -1)
+	for y in DungeonMap.MAP.size():
+		for x in DungeonMap.MAP[y].size():
+			if DungeonMap.MAP[y][x] == 4:
+				stairs = Vector2i(x, y)
+	player.restore(stairs, 0)
+	player._arrive()
+	check("event: level_completed once, on the stairs", stairs.x >= 0 and _sent_once("level_completed", []))
+	paused = false  # (The Level complete screen pauses the game.)
 
 
 # --------------------------------------------------------------------------
@@ -299,8 +437,7 @@ func _check_save_load() -> void:
 	_rest_everyone()
 	dungeon.clear_monsters()
 	# A state unlike a fresh game in every part that is saved.
-	dungeon.open_door(PLAIN_DOOR)
-	dungeon.pull_lever(Vector2i(LEVER.x, LEVER.y), LEVER.z)
+	dungeon.open_door(PLAIN_DOOR)  # (The lever was pulled, a wall broken and another purified in _check_world_events.)
 	await create_timer(2.0).timeout  # The door slides for 0.6 s, the portcullis for 1.5 s.
 	check("setup: a door is open and a lever is on", DungeonMap.open_doors.has(PLAIN_DOOR) and dungeon.lever_on.get(LEVER, false))
 	party.swap_positions(0, 2)
@@ -309,7 +446,7 @@ func _check_save_load() -> void:
 	party.add_to_backpack(1, ItemStack.of(potion, 3))
 	party.add_to_backpack(3, ItemStack.of(stone, 7))
 	dungeon.place_item(Vector2i(10, 13), ItemStack.of(stone, 4))
-	dungeon.take_item(Vector2i(6, 10))  # The short sword in front of the start is gone.
+	dungeon.take_item(SWORD_TILE)  # The short sword in front of the start is gone.
 	var n := 0
 	for m in party.members:
 		m.hp = maxi(1, m.def.max_hp - 3 - 2 * n)
@@ -320,6 +457,7 @@ func _check_save_load() -> void:
 	_monster("skeleton_guard", CLOSETS[1], 5)
 
 	var saved := _snapshot()
+	var sent_before := _event_counts()
 	var error: String = SaveGame.save(self)
 	check("the game saves", error == "" and SaveGame.has_save())
 
@@ -347,6 +485,9 @@ func _check_save_load() -> void:
 		return
 	var loaded := _snapshot()
 
+	check("load: sends no GameEvents (a broken wall, a purified wall and a solved puzzle are put back silently)",
+			_event_counts() == sent_before and DungeonMap.broken_walls.has(CRACKED_WALL) and DungeonMap.purified.has(THICK_CORRUPTION)
+			and DungeonMap.puzzles_done.has("nook_blessing"))
 	check("load: formation", loaded.formation == saved.formation)
 	check("load: every hero's HP", loaded.hp == saved.hp)
 	var mana_ok := true

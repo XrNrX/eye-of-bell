@@ -6,6 +6,7 @@ extends RefCounted
 ## Used by corrupted walls: purifying one is a condition, and purifying one is an effect, so a lever or another puzzle can
 ## burn one away. Run state (puzzles that have fired, doors they hold open) is in DungeonMap and is saved.
 
+const Events := preload("res://scripts/game_events.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 
 
@@ -27,6 +28,7 @@ static func check(dungeon: Node) -> Array:
 		for effect in puzzle.then:
 			run(dungeon, effect)
 		fired.append(id)
+		Events.send(dungeon.get_tree(), "puzzle_solved", [id])
 	return fired
 
 

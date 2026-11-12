@@ -17,6 +17,7 @@ extends Node
 ## regenerates all the time; Shield/Bless are timed buffs counted in effective_stats(),
 ## which both sides of a fight read.
 
+const Events := preload("res://scripts/game_events.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const CombatRules := preload("res://scripts/combat_rules.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
@@ -468,6 +469,7 @@ func _fire(m: Member, hand: int) -> void:
 	s.damage_min = weapon.shot_damage_min
 	s.damage_max = weapon.shot_damage_max
 	var result := CombatRules.resolve_attack(s, target.def, CombatRules.crit_chance(m.def, weapon))
+	result.by = m.hero_index  # Who struck: GameEvents.monster_killed names the killer.
 	target.take_hit(result)
 	if not result.hit:
 		_say("%s's %s misses the %s (%s)." % [m.def.display_name, weapon.ammo.display_name.to_lower(), target.def.display_name, left_text], "miss")
@@ -532,6 +534,7 @@ func _do_throw(m: Member, source: Dictionary) -> bool:
 	s.damage_max = def.throw_damage_max
 	var result := CombatRules.resolve_attack(s, target.def, CombatRules.crit_chance(m.def, def))
 	result.fail = not result.hit and CombatRules.roll_fumble()
+	result.by = m.hero_index  # Who struck: GameEvents.monster_killed names the killer.
 	target.take_hit(result)
 	if result.fail:
 		_critical_fail(m, source.index, def, true, land)  # It has already left the hand: a stumble.
@@ -627,12 +630,12 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 				var damage := CombatRules.roll_damage(spell.damage_min, spell.damage_max)
 				var crit := CombatRules.roll_crit(m.def.spell_crit)
 				var dealt := CombatRules.crit_damage(damage, CombatRules.SPELL_CRIT_MULT) if crit else damage
-				monster.take_hit({"hit": true, "damage": dealt, "chance": 100, "crit": crit})
+				monster.take_hit({"hit": true, "damage": dealt, "chance": 100, "crit": crit, "by": m.hero_index})
 				if crit:
 					spell_crit = true
 				var caught := 0  # (The splash below is half the plain roll: a crit is for the main target alone.)
 				if spell.splash_radius > 0:
-					caught = _splash(monster, spell.splash_radius, maxi(1, ceili(damage * spell.splash_percent / 100.0)))
+					caught = _splash(monster, spell.splash_radius, maxi(1, ceili(damage * spell.splash_percent / 100.0)), m.hero_index)
 				var opened := 0
 				if spell.breaks_walls:  # The shockwave cracks open any cracked wall beside the target.
 					opened = _break_walls_near(monster.cell, maxi(1, spell.splash_radius))
@@ -1116,6 +1119,7 @@ func revive(slot: int, def: Resource) -> Dictionary:
 	_cue("bless")
 	get_tree().call_group("spell_effects", "holy_pulse", 1.6 if divine else 1.0)
 	revived.emit(m.slot, divine)
+	Events.send(get_tree(), "hero_revived", [m.hero_index, true])
 	var text := "%s returns, whole in body but too shaken to pray." % m.def.display_name if divine \
 			else "%s returns from the dead." % m.def.display_name
 	_say(text)
@@ -1162,7 +1166,7 @@ func _read_scroll(m: Member, def: Resource) -> Dictionary:
 	var damage := CombatRules.roll_damage(def.spell_damage_min, def.spell_damage_max)
 	_cue("zap")
 	_fx("missile", target.cell)
-	target.take_hit({"hit": true, "damage": damage, "chance": 100})
+	target.take_hit({"hit": true, "damage": damage, "chance": 100, "by": m.hero_index})
 	var text := "%s reads the scroll: it hits the %s for %d!" % [m.def.display_name, target.def.display_name, damage]
 	if target.hp <= 0:
 		text += " It dies!"
@@ -1172,14 +1176,14 @@ func _read_scroll(m: Member, def: Resource) -> Dictionary:
 ## A blast's splash: every other living monster within `radius` tiles (the 8 around, for 1) of
 ## the target takes `damage` (already worked out: no roll, no hit chance). Returns how many were hit.
 ## Walls and closed doors hold no monsters, so nothing passes through them; the party is never hurt.
-func _splash(target: Node, radius: int, damage: int) -> int:
+func _splash(target: Node, radius: int, damage: int, by := -1) -> int:
 	var count := 0
 	for other in DungeonMap.occupied.values().duplicate():
 		if other == target or not is_instance_valid(other) or other.dying:
 			continue
 		var d: Vector2i = (other.cell - target.cell).abs()
 		if maxi(d.x, d.y) <= radius:
-			other.take_hit({"hit": true, "damage": damage, "chance": 100})
+			other.take_hit({"hit": true, "damage": damage, "chance": 100, "by": by})
 			count += 1
 	return count
 
@@ -1305,6 +1309,7 @@ func _melee(m: Member, hand: int) -> void:
 	var weapon: Resource = equipped_weapon(m) if hand < 0 else _melee_weapon_in(m, hand)
 	var result := CombatRules.resolve_attack(effective_stats(m, hand), target.def, CombatRules.crit_chance(m.def, weapon))
 	result.fail = not result.hit and CombatRules.roll_fumble()
+	result.by = m.hero_index  # Who struck: GameEvents.monster_killed names the killer.
 	target.take_hit(result)
 	if result.hit and not result.crit:
 		_cue("hit")
@@ -1395,6 +1400,7 @@ func take_hit_from(monster: Node) -> void:
 		if m.hp == 0:
 			m.buffs.clear()
 			_cue_from("hero_die", side)
+			Events.send(get_tree(), "hero_died", [m.hero_index])
 		else:
 			_cue_from("crit_hurt" if result.crit else "hero_hurt", side)
 		hp_changed.emit(m.slot)

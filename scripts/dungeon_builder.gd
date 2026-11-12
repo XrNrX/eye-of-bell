@@ -3,6 +3,7 @@ extends Node3D
 ## a cube per wall cell, a floor + ceiling plane per floor cell, a sliding
 ## panel per door cell, and a sprite + light per wall torch.
 
+const Events := preload("res://scripts/game_events.gd")
 const WallSigns := preload("res://scripts/wall_signs.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const TorchLight := preload("res://scripts/torch.gd")
@@ -249,6 +250,7 @@ func pull_lever(cell: Vector2i, side: int) -> void:
 	lever_on[key] = not lever_on.get(key, false)
 	levers[key].frame = 1 if lever_on[key] else 0
 	get_tree().call_group("audio", "play", "lever")
+	Events.send(get_tree(), "lever_pulled", [cell, side, lever_on[key]])
 	refresh()
 	Puzzles.check(self)
 
@@ -395,6 +397,7 @@ func break_wall(cell: Vector2i, burst := true, delay := 0.0) -> bool:
 	if not DungeonMap.is_destructible(cell):
 		return false
 	DungeonMap.broken_walls[cell] = true
+	Events.send(get_tree(), "wall_broken", [cell])
 	if burst and delay > 0.0:
 		get_tree().create_timer(delay).timeout.connect(func(): _show_break(cell, true))
 	else:
@@ -405,8 +408,9 @@ func break_wall(cell: Vector2i, burst := true, delay := 0.0) -> bool:
 ## Put every wall in this list of cells in the broken state, with no show (loading a save).
 func restore_broken_walls(cells: Array) -> void:
 	for cell in cells:
-		if DungeonMap.is_destructible(cell):
-			break_wall(cell, false)
+		if DungeonMap.is_destructible(cell):  # (Not break_wall: loading a save is not news for GameEvents.)
+			DungeonMap.broken_walls[cell] = true
+			_show_break(cell, false)
 
 
 func _show_break(cell: Vector2i, burst: bool) -> void:
@@ -495,6 +499,8 @@ func _purify(cell: Vector2i, show: bool) -> void:
 		DungeonMap.corrupted_left.erase(cell)
 		corrupt.erase(cell)
 		refresh()
+		if show:  # (Not when a save puts a purified wall back.)
+			Events.send(get_tree(), "wall_purified", [cell])
 		Puzzles.check(self)
 	if show and node != null:
 		node.purify(func(): _open_cell(cell), finish)

@@ -5,6 +5,7 @@ extends Node3D
 ## item on the tile in front, onto the cursor (see cursor_item.gd).
 ## Every move/turn is tweened; movement input is ignored while a tween is running.
 
+const Events := preload("res://scripts/game_events.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
 
@@ -92,6 +93,7 @@ func _click_item(shift := false) -> void:
 			_stow(front, stack)
 			return
 		dungeon.take_item(front)
+		Events.send(get_tree(), "item_picked_up", [stack.def, stack.count])
 		# A thrown item goes home to the hand or quick slot it was thrown from, if that
 		# slot is free (or holds the same stack); otherwise it comes onto the cursor.
 		var home: String = party.return_to_origin(stack) if party else ""
@@ -115,15 +117,19 @@ func _click_item(shift := false) -> void:
 ## Shift+click: the party takes the item without it passing through the cursor. What
 ## doesn't fit anywhere stays on the floor.
 func _stow(front: Vector2i, stack: RefCounted) -> void:
+	var had: int = stack.count
 	var worn: String = party.equip_best(stack)  # Armour goes on whoever gains the most defence...
 	if worn != "":
 		if stack.count <= 0:
 			dungeon.take_item(front)
+		Events.send(get_tree(), "item_picked_up", [stack.def, had - stack.count])
 		_say(worn)
 		return
 	var message: String = party.stow(stack)  # ...otherwise into a backpack, as any item.
 	if message != "":
 		_cue("pickup")
+	if stack.count < had:
+		Events.send(get_tree(), "item_picked_up", [stack.def, had - stack.count])
 	if stack.count <= 0:
 		dungeon.take_item(front)  # All of it went; remove the empty stack from the pile.
 	if message == "":
@@ -220,6 +226,7 @@ func _report_position() -> void:
 ## Called when a step finishes: take the stairs if we're on them.
 func _arrive() -> void:
 	if DungeonMap.is_stairs(cell):
+		Events.send(get_tree(), "level_completed")
 		get_tree().call_group("level_complete", "show_screen")
 
 
@@ -253,6 +260,7 @@ func _interact() -> void:
 			_say("The door is locked.")
 			return
 		DungeonMap.unlocked_doors[front] = true
+		Events.send(get_tree(), "door_unlocked", [front])
 		_cue("unlock")
 		_say("You unlock the door.")
 	get_tree().call_group("dungeon", "open_door", front)
