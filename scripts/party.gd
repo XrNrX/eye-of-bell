@@ -25,6 +25,7 @@ const ItemStack := preload("res://scripts/item_stack.gd")
 const SpellDef := preload("res://scripts/spell_def.gd")
 
 const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
+const FightTracker := preload("res://scripts/fight_tracker.gd")
 const NO_CELL := Vector2i(-1, -1)
 const MISSILE_RANGE := 4  # How many tiles down the corridor ahead a scroll's missile reaches.
 const QUICK_SLOTS := 2        # Quick slots per member (see use_quick), shown under their portrait.
@@ -126,8 +127,7 @@ class Stats:
 
 
 var last_hit_side := "front"  # Where the latest blow came from (the HUD's full-view flash is for the front only).
-var behind_warned := false    # "Something's behind you!" has shown this fight.
-var fight_left := 0.0         # Seconds until this fight counts as over (see take_hit_from).
+var fight: Node               # The fight tracker (fight_tracker.gd): is the party in a fight, and has "Something's behind you!" been said in it.
 var _wipe_shown := false      # The party is wiped and Game over has been shown (see _check_wiped).
 var members: Array = []  # Member per position (slot), front row first. Reordered by set_formation.
 
@@ -144,6 +144,9 @@ func _enter_tree() -> void:
 
 
 func _ready() -> void:
+	fight = FightTracker.new()
+	fight.name = "FightTracker"
+	add_child(fight)
 	for i in hero_defs.size():
 		var m := Member.new()
 		m.def = hero_defs[i]
@@ -163,10 +166,6 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if fight_left > 0.0:
-		fight_left -= delta
-		if fight_left <= 0.0:
-			behind_warned = false
 	for m in members:
 		m.cooldown_left = maxf(0.0, m.cooldown_left - delta)
 		for i in QUICK_SLOTS:
@@ -1449,7 +1448,7 @@ func take_hit_from(monster: Node) -> void:
 		return
 	var side := side_of(monster.cell)
 	last_hit_side = side
-	fight_left = SpellEffectsConfig.get_config().fight_gap_seconds
+	fight.blow()
 	var m: Member = targets[CombatRules.rng().randi_range(0, targets.size() - 1)]
 	# The hero's effective stats, so Shield (and later armour) counts.
 	var result := CombatRules.resolve_attack(monster.def, effective_stats(m), monster.def.crit_chance, CombatRules.MONSTER_CRIT_MULT)
@@ -1472,8 +1471,8 @@ func take_hit_from(monster: Node) -> void:
 	hero_hit.emit(m.slot, result.damage)
 	if result.hit:
 		hit_from.emit(side, m.slot, result.damage)
-		if side == "behind" and not behind_warned and not is_wiped():
-			behind_warned = true
+		if side == "behind" and not fight.behind_warned and not is_wiped():
+			fight.behind_warned = true
 			_say("Something's behind you!", "hurt")
 			_banter("hit_behind", m)
 

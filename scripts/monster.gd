@@ -255,6 +255,7 @@ func _kill_feel_tween() -> void:
 func take_hit(result: Dictionary) -> void:
 	if dying:
 		return
+	get_tree().call_group("fight_tracker", "blow")  # A hit or a miss, by a weapon, a missile or a spell: a fight is on.
 	if not result.hit:
 		if result.get("fail", false) and feel_cfg.fail_text_enabled:
 			_float_text("CRITICAL FAIL!", feel_cfg.fail_colour, 0.4, feel_cfg.fail_text_size)
@@ -358,12 +359,16 @@ func _sprite_height() -> float:
 ## One AI step: hold position next to the party, chase if it's close and visible,
 ## else wander.
 func _on_tick() -> void:
-	if dying or _next_to_player():
+	if dying:
+		return
+	if _next_to_player():
+		get_tree().call_group("fight_tracker", "noticed", self)  # (Keeps the fight on while it stands at the party's side.)
 		return
 	var to_player := DungeonMap.player_cell - cell
 	var distance := absi(to_player.x) + absi(to_player.y)
 	var dir := Vector2i.ZERO
 	if distance <= def.sight_range and DungeonMap.has_line_of_sight(cell, DungeonMap.player_cell):
+		get_tree().call_group("fight_tracker", "noticed", self)
 		dir = _chase_dir(to_player)
 	else:
 		dir = _wander_dir()

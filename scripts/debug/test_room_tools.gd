@@ -29,6 +29,7 @@ var help: PanelContainer
 var help_label: Label
 var menu: Control
 var god := false
+var help_clock := 0.0
 var banter_on := true
 var fog_on := true
 var shake_on := true
@@ -50,7 +51,12 @@ func _ready() -> void:
 	_say("Test room. H shows the debug keys.")
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if help != null and help.visible:  # The fight line changes by itself: redraw the overlay a few times a second.
+		help_clock -= delta
+		if help_clock <= 0.0:
+			help_clock = 0.2
+			_refresh_help()
 	if not in_room or DungeonMap.player_cell == last_cell:
 		return
 	last_cell = DungeonMap.player_cell
@@ -294,12 +300,22 @@ func _refresh_help() -> void:
 		"N   FOG           %s" % _on(fog_on),
 		"J   SCREEN SHAKE  %s" % _on(shake_on),
 		"P   SHADOWS       %s" % _on(Settings.spell_shadows),
+		"",
+		"FIGHT  %s" % _fight_status(),
 		"F12 LEAVE (FLOOR 1)",
 	])
 	help.reset_size()
 
 
 # --- Helpers -------------------------------------------------------------------------------------
+
+## What the fight tracker says: "OFF", or "ON  QUIET 2.1S  AWARE 1".
+func _fight_status() -> String:
+	var party := _party()
+	if party == null or party.get("fight") == null:
+		return "NO TRACKER"
+	return party.fight.status()
+
 
 func _on(v: bool) -> String:
 	return "ON" if v else "OFF"

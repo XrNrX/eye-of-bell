@@ -115,6 +115,7 @@ func _check_game() -> void:
 		tools._unhandled_input(e)
 	press.call(KEY_H)
 	check("H shows the help", tools.help.visible)
+	check("the help shows the fight state", tools.help_label.text.contains("FIGHT  OFF"))
 	press.call(KEY_H)
 	check("H hides it again", not tools.help.visible)
 	press.call(KEY_G)

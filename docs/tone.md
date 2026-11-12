@@ -330,6 +330,8 @@ Each hero, six different events. Use these as the measure for new ones.
   nothing in the JSON.
   `banter.gd` does not replace `{name}` / `{target}` yet: add that to the code
   before adding lines that use them.
+- **Fights:** `Party.fight.in_fight` (the fight tracker) says whether a fight is on; `GameEvents.fight_started` and `fight_ended` announce it. Use
+  them for the timing in section 4: banter before a scare, a battle cry as it starts, silence during, reactions after `fight_ended`.
 - **Log messages:** `Party._say(text, tone)` and `Hud.show_message`; tones `miss`,
   `crit`, `hurt`, `fail`, `banter` set the colour. Narrator voice.
 - **Status row** (one row under the log, hover text and prompts like "Heal whom?"):

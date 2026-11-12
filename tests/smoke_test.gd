@@ -8,6 +8,7 @@ extends SceneTree
 ## where monsters stand) to set each check up; it never changes game code or data.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
+const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
 const CombatRules := preload("res://scripts/combat_rules.gd")
 const Settings := preload("res://scripts/settings.gd")
 const SaveGame := preload("res://scripts/save_game.gd")
@@ -30,6 +31,7 @@ const SWORD_TILE := Vector2i(6, 10)        # The short sword in front of the sta
 
 var fails := 0
 var events := {}  # GameEvents signal name -> the argument lists it was sent with, in order.
+var fight_log := []  # "started" / "ended", in order (GameEvents.fight_started and fight_ended).
 var party: Node
 var player: Node
 var dungeon: Node
@@ -71,6 +73,7 @@ func _init() -> void:
 	await _check_save_load()
 	_check_stairs()
 	await _check_hurt_and_heal()
+	await _check_fight()
 	_check_names()
 	_finish()
 
@@ -87,6 +90,8 @@ func _listen() -> bool:
 	var bus := root.get_node_or_null("GameEvents")
 	if bus == null:
 		return false
+	bus.fight_started.connect(func(): fight_log.append("started"))
+	bus.fight_ended.connect(func(): fight_log.append("ended"))
 	for event in EVENTS:
 		events[event] = []
 		if not bus.has_signal(event):
@@ -460,6 +465,86 @@ func _check_names() -> void:
 	check("a renamed Mage still cannot wear leather armour", not party.can_equip(by_class.mage, armour))
 	mage_def.hero_name = "Fennick"
 	banter.ready_at.clear()
+	_rest_everyone()
+
+
+## The fight tracker (docs/code_review.md step 4): a fight starts with a blow or a monster noticing the party, and ends after quiet.
+func _check_fight() -> void:
+	_rest_everyone()
+	dungeon.clear_monsters()
+	player.restore(SPOT, EAST)  # (The stairs check left the party on the stairs.)
+	var fight: Node = party.fight
+	check("the party has a fight tracker", fight != null)
+	if fight == null:
+		return
+	var config: Resource = SpellEffectsConfig.get_config()
+	var clear_was: float = config.fight_clear_seconds
+	var gap_was: float = config.fight_gap_seconds
+	config.fight_clear_seconds = 0.6  # Short, so the test need not wait long.
+	config.fight_gap_seconds = 1.5
+	var banter: Node = get_first_node_in_group("banter")
+	var warnings := func() -> int:
+		return banter.said.filter(func(l): return "BEHIND US" in str(l)).size()
+
+	var waited := 0.0
+	while fight.in_fight and waited < 4.0:
+		await create_timer(0.2).timeout
+		waited += 0.2
+	check("no fight while nothing is going on", not fight.in_fight and fight.aware_count() == 0)
+	fight_log.clear()
+
+	# A hero's spell, even before the monster has noticed anything.
+	var target: Node = _monster("skeleton", AHEAD_2, 99)
+	_cast("magic_missile")
+	check("a blow starts a fight, and says so once", fight.in_fight and fight_log == ["started"])
+	_cast("magic_missile")
+	check("a second blow does not start another", fight_log == ["started"])
+	dungeon.clear_monsters()
+	await create_timer(1.2).timeout
+	check("the fight ends when it goes quiet (and says so once)", not fight.in_fight and fight_log == ["started", "ended"])
+
+	# A monster that sees the party starts one with no blow at all; one shut in a closet does not.
+	var seen: Node = _monster("skeleton", AHEAD_2 + Vector2i(2, 0))
+	var hidden: Node = _monster("slime", CLOSETS[0])
+	hidden._on_tick()
+	check("a monster behind a shut door starts no fight", not fight.in_fight and fight_log.size() == 2)
+	seen._on_tick()
+	check("a monster that notices the party starts a fight", fight.in_fight and fight.aware_count() == 1 and fight_log.size() == 3)
+	dungeon.clear_monsters()
+	await create_timer(1.2).timeout
+	check("with it gone the fight ends", not fight.in_fight and fight_log == ["started", "ended", "started", "ended"])
+
+	# A monster's blow, and "Something's behind you!" once a fight.
+	player.restore(Vector2i(9, 13), 1)  # Facing west: east, where the skeleton stands, is behind.
+	var rear: Node = _monster("skeleton", Vector2i(10, 13))
+	var blows := 0
+	while warnings.call() == 0 and blows < 80:
+		_rest_everyone()
+		party.take_hit_from(rear)
+		blows += 1
+	check("a monster's blow from behind starts a fight and warns (%d blows)" % blows, fight.in_fight and warnings.call() == 1 and fight_log.size() == 5)
+	for i in 12:
+		_rest_everyone()
+		party.take_hit_from(rear)
+	check("the warning is said once in a fight", warnings.call() == 1 and fight.behind_warned)
+	dungeon.clear_monsters()
+	await create_timer(1.2).timeout
+	check("the fight ends and the warning is ready again", not fight.in_fight and not fight.behind_warned)
+	rear = _monster("skeleton", Vector2i(10, 13))
+	blows = 0
+	while warnings.call() < 2 and blows < 80:
+		_rest_everyone()
+		party.take_hit_from(rear)
+		blows += 1
+	check("in the next fight it warns again", warnings.call() == 2)
+	dungeon.clear_monsters()
+	await create_timer(1.2).timeout
+	var four := ["started", "ended", "started", "ended", "started", "ended", "started", "ended"]  # A spell, a monster noticing, two blows from behind.
+	check("four fights: each started once and ended once", fight_log == four)
+
+	config.fight_clear_seconds = clear_was
+	config.fight_gap_seconds = gap_was
+	player.restore(SPOT, EAST)
 	_rest_everyone()
 
 

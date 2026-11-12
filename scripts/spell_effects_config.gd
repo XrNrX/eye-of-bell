@@ -408,4 +408,5 @@ func glow(kind: String) -> Dictionary:
 @export var edge_glow_reduced_strength := 0.5  # With Reduce flashing: one steady glow this strong.
 @export var hit_sound_pan := 0.85         # A side hit's sound: -1 to 1 is full left to full right.
 @export var hit_sound_behind_cutoff := 1100.0  # Stereo has no "behind": a hit from there is muffled instead (Hz).
-@export var fight_gap_seconds := 12.0     # With no monster attacking for this long a fight is over, and "Something's behind you!" can show again.
+@export var fight_clear_seconds := 3.0    # A fight is over this long after the last blow, when no monster is aware of the party (fight_tracker.gd).
+@export var fight_gap_seconds := 12.0     # ...or this long after the last blow if some monster still is (one watching through a portcullis). "Something's behind you!" can then show again.
