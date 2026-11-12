@@ -76,8 +76,10 @@ appeared, or a reaction that tells the player a scare was not serious.
 
 Players will be able to rename the heroes. **Never type a hero's name in a line.**
 
-- `{name}` = the speaker, or the hero the message is about.
-- `{target}` = the other hero the line is aimed at.
+- `{name}` = the speaker, always.
+- `{target}` = the hero the line is about: the event's target if it has one, else the hero it happened to (a death: the one who died).
+- `{actor}` = the hero the event happened to or who did it (a kill: whoever struck the blow), whoever else it is aimed at.
+- A line that uses `{actor}` or `{target}` when the event has no such hero is not said, so a line never prints a gap.
 - Calling someone by their job is fine and in character: "Shut up, cleric!",
   "Ask the thief."
 - Avoid he/she/him/her for heroes. Use `{target}`, "you", "that one" or the job.
@@ -321,15 +323,15 @@ Each hero, six different events. Use these as the measure for new ones.
 
 ## 11. Where text hooks in (so lines fit the systems)
 
-- **Banter:** `data/banter.json`, one entry per event (`crit`, `fail`,
-  `hit_behind`, `equip`, `eat`, `corruption_bounce`, `corruption_resists`,
-  `corruption_purified`), with `chance`, `cooldown` and conditions; see the header
-  of `scripts/banter.gd`. `speaker` and `actor` are the hero's CLASS ID
-  ("cleric", "fighter", "thief", "mage": a role key, never shown); the log shows
-  the hero's own name in front ("Brother Felix: text"), so renaming a hero changes
-  nothing in the JSON.
-  `banter.gd` does not replace `{name}` / `{target}` yet: add that to the code
-  before adding lines that use them.
+- **Banter:** `data/banter.json`, one entry per event: `chance`, `cooldown` (game seconds) and `lines`. Any `GameEvents` signal is an
+  event of the same name (`hero_died`, `monster_killed`, `puzzle_solved`, `fight_ended`...), so a line for it is only JSON; the
+  engine's own rules are in the header of `scripts/banter.gd` and the Banter paragraph of `CLAUDE.md`. `speaker` and `actor` are the
+  hero's CLASS ID ("cleric", "fighter", "thief", "mage": a role key, never shown); the log shows the hero's own name in front
+  ("Brother Felix: text"), so renaming a hero changes nothing in the JSON. **Fields that carry the timing rules of section 4:**
+  `reply` (the other half of an exchange, said after a delay), `urgent` (a battle cry or a shout: ignores quiet and the gap),
+  `in_fight` (false for a conversation, so it never happens in a fight), `once` + `id` (said once a run), `if` (the context
+  decides). Ambushes switch banter quiet with `set_quiet("ambush", true)` and lift it when the fight is over; nothing but an `urgent`
+  line speaks until then. Nothing is said within 3 s of the last line unless it is `urgent` or a reply.
 - **Fights:** `Party.fight.in_fight` (the fight tracker) says whether a fight is on; `GameEvents.fight_started` and `fight_ended` announce it. Use
   them for the timing in section 4: banter before a scare, a battle cry as it starts, silence during, reactions after `fight_ended`.
 - **Log messages:** `Party._say(text, tone)` and `Hud.show_message`; tones `miss`,

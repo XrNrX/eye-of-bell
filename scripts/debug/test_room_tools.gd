@@ -296,7 +296,7 @@ func _refresh_help() -> void:
 		"Z   KILL ALL MONSTERS",
 		"V   SPAWN MONSTER AHEAD",
 		"T   TELEPORT TO STATION",
-		"B   BANTER        %s" % _on(banter_on),
+		"B   BANTER        %s" % _banter_status(),
 		"N   FOG           %s" % _on(fog_on),
 		"J   SCREEN SHAKE  %s" % _on(shake_on),
 		"P   SHADOWS       %s" % _on(Settings.spell_shadows),
@@ -308,6 +308,12 @@ func _refresh_help() -> void:
 
 
 # --- Helpers -------------------------------------------------------------------------------------
+
+## What the banter node says: "ON", "OFF" or "ON  QUIET (ambush)" (some system has switched banter quiet).
+func _banter_status() -> String:
+	var b := get_tree().get_first_node_in_group("banter")
+	return b.status() if b != null else _on(banter_on)
+
 
 ## What the fight tracker says: "OFF", or "ON  QUIET 2.1S  AWARE 1".
 func _fight_status() -> String:

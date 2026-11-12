@@ -457,17 +457,17 @@ func _check_names() -> void:
 
 	# Banter: speakers are class ids; the log shows the hero's name, and renaming changes only that.
 	var banter: Node = get_first_node_in_group("banter")
-	banter.ready_at.clear()
+	banter.reset_timers()
 	var lines: Array = banter.event("hit_behind", {"actor": "fighter"})
 	check("banter speaks as the hero's name, not the class", lines.size() == 1 and str(lines[0]).begins_with("Fennick: "))
 	var mage_def: Resource = by_class.mage.def
 	mage_def.hero_name = "Fenwick the Test"  # (Restored below: this resource is shared.)
-	banter.ready_at.clear()
+	banter.reset_timers()
 	lines = banter.event("hit_behind", {"actor": "fighter"})
 	check("renaming a hero changes the banter prefix and nothing else", lines.size() == 1 and str(lines[0]).begins_with("Fenwick the Test: "))
 	check("a renamed Mage still cannot wear leather armour", not party.can_equip(by_class.mage, armour))
 	mage_def.hero_name = "Fennick"
-	banter.ready_at.clear()
+	banter.reset_timers()
 	_rest_everyone()
 
 
@@ -486,6 +486,8 @@ func _check_fight() -> void:
 	config.fight_clear_seconds = 0.6  # Short, so the test need not wait long.
 	config.fight_gap_seconds = 1.5
 	var banter: Node = get_first_node_in_group("banter")
+	var gap_was_banter: float = banter.min_gap
+	banter.min_gap = 0.0  # (The global gap would hide the second warning: it is tested in banter_test.gd.)
 	var warnings := func() -> int:
 		return banter.said.filter(func(l): return "BEHIND US" in str(l)).size()
 
@@ -547,6 +549,7 @@ func _check_fight() -> void:
 
 	config.fight_clear_seconds = clear_was
 	config.fight_gap_seconds = gap_was
+	banter.min_gap = gap_was_banter
 	player.restore(SPOT, EAST)
 	_rest_everyone()
 
