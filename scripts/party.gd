@@ -663,6 +663,7 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 		return false
 	if not can_afford(slot, spell):
 		_say("Not enough mana.")
+		Events.send(get_tree(), "mana_low", [m.hero_index])
 		return false
 	var who: String = m.name()
 	var text := ""

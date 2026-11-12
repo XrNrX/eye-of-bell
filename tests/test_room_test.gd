@@ -174,11 +174,30 @@ func _check_game() -> void:
 	# The ambush: walk onto the trigger.
 	for n in get_nodes_in_group("monsters"):
 		n.free()
+	var banter: Node = get_first_node_in_group("banter")
+	banter.reset_timers()
+	banter.said.clear()
+	player.restore(Vector2i(3, 17), 2)  # Within 6 tiles of the trigger: the warning.
+	await create_timer(0.2).timeout
+	check("the ambush gives its warning on the way in", banter.said == ["Brother Felix: I smell evil."])
 	player.restore(Vector2i(3, 21), 2)
 	await create_timer(0.1).timeout
 	player.restore(Vector2i(3, 22), 2)
 	await create_timer(0.2).timeout
 	check("the ambush tile spawns its monsters", get_nodes_in_group("monsters").size() == 2)
+	check("the ambush keeps banter quiet", banter.is_quiet() and tools.ambush_active)
+	check("...but the battle cry gets through", banter.said.size() >= 2 and banter.said[1] == "Brother Felix: I did say!")
+	await create_timer(1.0).timeout
+	check("...and its answer", banter.said.has("Brannoc: Shut up, cleric!") and not banter.said.has("Brannoc: Shut up."))
+	for n in get_nodes_in_group("monsters"):
+		n.free()  # The fight is over once it has been quiet for a moment: banter may speak, and the Cleric remarks on the Fighter.
+	var said_before: int = banter.said.size()
+	var waited := 0.0
+	while tools.ambush_active and waited < 8.0:
+		await create_timer(0.25).timeout
+		waited += 0.25
+	check("when the ambush's fight is over banter is let speak again", not tools.ambush_active and not banter.is_quiet())
+	check("...with the Cleric's grudging remark", banter.said.size() > said_before and (str(banter.said[-1]).contains("not so bad with a sword") or str(banter.said[-1]).contains("adequate")))
 	# The slingshot: fires a stone from the backpack at the first monster in line, spends it, needs ammo.
 	for n in get_nodes_in_group("monsters"):
 		n.free()

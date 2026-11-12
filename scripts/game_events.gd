@@ -35,11 +35,11 @@ signal puzzle_solved(id: String)
 ## The party took the stairs.
 signal level_completed
 
-# Sent by Party.hurt and the fight tracker; mana_low is declared for banter (7f) and nothing sends it yet.
+# Sent by Party.hurt, Party.cast (mana_low) and the fight tracker.
 signal hero_hurt(hero: int, amount: int, source: String)  # Sent by Party.hurt: a hero lost HP (source: "monster", "sickness"...).
 signal fight_started                                      # Sent by the fight tracker (fight_tracker.gd): the first blow, or a monster noticed the party.
 signal fight_ended                                        # ...and quiet again: nothing struck for a few seconds and no monster aware.
-signal mana_low(hero: int)                                # Declared for banter (7f); nothing sends it yet.
+signal mana_low(hero: int)                                # Sent by Party.cast: this hero tried to cast and could not afford it ("Not enough mana.").
 
 
 ## Send one of the signals above, if the autoload is there. args are the signal's arguments, in order.

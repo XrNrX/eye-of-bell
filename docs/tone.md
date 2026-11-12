@@ -332,6 +332,10 @@ Each hero, six different events. Use these as the measure for new ones.
   `in_fight` (false for a conversation, so it never happens in a fight), `once` + `id` (said once a run), `if` (the context
   decides). Ambushes switch banter quiet with `set_quiet("ambush", true)` and lift it when the fight is over; nothing but an `urgent`
   line speaks until then. Nothing is said within 3 s of the last line unless it is `urgent` or a reply.
+  **The starter lines are in `data/banter.json`**: the signal events (`hero_died`, `hero_revived`, `mana_low`, `item_picked_up`,
+  `puzzle_solved`, `wall_broken`, `fight_started`, `fight_ended`) and the ambush's three (`ambush_warning`, `ambush_started`,
+  `ambush_over`: sent by the ambush system, which keeps banter quiet in between). `flag` makes a line follow another once-line
+  (the first death, then the first revival). `mana_low` is sent when a hero tries to cast and cannot afford it.
 - **Fights:** `Party.fight.in_fight` (the fight tracker) says whether a fight is on; `GameEvents.fight_started` and `fight_ended` announce it. Use
   them for the timing in section 4: banter before a scare, a battle cry as it starts, silence during, reactions after `fight_ended`.
 - **Log messages:** `Party._say(text, tone)` and `Hud.show_message`; tones `miss`,

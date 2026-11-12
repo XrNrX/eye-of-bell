@@ -19,6 +19,10 @@ extends Node
 ##     target    a second hero the event is aimed at (a class id)
 ##     weapon    the name of the weapon involved ("Grudge")
 ##     slipped   true if a weapon slipped; any other key is free ("monster": "Skeleton", "puzzle": "gate_n") and a line may test it
+## A revival also carries "earlier": true if another hero was revived before this one this run. The ambush system (docs/code_review.md
+## phase 7d) sends three events of its own, not GameEvents signals: "ambush_warning" (a quick exchange before the burst), "ambush_started"
+## (context {"warned": whether the warning was said}: the battle cry) and "ambush_over" (the grudging remark), and keeps banter quiet
+## with set_quiet("ambush") between the first two and the last. The test room's ambush corridor sends them already.
 ##
 ## A LINE: `speaker` (a living hero by CLASS ID, so renaming a hero changes nothing here; a weapon the actor holds, "Grudge"; or "$actor"),
 ## `text`, and these optional fields:
@@ -32,6 +36,8 @@ extends Node
 ##     in_fight     true / false: the party must (not) be in a fight (the fight tracker). A conversation is "in_fight": false
 ##     once         true: said once a RUN, remembered in the run flags (so saved). Give it an `id` ("first_death"): the default is the
 ##                  line's place in the file, which moves when lines are added
+##     flag         a run flag that must be set: "banter.once.first_death" is set once the line with that id has been said, so this
+##                  line only follows it (a scene told across the run: the first death, and later the first revival)
 ##   behaviour:
 ##     priority     among the lines that fit, only the highest priority is picked from (default 0)
 ##     always       said as well as the picked line
@@ -53,6 +59,7 @@ const PATH := "res://data/banter.json"
 const MIN_GAP := 3.0       # Seconds of game time between one exchange and the next.
 const REPLY_DELAY := 1.4   # Seconds between a line and its reply when the reply gives no `delay`.
 const ONCE_FLAG := "banter.once."  # Run flags that remember the once-lines: "banter.once.<id>".
+const REVIVED_FLAG := "banter.revived."  # ...and the heroes already revived this run: "banter.revived.<class id>".
 
 var events := {}
 var ready_at := {}          # event -> game time when it may speak again.
@@ -230,6 +237,8 @@ func _fits(line: Dictionary, context: Dictionary, event_name: String, path: Stri
 		return false
 	if line.get("once", false) and DungeonMap.has_flag(_once_key(line, event_name, path)):
 		return false
+	if line.has("flag") and not DungeonMap.has_flag(str(line.flag)):
+		return false
 	var text := str(line.get("text", ""))
 	if "{actor}" in text and _name_of(actor) == "":
 		return false
@@ -341,7 +350,14 @@ func _on_hero_died(hero: int) -> void:
 
 
 func _on_hero_revived(hero: int, by_scroll: bool) -> void:
-	event("hero_revived", {"actor": _class_of(hero), "by_scroll": by_scroll})
+	var who := _class_of(hero)
+	var earlier := false  # Has another hero been revived before this one this run?
+	for flag_name in DungeonMap.flags:
+		if str(flag_name).begins_with(REVIVED_FLAG) and flag_name != REVIVED_FLAG + who:
+			earlier = true
+	if who != "":
+		DungeonMap.set_flag(REVIVED_FLAG + who)
+	event("hero_revived", {"actor": who, "by_scroll": by_scroll, "earlier": earlier})
 
 
 func _on_hero_hurt(hero: int, amount: int, source: String) -> void:

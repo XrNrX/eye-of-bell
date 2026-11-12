@@ -14,6 +14,7 @@ const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const Settings := preload("res://scripts/settings.gd")
 const SpellEffectsConfigScript := preload("res://scripts/spell_effects_config.gd")
 const FONT := preload("res://art/fonts/PressStart2P-Regular.ttf")
+const WARN_DISTANCE := 6  # Tiles from an ambush's trigger at which the party gets its warning.
 const MONSTER_DIR := "res://data/monsters"
 
 const INK := Color("0b0a10")
@@ -34,6 +35,9 @@ var banter_on := true
 var fog_on := true
 var shake_on := true
 var armed := {}          # ambush index -> true while it can spring
+var warned := {}         # ambush index -> true once its warning has been given (until the party walks away)
+var ambush_active := false  # An ambush has sprung and its fight is not over: banter is quiet
+var ambush_age := 0.0
 var last_cell := Vector2i(-99, -99)
 
 
@@ -47,11 +51,19 @@ func _ready() -> void:
 	shake_on = _feel().screen_shake_enabled
 	for i in DungeonMap.AMBUSHES.size():
 		armed[i] = true
+	var bus := get_tree().root.get_node_or_null("GameEvents")
+	if bus != null:
+		bus.fight_ended.connect(_on_fight_ended)
 	_build_help()
 	_say("Test room. H shows the debug keys.")
 
 
 func _process(delta: float) -> void:
+	if ambush_active:  # Safety: if no fight ever starts, banter does not stay quiet for ever.
+		ambush_age += delta
+		var party := _party()
+		if ambush_age > 12.0 and not (party != null and party.fight.in_fight):
+			_end_ambush(false)
 	if help != null and help.visible:  # The fight line changes by itself: redraw the overlay a few times a second.
 		help_clock -= delta
 		if help_clock <= 0.0:
@@ -63,11 +75,16 @@ func _process(delta: float) -> void:
 	for i in DungeonMap.AMBUSHES.size():
 		var a: Dictionary = DungeonMap.AMBUSHES[i]
 		var d: Vector2i = last_cell - a.trigger
+		var distance := absi(d.x) + absi(d.y)
 		if last_cell == a.trigger and armed.get(i, false):
 			armed[i] = false
-			_spring(a)
-		elif absi(d.x) + absi(d.y) > 8:
+			_spring(a, i)
+		elif distance > 8:
 			armed[i] = true
+			warned[i] = false
+		elif armed.get(i, false) and distance <= WARN_DISTANCE and not warned.get(i, false):
+			warned[i] = true  # A quick exchange before the burst (the laugh lowers the guard).
+			_banter("ambush_warning", {})
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -177,12 +194,34 @@ func _spawn(path: String) -> void:
 	_say("A %s appears." % def.display_name)
 
 
-func _spring(a: Dictionary) -> void:
+func _spring(a: Dictionary, index := 0) -> void:
 	var dungeon := get_tree().get_first_node_in_group("dungeon")
 	for m in a.monsters:
 		if not DungeonMap.is_blocked(m.cell) and not DungeonMap.is_occupied(m.cell):
 			dungeon.spawn_monster(load(m.def), m.cell)
 	_say(a.text)
+	# Banter: quiet for the whole fight, except the battle cry that starts it.
+	ambush_active = true
+	ambush_age = 0.0
+	get_tree().call_group("banter", "set_quiet", "ambush", true)
+	_banter("ambush_started", {"warned": warned.get(index, false)})
+
+
+## The ambush's fight is over (GameEvents.fight_ended): banter may speak again, and the party reacts.
+func _on_fight_ended() -> void:
+	if ambush_active:
+		_end_ambush(true)
+
+
+func _end_ambush(react: bool) -> void:
+	ambush_active = false
+	get_tree().call_group("banter", "set_quiet", "ambush", false)
+	if react:
+		_banter("ambush_over", {})
+
+
+func _banter(event_name: String, context: Dictionary) -> void:
+	get_tree().call_group("banter", "event", event_name, context)
 
 
 func _teleport(entry: Dictionary) -> void:

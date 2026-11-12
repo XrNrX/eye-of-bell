@@ -14,7 +14,11 @@ const SaveGame := preload("res://scripts/save_game.gd")
 const SAVE_PATH := "user://banter_test_save.json"
 const CLASSES := ["cleric", "fighter", "thief", "mage"]
 const LINE_FIELDS := ["speaker", "text", "about", "actor", "target", "holding", "not_holding", "slipped", "alone", "if", "in_fight",
-		"once", "id", "priority", "always", "urgent", "reply", "delay"]
+		"once", "id", "flag", "priority", "always", "urgent", "reply", "delay"]
+const MAX_TEXT := 55  # docs/tone.md: spoken text, never more than this many characters.
+const LEGACY := ["It's alive. I don't like stabbing things that are alive.", "IT'S BEHIND US! I SAID THIS!"]  # From before the tone guide (its audit list): not checked.
+const HERO_WORDS := ["Brother", "Felix", "Brannoc", "Wren", "Fennick"]  # A line never types a hero's name.
+const BANNED_WORDS := ["okay", "guys", "awesome", "literally", "epic", "loot", "xp", "level", "hp"]  # docs/tone.md section 3.
 
 var fails := 0
 var banter: Node
@@ -52,8 +56,10 @@ func _init() -> void:
 
 	_check_real_data()
 	await _check_real_lines()
+	_check_starter_lines()
 	_check_placeholders()
 	_check_conditions()
+	_check_flag_and_earlier()
 	_check_once()
 	_check_replies()
 	_check_gap()
@@ -129,6 +135,30 @@ func _line_problems(line: Dictionary, where: String, bad: Array) -> void:
 		_line_problems(line.reply[i], "%s reply %d" % [where, i], bad)
 
 
+func _tone_problems(line: Dictionary, where: String, out: Array) -> void:
+	var text := str(line.get("text", ""))
+	if text in LEGACY:
+		return
+	if text.length() > MAX_TEXT:
+		out.append("%s: %d characters: %s" % [where, text.length(), text])
+	for word in HERO_WORDS:
+		if word in text:
+			out.append("%s: types a hero's name (%s): %s" % [where, word, text])
+	for word in BANNED_WORDS:
+		for token in text.to_lower().split(" ", false):
+			if token.trim_prefix("(").trim_suffix(".").trim_suffix(",").trim_suffix("?").trim_suffix("!") == word:
+				out.append("%s: banned word '%s': %s" % [where, word, text])
+	var left := text
+	for known in ["{name}", "{actor}", "{target}"]:
+		left = left.replace(known, "")
+	if "{" in left or "}" in left:
+		out.append("%s: unknown placeholder: %s" % [where, text])
+	if text.count("!") > 1 or "*" in text:
+		out.append("%s: punctuation: %s" % [where, text])
+	for reply in line.get("reply", []):
+		_tone_problems(reply, where + " reply", out)
+
+
 func _check_real_data() -> void:
 	var bad := []
 	for event_name in real_events:
@@ -141,6 +171,13 @@ func _check_real_data() -> void:
 	for b in bad:
 		print("  ", b)
 	check("data/banter.json: every event and line is well formed (%d events)" % real_events.size(), bad.is_empty() and real_events.size() >= 8)
+	var tone := []
+	for event_name in real_events:
+		for line in real_events[event_name].lines:
+			_tone_problems(line, event_name, tone)
+	for t in tone:
+		print("  ", t)
+	check("data/banter.json: every line fits the tone guide (short, no typed names, no banned words, known placeholders)", tone.is_empty())
 
 
 func _check_real_lines() -> void:
@@ -172,6 +209,133 @@ func _check_real_lines() -> void:
 	check("existing line: the Mage's remark on armour", said_equip)
 	banter.reset_timers()
 	check("a hero who is not alive does not speak", _dead_does_not_speak())
+
+
+## Every distinct thing an event says over many draws (the pick among the lines that fit is random): {text: true}.
+func _outputs(event_name: String, context: Dictionary, draws := 80, flags := []) -> Dictionary:
+	var out := {}
+	for i in draws:
+		_events(real_events)
+		for flag_name in flags:
+			DungeonMap.set_flag(flag_name)  # (Without it the once-line of the first death always wins: it has the top priority.)
+		for line in banter.event(event_name, context):
+			out[str(line)] = true
+	return out
+
+
+func _has_text(outputs: Dictionary, part: String) -> bool:
+	for text in outputs:
+		if part in str(text):
+			return true
+	return false
+
+
+## The starter lines of the brief (cleric, fighter, thief, mage), by the engine's own rules.
+func _check_starter_lines() -> void:
+	var fighter = _member("fighter")
+	var cleric = _member("cleric")
+	var out := _outputs("hero_died", {"actor": "fighter"})
+	check("the Cleric on the Fighter's death", _has_text(out, "Brother Felix: You didn't have the faith, my son."))
+	var told := ["banter.once.first_death"]  # (The first death has been told: these are the ones after it.)
+	out = _outputs("hero_died", {"actor": "thief"}, 80, told)
+	check("the Cleric on the Thief's death", _has_text(out, "The Light does not protect those who pick its pockets."))
+	check("the others on the Thief's death use their own name (and the Thief says nothing)", _has_text(out, "Brannoc: Get up, Wren. That's an order.")
+			and _has_text(out, "Fennick: Is Wren meant to be that colour?") and not _has_text(out, "Wren:") and not _has_text(out, "Brannoc: No. Not"))
+	out = _outputs("hero_died", {"actor": "mage"}, 80, told)
+	check("the Cleric on the Mage's death", _has_text(out, "All that reading, and not one prayer."))
+	check("the others on the Mage's death", _has_text(out, "Wren: Dibs on Fennick's boots.") and _has_text(out, "Brannoc: Get up, Fennick. That's an order."))
+	out = _outputs("hero_died", {"actor": "cleric"}, 80, told)
+	check("nobody speaks as the Cleric when the Cleric is the one who died", not _has_text(out, "Brother Felix:") and out.size() >= 3)
+
+	# The first death: told once, and it makes the first revival a scene.
+	_events(real_events)
+	var first: Array = banter.event("hero_died", {"actor": "thief"})
+	check("the first death of a run gets the Fighter's line, once", first == ["Brannoc: No. Not Wren."] and DungeonMap.has_flag("banter.once.first_death"))
+	banter.reset_timers()
+	check("...and a second death does not get it again", banter.event("hero_died", {"actor": "mage"}) != ["Brannoc: No. Not Fennick."])
+	banter.reset_timers()
+	banter.said.clear()
+	banter.min_gap = 50.0
+	var revived: Array = banter.event("hero_revived", {"actor": "thief", "by_scroll": true})
+	check("the first revival after it is the Fighter's scene", revived == ["Brannoc: I wasn't bothered."])
+	_advance(1.5)
+	check("...the revived hero answers as themselves", banter.said.size() == 2 and banter.said[1] == "Wren: I heard you.")
+	_advance(1.5)
+	check("...and the Fighter has the last word", banter.said.size() == 3 and banter.said[2] == "Brannoc: I'm hungry. Someone get a fire on.")
+	banter.reset_timers()
+	check("the scene is told once", banter.event("hero_revived", {"actor": "thief", "by_scroll": true}) != ["Brannoc: I wasn't bothered."])
+	_events(real_events)
+	banter.event("hero_revived", {"actor": "thief", "by_scroll": true})
+	check("without a first death there is no 'I wasn't bothered'", not _has_text(_outputs("hero_revived", {"actor": "thief", "by_scroll": true}), "I wasn't bothered"))
+
+	# Revivals: the Fighter snaps back at the Cleric, the Cleric on himself.
+	var line: Array = []
+	for i in 80:  # (A random pick among those who may speak: until it is the Cleric's.)
+		_events(real_events)
+		banter.min_gap = 50.0
+		line = banter.event("hero_revived", {"actor": "fighter", "by_scroll": true})
+		if line == ["Brother Felix: The Light brought you back, my son."]:
+			break
+	_advance(1.5)
+	check("the Cleric claims the credit and the Fighter snaps back", line == ["Brother Felix: The Light brought you back, my son."]
+			and banter.said.size() == 2 and banter.said[1] == "Brannoc: Faith didn't buy that scroll.")
+	_events(real_events)
+	banter.min_gap = 50.0
+	out = {}
+	for i in 60:  # (A random pick: collect what he says about himself.)
+		_events(real_events)
+		banter.min_gap = 50.0
+		for l in banter.event("hero_revived", {"actor": "cleric", "by_scroll": true, "earlier": false}):
+			out[str(l)] = true
+	check("the Cleric revived: 'I was at peace', and the exchange continues in his own voice",
+			_has_text(out, "I was at peace. There was light.") and not _has_text(out, "Oh, him first"))
+	_events(real_events)
+	banter.min_gap = 50.0
+	banter.event("hero_revived", {"actor": "cleric", "by_scroll": true, "earlier": false})
+	var peace_said := true
+	for i in 40:  # Until the peace line comes up, then let its reply arrive.
+		if banter.said.size() > 0 and "peace" in banter.said[0]:
+			break
+		_events(real_events)
+		banter.min_gap = 50.0
+		banter.event("hero_revived", {"actor": "cleric", "by_scroll": true, "earlier": false})
+	_advance(1.5)
+	peace_said = banter.said.size() == 2 and banter.said[1] == "Brother Felix: And you dragged me back here for this?"
+	check("...'And you dragged me back here for this?' follows as a reply", peace_said)
+	out = _outputs("hero_revived", {"actor": "cleric", "by_scroll": true, "earlier": true})
+	check("the Cleric revived after another hero: 'Oh, him first. Naturally.'", _has_text(out, "Brother Felix: Oh, him first. Naturally."))
+
+	# Out of mana.
+	out = _outputs("mana_low", {"actor": "cleric"})
+	check("the Cleric out of mana", _has_text(out, "My god is not a well you can keep drawing from."))
+	out = _outputs("mana_low", {"actor": "mage"})
+	check("the others on a caster out of mana", _has_text(out, "Out of magic? Try a knife, Fennick.") and _has_text(out, "No spells? Fine. Stand behind me.")
+			and _has_text(out, "Pray, my child. It costs nothing."))
+
+	# The ambush.
+	_events(real_events)
+	banter.min_gap = 50.0
+	banter.event("ambush_warning", {})
+	_advance(1.5)
+	check("before the burst: a quick exchange", banter.said == ["Brother Felix: I smell evil.", "Brannoc: Shut up."])
+	banter.reset_timers()
+	banter.said.clear()
+	banter.set_quiet("ambush")
+	var cry: Array = banter.event("ambush_started", {"warned": true})
+	check("the battle cry is said in quiet and inside the gap (urgent)", cry == ["Brother Felix: I did say!"])
+	_advance(1.0)
+	check("...and the Fighter answers it", banter.said == ["Brother Felix: I did say!", "Brannoc: Shut up, cleric!"])
+	banter.reset_timers()
+	banter.said.clear()
+	check("an ambush nobody warned about: the Fighter alone", banter.event("ambush_started", {"warned": false}) == ["Brannoc: Behind me!"])
+	banter.reset_timers()
+	banter.said.clear()
+	check("nothing ordinary is said during an ambush", banter.event("fight_ended", {}).is_empty() and banter.event("hero_died", {"actor": "thief"}).is_empty())
+	banter.set_quiet("ambush", false)
+	banter.reset_timers()
+	out = _outputs("ambush_over", {})
+	check("after it: the Cleric, grudgingly", _has_text(out, "Brother Felix: You're not so bad with a sword."))
+	_events(real_events)
 
 
 func _dead_does_not_speak() -> bool:
@@ -233,6 +397,32 @@ func _check_conditions() -> void:
 # --------------------------------------------------------------------------
 # Once, replies, the gap, quiet, time
 # --------------------------------------------------------------------------
+
+func _check_flag_and_earlier() -> void:
+	_events({"f": _one([_line("fighter", "after the first", {"flag": "banter.once.test_first"})])})
+	check("condition `flag`: the line waits for its flag", banter.event("f", {}).is_empty())
+	DungeonMap.set_flag("banter.once.test_first")
+	check("condition `flag`: and is said once it is set", banter.event("f", {}) == ["Brannoc: after the first"])
+	_events({"hero_revived": _one([_line("$actor", "alone", {"if": {"earlier": false}}), _line("$actor", "after another", {"if": {"earlier": true}})])})
+	var fighter = _member("fighter")
+	var cleric = _member("cleric")
+	bus.hero_revived.emit(fighter.hero_index, true)
+	check("a revival with nobody revived before it: earlier is false", banter.said == ["Brannoc: alone"])
+	check("...and is remembered in the run flags", DungeonMap.has_flag("banter.revived.fighter"))
+	banter.reset_timers()
+	banter.said.clear()
+	bus.hero_revived.emit(cleric.hero_index, true)
+	check("a revival after another hero's: earlier is true", banter.said == ["Brother Felix: after another"])
+	banter.reset_timers()
+	banter.said.clear()
+	bus.hero_revived.emit(cleric.hero_index, true)
+	check("the same hero revived twice does not count as another hero", banter.said == ["Brother Felix: after another"])
+	DungeonMap.flags.clear()
+	banter.reset_timers()
+	banter.said.clear()
+	bus.hero_revived.emit(cleric.hero_index, true)
+	check("a new run forgets who was revived", banter.said == ["Brother Felix: alone"])
+
 
 func _check_once() -> void:
 	_events({"o": _one([_line("cleric", "the first time", {"once": true, "id": "test_first"}), _line("fighter", "after that", {"priority": -1})])})

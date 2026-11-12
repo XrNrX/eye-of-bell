@@ -23,7 +23,7 @@ const CLOSETS: Array[Vector2i] = [Vector2i(18, 1), Vector2i(20, 1)]  # One-tile 
 const PLAIN_DOOR := Vector2i(16, 6)
 const LEVER := Vector3i(19, 7, 0)  # The north lever of gate_n: cell (19,7), side 0.
 
-const EVENTS := ["monster_killed", "hero_hurt", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
+const EVENTS := ["monster_killed", "hero_hurt", "mana_low", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
 		"wall_purified", "puzzle_solved", "level_completed"]
 const CRACKED_WALL := Vector2i(2, 6)
 const THICK_CORRUPTION := Vector2i(16, 4)  # Purifying it fires the puzzle "nook_blessing".
@@ -278,6 +278,17 @@ func _check_spells() -> void:
 	r = _cast("shield", 0)
 	check("Shield raises the target's defence", r.cast and party.effective_stats(guarded).defence > plain)
 	check("Shield spends its mana", _spent_right(r))
+	_rest_everyone()
+
+	# A cast the hero cannot afford costs nothing and says mana_low.
+	var who := _caster_of(load("res://data/spells/magic_missile.tres"))
+	var caster = party.members[who[0]]
+	caster.mana = 0.0
+	caster.cooldown_left = 0.0
+	var low_before: int = events.mana_low.size()
+	var cast_ok: bool = party.cast(who[0], who[1], load("res://data/spells/magic_missile.tres"))
+	check("a cast with no mana fails and costs nothing", not cast_ok and is_zero_approx(caster.mana) and is_zero_approx(caster.cooldown_left))
+	check("event: mana_low once, naming the hero", events.mana_low.size() == low_before + 1 and events.mana_low[-1][0] == caster.hero_index)
 	_rest_everyone()
 
 
@@ -683,8 +694,13 @@ func _check_save_load() -> void:
 	check("load: sends no GameEvents (a broken wall, a purified wall and a solved puzzle are put back silently)",
 			_event_counts() == sent_before and DungeonMap.broken_walls.has(CRACKED_WALL) and DungeonMap.purified.has(THICK_CORRUPTION)
 			and DungeonMap.puzzles_done.has("nook_blessing"))
-	check("load: run flags come back, with their types, and nothing else", DungeonMap.flags == {"smoke.seen": true, "smoke.count": 3, "smoke.ratio": 0.5, "smoke.name": "Fennick"}
-			and typeof(DungeonMap.flags["smoke.count"]) == TYPE_INT and typeof(DungeonMap.flags["smoke.ratio"]) == TYPE_FLOAT)
+	var smoke_flags := {}  # (Banter has set flags of its own during the run: look at the test's.)
+	for flag_name in DungeonMap.flags:
+		if str(flag_name).begins_with("smoke."):
+			smoke_flags[flag_name] = DungeonMap.flags[flag_name]
+	check("load: run flags come back, with their types, and nothing else", smoke_flags == {"smoke.seen": true, "smoke.count": 3, "smoke.ratio": 0.5, "smoke.name": "Fennick"}
+			and typeof(DungeonMap.flags["smoke.count"]) == TYPE_INT and typeof(DungeonMap.flags["smoke.ratio"]) == TYPE_FLOAT
+			and not DungeonMap.has_flag("smoke.wrecked"))
 	check("load: formation", loaded.formation == saved.formation)
 	check("load: every hero's HP", loaded.hp == saved.hp)
 	var mana_ok := true

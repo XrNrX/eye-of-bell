@@ -78,5 +78,136 @@
 		"lines": [
 			{"speaker": "fighter", "about": "self", "text": "Tastes like the floor. Still good."}
 		]
+	},
+	"hero_died": {
+		"chance": 1.0,
+		"cooldown": 6,
+		"lines": [
+			{"speaker": "fighter", "about": "other", "once": true, "id": "first_death", "priority": 5, "text": "No. Not {actor}."},
+			{"speaker": "cleric", "actor": "fighter", "text": "You didn't have the faith, my son."},
+			{"speaker": "cleric", "actor": "thief", "text": "The Light does not protect those who pick its pockets."},
+			{"speaker": "cleric", "actor": "mage", "text": "All that reading, and not one prayer."},
+			{"speaker": "fighter", "about": "other", "text": "Get up, {actor}. That's an order."},
+			{"speaker": "thief", "about": "other", "text": "Dibs on {actor}'s boots."},
+			{"speaker": "thief", "actor": "cleric", "text": "Well. That's the sermons over."},
+			{"speaker": "mage", "about": "other", "text": "Is {actor} meant to be that colour?"},
+			{"speaker": "mage", "actor": "cleric", "text": "Who prays now? Does anyone know how?"}
+		]
+	},
+	"hero_revived": {
+		"chance": 1.0,
+		"cooldown": 4,
+		"lines": [
+			{"speaker": "fighter", "about": "other", "once": true, "id": "first_revival", "flag": "banter.once.first_death", "priority": 5, "in_fight": false, "text": "I wasn't bothered.", "reply": [{"speaker": "$actor", "text": "I heard you."}, {"speaker": "fighter", "text": "I'm hungry. Someone get a fire on."}]},
+			{"speaker": "cleric", "about": "other", "actor": "fighter", "if": {"by_scroll": true}, "in_fight": false, "text": "The Light brought you back, my son.", "reply": [{"speaker": "fighter", "text": "Faith didn't buy that scroll."}]},
+			{"speaker": "cleric", "about": "other", "actor": "thief", "if": {"by_scroll": true}, "in_fight": false, "text": "The Light brought you back, my child.", "reply": [{"speaker": "thief", "text": "That was a scroll. Ask the scroll."}]},
+			{"speaker": "cleric", "about": "other", "actor": "mage", "if": {"by_scroll": true}, "in_fight": false, "text": "The Light brought you back, my child.", "reply": [{"speaker": "mage", "text": "Technically, it was a scroll."}]},
+			{"speaker": "cleric", "about": "self", "in_fight": false, "text": "I was at peace. There was light.", "reply": [{"speaker": "cleric", "text": "And you dragged me back here for this?"}]},
+			{"speaker": "cleric", "about": "self", "if": {"earlier": true}, "text": "Oh, him first. Naturally."},
+			{"speaker": "cleric", "about": "self", "text": "I forgive you for taking so long."},
+			{"speaker": "fighter", "about": "other", "text": "On your feet, {actor}. We're moving."},
+			{"speaker": "fighter", "about": "self", "text": "Did I miss dinner?"},
+			{"speaker": "thief", "about": "other", "text": "Pockets checked. Welcome back, {actor}."},
+			{"speaker": "thief", "about": "self", "text": "Who's been through my pockets?"},
+			{"speaker": "mage", "about": "other", "text": "{actor} wasn't breathing a minute ago."},
+			{"speaker": "mage", "about": "self", "text": "I was dead. I have so many questions."}
+		]
+	},
+	"mana_low": {
+		"chance": 1.0,
+		"cooldown": 15,
+		"lines": [
+			{"speaker": "cleric", "about": "self", "text": "My god is not a well you can keep drawing from."},
+			{"speaker": "cleric", "about": "self", "text": "The Light needs a moment. So do I."},
+			{"speaker": "cleric", "about": "self", "text": "Even devotion has a limit. Mine is high."},
+			{"speaker": "cleric", "about": "other", "actor": "mage", "text": "Pray, my child. It costs nothing."},
+			{"speaker": "mage", "about": "self", "text": "I'm out of mana. This is how I die."},
+			{"speaker": "mage", "about": "self", "text": "I'm empty. Nobody tell the monsters."},
+			{"speaker": "thief", "about": "other", "text": "Out of magic? Try a knife, {actor}."},
+			{"speaker": "fighter", "about": "other", "text": "No spells? Fine. Stand behind me."}
+		]
+	},
+	"item_picked_up": {
+		"chance": 0.2,
+		"cooldown": 40,
+		"lines": [
+			{"speaker": "cleric", "in_fight": false, "text": "The Light provides.", "reply": [{"speaker": "thief", "text": "Then it can carry the bags."}]},
+			{"speaker": "cleric", "text": "Don't thank me. I'm not carrying it."},
+			{"speaker": "cleric", "text": "Such burdens the faithful must bear."},
+			{"speaker": "fighter", "text": "Is it food?"},
+			{"speaker": "fighter", "text": "Pack it. Keep moving."},
+			{"speaker": "thief", "text": "I'd have found it sooner alone."},
+			{"speaker": "mage", "text": "I read that everything here is cursed."}
+		]
+	},
+	"puzzle_solved": {
+		"chance": 1.0,
+		"cooldown": 10,
+		"lines": [
+			{"speaker": "cleric", "in_fight": false, "text": "The Light showed the way. Through me.", "reply": [{"speaker": "fighter", "text": "You watched."}]},
+			{"speaker": "cleric", "text": "Naturally. The Light does the hard parts."},
+			{"speaker": "cleric", "text": "You may thank me later. Or now."},
+			{"speaker": "fighter", "text": "Door's open. Stop admiring it."},
+			{"speaker": "thief", "text": "Easy. Don't ask how I knew."},
+			{"speaker": "mage", "text": "As predicted. Eventually."}
+		]
+	},
+	"wall_broken": {
+		"chance": 1.0,
+		"cooldown": 10,
+		"lines": [
+			{"speaker": "cleric", "text": "Violence. Again."},
+			{"speaker": "cleric", "text": "The Light would have asked nicely."},
+			{"speaker": "fighter", "text": "About time."},
+			{"speaker": "fighter", "text": "Told you it would break."},
+			{"speaker": "thief", "text": "Anything behind it?"},
+			{"speaker": "mage", "text": "Structurally, that was a bad idea."}
+		]
+	},
+	"fight_started": {
+		"chance": 0.5,
+		"cooldown": 30,
+		"lines": [
+			{"speaker": "fighter", "text": "Come on, then!"},
+			{"speaker": "fighter", "text": "Behind me. All of you."}
+		]
+	},
+	"fight_ended": {
+		"chance": 0.5,
+		"cooldown": 45,
+		"lines": [
+			{"speaker": "cleric", "in_fight": false, "text": "The Light was with us.", "reply": [{"speaker": "fighter", "text": "Behind me, mostly."}]},
+			{"speaker": "cleric", "text": "Observe: not a scratch on me."},
+			{"speaker": "cleric", "text": "Another victory for the faithful."},
+			{"speaker": "fighter", "text": "Done. What's for dinner?"},
+			{"speaker": "fighter", "text": "Anyone hurt? Say so."},
+			{"speaker": "thief", "text": "Anything on them worth taking?"},
+			{"speaker": "thief", "text": "I'll check their pockets. For safety."},
+			{"speaker": "mage", "text": "Is it dead? Check it's dead."},
+			{"speaker": "mage", "text": "I counted six ways that went wrong."}
+		]
+	},
+	"ambush_warning": {
+		"chance": 1.0,
+		"cooldown": 30,
+		"lines": [
+			{"speaker": "cleric", "in_fight": false, "text": "I smell evil.", "reply": [{"speaker": "fighter", "text": "Shut up."}]}
+		]
+	},
+	"ambush_started": {
+		"chance": 1.0,
+		"cooldown": 0,
+		"lines": [
+			{"speaker": "cleric", "urgent": true, "if": {"warned": true}, "text": "I did say!", "reply": [{"speaker": "fighter", "urgent": true, "delay": 0.8, "text": "Shut up, cleric!"}]},
+			{"speaker": "fighter", "urgent": true, "priority": -1, "text": "Behind me!"}
+		]
+	},
+	"ambush_over": {
+		"chance": 1.0,
+		"cooldown": 0,
+		"lines": [
+			{"speaker": "cleric", "urgent": true, "text": "You're not so bad with a sword."},
+			{"speaker": "cleric", "urgent": true, "text": "That was adequate. Barely."}
+		]
 	}
 }
