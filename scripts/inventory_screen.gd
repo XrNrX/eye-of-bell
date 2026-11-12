@@ -18,6 +18,7 @@ const InventorySlotScript := preload("res://scripts/inventory_slot.gd")
 const PartyScript := preload("res://scripts/party.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const CharacterSheet := preload("res://scripts/character_sheet.gd")
+const NAME_MAX_WIDTH := 150.0  # The header name wraps beyond this many units (see refresh).
 
 @onready var backdrop: ColorRect = %Backdrop
 @onready var name_label: Label = %NameLabel
@@ -179,7 +180,11 @@ func refresh() -> void:
 	if party == null:
 		return  # Not built yet.
 	var m = party.member(focused_slot)
-	name_label.text = m.def.display_name
+	name_label.text = m.name()
+	# A long name ("Brother Felix" at 16 px) would make the window wider than its pack grid and push it under the sheet: it wraps instead.
+	var wide: bool = name_label.get_theme_font("font").get_string_size(name_label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x > NAME_MAX_WIDTH
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wide else TextServer.AUTOWRAP_OFF
+	name_label.custom_minimum_size.x = NAME_MAX_WIDTH if wide else 0.0
 	hp_label.text = "%d/%d HP" % [m.hp, m.def.max_hp]
 	for i in hand_slots.size():
 		hand_slots[i].setup(self, focused_slot, InventorySlotScript.Kind.HAND, i)

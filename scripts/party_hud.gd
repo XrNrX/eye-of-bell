@@ -808,7 +808,7 @@ func _revive_column_texture() -> Texture2D:
 func _update_hp(slot: int) -> void:
 	var m = party.member(slot)
 	var p: Dictionary = panels[slot]
-	p.name_label.text = m.def.display_name  # (Changes when the formation does.)
+	p.name_label.text = m.short_name()  # (Changes when the formation does.)
 	p.mana_bar.max_value = maxi(1, m.def.max_mana)
 	p.mana_bar.modulate.a = 1.0 if m.def.max_mana > 0 else 0.0
 	p.hp_bar.max_value = m.def.max_hp
@@ -1119,7 +1119,7 @@ func _make_panel(m) -> Dictionary:
 
 	# Clicking the name (or the little scroll beside it) opens the inventory screen with the character sheet
 	# showing. Hovering the name brightens it, underlines it and shows a pointing hand and a tooltip.
-	var name_label := _label(m.def.display_name, 8)
+	var name_label := _label(m.short_name(), 8)
 	name_label.mouse_filter = Control.MOUSE_FILTER_STOP
 	name_label.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	name_label.tooltip_text = "Character sheet (C)"

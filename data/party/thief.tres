@@ -11,6 +11,8 @@
 [resource]
 script = ExtResource("1_def")
 display_name = "Thief"
+class_id = "thief"
+hero_name = "Wren"
 max_hp = 18
 attack = 3
 defence = 2

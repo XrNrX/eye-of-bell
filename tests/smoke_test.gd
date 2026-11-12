@@ -71,6 +71,7 @@ func _init() -> void:
 	await _check_save_load()
 	_check_stairs()
 	await _check_hurt_and_heal()
+	_check_names()
 	_finish()
 
 
@@ -416,6 +417,50 @@ func _check_hurt_and_heal() -> void:
 	var game_over: Node = get_first_node_in_group("game_over")
 	check("a wipe shows Game over, once", wipes[0] == 1 and game_over != null and game_over.visible and paused)
 	paused = false
+
+
+## Hero names and class ids (docs/code_review.md step 3): the player reads the hero's own name; banter and item rules use the class id.
+func _check_names() -> void:
+	_rest_everyone()
+	var by_class := {}
+	for m in party.members:
+		by_class[m.class_id()] = m
+	check("the four heroes have their class ids", by_class.keys().size() == 4 and by_class.has("cleric") and by_class.has("fighter")
+			and by_class.has("thief") and by_class.has("mage"))
+	check("the heroes have their own names", by_class.cleric.name() == "Brother Felix" and by_class.fighter.name() == "Brannoc"
+			and by_class.thief.name() == "Wren" and by_class.mage.name() == "Fennick")
+	check("the class is still the class label", by_class.cleric.def.display_name == "Cleric" and by_class.mage.def.display_name == "Mage")
+	check("a long name gets a short form for a narrow label", by_class.cleric.short_name() == "Felix" and by_class.fighter.short_name() == "Brannoc")
+
+	# Messages use the name.
+	var cleric = by_class.cleric
+	cleric.hp = 1
+	var line_count: int = get_first_node_in_group("hud").lines.size()
+	cleric.hp = cleric.def.max_hp - 5
+	party.eat(cleric.slot, load("res://data/items/stale_bread.tres"))
+	_cast("heal", cleric.slot)
+	var said: String = " ".join(get_first_node_in_group("hud").lines.slice(line_count).map(func(l): return str(l.text)))
+	check("a casting message names the hero, not the class", "Brother Felix" in said and not ("Cleric" in said))
+
+	# Item rules match the class id.
+	var armour: Resource = load("res://data/items/leather_armour.tres")
+	check("the Mage cannot wear leather armour (cant_use is a class id)", not party.can_equip(by_class.mage, armour) and party.can_equip(by_class.fighter, armour))
+	check("the refusal names the hero", "Fennick" in party.equip_refusal(by_class.mage, armour))
+
+	# Banter: speakers are class ids; the log shows the hero's name, and renaming changes only that.
+	var banter: Node = get_first_node_in_group("banter")
+	banter.ready_at.clear()
+	var lines: Array = banter.event("hit_behind", {"actor": "fighter"})
+	check("banter speaks as the hero's name, not the class", lines.size() == 1 and str(lines[0]).begins_with("Fennick: "))
+	var mage_def: Resource = by_class.mage.def
+	mage_def.hero_name = "Fenwick the Test"  # (Restored below: this resource is shared.)
+	banter.ready_at.clear()
+	lines = banter.event("hit_behind", {"actor": "fighter"})
+	check("renaming a hero changes the banter prefix and nothing else", lines.size() == 1 and str(lines[0]).begins_with("Fenwick the Test: "))
+	check("a renamed Mage still cannot wear leather armour", not party.can_equip(by_class.mage, armour))
+	mage_def.hero_name = "Fennick"
+	banter.ready_at.clear()
+	_rest_everyone()
 
 
 func _check_stairs() -> void:

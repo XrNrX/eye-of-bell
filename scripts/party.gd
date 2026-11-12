@@ -99,6 +99,22 @@ class Member:
 	func is_alive() -> bool:
 		return hp > 0
 
+	## What the player sees: the hero's own name ("Brother Felix"), or their class if they have none.
+	func name() -> String:
+		return def.hero_name if def.hero_name != "" else def.display_name
+
+	## The class as a key ("cleric"): what banter and ItemDef.cant_use match, whatever the hero is called.
+	func class_id() -> String:
+		return def.class_id if def.class_id != "" else def.display_name.to_lower()
+
+	## A name that fits a narrow label (the party panel): the whole name if it fits, else its last word, cut to length.
+	func short_name(max_chars := 9) -> String:
+		var full := name()
+		if full.length() <= max_chars:
+			return full
+		var last := full.get_slice(" ", full.get_slice_count(" ") - 1)
+		return last.substr(0, max_chars)
+
 
 ## A member's attack numbers after their equipment is applied, in the same shape
 ## CombatRules.resolve_attack reads from a CharacterDef or MonsterDef.
@@ -162,7 +178,7 @@ func _process(delta: float) -> void:
 			m.shaken_left -= delta
 			if m.shaken_left <= 0.0:
 				m.shaken_left = 0.0
-				_say("%s's faith steadies." % m.def.display_name)
+				_say("%s's faith steadies." % m.name())
 		else:
 			m.mana = minf(m.def.max_mana, m.mana + delta / MANA_REGEN_TIME)
 		for b in m.buffs:
@@ -250,7 +266,7 @@ func _tick_food(m: Member, delta: float) -> void:
 			sick_tick.emit(m.slot, lost)
 		if m.sick_left <= 0.0:
 			m.sick_acc = 0.0
-			_say("%s feels better." % m.def.display_name)
+			_say("%s feels better." % m.name())
 
 
 ## Eat a food (ItemDef.is_food): it heals over time, replacing any food heal already running. Refused for the dead
@@ -261,18 +277,18 @@ func eat(slot: int, def: Resource) -> Dictionary:
 	if m == null or def == null or not def.is_food():
 		return {"used": false, "message": "", "close": false}
 	if not m.is_alive():
-		return {"used": false, "message": "%s is dead." % m.def.display_name, "close": false}
+		return {"used": false, "message": "%s is dead." % m.name(), "close": false}
 	if m.hp >= m.def.max_hp:
-		return {"used": false, "message": "%s is not hungry." % m.def.display_name, "close": false}
+		return {"used": false, "message": "%s is not hungry." % m.name(), "close": false}
 	m.food_left = def.food_seconds
 	m.food_rate = float(def.food_heal) / def.food_seconds
 	m.food_acc = 0.0
-	var text := "%s eats the %s." % [m.def.display_name, def.display_name.to_lower()]
+	var text := "%s eats the %s." % [m.name(), def.display_name.to_lower()]
 	if def.food_sick_chance > 0.0 and def.food_sick_seconds > 0.0 and CombatRules.rng().randf() < def.food_sick_chance:
 		m.sick_left = def.food_sick_seconds
 		m.sick_rate = float(def.food_sick_damage) / def.food_sick_seconds
 		m.sick_acc = 0.0
-		text += " It tastes foul: %s feels sick." % m.def.display_name
+		text += " It tastes foul: %s feels sick." % m.name()
 	_cue("potion")
 	_banter.call_deferred("eat", m)  # After the "eats" line the caller shows.
 	return {"used": true, "message": text, "close": false}
@@ -288,7 +304,7 @@ func swap_positions(a: int, b: int) -> bool:
 	var t = order[a]
 	order[a] = order[b]
 	order[b] = t
-	var names := "%s and %s" % [member(a).def.display_name, member(b).def.display_name]
+	var names := "%s and %s" % [member(a).name(), member(b).name()]
 	set_formation(order)
 	_cue("ui_swap")
 	_say("%s swap places." % names)
@@ -430,7 +446,7 @@ func act(slot: int, hand: int) -> void:
 		Act.THROW:
 			_throw(m, hand)
 		Act.CANT_REACH:
-			_say("%s can't reach." % m.def.display_name)
+			_say("%s can't reach." % m.name())
 		Act.USE:
 			_use_from_hand(m, hand)
 		Act.FIRE:
@@ -480,7 +496,7 @@ func _fire(m: Member, hand: int) -> void:
 			pack = i
 			break
 	if pack < 0:
-		_say("%s has no %s for the %s." % [m.def.display_name, weapon.ammo.display_name.to_lower(), weapon.display_name.to_lower()])
+		_say("%s has no %s for the %s." % [m.name(), weapon.ammo.display_name.to_lower(), weapon.display_name.to_lower()])
 		return
 	var dir: Vector2i = player.DIRS[player.facing]
 	if DungeonMap.is_blocked(player.cell + dir):
@@ -509,7 +525,7 @@ func _fire(m: Member, hand: int) -> void:
 		dungeon.show_throw(player.cell, land, weapon.ammo)
 	var left_text := "%d left" % left if left > 0 else "that was the last"
 	if target == null:
-		_say("%s shoots a %s (%s)." % [m.def.display_name, weapon.ammo.display_name.to_lower(), left_text])
+		_say("%s shoots a %s (%s)." % [m.name(), weapon.ammo.display_name.to_lower(), left_text])
 		return
 	var s := Stats.new()
 	s.attack = m.def.attack + weapon.attack_bonus
@@ -521,11 +537,11 @@ func _fire(m: Member, hand: int) -> void:
 	result.by = m.hero_index  # Who struck: GameEvents.monster_killed names the killer.
 	target.take_hit(result)
 	if not result.hit:
-		_say("%s's %s misses the %s (%s)." % [m.def.display_name, weapon.ammo.display_name.to_lower(), target.def.display_name, left_text], "miss")
+		_say("%s's %s misses the %s (%s)." % [m.name(), weapon.ammo.display_name.to_lower(), target.def.display_name, left_text], "miss")
 	elif target.hp <= 0:
-		_say_hit("%s kills the %s with the %s! (%s)" % [m.def.display_name, target.def.display_name, weapon.display_name.to_lower(), left_text], m, weapon, result.crit)
+		_say_hit("%s kills the %s with the %s! (%s)" % [m.name(), target.def.display_name, weapon.display_name.to_lower(), left_text], m, weapon, result.crit)
 	else:
-		_say_hit("%s hits the %s with the %s for %d. (%s)" % [m.def.display_name, target.def.display_name, weapon.display_name.to_lower(), result.damage, left_text], m, weapon, result.crit)
+		_say_hit("%s hits the %s with the %s for %d. (%s)" % [m.name(), target.def.display_name, weapon.display_name.to_lower(), result.damage, left_text], m, weapon, result.crit)
 
 
 func _throw(m: Member, hand: int) -> void:
@@ -573,7 +589,7 @@ func _do_throw(m: Member, source: Dictionary) -> bool:
 		dungeon.place_item(land, piece)
 		dungeon.show_throw(player.cell, land, def)
 	if target == null:
-		_say("%s throws the %s." % [m.def.display_name, def.display_name])
+		_say("%s throws the %s." % [m.name(), def.display_name])
 		return true
 	var s := Stats.new()  # The thrower's attack (with buffs) plus the item's bonus.
 	s.attack = m.def.attack + def.attack_bonus
@@ -588,11 +604,11 @@ func _do_throw(m: Member, source: Dictionary) -> bool:
 	if result.fail:
 		_critical_fail(m, source.index, def, true, land)  # It has already left the hand: a stumble.
 	elif not result.hit:
-		_say("%s's %s misses the %s." % [m.def.display_name, def.display_name, target.def.display_name], "miss")
+		_say("%s's %s misses the %s." % [m.name(), def.display_name, target.def.display_name], "miss")
 	elif target.hp <= 0:
-		_say_hit("%s kills the %s with the %s!" % [m.def.display_name, target.def.display_name, def.display_name], m, def, result.crit)
+		_say_hit("%s kills the %s with the %s!" % [m.name(), target.def.display_name, def.display_name], m, def, result.crit)
 	else:
-		_say_hit("%s hits the %s with the %s for %d." % [m.def.display_name, target.def.display_name, def.display_name, result.damage], m, def, result.crit)
+		_say_hit("%s hits the %s with the %s for %d." % [m.name(), target.def.display_name, def.display_name, result.damage], m, def, result.crit)
 	return true
 
 
@@ -608,14 +624,14 @@ func cast_refusal(slot: int, hand: int) -> String:
 	if m == null or not m.is_alive():
 		return ""
 	if m.shaken_left > 0.0 and m.def.magic == ItemDef.Magic.DIVINE:
-		return "%s is too shaken to pray." % m.def.display_name
+		return "%s is too shaken to pray." % m.name()
 	var stack = m.hands[hand]
 	if stack == null or stack.def.type != ItemDef.Type.FOCUS:
 		if m.def.magic == ItemDef.Magic.DIVINE:
 			return "You need your holy symbol."  # The cleric prays through it; it must be in a hand.
 		return "Nothing to cast from."
 	if m.def.max_mana <= 0 or m.def.magic != stack.def.magic:
-		return "The %s can't make sense of the %s." % [m.def.display_name, stack.def.display_name]
+		return "%s can't make sense of the %s." % [m.name(), stack.def.display_name]
 	return ""
 
 
@@ -649,7 +665,7 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 	if not can_afford(slot, spell):
 		_say("Not enough mana.")
 		return false
-	var who: String = m.def.display_name
+	var who: String = m.name()
 	var text := ""
 	var spell_crit := false
 	match spell.target:
@@ -699,17 +715,17 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 		SpellDef.Target.HERO:
 			var t := member(target_slot)
 			if t == null or not t.is_alive():
-				_say("%s is beyond help." % t.def.display_name if t else "No one to target.")
+				_say("%s is beyond help." % t.name() if t else "No one to target.")
 				return false
 			if spell.heal_max > 0:
 				if t.hp >= t.def.max_hp:
-					_say("%s is already healthy." % t.def.display_name)
+					_say("%s is already healthy." % t.name())
 					return false
 				var healed := heal(t, CombatRules.roll_damage(spell.heal_min, spell.heal_max), "spell")
-				text = "%s casts %s on %s (+%d HP)." % [who, spell.display_name, t.def.display_name, healed]
+				text = "%s casts %s on %s (+%d HP)." % [who, spell.display_name, t.name(), healed]
 			if spell.duration > 0.0:
 				_add_buff(t, spell)
-				text = "%s casts %s on %s." % [who, spell.display_name, t.def.display_name]
+				text = "%s casts %s on %s." % [who, spell.display_name, t.name()]
 		SpellDef.Target.PARTY:
 			for other in members:
 				if other.is_alive():
@@ -810,7 +826,7 @@ func place_in_quick(slot: int, index: int, cursor: Node) -> String:
 	if m == null or index < 0 or index >= QUICK_SLOTS:
 		return ""
 	if not m.is_alive():
-		return "%s is dead." % m.def.display_name
+		return "%s is dead." % m.name()
 	var held: RefCounted = cursor.held
 	if not quick_accepts(held):
 		return "The %s can't go in a quick slot." % held.def.display_name
@@ -844,7 +860,7 @@ func hand_refusal(stack: RefCounted) -> String:
 
 ## Can this hero wear or wield the item (ItemDef.cant_use lists the classes that can't)?
 func can_equip(m: Member, def: Resource) -> bool:
-	return not (m.def.display_name in def.cant_use)
+	return not (m.class_id() in def.cant_use)
 
 
 ## Armour and melee-or-thrown weapons can be equipped straight from the cursor (focus items, keys and the rest cannot).
@@ -869,9 +885,9 @@ func equip_change(m: Member, def: Resource) -> Dictionary:
 ## The class message when a hero can't use the item, or "".
 func equip_refusal(m: Member, def: Resource) -> String:
 	if not m.is_alive():
-		return "%s is dead." % m.def.display_name
+		return "%s is dead." % m.name()
 	if not can_equip(m, def):
-		return "The %s can't %s that." % [m.def.display_name.to_lower(), "wear" if def.type == ItemDef.Type.ARMOUR else "use"]
+		return "%s can't %s that." % [m.name(), "wear" if def.type == ItemDef.Type.ARMOUR else "use"]
 	return ""
 
 
@@ -883,9 +899,9 @@ func stow_from_cursor(slot: int, cursor: Node) -> Dictionary:
 	var item: String = stack.def.display_name.to_lower()
 	if add_to_backpack(slot, stack):
 		_cue("pickup")
-		return {"done": true, "message": "%s stows the %s." % [m.def.display_name, item]}
+		return {"done": true, "message": "%s stows the %s." % [m.name(), item]}
 	cursor.hold(stack)  # The pack is full (or only part of a stack fitted): the rest stays in hand.
-	return {"done": false, "message": "%s's backpack is full." % m.def.display_name}
+	return {"done": false, "message": "%s's backpack is full." % m.name()}
 
 
 ## An armour piece or weapon on the cursor, clicked onto a hero's portrait: armour goes into the armour slot, a weapon into the
@@ -896,7 +912,7 @@ func equip_from_cursor(slot: int, cursor: Node) -> Dictionary:
 	var why := equip_refusal(m, held.def)
 	if why != "":
 		return {"done": false, "message": why}
-	var name: String = m.def.display_name
+	var name: String = m.name()
 	var item: String = held.def.display_name.to_lower()
 	var old: RefCounted
 	if held.def.type == ItemDef.Type.ARMOUR:
@@ -954,7 +970,7 @@ func equip_best(stack: RefCounted) -> String:
 	hp_changed.emit(best.slot)
 	_cue("pickup")
 	_banter("equip", best, stack.def)
-	return "%s straps on the %s." % [best.def.display_name, stack.def.display_name.to_lower()]
+	return "%s straps on the %s." % [best.name(), stack.def.display_name.to_lower()]
 
 
 ## Click a hand while holding an item on the cursor: same rules as a quick slot
@@ -964,7 +980,7 @@ func place_in_hand(slot: int, hand: int, cursor: Node) -> String:
 	if m == null or hand < 0 or hand >= HAND_SLOTS:
 		return ""
 	if not m.is_alive():
-		return "%s is dead." % m.def.display_name
+		return "%s is dead." % m.name()
 	var held: RefCounted = cursor.held
 	var why := hand_refusal(held)
 	if why != "":
@@ -1008,7 +1024,7 @@ func return_to_origin(stack: RefCounted) -> String:
 	stack.origin = {}
 	if o.where == "quick":
 		quick_changed.emit(m.slot)
-	return "%s takes back the %s." % [m.def.display_name, stack.def.display_name.to_lower()]
+	return "%s takes back the %s." % [m.name(), stack.def.display_name.to_lower()]
 
 
 ## Shift-click on a floor item: send as much of the stack as fits to the first free
@@ -1036,7 +1052,7 @@ func stow(stack: RefCounted) -> String:
 				if moved > 0:
 					quick_changed.emit(m.slot)
 					if message == "":
-						message = "%s readies the %s." % [m.def.display_name, item_name]
+						message = "%s readies the %s." % [m.name(), item_name]
 	if stack.count > 0:
 		var packed := stow_in_backpack(stack)
 		if message == "":
@@ -1061,7 +1077,7 @@ func stow_in_backpack(stack: RefCounted) -> String:
 		else:
 			stack.count = copy.count  # Whatever didn't fit (it may have topped up stacks).
 		if stack.count < before and message == "":
-			message = "%s stows the %s." % [m.def.display_name, item_name]
+			message = "%s stows the %s." % [m.name(), item_name]
 	return message
 
 
@@ -1126,7 +1142,7 @@ func use_item(slot: int, def: Resource) -> Dictionary:
 		return {"used": false, "close": false, "message": "The scroll needs the fallen." if fallen().is_empty() \
 				else "Click a fallen hero's portrait with it."}
 	if not m.is_alive():
-		return {"used": false, "message": "%s is dead." % m.def.display_name, "close": false}
+		return {"used": false, "message": "%s is dead." % m.name(), "close": false}
 	if def.is_food():
 		return eat(slot, def)
 	if def.heal_amount > 0:
@@ -1166,8 +1182,8 @@ func revive(slot: int, def: Resource) -> Dictionary:
 	get_tree().call_group("spell_effects", "holy_pulse", 1.6 if divine else 1.0)
 	revived.emit(m.slot, divine)
 	Events.send(get_tree(), "hero_revived", [m.hero_index, true])
-	var text := "%s returns, whole in body but too shaken to pray." % m.def.display_name if divine \
-			else "%s returns from the dead." % m.def.display_name
+	var text := "%s returns, whole in body but too shaken to pray." % m.name() if divine \
+			else "%s returns from the dead." % m.name()
 	_say(text)
 	return {"used": true, "message": text}
 
@@ -1194,11 +1210,11 @@ func revive_from_quick(slot: int, index: int, target_slot: int) -> bool:
 
 func _drink(m: Member, def: Resource) -> Dictionary:
 	if m.hp >= m.def.max_hp:
-		return {"used": false, "message": "%s is already healthy." % m.def.display_name, "close": false}
+		return {"used": false, "message": "%s is already healthy." % m.name(), "close": false}
 	var healed := heal(m, def.heal_amount, "potion")
 	_cue("potion")
 	return {"used": true, "close": false,
-		"message": "%s drinks the %s (+%d HP)." % [m.def.display_name, def.display_name, healed]}
+		"message": "%s drinks the %s (+%d HP)." % [m.name(), def.display_name, healed]}
 
 
 ## A scroll's missile: it flies straight ahead, stopping at walls and closed doors,
@@ -1211,7 +1227,7 @@ func _read_scroll(m: Member, def: Resource) -> Dictionary:
 	_cue("zap")
 	_fx("missile", target.cell)
 	target.take_hit({"hit": true, "damage": damage, "chance": 100, "by": m.hero_index})
-	var text := "%s reads the scroll: it hits the %s for %d!" % [m.def.display_name, target.def.display_name, damage]
+	var text := "%s reads the scroll: it hits the %s for %d!" % [m.name(), target.def.display_name, damage]
 	if target.hp <= 0:
 		text += " It dies!"
 	return {"used": true, "message": text, "close": true}
@@ -1255,7 +1271,7 @@ func _corrupted_wall_ahead() -> Vector2i:
 
 ## A blow or a blast bounced off a corrupted wall: the party remarks on it (data/banter.json, event corruption_bounce).
 func _corruption_bounced(m: Member) -> void:
-	get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED, "banter", "event", "corruption_bounce", {"actor": m.def.display_name})  # After the cast's own line.
+	get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED, "banter", "event", "corruption_bounce", {"actor": m.class_id()})  # After the cast's own line.
 
 
 ## A Bless from a divine caster also goes into a corrupted wall one tile ahead. Returns the sentence to add to the cast's
@@ -1272,7 +1288,7 @@ func _bless_corruption(m: Member) -> String:
 	if not result.get("ok", false):
 		return ""
 	var event := "corruption_purified" if result.purified else "corruption_resists"
-	get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED, "banter", "event", event, {"actor": m.def.display_name})
+	get_tree().call_group_flags(SceneTree.GROUP_CALL_DEFERRED, "banter", "event", event, {"actor": m.class_id()})
 	if result.purified:
 		return " The gold light pours into the corrupted wall: the veins burn away, the stone blackens and crumbles to ash!"
 	return " The gold light sinks into the corrupted wall: the veins burn back, but it holds. It needs another blessing."
@@ -1335,10 +1351,10 @@ func _swing_at_wall(m: Member, hand: int, front: Vector2i) -> void:
 	if weapon != null and weapon.breaks_walls:
 		var dungeon := get_tree().get_first_node_in_group("dungeon")
 		if dungeon != null and dungeon.break_wall(front):
-			_say("%s smashes the cracked wall with the %s: it crumbles!" % [m.def.display_name, weapon.display_name])
+			_say("%s smashes the cracked wall with the %s: it crumbles!" % [m.name(), weapon.display_name])
 			_cue("hit")
 	else:
-		_say("%s strikes the cracked wall. It shudders but holds: it needs something heavier." % m.def.display_name)
+		_say("%s strikes the cracked wall. It shudders but holds: it needs something heavier." % m.name())
 
 
 ## Swing at the tile in front; hand -1 means "first weapon" (see effective_stats).
@@ -1360,11 +1376,11 @@ func _melee(m: Member, hand: int) -> void:
 	if result.fail:
 		_critical_fail(m, hand, weapon, false, front)
 	elif not result.hit:
-		_say("%s swings at the %s and misses." % [m.def.display_name, target.def.display_name], "miss")
+		_say("%s swings at the %s and misses." % [m.name(), target.def.display_name], "miss")
 	elif target.hp <= 0:
-		_say_hit("%s kills the %s!" % [m.def.display_name, target.def.display_name], m, weapon, result.crit)
+		_say_hit("%s kills the %s!" % [m.name(), target.def.display_name], m, weapon, result.crit)
 	else:
-		_say_hit("%s hits the %s for %d." % [m.def.display_name, target.def.display_name, result.damage], m, weapon, result.crit)
+		_say_hit("%s hits the %s for %d." % [m.name(), target.def.display_name, result.damage], m, weapon, result.crit)
 
 
 ## The line for a landed attack; a crit gets the CRITICAL! prefix and colour, and maybe a remark.
@@ -1381,7 +1397,7 @@ func _say_hit(text: String, m: Member, weapon: Resource, crit: bool) -> void:
 ## to this hand (ItemStack.origin, as for a thrown weapon). A thrown item or fists can only stumble; so can a weapon that
 ## never_slips. Someone always rubs it in.
 func _critical_fail(m: Member, hand: int, weapon: Resource, thrown: bool, cell: Vector2i) -> void:
-	var who: String = m.def.display_name
+	var who: String = m.name()
 	var index := hand if hand >= 0 else _hand_holding(m, weapon)
 	var slip: bool = weapon != null and not thrown and not weapon.never_slips and index >= 0 \
 			and m.hands[index] != null and CombatRules.rng().randf() < CombatRules.SLIP_CHANCE
@@ -1420,7 +1436,7 @@ func crit_in_hand(m: Member, hand: int) -> int:
 
 ## Ask for a line of banter (group "banter"; a scene without the node is just quiet).
 func _banter(event_name: String, m: Member, weapon: Resource = null, extra := {}) -> void:
-	var context := {"actor": m.def.display_name, "weapon": weapon.display_name if weapon != null else ""}
+	var context := {"actor": m.class_id(), "weapon": weapon.display_name if weapon != null else ""}
 	context.merge(extra)
 	get_tree().call_group("banter", "event", event_name, context)
 
@@ -1446,13 +1462,13 @@ func take_hit_from(monster: Node) -> void:
 		else:
 			_cue_from("crit_hurt" if result.crit else "hero_hurt", side)
 		if result.crit:
-			_say("CRITICAL! The %s hits %s for %d." % [monster.def.display_name, m.def.display_name, result.damage], "hurt")
+			_say("CRITICAL! The %s hits %s for %d." % [monster.def.display_name, m.name(), result.damage], "hurt")
 			hero_crit.emit(m.slot, result.damage)
 		else:
-			_say("The %s hits %s for %d." % [monster.def.display_name, m.def.display_name, result.damage])
+			_say("The %s hits %s for %d." % [monster.def.display_name, m.name(), result.damage])
 	else:
 		_cue_from("whiff", side)
-		_say("The %s misses %s." % [monster.def.display_name, m.def.display_name], "miss")
+		_say("The %s misses %s." % [monster.def.display_name, m.name()], "miss")
 	hero_hit.emit(m.slot, result.damage)
 	if result.hit:
 		hit_from.emit(side, m.slot, result.damage)

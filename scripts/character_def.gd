@@ -2,7 +2,9 @@ extends Resource
 ## A hero described as data (see data/party/*.tres). Shares its combat fields with
 ## MonsterDef, so CombatRules.resolve_attack works for either side.
 
-@export var display_name := "Hero"
+@export var display_name := "Hero"  # The CLASS as the player reads it ("Cleric"): the sheet's subtitle.
+@export var class_id := ""     # The class as a key, never shown ("cleric"): banter speakers, ItemDef.cant_use. Empty: display_name in lower case.
+@export var hero_name := ""    # The hero's own name ("Brother Felix"), what every message and panel shows. Empty: display_name.
 @export var max_hp := 20
 @export var attack := 3       # Accuracy: raises the chance to hit.
 @export var defence := 3      # Lowers enemies' chance to hit this hero.

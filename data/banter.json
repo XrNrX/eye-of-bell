@@ -3,11 +3,11 @@
 		"chance": 0.15,
 		"cooldown": 20,
 		"lines": [
-			{"speaker": "Fighter", "text": "Aye."},
-			{"speaker": "Thief", "text": "Right in the everything."},
-			{"speaker": "Cleric", "about": "self", "holding": "mace", "text": "The Light guides my mace."},
-			{"speaker": "Cleric", "about": "self", "not_holding": "mace", "text": "The Light guides my hand."},
-			{"speaker": "Mage", "about": "self", "text": "Was that me? That was me."},
+			{"speaker": "fighter", "text": "Aye."},
+			{"speaker": "thief", "text": "Right in the everything."},
+			{"speaker": "cleric", "about": "self", "holding": "mace", "text": "The Light guides my mace."},
+			{"speaker": "cleric", "about": "self", "not_holding": "mace", "text": "The Light guides my hand."},
+			{"speaker": "mage", "about": "self", "text": "Was that me? That was me."},
 			{"speaker": "Grudge", "holding": "Grudge", "priority": 3, "text": "MORE."}
 		]
 	},
@@ -15,12 +15,12 @@
 		"chance": 1.0,
 		"cooldown": 0,
 		"lines": [
-			{"speaker": "Cleric", "about": "other", "text": "I knew you were useless."},
-			{"speaker": "Fighter", "about": "other", "text": "Embarrassing."},
-			{"speaker": "Thief", "about": "other", "slipped": true, "text": "Want me to hold that for you?"},
-			{"speaker": "Thief", "about": "other", "slipped": false, "text": "Saw that. Everyone saw that."},
-			{"speaker": "Mage", "about": "other", "text": "That was... unlikely."},
-			{"speaker": "Cleric", "about": "other", "actor": "Fighter", "priority": 2, "text": "The Light laughed at that."},
+			{"speaker": "cleric", "about": "other", "text": "I knew you were useless."},
+			{"speaker": "fighter", "about": "other", "text": "Embarrassing."},
+			{"speaker": "thief", "about": "other", "slipped": true, "text": "Want me to hold that for you?"},
+			{"speaker": "thief", "about": "other", "slipped": false, "text": "Saw that. Everyone saw that."},
+			{"speaker": "mage", "about": "other", "text": "That was... unlikely."},
+			{"speaker": "cleric", "about": "other", "actor": "fighter", "priority": 2, "text": "The Light laughed at that."},
 			{"speaker": "Grudge", "holding": "Grudge", "always": true, "text": "Still here. Pity."},
 			{"speaker": "$actor", "alone": true, "priority": 1, "text": "Nobody saw that."}
 		]
@@ -29,54 +29,54 @@
 		"chance": 1.0,
 		"cooldown": 0,
 		"lines": [
-			{"speaker": "Mage", "text": "BEHIND US! WHY IS IT ALWAYS BEHIND US?"},
-			{"speaker": "Mage", "text": "IT'S BEHIND US! I SAID THIS!"}
+			{"speaker": "mage", "text": "BEHIND US! WHY IS IT ALWAYS BEHIND US?"},
+			{"speaker": "mage", "text": "IT'S BEHIND US! I SAID THIS!"}
 		]
 	},
 	"equip": {
 		"chance": 0.6,
 		"cooldown": 8,
 		"lines": [
-			{"speaker": "Fighter", "about": "self", "text": "Mine."},
-			{"speaker": "Thief", "about": "self", "text": "Finders keepers."},
-			{"speaker": "Cleric", "about": "self", "text": "Humble, but fitting."},
-			{"speaker": "Mage", "about": "self", "holding": "armour", "text": "I can't feel my legs."}
+			{"speaker": "fighter", "about": "self", "text": "Mine."},
+			{"speaker": "thief", "about": "self", "text": "Finders keepers."},
+			{"speaker": "cleric", "about": "self", "text": "Humble, but fitting."},
+			{"speaker": "mage", "about": "self", "holding": "armour", "text": "I can't feel my legs."}
 		]
 	},
 	"corruption_bounce": {
 		"chance": 1.0,
 		"cooldown": 20,
 		"lines": [
-			{"speaker": "Cleric", "actor": "Fighter", "always": true, "text": "Some doors open to faith, my son. Not to swinging."},
-			{"speaker": "Fighter", "actor": "Fighter", "always": true, "text": "Just do your glowy thing."},
-			{"speaker": "Cleric", "about": "other", "actor": "Mage", "always": true, "text": "Fire. Against rot. Truly, a scholar."},
-			{"speaker": "Mage", "actor": "Mage", "always": true, "text": "It ATE it. The wall ate my fireball."},
-			{"speaker": "Thief", "about": "self", "actor": "Thief", "always": true, "text": "It's alive. I don't like stabbing things that are alive."},
-			{"speaker": "Fighter", "about": "other", "actor": "Cleric", "always": true, "text": "Don't look at me. You do the praying."}
+			{"speaker": "cleric", "actor": "fighter", "always": true, "text": "Some doors open to faith, my son. Not to swinging."},
+			{"speaker": "fighter", "actor": "fighter", "always": true, "text": "Just do your glowy thing."},
+			{"speaker": "cleric", "about": "other", "actor": "mage", "always": true, "text": "Fire. Against rot. Truly, a scholar."},
+			{"speaker": "mage", "actor": "mage", "always": true, "text": "It ATE it. The wall ate my fireball."},
+			{"speaker": "thief", "about": "self", "actor": "thief", "always": true, "text": "It's alive. I don't like stabbing things that are alive."},
+			{"speaker": "fighter", "about": "other", "actor": "cleric", "always": true, "text": "Don't look at me. You do the praying."}
 		]
 	},
 	"corruption_resists": {
 		"chance": 1.0,
 		"cooldown": 0,
 		"lines": [
-			{"speaker": "Cleric", "about": "self", "always": true, "text": "It resists. The Light is patient."},
-			{"speaker": "Fighter", "always": true, "text": "Again. Faster."}
+			{"speaker": "cleric", "about": "self", "always": true, "text": "It resists. The Light is patient."},
+			{"speaker": "fighter", "always": true, "text": "Again. Faster."}
 		]
 	},
 	"corruption_purified": {
 		"chance": 1.0,
 		"cooldown": 0,
 		"lines": [
-			{"speaker": "Cleric", "about": "self", "always": true, "text": "Ashes to ashes. You're welcome."},
-			{"speaker": "Fighter", "always": true, "text": "Told you. Glowy."},
-			{"speaker": "Thief", "always": true, "text": "Anything valuable in the ashes?"}
+			{"speaker": "cleric", "about": "self", "always": true, "text": "Ashes to ashes. You're welcome."},
+			{"speaker": "fighter", "always": true, "text": "Told you. Glowy."},
+			{"speaker": "thief", "always": true, "text": "Anything valuable in the ashes?"}
 		]
 	},
 	"eat": {
 		"chance": 0.5,
 		"cooldown": 30,
 		"lines": [
-			{"speaker": "Fighter", "about": "self", "text": "Tastes like the floor. Still good."}
+			{"speaker": "fighter", "about": "self", "text": "Tastes like the floor. Still good."}
 		]
 	}
 }

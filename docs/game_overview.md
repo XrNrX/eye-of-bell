@@ -10,7 +10,7 @@
 - **Wren**, thief: sarcastic and greedy.
 - **Fennick**, mage: nervous.
 
-They can't stand each other but would die for each other. (In data a hero's `display_name` is still the class.)
+They can't stand each other but would die for each other. (In data a hero has a `hero_name` (these names), a `class_id` (`cleric`...) and a `display_name` that is the class.)
 
 ## Visual style
 Dark, desaturated, cursed (`docs/art_style.md`). Sickly green means the curse and danger. Spells: fire orange, holy gold, arcane pale blue. Torchlight is the only warm colour.

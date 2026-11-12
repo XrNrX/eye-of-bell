@@ -324,8 +324,10 @@ Each hero, six different events. Use these as the measure for new ones.
 - **Banter:** `data/banter.json`, one entry per event (`crit`, `fail`,
   `hit_behind`, `equip`, `eat`, `corruption_bounce`, `corruption_resists`,
   `corruption_purified`), with `chance`, `cooldown` and conditions; see the header
-  of `scripts/banter.gd`. `speaker` and `actor` are the hero's CLASS ("Cleric"),
-  which is a role key and not a name. The log shows "Speaker: text".
+  of `scripts/banter.gd`. `speaker` and `actor` are the hero's CLASS ID
+  ("cleric", "fighter", "thief", "mage": a role key, never shown); the log shows
+  the hero's own name in front ("Brother Felix: text"), so renaming a hero changes
+  nothing in the JSON.
   `banter.gd` does not replace `{name}` / `{target}` yet: add that to the code
   before adding lines that use them.
 - **Log messages:** `Party._say(text, tone)` and `Hud.show_message`; tones `miss`,

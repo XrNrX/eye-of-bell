@@ -107,7 +107,7 @@ func refusal(stack: RefCounted) -> String:
 	if (kind == Kind.HAND or kind == Kind.ARMOUR) and screen != null and screen.party != null:
 		var m = screen.party.member(member_slot)
 		if m != null and not screen.party.can_equip(m, stack.def):  # The same class rule as clicking a portrait.
-			return "The %s can't %s that." % [m.def.display_name.to_lower(), "wear" if stack.def.type == ItemDef.Type.ARMOUR else "use"]
+			return "%s can't %s that." % [m.name(), "wear" if stack.def.type == ItemDef.Type.ARMOUR else "use"]
 	if stack.count > 1 and not holds_stacks(stack.def):
 		return "Only one at a time goes there."
 	return ""
@@ -125,7 +125,7 @@ func refresh() -> void:
 		var m = screen.party.member(member_slot)
 		icon.texture = m.def.portrait if m.is_alive() else m.def.portrait_dead
 		filled = member_slot == screen.focused_slot  # Highlight whichever member is shown.
-		tooltip_text = m.def.display_name
+		tooltip_text = m.name()
 	else:
 		var stack := get_item()
 		icon.texture = stack.def.icon if stack else null
@@ -261,7 +261,7 @@ func _click_portrait() -> void:
 		return
 	if not screen.party.add_to_backpack(member_slot, cursor.held):
 		cursor.refresh()  # Part of a stack may have fitted.
-		screen.say("%s's backpack is full." % m.def.display_name)
+		screen.say("%s's backpack is full." % m.name())
 		screen.refresh()
 		return
 	cursor.release()

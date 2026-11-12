@@ -2,7 +2,7 @@ extends Node
 ## Banter: one short line in the message log when something happens. Scripts never hold this node; they call it
 ## through the group, and a scene without it is simply quiet:
 ##
-##     get_tree().call_group("banter", "event", "crit", {"actor": "Thief", "weapon": "Dagger"})
+##     get_tree().call_group("banter", "event", "crit", {"actor": "thief", "weapon": "Dagger"})
 ##
 ## The lines live in data/banter.json, one entry per event:
 ##     chance    0..1, how often the event gets a line at all
@@ -16,7 +16,8 @@ extends Node
 ##     alone        whether the actor is the only hero alive
 ##     priority     among the lines that fit, only the highest priority is picked from (default 0)
 ##     always       said as well as the picked line
-## A speaker is a living hero, a weapon the actor holds (Grudge), or "$actor". Rolls use the combat dice, so tests can seed them.
+## A speaker is a living hero by CLASS ID ("cleric", "fighter", "thief", "mage": CharacterDef.class_id, so renaming a hero changes nothing here;
+## the log shows the hero's own name), a weapon the actor holds (Grudge), or "$actor". `actor` (in the context and as a condition) is a class id too. Rolls use the combat dice, so tests can seed them.
 
 const CombatRules := preload("res://scripts/combat_rules.gd")
 
@@ -56,7 +57,7 @@ func event(event_name: String, context := {}) -> Array:
 	var out := []
 	for line in lines:
 		var speaker: String = context.get("actor", "") if line.speaker == "$actor" else line.speaker
-		var text := "%s: %s" % [speaker, line.text]
+		var text := "%s: %s" % [_display(speaker), line.text]
 		get_tree().call_group("hud", "show_message", text, false, "banter")
 		said.append(text)
 		out.append(text)
@@ -87,12 +88,23 @@ func _fits(line: Dictionary, context: Dictionary) -> bool:
 	return true
 
 
-## The names of the heroes still alive.
+## The class ids of the heroes still alive ("cleric"...), which is what a line's `speaker` and `actor` are.
 func _living() -> Array:
 	var names := []
 	var party := get_tree().get_first_node_in_group("party")
 	if party != null:
 		for m in party.members:
 			if m.is_alive():
-				names.append(m.def.display_name)
+				names.append(m.class_id())
 	return names
+
+
+## What the log shows before a line: the hero's own name for a class id ("cleric" -> "Brother Felix"), else the speaker as written
+## (a weapon: "Grudge").
+func _display(speaker: String) -> String:
+	var party := get_tree().get_first_node_in_group("party")
+	if party != null:
+		for m in party.members:
+			if m.class_id() == speaker:
+				return m.name()
+	return speaker

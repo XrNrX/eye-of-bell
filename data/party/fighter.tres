@@ -9,6 +9,8 @@
 [resource]
 script = ExtResource("1_def")
 display_name = "Fighter"
+class_id = "fighter"
+hero_name = "Brannoc"
 max_hp = 30
 attack = 4
 defence = 4

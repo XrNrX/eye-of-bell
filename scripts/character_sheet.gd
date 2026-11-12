@@ -29,6 +29,7 @@ const FONT := 8
 var party: Node
 var portrait: TextureRect
 var title: Label
+var class_label: Label
 var row_label: Label
 var rows := {}          # stat key -> {name, value, delta} labels
 var buff_label: Label
@@ -63,7 +64,11 @@ func _ready() -> void:
 	names.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	head.add_child(names)
 	title = _label("", TITLE)
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # "Brother Felix" is wider than the space beside the portrait.
+	title.custom_minimum_size.x = WIDTH - 16.0 - 48.0 - 8.0  # As wide as the gear lines below allow the head to be: the sheet stays the width it was.
 	names.add_child(title)
+	class_label = _label("", MUTED)  # The class, under the hero's name.
+	names.add_child(class_label)
 	row_label = _label("", MUTED)
 	names.add_child(row_label)
 
@@ -126,7 +131,8 @@ func refresh(a_party: Node, slot: int) -> void:
 	party = a_party
 	var m = party.member(slot)
 	portrait.texture = m.def.portrait if m.is_alive() else m.def.portrait_dead
-	title.text = m.def.display_name  # A hero is their class: "Fighter", "Mage"...
+	title.text = m.name()
+	class_label.text = m.def.display_name  # The class: "Fighter", "Mage"...
 	row_label.text = "Front row" if slot < 2 else "Back row"
 	if not m.is_alive():
 		row_label.text = "Dead"
