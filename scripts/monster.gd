@@ -41,9 +41,7 @@ var _walk_time := 0.0
 var _one_shot := PackedInt32Array()  # Frames of an attack/hurt animation playing now.
 var _one_shot_time := 0.0
 var _one_shot_fps := 10.0
-var _telegraphing := false
-var _feel_tween: Tween  # The rear-back / lunge on the sprite (see _telegraph).
-var _flash_tween: Tween  # The colour flash that goes with it.
+var _swinging := false  # The attack animation is playing and the blow lands when attack_cooldown runs out (see _begin_swing).
 
 
 ## Call before adding to the tree.
@@ -89,14 +87,13 @@ func _process(delta: float) -> void:
 		return
 	if _next_to_player():
 		attack_cooldown -= delta
-		# Warn the player a moment before the blow lands (it still lands on schedule).
-		if not _telegraphing and attack_cooldown > 0.0 and attack_cooldown <= feel_cfg.telegraph_seconds:
-			_telegraph()
+		# The swing starts early enough that its impact frame appears just as the blow lands (see _begin_swing).
+		if not _swinging and attack_cooldown <= _hit_delay():
+			_begin_swing()
 		if attack_cooldown <= 0.0:
 			_attack()
 	else:
-		if _telegraphing:
-			_end_feel()  # The party moved away: stand down.
+		_swinging = false  # The party moved away: no blow comes of it.
 		# Arriving next to the party: a short wind-up before the first blow.
 		attack_cooldown = maxf(attack_cooldown, def.attack_interval * WIND_UP)
 
@@ -175,80 +172,31 @@ func _next_to_player() -> bool:
 	return absi(d.x) + absi(d.y) == 1
 
 
-func _attack() -> void:
-	attack_cooldown = def.attack_interval
-	get_tree().call_group("party", "cue_attack_from", self)
-	var was_telegraphing := _telegraphing
-	_end_feel()
-	if was_telegraphing and feel_cfg.telegraph_lunge:
-		_lunge()
+## Seconds from the start of the attack animation to the frame where the blow lands (MonsterDef.attack_hit_frame): the
+## swing's anticipation. 0 for a monster with no attack animation.
+func _hit_delay() -> float:
+	if def.attack_frames.is_empty():
+		return 0.0
+	var hit: int = def.attack_hit_frame if def.attack_hit_frame >= 0 else def.attack_frames.size() / 2
+	return float(clampi(hit, 0, def.attack_frames.size() - 1)) / maxf(def.attack_fps, 0.01)
+
+
+## Start the attack animation, so that its impact frame is on screen the moment the damage, the red flash and the
+## screen shake arrive (_attack): the blow comes `_hit_delay()` seconds after this. The rhythm of attacks is unchanged
+## (attack_interval), only the animation leads it; a monster that was late to begin waits for the impact frame.
+func _begin_swing() -> void:
+	_swinging = true
+	attack_cooldown = maxf(attack_cooldown, _hit_delay())
 	if not def.attack_frames.is_empty():
 		_play(def.attack_frames, def.attack_fps)
+
+
+## The blow lands: sound, damage and everything that follows (flash, shake, jolt) happen here, together, on the impact frame.
+func _attack() -> void:
+	attack_cooldown = def.attack_interval
+	_swinging = false
+	get_tree().call_group("party", "cue_attack_from", self)
 	get_tree().call_group("party", "take_hit_from", self)
-
-
-## Where the sprite sits at rest (local to the monster) and the way it faces away from
-## the party, for rearing back.
-func _rest_position() -> Vector3:
-	return Vector3(0.0, _sprite_height() / 2.0, 0.0)
-
-
-func _away_from_party() -> Vector3:
-	var d := cell - DungeonMap.player_cell
-	return Vector3(d.x, 0.0, d.y)
-
-
-## The wind-up: lean away from the party, stretch taller and flash, for the last
-## telegraph_seconds before the blow. Purely visual.
-func _telegraph() -> void:
-	if not feel_cfg.telegraph_enabled:
-		return
-	_telegraphing = true
-	_kill_feel_tween()
-	var rear: float = feel_cfg.telegraph_rear_back
-	var h := _sprite_height()
-	var time := maxf(attack_cooldown, 0.05)
-	_feel_tween = create_tween().set_parallel()
-	_feel_tween.tween_property(sprite, "scale", Vector3(1.0 - rear * 0.4, 1.0 + rear, 1.0), time * 0.6).set_ease(Tween.EASE_OUT)
-	_feel_tween.tween_property(sprite, "position",
-			_rest_position() + _away_from_party() * rear * 0.5 + Vector3(0.0, h * rear * 0.5, 0.0), time * 0.6).set_ease(Tween.EASE_OUT)
-	# Flash: pulses between the tint and normal.
-	var flashes := maxi(1, feel_cfg.telegraph_flashes)
-	var flash := create_tween()
-	for i in flashes:
-		flash.tween_property(sprite, "modulate", feel_cfg.telegraph_flash_colour, time / (flashes * 2.0))
-		flash.tween_property(sprite, "modulate", Color.WHITE, time / (flashes * 2.0))
-	flash.tween_callback(func(): sprite.modulate = Color.WHITE)
-	_flash_tween = flash
-
-
-## The blow lands: snap towards the party, then settle.
-func _lunge() -> void:
-	_kill_feel_tween()
-	var toward := -_away_from_party() * 0.12
-	sprite.scale = Vector3(1.1, 0.92, 1.0)
-	sprite.position = _rest_position() + toward
-	_feel_tween = create_tween().set_parallel()
-	_feel_tween.tween_property(sprite, "scale", Vector3.ONE, 0.18).set_ease(Tween.EASE_OUT)
-	_feel_tween.tween_property(sprite, "position", _rest_position(), 0.18).set_ease(Tween.EASE_OUT)
-
-
-## Stop the telegraph and put the sprite back to normal.
-func _end_feel() -> void:
-	_telegraphing = false
-	_kill_feel_tween()
-	sprite.scale = Vector3.ONE
-	sprite.position = _rest_position()
-	sprite.modulate = Color.WHITE
-
-
-func _kill_feel_tween() -> void:
-	if _feel_tween:
-		_feel_tween.kill()
-		_feel_tween = null
-	if _flash_tween:
-		_flash_tween.kill()
-		_flash_tween = null
 
 
 ## Called by the party with a CombatRules result: show the number, flash, maybe die.
@@ -301,7 +249,6 @@ func _die(big := false, killer := -1) -> void:
 	dying = true
 	Events.send(get_tree(), "monster_killed", [def, cell, killer])
 	_drop_loot()
-	_end_feel()  # Back to normal first: the sink below tweens the sprite's scale and height.
 	_release_tiles()
 	get_tree().call_group("dungeon", "refresh")
 	var tween := create_tween()

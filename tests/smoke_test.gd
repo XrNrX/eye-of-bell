@@ -68,6 +68,7 @@ func _init() -> void:
 	player.restore(SPOT, EAST)
 	_check_kill()
 	_check_monster_hit()
+	await _check_attack_timing()
 	_check_hero_death()
 	_check_spells()
 	await _check_food()
@@ -184,6 +185,40 @@ func _check_monster_hit() -> void:
 			front_only = false
 	check("a monster in front hurts the front row only", front_only)
 	dungeon.clear_monsters()
+
+
+## A monster's blow lands on the impact frame of its swing: the damage (and with it the red flash, the shake and the sound) arrives
+## as that frame appears, and the monster does not rear back or stretch first (MonsterDef.attack_hit_frame, monster._begin_swing).
+func _check_attack_timing() -> void:
+	for file in ["skeleton", "skeleton_guard", "slime", "slime_acid"]:
+		_rest_everyone()
+		dungeon.clear_monsters()
+		player.restore(SPOT, EAST)
+		var monster: Node = _monster(file, AHEAD_1)
+		var def: Resource = monster.def
+		var impact: int = def.attack_frames[def.attack_hit_frame]
+		var seen := {"start": -1.0, "hit": -1.0, "frame": -1, "drift": 0.0}
+		var started := Time.get_ticks_msec()
+		var on_hit := func(_slot, _damage):
+			if seen.hit < 0.0:
+				seen.hit = (Time.get_ticks_msec() - started) / 1000.0
+				seen.frame = monster.sprite.frame
+		party.hero_hit.connect(on_hit)
+		while seen.hit < 0.0 and (Time.get_ticks_msec() - started) < 6000:
+			await process_frame
+			var now := (Time.get_ticks_msec() - started) / 1000.0
+			if monster._swinging and seen.start < 0.0:
+				seen.start = now
+			seen.drift = maxf(seen.drift, maxf((monster.sprite.scale - Vector3.ONE).length(), absf(monster.sprite.position.y - monster._sprite_height() / 2.0)))
+		party.hero_hit.disconnect(on_hit)
+		var wait: float = seen.hit - seen.start
+		var expected: float = def.attack_hit_frame / def.attack_fps
+		check("%s: the blow lands (the swing began %.2f s earlier, the impact frame is %.2f s in)" % [file, wait, expected],
+				seen.hit >= 0.0 and seen.start >= 0.0 and absf(wait - expected) < 0.12)
+		check("%s: the impact frame is on screen as it lands (frame %d, wanted %d)" % [file, seen.frame, impact], absi(seen.frame - impact) <= 1)
+		check("%s: no pull-back or stretch before the blow" % file, seen.drift < 0.001)
+	dungeon.clear_monsters()
+	_rest_everyone()
 
 
 func _check_hero_death() -> void:

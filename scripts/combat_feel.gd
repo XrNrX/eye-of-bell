@@ -1,7 +1,7 @@
 extends Node
 ## Combat feel: the effects that need a global hand -- hit-pause and screen shake.
-## (The monster telegraph lives in monster.gd, the portrait shake in party_hud.gd, the
-## miss message in party.gd/hud.gd; they all read the same config.) Self-contained:
+## (The portrait shake lives in party_hud.gd, the miss message in party.gd/hud.gd; they all read
+## the same config. A monster's blow, the red flash and the shake land together: monster.gd.) Self-contained:
 ## delete this node and those two effects just stop.
 ##
 ## Heard through the group "combat_feel":

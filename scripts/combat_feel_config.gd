@@ -35,16 +35,6 @@ static func get_config() -> Resource:
 @export var screen_shake_strength := 0.05    # Camera offset at full strength (world units).
 @export var screen_shake_seconds := 0.3
 
-@export_group("Monster telegraph")
-## A monster rears back and flashes just before each attack. The attack still lands at
-## exactly the same moment; the warning fills the last stretch of its cooldown.
-@export var telegraph_enabled := true
-@export var telegraph_seconds := 0.45        # How long before the blow it starts.
-@export var telegraph_rear_back := 0.18      # How far it leans away and stretches (fraction of its height).
-@export var telegraph_flash_colour := Color(1.0, 0.62, 0.35)  # Close to palette rust_300.
-@export var telegraph_flashes := 3
-@export var telegraph_lunge := true          # Snap forward as the blow lands.
-
 @export_group("Miss messages")
 ## Misses (by heroes, monsters and thrown weapons) get their own look on the message line.
 @export var miss_message_enabled := true

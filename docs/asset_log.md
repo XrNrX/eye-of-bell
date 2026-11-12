@@ -98,7 +98,7 @@ None of these were made with the VFX suite, so they should be replaced.
 - Curse veins on walls: a pulsing emissive decal (`wall_decor.gd`, `start_pulse`).
 - The cracked wall's green crack glow and its dimming (`Dungeon.dim_curse`).
 - Volumetric fog and bloom (`SpellEffectsConfig.apply_environment`): an engine effect, not art.
-- Monster hurt flashes and telegraph glow (`monster.gd`) and the party panel's buff rings and food flares (`party_hud.gd`).
+- Monster hurt flashes (`monster.gd`) and the party panel's buff rings and food flares (`party_hud.gd`).
 - Ambush bursts and legendary item glows: none exist yet; when they do they must be made with the VFX suite.
 
 **Corrupted walls** (everything that moves on them is in the table above; what is left in code)

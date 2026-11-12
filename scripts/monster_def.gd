@@ -45,6 +45,10 @@ extends Resource
 @export var idle_fps := 2.0
 @export var walk_fps := 13.0  # Four frames in one 0.3 s step: one stride per step.
 @export var attack_fps := 8.0
+## Which frame of attack_frames is the moment the blow lands (0 = the first): the fist at full reach, the axe coming down, the slam.
+## The attack animation starts early enough that this frame appears just as the damage is dealt, so the swing, the red flash and
+## the screen shake are one beat (monster.gd: _begin_swing). -1: the middle frame. Set it for every new or redone attack animation.
+@export var attack_hit_frame := -1
 @export var hurt_fps := 14.0
 ## World units per sprite pixel (48x64 frame at 0.028 is about 1.3 x 1.8 units).
 @export var pixel_size := 0.028
