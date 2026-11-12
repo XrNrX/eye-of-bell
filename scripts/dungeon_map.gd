@@ -343,7 +343,28 @@ static var purified := {}        # Corrupted walls that have been burned away (c
 static var purify_pending := {}  # Walls whose purifying show is still running: they stay solid until it ends (cell -> true).
 static var puzzles_done := {}    # Puzzles that have fired (id -> true); saved.
 static var puzzle_doors := {}    # DOOR_IDS doors a puzzle holds open (id -> true); saved.
+## Run flags: things that have happened in this run that no other state records (a banter line that may only be said once, an
+## ambush that has sprung, a secret found). Name -> a bool, a whole number, a float or a String; nothing else is saved. Cleared by
+## reset_run, saved under "flags" (an older save has none, so it loads with none). Name them "system.what", e.g. "banter.first_death".
+static var flags := {}
 static var player_cell := Vector2i(-1, -1)  # Set by player.gd as it moves.
+
+
+## Set a run flag (true by default).
+static func set_flag(name: String, value = true) -> void:
+	if typeof(value) not in [TYPE_BOOL, TYPE_INT, TYPE_FLOAT, TYPE_STRING]:
+		push_warning("run flag '%s': only a bool, number or String can be saved" % name)
+		return
+	flags[name] = value
+
+
+## A run flag's value, or `default` if it was never set.
+static func flag(name: String, default = false):
+	return flags.get(name, default)
+
+
+static func has_flag(name: String) -> bool:
+	return flags.has(name)
 
 
 ## The ID of a switch-controlled door, or "" for an ordinary door.
@@ -386,6 +407,7 @@ static func reset_run() -> void:
 	purify_pending.clear()
 	puzzles_done.clear()
 	puzzle_doors.clear()
+	flags.clear()
 
 
 ## True if the cell is a door of any kind (open, closed, locked or a portcullis).

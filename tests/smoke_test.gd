@@ -49,6 +49,9 @@ func _init() -> void:
 	SaveGame.path = SAVE_PATH
 	DungeonMap.use_level("")
 	CombatRules.seed_rng(12345)
+	DungeonMap.set_flag("smoke.left_over", true)
+	DungeonMap.use_level("")  # Starting a level starts a run: it clears the run flags.
+	check("starting a run clears the run flags", DungeonMap.flags.is_empty())
 	var scene: Node = load("res://scenes/main.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene  # So loading can reload it, as in the real game.
@@ -627,6 +630,13 @@ func _check_save_load() -> void:
 	party.add_to_backpack(3, ItemStack.of(stone, 7))
 	dungeon.place_item(Vector2i(10, 13), ItemStack.of(stone, 4))
 	dungeon.take_item(SWORD_TILE)  # The short sword in front of the start is gone.
+	DungeonMap.set_flag("smoke.seen", true)
+	DungeonMap.set_flag("smoke.count", 3)
+	DungeonMap.set_flag("smoke.ratio", 0.5)
+	DungeonMap.set_flag("smoke.name", "Fennick")
+	DungeonMap.set_flag("smoke.bad", [1, 2])  # (Refused with a warning: only simple values are saved.)
+	check("a run flag holds a bool, a number or a string and nothing else", DungeonMap.has_flag("smoke.seen") and DungeonMap.flag("smoke.count") == 3
+			and not DungeonMap.has_flag("smoke.bad") and DungeonMap.flag("smoke.missing", 7) == 7)
 	var n := 0
 	for m in party.members:
 		m.hp = maxi(1, m.def.max_hp - 3 - 2 * n)
@@ -650,6 +660,8 @@ func _check_save_load() -> void:
 	dungeon.clear_monsters()
 	dungeon.set_pile(Vector2i(10, 13), [])
 	player.restore(DungeonMap.START_TILE, 0)
+	DungeonMap.flags.clear()
+	DungeonMap.set_flag("smoke.wrecked", true)
 
 	error = SaveGame.load_game(self)
 	check("the game loads", error == "")
@@ -668,6 +680,8 @@ func _check_save_load() -> void:
 	check("load: sends no GameEvents (a broken wall, a purified wall and a solved puzzle are put back silently)",
 			_event_counts() == sent_before and DungeonMap.broken_walls.has(CRACKED_WALL) and DungeonMap.purified.has(THICK_CORRUPTION)
 			and DungeonMap.puzzles_done.has("nook_blessing"))
+	check("load: run flags come back, with their types, and nothing else", DungeonMap.flags == {"smoke.seen": true, "smoke.count": 3, "smoke.ratio": 0.5, "smoke.name": "Fennick"}
+			and typeof(DungeonMap.flags["smoke.count"]) == TYPE_INT and typeof(DungeonMap.flags["smoke.ratio"]) == TYPE_FLOAT)
 	check("load: formation", loaded.formation == saved.formation)
 	check("load: every hero's HP", loaded.hp == saved.hp)
 	var mana_ok := true
@@ -684,3 +698,10 @@ func _check_save_load() -> void:
 		if loaded[key] != saved[key]:
 			print("  ", key, " saved:  ", saved[key])
 			print("  ", key, " loaded: ", loaded[key])
+
+	# A save from before run flags existed has no "flags": it loads, with none set.
+	var old_save: Dictionary = SaveGame.read_file()
+	old_save.erase("flags")
+	DungeonMap.set_flag("smoke.stale", true)
+	error = SaveGame.apply(self, old_save)
+	check("an older save without flags loads, with no flags set", error == "" and DungeonMap.flags.is_empty())

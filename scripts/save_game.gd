@@ -14,6 +14,7 @@ extends RefCounted
 ##              which doors are open or unlocked, which levers are on, live monsters
 ##              (kind, cell, hp, attack timer)
 ##   cursor     the item held on the cursor
+##   flags      the run flags (DungeonMap.flags: things that have happened, by name)
 ## Not saved: cooldowns (they restart ready), animations in flight, floating text.
 ##
 ## Loading reloads main.tscn (a clean, fully built dungeon) and then applies the file to
@@ -151,6 +152,7 @@ static func serialize(tree: SceneTree) -> Dictionary:
 				"levers": levers, "monsters": monsters, "broken_walls": broken,
 				"purified_walls": purified, "corruption": corruption,
 				"puzzles_done": DungeonMap.puzzles_done.keys(), "puzzle_doors": DungeonMap.puzzle_doors.keys()},
+		"flags": DungeonMap.flags.duplicate(),
 		"cursor": stack_to_data(cursor.held) if cursor else null,
 	}
 
@@ -266,6 +268,15 @@ static func apply(tree: SceneTree, data: Dictionary) -> String:
 	DungeonMap.puzzle_doors.clear()
 	for id in d.get("puzzle_doors", []):
 		DungeonMap.puzzle_doors[str(id)] = true
+	DungeonMap.flags.clear()  # (An older save has none: the run starts with no flags set.)
+	var saved_flags = data.get("flags", {})
+	if saved_flags is Dictionary:
+		for name in saved_flags:
+			var value = saved_flags[name]
+			if value is float and value == floorf(value) and absf(value) < 1.0e15:
+				value = int(value)  # JSON gives every number back as a float.
+			if typeof(value) in [TYPE_BOOL, TYPE_INT, TYPE_FLOAT, TYPE_STRING]:
+				DungeonMap.flags[str(name)] = value
 	dungeon.restore_corruption(left, purified_cells)
 	dungeon.restore_doors(open)
 	var on := {}
