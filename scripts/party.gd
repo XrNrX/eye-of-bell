@@ -112,6 +112,7 @@ class Stats:
 var last_hit_side := "front"  # Where the latest blow came from (the HUD's full-view flash is for the front only).
 var behind_warned := false    # "Something's behind you!" has shown this fight.
 var fight_left := 0.0         # Seconds until this fight counts as over (see take_hit_from).
+var _wipe_shown := false      # The party is wiped and Game over has been shown (see _check_wiped).
 var members: Array = []  # Member per position (slot), front row first. Reordered by set_formation.
 
 ## The formation: the hero_index standing in each position, e.g. [0, 1, 2, 3] by default
@@ -169,6 +170,57 @@ func _process(delta: float) -> void:
 		m.buffs = m.buffs.filter(func(b): return b.left > 0.0)
 
 
+# --------------------------------------------------------------------------
+# Hit points: hurt() and heal() are the only places a hero's hp changes in play
+# --------------------------------------------------------------------------
+# (A new run sets hp in _ready, loading a save sets it in save_game.gd, and the test room's refill key sets it: those
+# put a state in place, they are not things that happen to a hero.)
+
+## Take `amount` HP from a living hero. `source` says what did it ("monster", "sickness", later a trap or a curse) and
+## goes out with GameEvents.hero_hurt. With can_kill false the last HP is never taken (sickness). At 0 HP the hero is
+## dead: their buffs end, GameEvents.hero_died is sent, and if nobody is left the party is wiped (Game over, at the end
+## of this frame so that whatever struck the blow can finish its own messages first). Returns the HP actually lost.
+func hurt(m: Member, amount: int, source := "", can_kill := true) -> int:
+	if m == null or not m.is_alive() or amount <= 0:
+		return 0
+	var lost := mini(amount, m.hp if can_kill else m.hp - 1)
+	if lost <= 0:
+		return 0
+	m.hp -= lost
+	if m.hp == 0:
+		m.buffs.clear()
+	hp_changed.emit(m.slot)
+	Events.send(get_tree(), "hero_hurt", [m.hero_index, lost, source])
+	if m.hp == 0:
+		Events.send(get_tree(), "hero_died", [m.hero_index])
+		_check_wiped.call_deferred()
+	return lost
+
+
+## Give a living hero up to `amount` HP, never above their maximum. `source` says what did it ("food", "potion",
+## "spell", "revive"). The dead are not healed unless raise_dead is true (a resurrection: revive() does the rest).
+## Returns the HP actually gained.
+func heal(m: Member, amount: int, source := "", raise_dead := false) -> int:
+	if m == null or amount <= 0 or (not m.is_alive() and not raise_dead):
+		return 0
+	var gained := mini(amount, m.def.max_hp - m.hp)
+	if gained <= 0:
+		return 0
+	m.hp += gained
+	_wipe_shown = false
+	hp_changed.emit(m.slot)
+	return gained
+
+
+## Everyone is dead: say so once (the `wiped` signal and the Game over screen).
+func _check_wiped() -> void:
+	if _wipe_shown or not is_wiped():
+		return
+	_wipe_shown = true
+	wiped.emit()
+	get_tree().call_group("game_over", "show_screen")
+
+
 ## Food heals and sickness hurts a little at a time: the rate is HP a second, the whole points are applied as they
 ## add up (so a 10 HP heal over 10 s is about 1 HP a second). Sickness never takes the last HP. Dying ends both.
 func _tick_food(m: Member, delta: float) -> void:
@@ -182,22 +234,19 @@ func _tick_food(m: Member, delta: float) -> void:
 		var whole := int(m.food_acc)
 		if whole > 0:
 			m.food_acc -= whole
-			var healed := mini(whole, m.def.max_hp - m.hp)
+			var healed := heal(m, whole, "food")
 			if healed > 0:
-				m.hp += healed
-				hp_changed.emit(m.slot)
 				food_tick.emit(m.slot, healed)
 		if m.food_left <= 0.0:
 			m.food_acc = 0.0
 	if m.sick_left > 0.0:
 		m.sick_acc += m.sick_rate * minf(delta, m.sick_left)
 		m.sick_left = maxf(0.0, m.sick_left - delta)
-		var lost := mini(int(m.sick_acc), m.hp - 1)
-		if int(m.sick_acc) > 0:
-			m.sick_acc -= int(m.sick_acc)
+		var due := int(m.sick_acc)
+		if due > 0:
+			m.sick_acc -= due
+		var lost := hurt(m, due, "sickness", false)  # Never the last HP.
 		if lost > 0:
-			m.hp -= lost
-			hp_changed.emit(m.slot)
 			sick_tick.emit(m.slot, lost)
 		if m.sick_left <= 0.0:
 			m.sick_acc = 0.0
@@ -656,9 +705,7 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 				if t.hp >= t.def.max_hp:
 					_say("%s is already healthy." % t.def.display_name)
 					return false
-				var healed := mini(CombatRules.roll_damage(spell.heal_min, spell.heal_max), t.def.max_hp - t.hp)
-				t.hp += healed
-				hp_changed.emit(t.slot)
+				var healed := heal(t, CombatRules.roll_damage(spell.heal_min, spell.heal_max), "spell")
 				text = "%s casts %s on %s (+%d HP)." % [who, spell.display_name, t.def.display_name, healed]
 			if spell.duration > 0.0:
 				_add_buff(t, spell)
@@ -1107,7 +1154,6 @@ func revive(slot: int, def: Resource) -> Dictionary:
 		_say("The scroll needs the fallen.")
 		return {"used": false, "message": "The scroll needs the fallen."}
 	var divine: bool = m.def.magic == ItemDef.Magic.DIVINE
-	m.hp = m.def.max_hp if divine else maxi(1, ceili(m.def.max_hp * def.revive_percent / 100.0))
 	m.mana = 0.0
 	m.buffs.clear()
 	m.cooldown_left = 0.0
@@ -1115,7 +1161,7 @@ func revive(slot: int, def: Resource) -> Dictionary:
 	m.shaken_left = def.shaken_seconds if divine else 0.0
 	m.food_left = 0.0
 	m.sick_left = 0.0
-	hp_changed.emit(m.slot)
+	heal(m, m.def.max_hp if divine else maxi(1, ceili(m.def.max_hp * def.revive_percent / 100.0)), "revive", true)
 	_cue("bless")
 	get_tree().call_group("spell_effects", "holy_pulse", 1.6 if divine else 1.0)
 	revived.emit(m.slot, divine)
@@ -1149,9 +1195,7 @@ func revive_from_quick(slot: int, index: int, target_slot: int) -> bool:
 func _drink(m: Member, def: Resource) -> Dictionary:
 	if m.hp >= m.def.max_hp:
 		return {"used": false, "message": "%s is already healthy." % m.def.display_name, "close": false}
-	var healed := mini(def.heal_amount, m.def.max_hp - m.hp)
-	m.hp += healed
-	hp_changed.emit(m.slot)
+	var healed := heal(m, def.heal_amount, "potion")
 	_cue("potion")
 	return {"used": true, "close": false,
 		"message": "%s drinks the %s (+%d HP)." % [m.def.display_name, def.display_name, healed]}
@@ -1396,14 +1440,11 @@ func take_hit_from(monster: Node) -> void:
 	if result.hit:
 		if result.crit:
 			result.damage = CombatRules.cap_monster_crit(result.damage, m.hp, m.def.max_hp)
-		m.hp = maxi(0, m.hp - result.damage)
+		hurt(m, result.damage, "monster")
 		if m.hp == 0:
-			m.buffs.clear()
 			_cue_from("hero_die", side)
-			Events.send(get_tree(), "hero_died", [m.hero_index])
 		else:
 			_cue_from("crit_hurt" if result.crit else "hero_hurt", side)
-		hp_changed.emit(m.slot)
 		if result.crit:
 			_say("CRITICAL! The %s hits %s for %d." % [monster.def.display_name, m.def.display_name, result.damage], "hurt")
 			hero_crit.emit(m.slot, result.damage)
@@ -1419,9 +1460,6 @@ func take_hit_from(monster: Node) -> void:
 			behind_warned = true
 			_say("Something's behind you!", "hurt")
 			_banter("hit_behind", m)
-	if is_wiped():
-		wiped.emit()
-		get_tree().call_group("game_over", "show_screen")
 
 
 ## Which side of the party this tile is on, for the way it faces now: "front", "behind", "left" or "right".

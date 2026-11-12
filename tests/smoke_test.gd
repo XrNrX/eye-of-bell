@@ -22,7 +22,7 @@ const CLOSETS: Array[Vector2i] = [Vector2i(18, 1), Vector2i(20, 1)]  # One-tile 
 const PLAIN_DOOR := Vector2i(16, 6)
 const LEVER := Vector3i(19, 7, 0)  # The north lever of gate_n: cell (19,7), side 0.
 
-const EVENTS := ["monster_killed", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
+const EVENTS := ["monster_killed", "hero_hurt", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
 		"wall_purified", "puzzle_solved", "level_completed"]
 const CRACKED_WALL := Vector2i(2, 6)
 const THICK_CORRUPTION := Vector2i(16, 4)  # Purifying it fires the puzzle "nook_blessing".
@@ -70,6 +70,7 @@ func _init() -> void:
 	await _check_world_events()
 	await _check_save_load()
 	_check_stairs()
+	await _check_hurt_and_heal()
 	_finish()
 
 
@@ -165,6 +166,9 @@ func _check_monster_hit() -> void:
 		party.take_hit_from(skeleton)
 		blows += 1
 	check("a monster's hit lowers a hero's HP (%d blows)" % blows, _total_hp() < before)
+	var hurt_events: Array = events.hero_hurt
+	check("event: hero_hurt once, with the HP lost and the source", hurt_events.size() == 1 and hurt_events[0][1] == before - _total_hp()
+			and hurt_events[0][2] == "monster" and party.members.any(func(m): return m.hero_index == hurt_events[0][0] and m.hp < m.def.max_hp))
 	var front_only := true  # A monster in front reaches the front row (positions 0 and 1) only.
 	for m in party.members:
 		if m.slot >= 2 and m.hp < m.def.max_hp:
@@ -366,6 +370,52 @@ func _check_world_events() -> void:
 	check("event: wall_purified once, naming the wall", _sent_once("wall_purified", [THICK_CORRUPTION]))
 	check("event: puzzle_solved once, naming the puzzle", DungeonMap.puzzles_done.has("nook_blessing") and _sent_once("puzzle_solved", ["nook_blessing"]))
 	player.restore(SPOT, EAST)
+
+
+## Party.hurt and Party.heal directly: the one path every HP change takes. Last, because it ends in a wipe.
+func _check_hurt_and_heal() -> void:
+	_rest_everyone()
+	dungeon.clear_monsters()
+	var m = party.members[0]
+	var died_before: int = events.hero_died.size()
+	var hurt_before: int = events.hero_hurt.size()
+	check("hurt takes the HP and reports what was lost", party.hurt(m, 5, "test") == 5 and m.hp == m.def.max_hp - 5)
+	check("heal never goes above the maximum", party.heal(m, 99, "test") == 5 and m.hp == m.def.max_hp)
+	check("heal at full health does nothing", party.heal(m, 3, "test") == 0)
+	check("hurt that cannot kill leaves the last HP", party.hurt(m, 999, "test", false) == m.def.max_hp - 1 and m.hp == 1 and m.is_alive())
+	check("no death so far", events.hero_died.size() == died_before and events.hero_hurt.size() == hurt_before + 2)
+
+	# Sickness goes through the same path and never kills.
+	m.hp = 3
+	m.sick_left = 2.0
+	m.sick_rate = 6.0
+	m.sick_acc = 0.0
+	await create_timer(1.5).timeout
+	check("sickness hurts but stops at 1 HP", m.hp == 1 and m.is_alive() and events.hero_died.size() == died_before)
+	check("event: hero_hurt names sickness as the source", events.hero_hurt.any(func(e): return e[2] == "sickness" and e[0] == m.hero_index))
+	m.sick_left = 0.0
+
+	# A killing blow: buffs end, the dead are not healed, a resurrection is.
+	_rest_everyone()
+	_cast("shield", 0)
+	check("setup: the hero has a buff", not m.buffs.is_empty())
+	check("hurt can kill", party.hurt(m, 999, "test") == m.def.max_hp and not m.is_alive())
+	check("death ends the hero's buffs", m.buffs.is_empty())
+	check("event: hero_died for that death", events.hero_died.size() == died_before + 1 and events.hero_died[-1][0] == m.hero_index)
+	check("hurting or healing the dead does nothing", party.hurt(m, 5, "test") == 0 and party.heal(m, 5, "test") == 0 and m.hp == 0)
+	check("heal can raise the dead only when told to", party.heal(m, 4, "test", true) == 4 and m.hp == 4)
+
+	# Everyone dead: Game over, once.
+	var wipes := [0]
+	party.wiped.connect(func(): wipes[0] += 1)
+	for other in party.members:
+		party.hurt(other, 999, "test")
+	check("the party is wiped", party.is_wiped())
+	await process_frame
+	await process_frame
+	var game_over: Node = get_first_node_in_group("game_over")
+	check("a wipe shows Game over, once", wipes[0] == 1 and game_over != null and game_over.visible and paused)
+	paused = false
 
 
 func _check_stairs() -> void:
