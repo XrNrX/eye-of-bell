@@ -75,13 +75,13 @@ python tools/art/gen_skeleton.py --seed 7 --bone ash --weapon axe --helmet --nam
 python tools/art/gen_slime.py --seed 5 --colour acid --contents skull --name slime_acid
 ```
 
-There is no linter. The committed game tests are `tests/popup_layout_test.gd` (see **Pop-ups**) and `tests/test_room_test.gd` (see **Test room**).
+There is no linter. The committed game tests are `tests/smoke_test.gd` (see **Testing**), `tests/popup_layout_test.gd` (see **Pop-ups**) and `tests/test_room_test.gd` (see **Test room**).
 
 Sounds: `python tools/audio/gen_sounds.py` regenerates every WAV (`--only name`, `--list`); `python tools/audio/test_gen_sounds.py` is its self-test.
 
 ## Testing
 
-Apart from `tests/popup_layout_test.gd` and `tests/test_room_test.gd`, nothing is checked in for the game itself. The working approach has been throwaway headless scripts that `extends SceneTree`, instantiate `res://scenes/main.tscn`, teleport the player (`p.cell = ...; p.position = ...; p._report_position()`), call `p._try_move(...)` / `p._interact()` / `monster._on_tick()` directly, `await create_timer(...)`, and print PASS/FAIL. Gotchas:
+**`tests/smoke_test.gd` is the safety net: run it (and the other two) after any change to combat, spells, items, the party or saving**: `timeout 120 "$G" --headless --path . -s tests/smoke_test.gd` (exit code = failed checks; 36 checks on floor 1 with seeded dice: a kill, a monster's hit, the five spells and their mana, food, resurrection, and a save and load round trip of the party, player, doors, levers, piles and monsters; it uses its own settings and save files). Add a check there when a system it covers grows. Godot sometimes prints "1 resources still in use at exit" when it quits: harmless. Apart from the three committed tests, nothing is checked in for the game itself. For anything else the working approach has been throwaway headless scripts that `extends SceneTree`, instantiate `res://scenes/main.tscn`, teleport the player (`p.cell = ...; p.position = ...; p._report_position()`), call `p._try_move(...)` / `p._interact()` / `monster._on_tick()` directly, `await create_timer(...)`, and print PASS/FAIL. Gotchas:
 - A SceneTree script must call `quit()` on every path; a runtime error before it leaves Godot running forever. Wrap the run in `timeout 120`.
 - Godot auto-names code-created nodes (`@Timer@2`), so find them by type, not `get_node("Timer")`.
 - Input is polled (`Input.is_physical_key_pressed`), so tests call methods instead of simulating keys.
