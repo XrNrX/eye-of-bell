@@ -141,8 +141,11 @@ static func serialize(tree: SceneTree) -> Dictionary:
 	var monsters := []
 	for n in dungeon.get_children():
 		if n.has_method("take_hit") and not n.dying:
+			var statuses := []  # Held and any other status, with the time left (an older save has none).
+			for entry in n.statuses.values():
+				statuses.append({"def": entry.def.resource_path, "left": entry.left, "source": entry.source})
 			monsters.append({"def": n.def.resource_path, "cell": cell_to_data(n.cell),
-					"hp": n.hp, "attack_cooldown": n.attack_cooldown})
+					"hp": n.hp, "attack_cooldown": n.attack_cooldown, "statuses": statuses})
 
 	return {
 		"version": VERSION,
@@ -297,7 +300,10 @@ static func apply(tree: SceneTree, data: Dictionary) -> String:
 	dungeon.clear_monsters()
 	for mo in d.monsters:
 		if ResourceLoader.exists(str(mo.def)):
-			dungeon.spawn_monster(load(mo.def), data_to_cell(mo.cell), int(mo.hp), float(mo.attack_cooldown))
+			var monster: Node = dungeon.spawn_monster(load(mo.def), data_to_cell(mo.cell), int(mo.hp), float(mo.attack_cooldown))
+			for st in mo.get("statuses", []):
+				if ResourceLoader.exists(str(st.def)):
+					monster.add_status(load(st.def), float(st.left), int(st.source), true)  # Quiet: no news, no binding again.
 
 	# --- player and cursor ---
 	player.restore(data_to_cell(data.player.cell), int(data.player.facing))

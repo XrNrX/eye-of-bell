@@ -68,6 +68,10 @@ Entries before 2026-11-09 were filled in afterwards from the git history and the
 | `art/intro/shot_12_tunnel.png` | `create_image_pro` | 2026-11-07 | 25 |
 | `art/intro/shot_13_inside.png` | `create_image_pro` | 2026-11-07 | 25 |
 | `art/intro/shot_14_looking_out.png` | `create_image_pro` | 2026-11-07 | 25 |
+| `art/spells/hold_monster/bind_sheet.png` (source `tools/art/pieces/spells/hold_monster/bind.png` + `.json`; 14 frames of 67x77, 12 fps): Hold Monster's binding: grey motes gather, a flash, then two rune rings snap on at chest and knee height. Parts `charge_up`, `flash_burst`, two `rune_orbit`, all in palette greys (the game tints them cold pale blue). PixelLab My effects id 92fc3379-16bd-4247-9569-9d80f07dc603 | `vfx_workbench` | 2026-11-13 | 0 (free tool) |
+| `art/spells/hold_monster/held_sheet.png` (`held.png` + `.json`; 24 frames of 65x77, a seamless loop): the two rune rings turning while the monster is held. Two `rune_orbit` parts. My effects id 287eea0e-c644-42aa-a8c6-aef0777bccd6 | `vfx_workbench` | 2026-11-13 | 0 (free tool) |
+| `art/spells/hold_monster/shatter_sheet.png` (`shatter.png` + `.json`; 10 frames of 50x109): the rings burst and their shards fall when the hold ends (also played on a resisted cast). Two `ice_shatter` parts in greys. My effects id d96c90a2-5ddd-40b1-9604-2b995017cd67 | `vfx_workbench` | 2026-11-13 | 0 (free tool) |
+| `art/spells/icons/hold_monster.png` (source `tools/art/pieces/spell_menu/hold_monster.png`, 16x16, seed 8031): a round runic seal, the spell list icon; greens moved to greys by `gen_spell_menu.py` | `create_image_pixen` | 2026-11-13 | 1 |
 
 Older PixelLab art (items, monsters, portraits, walls, decals, the title screen, UI pieces) predates this log and isn't listed.
 
@@ -77,6 +81,8 @@ Older PixelLab art (items, monsters, portraits, walls, decals, the title screen,
 - `art/ui/frame_wood.png` (1280x720) built by `tools/art/gen_frame_wood.py`: the plank tiled into four 16-unit bars, tentacles and slime scattered at seeded random places, corners aligned to the bars by their planks, colours on the palette (slime to `curse_*`, wood darkened onto the wood ramp), enlarged 2x.
 
 ## Derived by script (no PixelLab)
+`art/ui/status_held.png`: the 7x7 padlock beside a held monster's health bar, drawn by `tools/art/gen_status_icons.py` (2026-11-13, 0 generations; too small for PixelLab's 16 px minimum). A still icon, not an effect.
+
 `art/normals/tiles/*_n.png` and `art/normals/decals/*_n.png`: normal maps made from the textures' own brightness by `tools/art/gen_normal_maps.py` (2026-11-10, 0 generations). Lighting data, not palette art, so they are not palette-checked.
 
 ## Code-drawn effects: placeholders

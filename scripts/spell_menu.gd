@@ -135,7 +135,9 @@ func refresh() -> void:
 	if m != null:
 		mana_label.text = "MANA %d" % floori(m.mana)
 	for r in rows:
-		var ok: bool = party.can_afford(caster, r.spell)
+		var wait: float = party.spell_wait_left(caster, r.spell)  # SpellDef.recast_seconds: the cost shows the seconds left instead.
+		var ok: bool = party.can_afford(caster, r.spell) and wait <= 0.0
+		r.cost.text = "%dS" % ceili(wait) if wait > 0.0 else str(r.spell.mana_cost)
 		r.button.disabled = not ok
 		r.name.add_theme_color_override("font_color", TEXT if ok else TEXT_OFF)
 		r.cost.add_theme_color_override("font_color", COST if ok else TEXT_OFF)

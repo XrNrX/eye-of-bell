@@ -24,6 +24,9 @@ extends Resource
 @export var crit_base := 0
 @export var finesse_crit := 0
 @export var spell_crit := 0
+## Added to the crit chance against a helpless monster (a held one: StatusDef.helpless), up to CombatRules.HELPLESS_CRIT_CAP:
+## a stab in the back. The Thief's is the biggest.
+@export var helpless_crit := 10
 
 @export_group("Portrait")
 @export var portrait: Texture2D        # Shown while alive.

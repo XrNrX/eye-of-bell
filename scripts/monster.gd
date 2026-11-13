@@ -15,6 +15,7 @@ const CombatRules := preload("res://scripts/combat_rules.gd")
 const ItemStack := preload("res://scripts/item_stack.gd")
 const FeelConfigScript := preload("res://scripts/combat_feel_config.gd")
 const AiConfigScript := preload("res://scripts/monster_ai_config.gd")
+const MonsterTiers := preload("res://scripts/monster_tiers.gd")
 
 const DAMAGE_COLOUR := Color(0.961, 0.812, 0.502)  # Palette torch_300.
 const MISS_COLOUR := Color(0.667, 0.663, 0.706)   # Palette stone_100.
@@ -40,6 +41,7 @@ var held_back := 0.0       # Seconds it has been queued behind a monster already
 var blows_struck := 0      # Attacks it has made (read by tests).
 var _was_in_reach := false
 var _queued := false       # Its last move found it held back (see _chase_dir).
+var statuses := {}         # StatusDef.id -> {def, left (seconds), source (hero_index), dot (damage owed), fx (the loop effect node)}
 var cell: Vector2i
 var hp: int
 var dying := false
@@ -88,28 +90,40 @@ func _exit_tree() -> void:
 
 
 func _process(delta: float) -> void:
-	_animate(delta)
+	if not _status_flag("freezes_animation"):
+		_animate(delta)
 	if dying:
 		return
+	_tick_statuses(delta)
+	if dying:
+		return  # (A damage-over-time tick killed it.)
 	# The party slipped out of reach: a beat before it follows. This only ever pushes the next move later.
 	var in_reach := _next_to_player()
 	if _was_in_reach and not in_reach:
 		move_wait = maxf(move_wait, def.reaction_delay)
 	held_back = held_back + delta if _queued else 0.0
-	move_wait -= delta
-	if move_wait <= 0.0:
-		move_wait = def.step_interval
-		_on_tick()
+	if not _status_flag("stops_moving"):  # Held: the move clock pauses.
+		move_wait -= delta / _status_scale("move_time_scale")
+		if move_wait <= 0.0:
+			move_wait = def.step_interval
+			_on_tick()
 	_was_in_reach = _next_to_player()
 	_fight(delta)
 
 
 ## Attack while next to the party. Never while a step is animating or during the arrival recovery after one, so it can't step
-## up and strike in the same moment; the wind-up (MonsterDef.wind_up) is held until both are over.
+## up and strike in the same moment; the wind-up (MonsterDef.wind_up) is held until both are over. A status that stops attacks
+## (held) pauses the attack clock where it is and cancels a swing in progress.
 func _fight(delta: float) -> void:
+	if _status_flag("stops_attacking"):
+		if _swinging:
+			_swinging = false
+			_one_shot = PackedInt32Array()
+			attack_cooldown = maxf(attack_cooldown, _hit_delay())  # The swing starts again from the top when it is free.
+		return
 	var in_reach := _next_to_player()
 	if in_reach and not _walking and recovery_left <= 0.0:
-		attack_cooldown -= delta
+		attack_cooldown -= delta / _status_scale("attack_time_scale")
 		# The swing starts early enough that its impact frame appears just as the blow lands (see _begin_swing).
 		if not _swinging and attack_cooldown <= _hit_delay():
 			_begin_swing()
@@ -122,6 +136,128 @@ func _fight(delta: float) -> void:
 	elif not _walking:
 		recovery_left -= delta
 	attack_cooldown = maxf(attack_cooldown, def.attack_interval * def.wind_up)
+
+
+# --------------------------------------------------------------------------
+# Status effects (StatusDef: data/statuses/*.tres). Every rule is a field of the StatusDef, so a new status is data.
+# --------------------------------------------------------------------------
+
+## Try to put a status on, the way every status source does it (a spell, a trap): the tier table (data/tiers.tres) for this
+## monster's tier, or its own MonsterDef.status_overrides, decides whether it lands and for how much of `seconds`. Returns
+## {"outcome": "landed" / "resisted" / "immune", "seconds": the time it got, "chance": percent, "message": a flavour line or ""}.
+## A resisted try plays the status's ending effect at once (the runes form and break). Rolled with the combat dice.
+func try_status(status: Resource, seconds: float, source := -1) -> Dictionary:
+	var odds: Dictionary = MonsterTiers.get_config().odds(status.id, def)
+	var out := {"outcome": "immune", "seconds": 0.0, "chance": odds.chance, "message": odds.message}
+	if dying or odds.immune:
+		return out
+	if odds.chance < 100 and CombatRules.rng().randi_range(1, 100) > odds.chance:
+		out.outcome = "resisted"
+		var fx := get_tree().get_first_node_in_group("spell_effects")
+		if fx != null:
+			fx.status_ended(self, status)
+		return out
+	out.outcome = "landed"
+	out.seconds = seconds * odds.duration
+	add_status(status, out.seconds, source)
+	return out
+
+
+## Put a status on (or refresh it to `seconds` if it is already on: the longer of the two). source: the hero_index who did it
+## (-1: nobody). quiet: no signal and no starting effect (loading a save).
+func add_status(status: Resource, seconds: float, source := -1, quiet := false) -> void:
+	if dying or status == null or seconds <= 0.0:
+		return
+	if statuses.has(status.id):
+		var entry: Dictionary = statuses[status.id]
+		entry.left = maxf(entry.left, seconds)
+		entry.source = source
+		return
+	statuses[status.id] = {"def": status, "left": seconds, "source": source, "dot": 0.0, "fx": null}
+	_refresh_tint()
+	var fx := get_tree().get_first_node_in_group("spell_effects")
+	if fx != null:
+		statuses[status.id].fx = fx.status_started(self, status, quiet)
+	if not quiet and status.started_event != "":
+		Events.send(get_tree(), status.started_event, [self, source])
+
+
+## Take a status off. by_itself: it ran out (its ended_event is sent and its ending effect plays); false when the monster dies.
+func remove_status(id: String, by_itself := true) -> void:
+	if not statuses.has(id):
+		return
+	var entry: Dictionary = statuses[id]
+	statuses.erase(id)
+	_refresh_tint()
+	if entry.fx != null and is_instance_valid(entry.fx):
+		entry.fx.queue_free()
+	var fx := get_tree().get_first_node_in_group("spell_effects") if is_inside_tree() else null
+	if fx != null and by_itself:
+		fx.status_ended(self, entry.def)
+	if by_itself and entry.def.ended_event != "":
+		Events.send(get_tree(), entry.def.ended_event, [self])
+
+
+func has_status(id: String) -> bool:
+	return statuses.has(id)
+
+
+## Seconds left on a status (0 if it is not on).
+func status_left(id: String) -> float:
+	return float(statuses[id].left) if statuses.has(id) else 0.0
+
+
+## Can't defend itself (a held monster): heroes' blows get their helpless_crit (CombatRules.crit_chance).
+func is_helpless() -> bool:
+	return _status_flag("helpless")
+
+
+## The icons to draw beside its health bar (enemy_bars.gd).
+func status_icons() -> Array:
+	var out := []
+	for entry in statuses.values():
+		if entry.def.icon != null:
+			out.append(entry.def.icon)
+	return out
+
+
+func _status_flag(field: String) -> bool:
+	for entry in statuses.values():
+		if entry.def.get(field):
+			return true
+	return false
+
+
+func _status_scale(field: String) -> float:
+	var s := 1.0
+	for entry in statuses.values():
+		s *= maxf(0.05, float(entry.def.get(field)))
+	return s
+
+
+func _tick_statuses(delta: float) -> void:
+	for id in statuses.keys():
+		var entry: Dictionary = statuses[id]
+		if entry.def.damage_per_second > 0.0:
+			entry.dot += entry.def.damage_per_second * delta
+			var whole := int(entry.dot)
+			if whole > 0:
+				entry.dot -= whole
+				take_hit({"hit": true, "damage": whole, "chance": 100, "crit": false, "by": entry.source, "status": id})
+				if dying:
+					return
+		entry.left -= delta
+		if entry.left <= 0.0:
+			remove_status(id)
+
+
+func _refresh_tint() -> void:
+	if sprite == null:
+		return
+	var tint := Color(1, 1, 1)
+	for entry in statuses.values():
+		tint = entry.def.tint
+	sprite.modulate = tint
 
 
 ## Show the attack/hurt animation if one is playing, else the walk cycle while stepping (if the
@@ -274,6 +410,8 @@ func _held(frames: PackedInt32Array, extra: int) -> PackedInt32Array:
 ## last blow (`by` in the result given to take_hit), or -1.
 func _die(big := false, killer := -1) -> void:
 	dying = true
+	for id in statuses.keys():
+		remove_status(id, false)  # It dies held: no "released" news and no shatter.
 	Events.send(get_tree(), "monster_killed", [def, cell, killer])
 	_drop_loot()
 	_release_tiles()

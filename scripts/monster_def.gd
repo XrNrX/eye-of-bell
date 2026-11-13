@@ -29,6 +29,14 @@ extends Resource
 ## may try to get round to another side of the party. Only monster_ai.tres max_flankers do so at once.
 @export var flank_after := 3.0
 
+@export_group("Combat extras")
+## 1 fodder, 2 tough, 3 elite or mini-boss, 4 boss. Decides how likely a status effect (Hold Monster, a trap...) is to land and for
+## how much of its time: the tier table, data/tiers.tres (monster_tiers.gd). A wall monster is immune to them all.
+@export_range(1, 4) var tier := 1
+## Special cases, per status id, over the tier table: {"held": {"chance": 90, "duration": 0.75, "message": "The {monster} ..."}}.
+## Any key may be left out. chance 0 = immune. message is added to the log line when the status lands ({monster}: its name).
+@export var status_overrides := {}
+
 ## Percent of its landed hits that are crits (x1.5, and never enough to kill a hero at half HP or more).
 @export var crit_chance := 0
 

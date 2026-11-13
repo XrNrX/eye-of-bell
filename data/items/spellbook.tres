@@ -1,4 +1,4 @@
-[gd_resource type="Resource" load_steps=8 format=3]
+[gd_resource type="Resource" load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/item_def.gd" id="1_def"]
 [ext_resource type="Texture2D" path="res://art/items/spellbook.png" id="2_icon"]
@@ -7,6 +7,7 @@
 [ext_resource type="Resource" path="res://data/spells/magic_missile.tres" id="4_a"]
 [ext_resource type="Resource" path="res://data/spells/shield.tres" id="5_b"]
 [ext_resource type="Resource" path="res://data/spells/fireball.tres" id="6_c"]
+[ext_resource type="Resource" path="res://data/spells/hold_monster.tres" id="7_d"]
 
 [resource]
 script = ExtResource("1_def")
@@ -17,4 +18,4 @@ floor_icon = ExtResource("3_floor")
 hud_icon = ExtResource("90_hud")
 icon_pixel_size = 0.01
 magic = 1
-spells = Array[Resource]([ExtResource("4_a"), ExtResource("5_b"), ExtResource("6_c")])
+spells = Array[Resource]([ExtResource("4_a"), ExtResource("5_b"), ExtResource("6_c"), ExtResource("7_d")])

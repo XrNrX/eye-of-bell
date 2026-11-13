@@ -1,0 +1,287 @@
+{
+ "frames": [
+  {
+   "filename": "hold-monster-shatter 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 109
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 109
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 109
+   },
+   "pivot": {
+    "x": 2.12,
+    "y": 0.9357798165137615
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-shatter 1.png",
+   "frame": {
+    "x": 50,
+    "y": 0,
+    "w": 50,
+    "h": 109
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 109
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 109
+   },
+   "pivot": {
+    "x": 2.12,
+    "y": 0.9357798165137615
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-shatter 2.png",
+   "frame": {
+    "x": 100,
+    "y": 0,
+    "w": 50,
+    "h": 109
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 109
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 109
+   },
+   "pivot": {
+    "x": 2.12,
+    "y": 0.9357798165137615
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-shatter 3.png",
+   "frame": {
+    "x": 150,
+    "y": 0,
+    "w": 50,
+    "h": 109
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 109
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 109
+   },
+   "pivot": {
+    "x": 2.12,
+    "y": 0.9357798165137615
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-shatter 4.png",
+   "frame": {
+    "x": 0,
+    "y": 109,
+    "w": 50,
+    "h": 109
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 109
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 109
+   },
+   "pivot": {
+    "x": 2.12,
+    "y": 0.9357798165137615
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-shatter 5.png",
+   "frame": {
+    "x": 50,
+    "y": 109,
+    "w": 50,
+    "h": 109
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 109
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 109
+   },
+   "pivot": {
+    "x": 2.12,
+    "y": 0.9357798165137615
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-shatter 6.png",
+   "frame": {
+    "x": 100,
+    "y": 109,
+    "w": 50,
+    "h": 109
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 109
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 109
+   },
+   "pivot": {
+    "x": 2.12,
+    "y": 0.9357798165137615
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-shatter 7.png",
+   "frame": {
+    "x": 150,
+    "y": 109,
+    "w": 50,
+    "h": 109
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 109
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 109
+   },
+   "pivot": {
+    "x": 2.12,
+    "y": 0.9357798165137615
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-shatter 8.png",
+   "frame": {
+    "x": 0,
+    "y": 218,
+    "w": 50,
+    "h": 109
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 109
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 109
+   },
+   "pivot": {
+    "x": 2.12,
+    "y": 0.9357798165137615
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-shatter 9.png",
+   "frame": {
+    "x": 50,
+    "y": 218,
+    "w": 50,
+    "h": 109
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 109
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 109
+   },
+   "pivot": {
+    "x": 2.12,
+    "y": 0.9357798165137615
+   },
+   "duration": 83
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "hold-monster-shatter.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 200,
+   "h": 327
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 106,
+   "y": 102
+  },
+  "frameTags": [
+   {
+    "name": "hold-monster-shatter",
+    "from": 0,
+    "to": 9,
+    "direction": "forward"
+   }
+  ]
+ }
+}

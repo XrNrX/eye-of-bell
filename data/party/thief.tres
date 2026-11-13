@@ -28,4 +28,5 @@ start_hand_counts = Array[int]([6, 1])
 dexterity = 16
 crit_base = 8
 finesse_crit = 8
+helpless_crit = 25
 spell_crit = 0

@@ -410,3 +410,15 @@ func glow(kind: String) -> Dictionary:
 @export var hit_sound_behind_cutoff := 1100.0  # Stereo has no "behind": a hit from there is muffled instead (Hz).
 @export var fight_clear_seconds := 3.0    # A fight is over this long after the last blow, when no monster is aware of the party (fight_tracker.gd).
 @export var fight_gap_seconds := 12.0     # ...or this long after the last blow if some monster still is (one watching through a portcullis). "Something's behind you!" can then show again.
+
+@export_group("Status effects on monsters")
+## Where a status's flipbooks (StatusDef.fx_*: Hold Monster's runes) sit on a monster, as a share of its sprite height, and how
+## big: the art's two rune rings are status_ring_gap_px apart, scaled so they are status_ring_gap_frac of the monster's height
+## apart (kept within the min and max scale). The ending one-shot's frame is taller: its centre sits status_end_drop_px lower.
+@export var status_height_frac := 0.42
+@export var status_ring_gap_frac := 0.45
+@export var status_ring_gap_px := 46.0
+@export var status_scale_min := 0.6
+@export var status_scale_max := 1.6
+@export var status_toward_camera := 0.18  # Drawn this far in front of the monster, towards the camera.
+@export var status_end_drop_px := 7.5

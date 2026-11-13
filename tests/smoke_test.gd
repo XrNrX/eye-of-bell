@@ -23,7 +23,7 @@ const CLOSETS: Array[Vector2i] = [Vector2i(18, 1), Vector2i(20, 1)]  # One-tile 
 const PLAIN_DOOR := Vector2i(16, 6)
 const LEVER := Vector3i(19, 7, 0)  # The north lever of gate_n: cell (19,7), side 0.
 
-const EVENTS := ["monster_killed", "hero_hurt", "mana_low", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
+const EVENTS := ["monster_killed", "monster_held", "monster_released", "hero_hurt", "mana_low", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
 		"wall_purified", "puzzle_solved", "level_completed"]
 const CRACKED_WALL := Vector2i(2, 6)
 const THICK_CORRUPTION := Vector2i(16, 4)  # Purifying it fires the puzzle "nook_blessing".
@@ -72,6 +72,7 @@ func _init() -> void:
 	await _check_pacing()
 	_check_hero_death()
 	_check_spells()
+	_check_hold()
 	await _check_food()
 	_check_resurrection()
 	await _check_world_events()
@@ -367,6 +368,125 @@ func _check_spells() -> void:
 # --------------------------------------------------------------------------
 # Food and resurrection
 # --------------------------------------------------------------------------
+
+## Hold Monster and the "held" status: who can be held (the tier table, a slime's shorter hold, wall monsters, tier 4 for half the time),
+## what holding does (no moving or attacking, paused clocks, a frozen frame, still hittable, crit bonus), the recast wait, the
+## signals, and running out by itself.
+func _check_hold() -> void:
+	_rest_everyone()
+	dungeon.clear_monsters()
+	player.restore(SPOT, EAST)
+	var spell: Resource = load("res://data/spells/hold_monster.tres")
+	var who := _caster_of(spell)
+	check("hold: Hold Monster is in the mage's spellbook", not who.is_empty())
+	if who.is_empty():
+		return
+	var mage = party.members[who[0]]
+	var r := _cast("hold_monster")
+	check("hold: with nothing in front it costs nothing", not r.cast and is_zero_approx(r.spent))
+	var tiers: Resource = load("res://data/tiers.tres")
+	check("hold: the tier table's held row (90/65/35/15%, full, full, half, half)", tiers.rows.held.chance == [90, 65, 35, 15]
+			and tiers.rows.held.duration == [1.0, 1.0, 0.5, 0.5])
+	var tier_ok := true
+	for file in ["skeleton", "slime", "slime_acid"]:
+		tier_ok = tier_ok and load("res://data/monsters/%s.tres" % file).tier == 1
+	check("hold: skeletons and slimes are tier 1, the guard tier 2", tier_ok and load("res://data/monsters/skeleton_guard.tres").tier == 2)
+	var slime: Node = _monster("slime", AHEAD_1)
+	var slime_casts := 0
+	while not slime.has_status("held") and slime_casts < 20:
+		mage.spell_wait.clear()
+		r = _cast("hold_monster")
+		slime_casts += 1
+	var hud: Node = get_first_node_in_group("hud")
+	check("hold: a slime can be held, for less time, and quivers (%.2f s)" % slime.status_left("held"), slime.has_status("held")
+			and absf(slime.status_left("held") - spell.status_seconds * 0.75) < 0.01
+			and hud.lines.any(func(l): return str(l).contains("The slime quivers against the runes.")))
+	dungeon.clear_monsters()
+	var skel: Node = _monster("skeleton", AHEAD_1)
+	var held_before: int = events.monster_held.size()
+	var released_before: int = events.monster_released.size()
+	var casts := 0
+	var resisted := 0
+	while not skel.has_status("held") and casts < 40:
+		mage.spell_wait.clear()
+		r = _cast("hold_monster")
+		casts += 1
+		if r.cast and not skel.has_status("held"):
+			resisted += 1
+	check("hold: it holds a skeleton (%d casts, %d resisted; every cast spent its mana)" % [casts, resisted], skel.has_status("held") and _spent_right(r)
+			and absf(skel.status_left("held") - spell.status_seconds) < 0.01)
+	var guard_odds: Dictionary = tiers.odds("held", load("res://data/monsters/skeleton_guard.tres"))
+	var skel_odds: Dictionary = tiers.odds("held", skel.def)
+	var slime_odds: Dictionary = tiers.odds("held", load("res://data/monsters/slime.tres"))
+	check("hold: the odds come from the tier, with the slime's own override on top", skel_odds.chance == 90 and is_equal_approx(skel_odds.duration, 1.0)
+			and guard_odds.chance == 65 and slime_odds.chance == 90 and is_equal_approx(slime_odds.duration, 0.75) and not slime_odds.immune
+			and tiers.odds("no such status", skel.def).chance == 100)
+	check("hold: its recast wait has started", party.spell_wait_left(who[0], spell) > 0.0)
+	mage.cooldown_left = 0.0
+	mage.mana = float(mage.def.max_mana)
+	check("hold: it can't be cast again until the wait is over", not party.cast(who[0], who[1], spell) and is_equal_approx(mage.mana, float(mage.def.max_mana)))
+	check("hold: event monster_held once, naming the monster and the mage", events.monster_held.size() == held_before + 1
+			and events.monster_held[-1][0] == skel and events.monster_held[-1][1] == mage.hero_index)
+	var cooldown: float = skel.attack_cooldown
+	var wait: float = skel.move_wait
+	var blows: int = skel.blows_struck
+	var frame: int = skel.sprite.frame
+	skel._process(1.0)
+	skel._process(1.0)
+	check("hold: a held monster doesn't move or attack, its clocks pause and its frame freezes", skel.blows_struck == blows and skel.cell == AHEAD_1
+			and is_equal_approx(skel.attack_cooldown, cooldown) and is_equal_approx(skel.move_wait, wait) and skel.sprite.frame == frame)
+	var thief: Resource = load("res://data/party/thief.tres")
+	var fighter: Resource = load("res://data/party/fighter.tres")
+	var dagger: Resource = load("res://data/items/dagger.tres")
+	var thief_gain: int = CombatRules.crit_chance(thief, dagger, 0, true) - CombatRules.crit_chance(thief, dagger)
+	var fighter_gain: int = CombatRules.crit_chance(fighter, null, 0, true) - CombatRules.crit_chance(fighter)
+	check("hold: blows on a held monster crit more often, the thief's most (+%d, fighter +%d)" % [thief_gain, fighter_gain],
+			skel.is_helpless() and thief_gain > fighter_gain and fighter_gain > 0)
+	var hp_before: int = skel.hp
+	for i in 30:
+		party.members[0].cooldown_left = 0.0
+		party.act(0, 0)
+		if skel.hp < hp_before or skel.dying:
+			break
+	check("hold: a held monster can still be hit", skel.hp < hp_before or skel.dying)
+	if not skel.dying:
+		skel._process(10.0)
+		check("hold: it runs out by itself", not skel.has_status("held") and not skel.is_helpless())
+		check("hold: event monster_released once", events.monster_released.size() == released_before + 1 and events.monster_released[-1][0] == skel)
+	dungeon.clear_monsters()
+	var boss_def: Resource = load("res://data/monsters/skeleton.tres").duplicate()
+	boss_def.tier = 4
+	var boss: Node = dungeon.spawn_monster(boss_def, AHEAD_1)
+	var boss_casts := 0
+	while not boss.has_status("held") and boss_casts < 60:
+		mage.spell_wait.clear()
+		r = _cast("hold_monster")
+		boss_casts += 1
+	check("hold: a tier 4 monster is held for half the time (%.1f s after %d casts)" % [boss.status_left("held"), boss_casts],
+			boss.has_status("held") and absf(boss.status_left("held") - spell.status_seconds * 0.5) < 0.01)
+	dungeon.clear_monsters()
+	var stubborn_def: Resource = load("res://data/monsters/skeleton.tres").duplicate()
+	stubborn_def.status_overrides = {"held": {"chance": 1}}  # A per-monster override beats the tier table.
+	var stubborn: Node = dungeon.spawn_monster(stubborn_def, AHEAD_1)
+	var shrugs := 0
+	for i in 5:
+		mage.spell_wait.clear()
+		r = _cast("hold_monster")
+		if r.cast and not stubborn.has_status("held") and _spent_right(r) and str(get_first_node_in_group("hud").last_message).ends_with("The skeleton shrugs off the spell."):
+			shrugs += 1
+	check("hold: a resisted cast still costs its mana and says so (%d of 5)" % shrugs, shrugs >= 4)
+	dungeon.clear_monsters()
+	var wall_def: Resource = boss_def.duplicate()
+	wall_def.tier = 1
+	wall_def.wall_monster = true
+	var wall: Node = dungeon.spawn_monster(wall_def, AHEAD_1)
+	mage.spell_wait.clear()
+	r = _cast("hold_monster")
+	check("hold: a wall monster can't be held", not r.cast and not wall.has_status("held"))
+	dungeon.clear_monsters()
+	mage.spell_wait.clear()
+	_rest_everyone()
+
 
 func _check_food() -> void:
 	_rest_everyone()
@@ -730,7 +850,7 @@ func _check_save_load() -> void:
 		n += 1
 	player.restore(Vector2i(9, 13), 1)
 	_monster("slime", CLOSETS[0], 3)
-	_monster("skeleton_guard", CLOSETS[1], 5)
+	_monster("skeleton_guard", CLOSETS[1], 5).add_status(load("res://data/statuses/held.tres"), 4.0, 3)
 
 	var saved := _snapshot()
 	var sent_before := _event_counts()
@@ -785,6 +905,10 @@ func _check_save_load() -> void:
 	check("load: levers", loaded.levers == saved.levers and saved.levers.size() == 1)
 	check("load: floor piles", loaded.piles == saved.piles)
 	check("load: monsters (kind, cell, hp)", loaded.monsters == saved.monsters and saved.monsters.size() == 2)
+	var guard = DungeonMap.occupied.get(CLOSETS[1])
+	check("load: a held monster is still held, with its time left (%.2f s)" % (guard.status_left("held") if guard else -1.0),
+			guard != null and guard.has_status("held") and guard.status_left("held") > 2.5 and guard.status_left("held") <= 4.0
+			and guard.statuses.held.source == 3)
 	for key in ["formation", "hp", "items", "doors", "levers", "piles", "monsters"]:
 		if loaded[key] != saved[key]:
 			print("  ", key, " saved:  ", saved[key])

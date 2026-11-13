@@ -1,0 +1,27 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/status_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/ui/status_held.png" id="2_icon"]
+
+[resource]
+script = ExtResource("1_def")
+id = "held"
+display_name = "Held"
+resist_message = "The {monster} shrugs off the spell."
+immune_message = "There is nothing in the {monster} to hold."
+started_event = "monster_held"
+ended_event = "monster_released"
+stops_moving = true
+stops_attacking = true
+freezes_animation = true
+helpless = true
+tint = Color(0.82, 0.88, 1, 1)
+icon = ExtResource("2_icon")
+fx_spell = "hold_monster"
+fx_start = "bind"
+fx_loop = "held"
+fx_end = "shatter"
+fx_tint = Color(0.9, 1.25, 2, 1)
+fx_light_colour = Color(0.6, 0.78, 1, 1)
+fx_light_energy = 0.9
+fx_light_range = 2.2

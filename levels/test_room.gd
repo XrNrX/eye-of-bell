@@ -6,12 +6,14 @@ extends RefCounted
 ##
 ## A long hall (row 12 to 16) with a station off it at every doorway. North: combat arena, wall types, item table, legendary
 ## items. South: ambush corridor, puzzle room, campfire, XP and levels, traps; through the XP room, monster pacing (a long
-## corridor to back away down, opening into a room for flanking). A sign in the hall and one inside labels each.
+## corridor to back away down, opening into a room for flanking), and south of that the held-monster room (Hold Monster:
+## a skeleton, a skeleton guard and a slime, which can't be held). A sign in the hall and one inside labels each.
 ## "NOT BUILT YET" stations are empty rooms waiting for their system.
 ##
 ## Debug keys (scripts/debug/test_room_tools.gd, H shows them in the game): G god mode, R refill HP and mana, X +500 XP,
 ## U level up, Z kill all monsters, V spawn a monster in front, T teleport to a station, B banter, N fog, J screen shake,
-## and for monster pacing O (which value), [ and ] (lower, raise), Y (reset from the files), I (a pack of three ahead).
+## and for monster pacing O (which value), [ and ] (lower, raise), Y (reset from the files), I (a pack of three ahead);
+## 9 holds the monster in front (no roll, no mana), 0 frees every held monster.
 
 
 const MAP := [
@@ -50,7 +52,12 @@ const MAP := [
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 32
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 33
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 34
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 35
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 35
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 36
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 37
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 38
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 39
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 40
 ]
 
 const START_TILE := Vector2i(20, 14)
@@ -95,6 +102,8 @@ const TORCHES: Array[Vector3i] = [
 	Vector3i(16, 31, 2),
 	Vector3i(25, 29, 0),
 	Vector3i(31, 34, 2),
+	Vector3i(25, 36, 0),
+	Vector3i(31, 39, 2),
 ]
 
 # The corrupted wall of the wall-types station: one Bless burns it away.
@@ -155,6 +164,10 @@ const MONSTERS := [
 	{"cell": Vector2i(8, 4), "def": "res://data/monsters/slime.tres"},
 	{"cell": Vector2i(5, 7), "def": "res://data/monsters/skeleton_guard.tres"},
 	{"cell": Vector2i(9, 7), "def": "res://data/monsters/slime_acid.tres"},
+	# The held-monster room: different hold resistances (skeleton 35%, guard 45%, slime immune).
+	{"cell": Vector2i(25, 39), "def": "res://data/monsters/skeleton.tres"},
+	{"cell": Vector2i(28, 39), "def": "res://data/monsters/skeleton_guard.tres"},
+	{"cell": Vector2i(31, 39), "def": "res://data/monsters/slime.tres"},
 ]
 
 const SIGNS := [
@@ -212,6 +225,9 @@ I = PACK AHEAD
 O [ ] Y = TUNE"},
 	{"cell": Vector2i(26, 29), "side": 0, "text": "OPEN ROOM
 FLANKING"},
+	{"cell": Vector2i(22, 37), "side": 1, "text": "HELD MONSTER
+9 = HOLD AHEAD
+0 = FREE ALL"},
 	{"cell": Vector2i(30, 24), "side": 3, "text": "PACING
 SOUTH"},
 ]
@@ -237,4 +253,5 @@ const STATIONS := [
 	{"name": "XP and levels", "cell": Vector2i(28, 18), "facing": 2},
 	{"name": "Traps", "cell": Vector2i(34, 18), "facing": 2},
 	{"name": "Monster pacing", "cell": Vector2i(10, 31), "facing": 3},
+	{"name": "Held monster", "cell": Vector2i(28, 36), "facing": 2},
 ]

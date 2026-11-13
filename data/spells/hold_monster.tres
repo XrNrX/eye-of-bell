@@ -1,0 +1,15 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/spell_def.gd" id="1_def"]
+[ext_resource type="Resource" path="res://data/statuses/held.tres" id="2_held"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Hold Monster"
+sound = "zap"
+mana_cost = 5
+target = 0
+reach = 1
+recast_seconds = 12.0
+applies_status = ExtResource("2_held")
+status_seconds = 5.0

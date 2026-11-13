@@ -1,0 +1,651 @@
+{
+ "frames": [
+  {
+   "filename": "hold-monster-held 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 1.png",
+   "frame": {
+    "x": 65,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 2.png",
+   "frame": {
+    "x": 130,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 3.png",
+   "frame": {
+    "x": 195,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 4.png",
+   "frame": {
+    "x": 260,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 5.png",
+   "frame": {
+    "x": 0,
+    "y": 77,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 6.png",
+   "frame": {
+    "x": 65,
+    "y": 77,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 7.png",
+   "frame": {
+    "x": 130,
+    "y": 77,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 8.png",
+   "frame": {
+    "x": 195,
+    "y": 77,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 9.png",
+   "frame": {
+    "x": 260,
+    "y": 77,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 10.png",
+   "frame": {
+    "x": 0,
+    "y": 154,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 11.png",
+   "frame": {
+    "x": 65,
+    "y": 154,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 12.png",
+   "frame": {
+    "x": 130,
+    "y": 154,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 13.png",
+   "frame": {
+    "x": 195,
+    "y": 154,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 14.png",
+   "frame": {
+    "x": 260,
+    "y": 154,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 15.png",
+   "frame": {
+    "x": 0,
+    "y": 231,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 16.png",
+   "frame": {
+    "x": 65,
+    "y": 231,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 17.png",
+   "frame": {
+    "x": 130,
+    "y": 231,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 18.png",
+   "frame": {
+    "x": 195,
+    "y": 231,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 19.png",
+   "frame": {
+    "x": 260,
+    "y": 231,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 20.png",
+   "frame": {
+    "x": 0,
+    "y": 308,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 21.png",
+   "frame": {
+    "x": 65,
+    "y": 308,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 22.png",
+   "frame": {
+    "x": 130,
+    "y": 308,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-held 23.png",
+   "frame": {
+    "x": 195,
+    "y": 308,
+    "w": 65,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 65,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 65,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.7230769230769232,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "hold-monster-held.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 325,
+   "h": 385
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 112,
+   "y": 92
+  },
+  "frameTags": [
+   {
+    "name": "hold-monster-held",
+    "from": 0,
+    "to": 23,
+    "direction": "forward"
+   }
+  ]
+ }
+}

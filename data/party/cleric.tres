@@ -28,4 +28,5 @@ start_hands = Array[Resource]([null, ExtResource("21_kit")])
 dexterity = 10
 crit_base = 3
 finesse_crit = 0
+helpless_crit = 8
 spell_crit = 0

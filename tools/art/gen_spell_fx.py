@@ -103,8 +103,10 @@ def build(scale=None):
     written = []
     # Fireball: fire colours. Magic Missile: neutral grey and bone only; the game tints it cold pale blue (the palette has no blue).
     # The holy spells (heal, bless, shield, resurrection): gold, one animation each (see HOLY_SHEETS).
-    for spell in ("fireball", "magic_missile", "heal", "bless", "shield", "resurrection"):
-        for name in ("cast", "projectile", "impact", "burst", "ring", "flash", "column", "portrait", "portrait_large"):
+    # Hold Monster: grey and bone runes, tinted cold pale blue in the game like Magic Missile (bind, held loop, shatter).
+    for spell in ("fireball", "magic_missile", "heal", "bless", "shield", "resurrection", "hold_monster"):
+        for name in ("cast", "projectile", "impact", "burst", "ring", "flash", "column", "portrait", "portrait_large",
+                     "bind", "held", "shatter"):
             if (PIECES / spell / f"{name}.png").exists():
                 (ART_DIR / "spells" / spell).mkdir(parents=True, exist_ok=True)
                 written += build_sheet(spell, name)

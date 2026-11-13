@@ -137,6 +137,17 @@ func _check_pacing(tools: Node, press: Callable, player: Node) -> void:
 	check("only one monster at a time goes round (%s)" % third.cell, not beside.call(third))
 	for n in get_nodes_in_group("monsters"):
 		n.free()
+	# The held-monster room: 9 holds the monster in front, 0 frees it.
+	var held_room: Dictionary = DungeonMap.STATIONS.filter(func(s): return s.name == "Held monster")[0]
+	tools._teleport(held_room)
+	tools._spawn("res://data/monsters/skeleton.tres")
+	var target: Node = get_nodes_in_group("monsters")[0]
+	press.call(KEY_9)
+	check("9 holds the monster in front", target.has_status("held"))
+	press.call(KEY_0)
+	check("0 frees every held monster", not target.has_status("held"))
+	for n in get_nodes_in_group("monsters"):
+		n.free()
 	var fight: Node = get_first_node_in_group("party").fight
 	var waited := 0.0
 	while fight.in_fight and waited < 8.0:  # Let the fight these monsters started end, so later checks start calm.
@@ -164,7 +175,7 @@ func _check_game() -> void:
 			signs += 1
 	check("signs are built", signs == DungeonMap.SIGNS.size())
 	check("player starts at the hall", player.cell == Vector2i(20, 14))
-	check("monsters are in the arena", get_nodes_in_group("monsters").size() == 4)
+	check("monsters are in the arena and the held-monster room", get_nodes_in_group("monsters").size() == DungeonMap.MONSTERS.size())
 
 	var press := func(code: Key):
 		var e := InputEventKey.new()
@@ -200,6 +211,10 @@ func _check_game() -> void:
 	tools._open_spawn_list()
 	var popups: Node = get_first_node_in_group("popups")
 	check("the spawn list opens on the pop-up layer", popups.open_count == 1 and is_instance_valid(tools.menu) and tools.menu.get_parent() == popups)
+	var labels := []
+	for b in tools.menu.find_children("*", "Button", true, false):
+		labels.append(b.text)
+	check("the spawn list shows each monster's tier (%s)" % ", ".join(labels), labels.has("SKELETON  T1") and labels.has("SKELETON GUARD  T2"))
 	press.call(KEY_ESCAPE)
 	await process_frame
 	await process_frame

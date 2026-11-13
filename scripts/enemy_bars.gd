@@ -86,7 +86,7 @@ func front_monster() -> Node:
 
 ## Fade level for a small bar: 0 full, 1..fade_steps dissolving, -1 hidden.
 func fade_level(m: Node, is_front: bool) -> int:
-	if is_front:
+	if is_front or not m.status_icons().is_empty():  # A held monster keeps its bar (and icon) while it is held.
 		return 0
 	var st := _state(m)
 	var age: float = now - st.last_hit
@@ -165,6 +165,15 @@ func _draw() -> void:
 		origin.x = clampi(origin.x, 2, int(view.x) - size.x - 2)
 		origin.y = clampi(origin.y, top + 2, int(view.y) - size.y - 2)
 		_bar(origin, size, m, entry[1], cfg.frame, cfg.frame_lit)
+		_status_icons(m, Vector2i(origin.x + size.x + 1, origin.y + size.y / 2))
+
+
+## The monster's status icons (StatusDef.icon: the held padlock), in a row starting at `left`, centred on that height.
+func _status_icons(m: Node, left: Vector2i) -> void:
+	var x := left.x
+	for tex in m.status_icons():
+		draw_texture(tex, Vector2(x, left.y - tex.get_height() / 2))
+		x += tex.get_width() + 1
 
 
 func _draw_strip(m: Node, view: Vector2) -> int:
@@ -179,6 +188,7 @@ func _draw_strip(m: Node, view: Vector2) -> int:
 	_text(m.def.display_name, Vector2i(x + 4, y + 3 + 7))
 	var bar := Vector2i(cfg.strip_bar_width, 6)
 	_bar(Vector2i(x + w - bar.x - 4, y + (h - bar.y) / 2), bar, m, 0, cfg.frame, cfg.frame_lit)
+	_status_icons(m, Vector2i(x + w + 2, y + h / 2))
 	return y + h
 
 
@@ -193,6 +203,7 @@ func _draw_boss(m: Node, view: Vector2) -> int:
 	var size := Vector2i(w, cfg.boss_height)
 	var origin := Vector2i(x, y + 11)
 	_bar(origin, size, m, 0, cfg.boss_trim, cfg.boss_trim_dark)
+	_status_icons(m, Vector2i(origin.x + size.x + 2, origin.y + size.y / 2))
 	return origin.y + size.y
 
 

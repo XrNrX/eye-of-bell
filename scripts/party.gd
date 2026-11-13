@@ -26,6 +26,7 @@ const SpellDef := preload("res://scripts/spell_def.gd")
 
 const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
 const FightTracker := preload("res://scripts/fight_tracker.gd")
+const MonsterTiers := preload("res://scripts/monster_tiers.gd")
 const NO_CELL := Vector2i(-1, -1)
 const MISSILE_RANGE := 4  # How many tiles down the corridor ahead a scroll's missile reaches.
 const QUICK_SLOTS := 2        # Quick slots per member (see use_quick), shown under their portrait.
@@ -95,6 +96,7 @@ class Member:
 	var sick_left := 0.0
 	var sick_rate := 0.0
 	var sick_acc := 0.0
+	var spell_wait := {}    # SpellDef -> seconds before this hero may cast it again (SpellDef.recast_seconds).
 	var shaken_left := 0.0  # A resurrected Cleric: seconds until their faith steadies (no mana, no prayer until then).
 
 	func is_alive() -> bool:
@@ -168,6 +170,10 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	for m in members:
 		m.cooldown_left = maxf(0.0, m.cooldown_left - delta)
+		for spell in m.spell_wait.keys():
+			m.spell_wait[spell] -= delta
+			if m.spell_wait[spell] <= 0.0:
+				m.spell_wait.erase(spell)
 		for i in QUICK_SLOTS:
 			m.quick_cooldown[i] = maxf(0.0, m.quick_cooldown[i] - delta)
 		_tick_food(m, delta)
@@ -532,9 +538,12 @@ func _fire(m: Member, hand: int) -> void:
 		s.attack += buff.spell.buff_attack
 	s.damage_min = weapon.shot_damage_min
 	s.damage_max = weapon.shot_damage_max
-	var result := CombatRules.resolve_attack(s, target.def, CombatRules.crit_chance(m.def, weapon))
+	var helpless: bool = target.is_helpless()
+	var result := CombatRules.resolve_attack(s, target.def, CombatRules.crit_chance(m.def, weapon, 0, helpless))
 	result.by = m.hero_index  # Who struck: GameEvents.monster_killed names the killer.
 	target.take_hit(result)
+	if helpless and result.hit:
+		_banter("hit_held", m, weapon)
 	if not result.hit:
 		_say("%s's %s misses the %s (%s)." % [m.name(), weapon.ammo.display_name.to_lower(), target.def.display_name, left_text], "miss")
 	elif target.hp <= 0:
@@ -596,10 +605,13 @@ func _do_throw(m: Member, source: Dictionary) -> bool:
 		s.attack += buff.spell.buff_attack
 	s.damage_min = def.throw_damage_min
 	s.damage_max = def.throw_damage_max
-	var result := CombatRules.resolve_attack(s, target.def, CombatRules.crit_chance(m.def, def))
+	var helpless: bool = target.is_helpless()
+	var result := CombatRules.resolve_attack(s, target.def, CombatRules.crit_chance(m.def, def, 0, helpless))
 	result.fail = not result.hit and CombatRules.roll_fumble()
 	result.by = m.hero_index  # Who struck: GameEvents.monster_killed names the killer.
 	target.take_hit(result)
+	if helpless and result.hit:
+		_banter("hit_held", m, def)
 	if result.fail:
 		_critical_fail(m, source.index, def, true, land)  # It has already left the hand: a stumble.
 	elif not result.hit:
@@ -641,6 +653,23 @@ func spells_in(slot: int, hand: int) -> Array:
 	return member(slot).hands[hand].def.spells
 
 
+## False while this hero must wait before casting this spell again (SpellDef.recast_seconds).
+func spell_ready(slot: int, spell: Resource) -> bool:
+	var m := member(slot)
+	return m != null and not m.spell_wait.has(spell)
+
+
+## Seconds before this hero may cast this spell again (0: ready).
+func spell_wait_left(slot: int, spell: Resource) -> float:
+	var m := member(slot)
+	return float(m.spell_wait.get(spell, 0.0)) if m != null else 0.0
+
+
+func _start_recast(m: Member, spell: Resource) -> void:
+	if spell.recast_seconds > 0.0:
+		m.spell_wait[spell] = spell.recast_seconds
+
+
 func can_afford(slot: int, spell: Resource) -> bool:
 	var m := member(slot)
 	return m != null and int(m.mana) >= spell.mana_cost
@@ -661,10 +690,24 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 			if why != "":
 				_say(why)
 		return false
+	if not spell_ready(slot, spell):
+		_say("%s is not ready yet." % spell.display_name)
+		return false
 	if not can_afford(slot, spell):
 		_say("Not enough mana.")
 		Events.send(get_tree(), "mana_low", [m.hero_index])
 		return false
+	if spell.applies_status != null and spell.target == SpellDef.Target.AHEAD:  # Hold Monster: a status, no damage.
+		var status_text := _cast_status(m, spell)
+		if status_text == "":
+			return false
+		m.mana -= spell.mana_cost
+		_start_cooldown(m)
+		_start_recast(m, spell)
+		if spell.sound != "":
+			_cue(spell.sound)
+		_say(status_text)
+		return true
 	var who: String = m.name()
 	var text := ""
 	var spell_crit := false
@@ -735,6 +778,7 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 		text += _bless_corruption(m)
 	m.mana -= spell.mana_cost
 	_start_cooldown(m)
+	_start_recast(m, spell)
 	if spell.sound != "":
 		_cue(spell.sound)
 	if spell.effect in ["heal", "bless", "shield"]:  # Played over the portraits that got it (party_hud), not out in the dungeon where it looks aimed at the monster.
@@ -754,6 +798,47 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 		holy_cast.emit(slot, hand, spell)
 	_say_hit(text, m, null, spell_crit)
 	return true
+
+
+## Cast a status spell (SpellDef.applies_status: Hold Monster) at the monster within the spell's reach. Whether it lands, and for
+## how long, is Monster.try_status (the tier table, data/tiers.tres). Returns the log line, or "" when it can't take effect
+## (nothing there, or an immune monster), which costs nothing. A resisted cast is still a cast: the mana, the cooldown and the
+## recast wait are spent. The cast starts a fight either way.
+func _cast_status(m: Member, spell: Resource) -> String:
+	var status: Resource = spell.applies_status
+	var target = _monster_in_reach(spell.reach)
+	if target == null:
+		_say("There is nothing to target.")
+		return ""
+	var monster_name: String = str(target.def.display_name).to_lower()
+	if MonsterTiers.get_config().odds(status.id, target.def).immune:
+		_say(status.immune_message.replace("{monster}", monster_name))
+		return ""
+	fight.blow()
+	var opener := "%s casts %s. " % [m.name(), spell.display_name]
+	var result: Dictionary = target.try_status(status, spell.status_seconds, m.hero_index)
+	if result.outcome == "resisted":
+		_banter("status_resisted", m, null, {"status": status.id, "monster": target.def.display_name})
+		return opener + status.resist_message.replace("{monster}", monster_name)
+	var text := opener + "The %s is %s." % [monster_name, str(status.display_name).to_lower()]
+	if result.message != "":
+		text += " " + str(result.message).replace("{monster}", monster_name)  # A special case's own line (the slime wobbling free).
+	return text
+
+
+## The first monster within `reach` tiles straight ahead (0: MISSILE_RANGE), or null; walls and closed doors stop the search.
+func _monster_in_reach(reach: int) -> Node:
+	if reach <= 0:
+		return _first_monster_ahead()
+	var dir: Vector2i = player.DIRS[player.facing]
+	for i in range(1, reach + 1):
+		var cell: Vector2i = player.cell + dir * i
+		if DungeonMap.is_blocked(cell):
+			return null
+		var monster = DungeonMap.occupied.get(cell)
+		if monster != null and is_instance_valid(monster) and not monster.dying:
+			return monster
+	return null
 
 
 ## Start a buff, or refresh it if it's already running (buffs don't stack).
@@ -1367,10 +1452,13 @@ func _melee(m: Member, hand: int) -> void:
 		_swing_at_wall(m, hand, front)
 		return
 	var weapon: Resource = equipped_weapon(m) if hand < 0 else _melee_weapon_in(m, hand)
-	var result := CombatRules.resolve_attack(effective_stats(m, hand), target.def, CombatRules.crit_chance(m.def, weapon))
+	var helpless: bool = target.is_helpless()  # Held: it can't dodge or turn (a crit bonus, the Thief's the biggest).
+	var result := CombatRules.resolve_attack(effective_stats(m, hand), target.def, CombatRules.crit_chance(m.def, weapon, 0, helpless))
 	result.fail = not result.hit and CombatRules.roll_fumble()
 	result.by = m.hero_index  # Who struck: GameEvents.monster_killed names the killer.
 	target.take_hit(result)
+	if helpless and result.hit:
+		_banter("hit_held", m, weapon)
 	if result.hit and not result.crit:
 		_cue("hit")
 	if result.fail:

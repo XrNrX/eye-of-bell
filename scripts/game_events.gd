@@ -16,6 +16,11 @@ extends Node
 
 ## A monster died. killer: the hero_index of whoever struck the last blow (-1: nobody, e.g. a debug kill).
 signal monster_killed(def: Resource, cell: Vector2i, killer: int)
+## A monster was held in place (the "held" status: Hold Monster). source: the hero_index who held it (-1: nothing, e.g. a trap).
+## Sent by Monster.add_status (StatusDef.started_event).
+signal monster_held(monster: Node, source: int)
+## A held monster can move again: the hold ran out (not when it died holding). Sent by Monster (StatusDef.ended_event).
+signal monster_released(monster: Node)
 ## A hero's HP reached 0.
 signal hero_died(hero: int)
 ## A fallen hero was raised. by_scroll: with a Scroll of Resurrection (the only way so far).

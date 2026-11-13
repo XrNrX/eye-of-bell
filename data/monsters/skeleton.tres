@@ -33,4 +33,5 @@ walk_fps = 18.0
 pixel_size = 0.00627
 drop_item = ExtResource("95_drop")
 drop_chance = 0.25
+tier = 1
 crit_chance = 3

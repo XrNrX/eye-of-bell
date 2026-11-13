@@ -8,7 +8,8 @@ extends CanvasLayer
 ## list), B banter, N fog, J screen shake, P spell and torch shadows. Monster pacing: O picks a value (step interval, reaction
 ## delay, arrival recovery, flank delay), [ and ] lower or raise it by 0.1 s on every monster kind at once (the loaded
 ## MonsterDefs, so live monsters feel it on their next move; never saved: copy what feels right into data/monsters/*.tres),
-## Y puts the values from the files back, I spawns a pack of three skeletons ahead. X and U wait for an XP system: they call Party.add_xp / Party.level_up_party when
+## Y puts the values from the files back, I spawns a pack of three skeletons ahead. Held monster: 9 holds the monster in front
+## (Hold Monster's status and time, with no resistance roll and no mana), 0 frees every held monster. X and U wait for an XP system: they call Party.add_xp / Party.level_up_party when
 ## those exist and say so in the log until then. A new system gets a station in levels/test_room.gd and, if it needs one, a key here.
 ##
 ## The ambush corridor is a stand-in: stepping on a trigger tile in DungeonMap.AMBUSHES spawns its monsters.
@@ -22,6 +23,7 @@ const MONSTER_DIR := "res://data/monsters"
 const PACING_FIELDS := [["step_interval", "STEP"], ["reaction_delay", "REACTION"], ["arrival_recovery", "RECOVERY"], ["flank_after", "FLANK DELAY"]]
 const PACING_STEP := 0.1
 const PACK_MONSTER := "res://data/monsters/skeleton.tres"
+const HOLD_SPELL := "res://data/spells/hold_monster.tres"
 
 const INK := Color("0b0a10")
 const STONE_900 := Color("14131b")
@@ -170,6 +172,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_reset_pacing()
 		KEY_I:
 			_spawn_pack()
+		KEY_9:
+			_hold_ahead()
+		KEY_0:
+			_free_all()
 		_:
 			handled = false
 	if handled:
@@ -262,6 +268,28 @@ func _spawn_pack() -> void:
 	_say("A pack of %d appears." % made if made > 0 else "No room ahead for a pack.")
 
 
+## 9: put Hold Monster's status on the monster in front, for the spell's time, with no roll (to look at the effect and tune it).
+func _hold_ahead() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	var m = DungeonMap.occupied.get(player.cell + player.DIRS[player.facing])
+	if m == null or not is_instance_valid(m) or m.dying:
+		_say("Nothing in front to hold.")
+		return
+	var spell: Resource = load(HOLD_SPELL)
+	m.add_status(spell.applies_status, spell.status_seconds, -1)
+	_say("The %s is held for %.1f s." % [str(m.def.display_name).to_lower(), spell.status_seconds])
+
+
+## 0: every held monster is free again (the shatter plays).
+func _free_all() -> void:
+	var n := 0
+	for m in get_tree().get_nodes_in_group("monsters"):
+		if m.has_status("held"):
+			m.remove_status("held")
+			n += 1
+	_say("%d monster%s freed." % [n, "" if n == 1 else "s"])
+
+
 func _spring(a: Dictionary, index := 0) -> void:
 	var dungeon := get_tree().get_first_node_in_group("dungeon")
 	for m in a.monsters:
@@ -314,7 +342,8 @@ func _open_spawn_list() -> void:
 	for f in names:
 		var path := "%s/%s" % [MONSTER_DIR, f.trim_suffix(".remap")]
 		var def: Resource = load(path)
-		rows.append([str(def.display_name).to_upper() if def != null else f, _spawn.bind(path)])
+		var label: String = ("%s  T%d" % [str(def.display_name).to_upper(), int(def.get("tier")) if def.get("tier") != null else 1]) if def != null else f
+		rows.append([label, _spawn.bind(path)])  # The tier: how likely a status effect lands (data/tiers.tres).
 	_open_menu("SPAWN AHEAD", rows)
 
 
@@ -409,7 +438,7 @@ func _refresh_help() -> void:
 		"P   SHADOWS       %s" % _on(Settings.spell_shadows),
 		"",
 		"MONSTER PACING (NOT SAVED)",
-		"I   PACK OF THREE AHEAD",
+		"I   PACK AHEAD    9 HOLD  0 FREE",
 		"O   TUNE          %s" % PACING_FIELDS[tune_index][1],
 		"[ ] -/+ 0.1S      Y FROM FILES",
 		_pacing_table(),

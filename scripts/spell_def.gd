@@ -21,3 +21,7 @@ enum Target { AHEAD, HERO, PARTY }  # First monster ahead / one hero you pick / 
 @export var buff_attack := 0     # HERO or PARTY: added to attack while it lasts.
 @export var buff_defence := 0    # Added to defence while it lasts.
 @export var duration := 0.0      # Seconds a buff lasts; recasting refreshes it.
+@export var reach := 0           # AHEAD: how many tiles ahead it can reach (0: Party.MISSILE_RANGE; 1: only the tile in front).
+@export var recast_seconds := 0.0  # After a cast that took effect, this hero can't cast this spell again for this long.
+@export var applies_status: Resource  # AHEAD: a StatusDef put on the target for status_seconds (Hold Monster), rolled against
+@export var status_seconds := 0.0     # the tier table (data/tiers.tres) for the monster's tier. No damage unless damage_max is set.

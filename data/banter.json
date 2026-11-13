@@ -209,5 +209,39 @@
 			{"speaker": "cleric", "urgent": true, "text": "You're not so bad with a sword."},
 			{"speaker": "cleric", "urgent": true, "text": "That was adequate. Barely."}
 		]
+	},
+	"monster_held": {
+		"chance": 0.5,
+		"cooldown": 25,
+		"lines": [
+			{"speaker": "mage", "about": "self", "once": true, "id": "first_hold", "priority": 3, "text": "It worked! It actually... ahem. As expected."},
+			{"speaker": "mage", "about": "self", "text": "Technically, it's still dangerous."},
+			{"speaker": "fighter", "about": "other", "text": "Good. Stay."},
+			{"speaker": "cleric", "about": "other", "text": "The Light guided that."}
+		]
+	},
+	"hit_held": {
+		"chance": 0.35,
+		"cooldown": 15,
+		"lines": [
+			{"speaker": "thief", "about": "self", "text": "Hold still. Good lad."},
+			{"speaker": "thief", "about": "self", "text": "Never saw me coming."}
+		]
+	},
+	"status_resisted": {
+		"chance": 0.6,
+		"cooldown": 20,
+		"lines": [
+			{"speaker": "mage", "about": "self", "text": "Of course it resisted. Of course."},
+			{"speaker": "thief", "about": "other", "actor": "mage", "text": "Try asking it nicely."},
+			{"speaker": "fighter", "about": "other", "actor": "mage", "text": "Glowy thing's broken."}
+		]
+	},
+	"monster_released": {
+		"chance": 0.3,
+		"cooldown": 30,
+		"lines": [
+			{"speaker": "mage", "text": "It's moving again. It's moving again."}
+		]
 	}
 }

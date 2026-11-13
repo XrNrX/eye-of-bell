@@ -24,4 +24,5 @@ portrait_dead = ExtResource("5_dead")
 dexterity = 11
 crit_base = 4
 finesse_crit = 0
+helpless_crit = 10
 spell_crit = 0

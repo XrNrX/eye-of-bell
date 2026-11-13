@@ -19,13 +19,13 @@ Dark, desaturated, cursed (`docs/art_style.md`). Sickly green means the curse an
 - Real-time grid movement, first-person 3D view at 416x260 inside a stone frame, 640x360 integer-scaled.
 - Test room (debug builds only, F12 or the main menu): a hall with stations for combat, an ambush stand-in, a puzzle, each wall type, every item and not-yet-built systems, wall signs and debug keys (god mode, refill, kill all, spawn, teleport, toggles). Add a station when a new system lands.
 - Level 1: doors, locked doors and keys, levers, plates, portcullises, cracked walls, two exits, 15 monsters of four kinds.
-- Real-time combat with crits and fails, hit direction (hits from behind and the sides), monster swings timed to land with the hit feedback, combat feel. Monster pacing for the step-back dance: monsters move on their own slower clock, pause before following, can't strike the moment they arrive, and queue instead of surrounding the party (one flanker at a time, after a delay); tunable in the test room.
+- Real-time combat with crits and fails, hit direction (hits from behind and the sides), monster swings timed to land with the hit feedback, combat feel. Monster pacing for the step-back dance: monsters move on their own slower clock, pause before following, can't strike the moment they arrive, and queue instead of surrounding the party (one flanker at a time, after a delay); tunable in the test room. Status effects on monsters (data-driven; held so far) and the Mage's Hold Monster spell: rooted for 5 s unless it resists, helpless to crits (the Thief's most), cold blue runes from PixelLab's VFX suite.
 - Map: a parchment corner map with PixelLab symbols and torchlight flicker, and a full-screen map on M with a legend (no fog of war yet).
 - Real shadows from spell lights and torches: walls, pillars, arches and doors block light (Options: SPELL SHADOWS, off for weaker machines).
 - Enemy health bars (small bar over damaged or front monsters, name strip, wide boss bar; Options: On / Boss only / Off).
 - Party: four heroes, front and back row, formation swapping, hands, throwing, quick slots.
 - Inventory, stacks, equipping, character sheet, food and sickness, potions, scrolls, resurrection.
-- Spells (Magic Missile, Fireball, Heal, Bless, Shield) with synced lighting and pixel particles, holy light.
+- Spells (Magic Missile, Fireball, Hold Monster, Heal, Bless, Shield) with synced lighting and pixel particles, holy light.
 - Banter system (crit, fail, hit from behind, eat, equip events).
 - Corrupted walls that only a cleric's Bless can burn away (two on floor 1), and a small data-driven puzzle system.
 - Intro cutscene: 14 painted shots with fog, rain, lightning and thunder, played once on first launch and from the menu.

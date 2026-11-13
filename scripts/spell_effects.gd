@@ -240,6 +240,77 @@ func _ensure_pixels() -> void:
 		add_child(pixels)
 
 
+# --------------------------------------------------------------------------
+# Status effects on monsters (StatusDef fx_*: Hold Monster's runes), called by Monster.add_status / remove_status
+# --------------------------------------------------------------------------
+
+const StatusFx := preload("res://scripts/status_fx.gd")
+
+
+## A status starts on a monster: its starting one-shot (unless quiet: loading a save), then its loop, and a steady light, all on a
+## holder that rides on the monster. Returns the holder (the monster frees it when the status ends), or null with no art.
+func status_started(monster: Node3D, status: Resource, quiet := false) -> Node:
+	if status.fx_spell == "":
+		return null
+	var c := Config.get_config()
+	var scale_by := _status_scale(monster)
+	var holder: Node3D = StatusFx.new()
+	holder.height = monster._sprite_height() * c.status_height_frac
+	holder.toward = c.status_toward_camera
+	monster.add_child(holder)
+	var start: Node = null
+	if not quiet and status.fx_start != "":
+		var sheet := _sheet(status.fx_spell, status.fx_start)
+		if not sheet.is_empty():
+			start = _flipbook(sheet, false, scale_by, status.fx_tint)
+			holder.add_child(start)
+	if status.fx_loop != "":
+		var sheet := _sheet(status.fx_spell, status.fx_loop)
+		if not sheet.is_empty():
+			var loop := _flipbook(sheet, true, scale_by, status.fx_tint)
+			holder.add_child(loop)
+			if start != null:  # The loop takes over where the binding ends.
+				loop.visible = false
+				start.finished.connect(func():
+					if is_instance_valid(loop):
+						loop.visible = true)
+	if status.fx_light_energy > 0.0:
+		var light := OmniLight3D.new()  # A soft steady light on it while it lasts (no shadows: small and still).
+		light.light_color = status.fx_light_colour
+		light.light_energy = status.fx_light_energy * _light_strength()
+		light.omni_range = status.fx_light_range
+		holder.add_child(light)
+	return holder
+
+
+## A status ends by itself (or a cast at it was resisted): its ending one-shot plays where the monster stands (the chains shatter).
+func status_ended(monster: Node3D, status: Resource) -> void:
+	if status.fx_spell == "" or status.fx_end == "":
+		return
+	var sheet := _sheet(status.fx_spell, status.fx_end)
+	if sheet.is_empty():
+		return
+	var c := Config.get_config()
+	var scale_by := _status_scale(monster)
+	var holder: Node3D = StatusFx.new()
+	holder.height = monster._sprite_height() * c.status_height_frac - c.status_end_drop_px * c.fb_pixel_size * scale_by
+	holder.toward = c.status_toward_camera
+	monster.add_child(holder)
+	var flip := _flipbook(sheet, false, scale_by, status.fx_tint)
+	holder.add_child(flip)
+	live += 1
+	flip.finished.connect(func():
+		live -= 1
+		if is_instance_valid(holder):
+			holder.queue_free())
+
+
+func _status_scale(monster: Node3D) -> float:
+	var c := Config.get_config()
+	var gap: float = c.status_ring_gap_px * c.fb_pixel_size
+	return clampf(monster._sprite_height() * c.status_ring_gap_frac / maxf(gap, 0.001), c.status_scale_min, c.status_scale_max)
+
+
 ## The Fireball. If its flipbooks are missing the old square-orb version plays instead.
 func fireball(from_cell: Vector2i, to_cell: Vector2i) -> void:
 	var proj := _sheet("fireball", "projectile")

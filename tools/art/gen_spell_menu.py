@@ -15,7 +15,7 @@ from palette import PAL
 
 PIECES = Path(__file__).parent / "pieces" / "spell_menu"
 FRAME_MARGIN = 10   # The part of spell_frame.png that never stretches: the iron border and its corner brackets.
-SPELLS = ["magic_missile", "fireball", "heal", "shield", "bless"]
+SPELLS = ["magic_missile", "fireball", "heal", "shield", "bless", "hold_monster"]
 
 
 def _snap(path):

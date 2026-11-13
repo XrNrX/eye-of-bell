@@ -8,7 +8,8 @@ const BASE_HIT := 60      # % chance to hit when attack equals defence.
 const HIT_PER_POINT := 5  # % per point of attack above (or below) the target's defence.
 const MIN_HIT := 10
 const MAX_HIT := 95
-const CRIT_CAP := 40             # No hero's crit chance goes above this, whatever adds to it.
+const CRIT_CAP := 40             # No hero's crit chance goes above this, whatever adds to it...
+const HELPLESS_CRIT_CAP := 60    # ...except against a helpless (held) monster, with the hero's helpless_crit added.
 const CRIT_MULT := 2.0           # Weapons, thrown weapons and fists.
 const SPELL_CRIT_MULT := 1.5     # Damage spells.
 const MONSTER_CRIT_MULT := 1.5
@@ -54,12 +55,14 @@ static func resolve_attack(attacker: Object, target: Object, crit_percent := 0, 
 
 ## A hero's crit chance with this weapon (null for fists): class base + (Dexterity - 10) + the weapon's bonus + the
 ## hero's bonus with finesse weapons + anything a perk adds, in percent, kept within 0..CRIT_CAP.
-static func crit_chance(hero: Object, weapon: Object = null, perk_points := 0) -> int:
+static func crit_chance(hero: Object, weapon: Object = null, perk_points := 0, helpless := false) -> int:
 	var chance: int = hero.crit_base + hero.dexterity - 10 + perk_points
 	if weapon != null:
 		chance += weapon.crit_bonus
 		if weapon.finesse:
 			chance += hero.finesse_crit
+	if helpless:  # A held monster can't dodge or turn: a stab in the back (CharacterDef.helpless_crit, the Thief's the biggest).
+		return clampi(chance + int(hero.get("helpless_crit") if hero.get("helpless_crit") != null else 0), 0, HELPLESS_CRIT_CAP)
 	return clampi(chance, 0, CRIT_CAP)
 
 

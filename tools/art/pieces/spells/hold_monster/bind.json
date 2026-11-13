@@ -1,0 +1,391 @@
+{
+ "frames": [
+  {
+   "filename": "hold-monster-bind 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.6865671641791045,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-bind 1.png",
+   "frame": {
+    "x": 67,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.6865671641791045,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-bind 2.png",
+   "frame": {
+    "x": 134,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.6865671641791045,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-bind 3.png",
+   "frame": {
+    "x": 201,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.6865671641791045,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-bind 4.png",
+   "frame": {
+    "x": 0,
+    "y": 77,
+    "w": 67,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.6865671641791045,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-bind 5.png",
+   "frame": {
+    "x": 67,
+    "y": 77,
+    "w": 67,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.6865671641791045,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-bind 6.png",
+   "frame": {
+    "x": 134,
+    "y": 77,
+    "w": 67,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.6865671641791045,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-bind 7.png",
+   "frame": {
+    "x": 201,
+    "y": 77,
+    "w": 67,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.6865671641791045,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-bind 8.png",
+   "frame": {
+    "x": 0,
+    "y": 154,
+    "w": 67,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.6865671641791045,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-bind 9.png",
+   "frame": {
+    "x": 67,
+    "y": 154,
+    "w": 67,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.6865671641791045,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-bind 10.png",
+   "frame": {
+    "x": 134,
+    "y": 154,
+    "w": 67,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.6865671641791045,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-bind 11.png",
+   "frame": {
+    "x": 201,
+    "y": 154,
+    "w": 67,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.6865671641791045,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-bind 12.png",
+   "frame": {
+    "x": 0,
+    "y": 231,
+    "w": 67,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.6865671641791045,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  },
+  {
+   "filename": "hold-monster-bind 13.png",
+   "frame": {
+    "x": 67,
+    "y": 231,
+    "w": 67,
+    "h": 77
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 67,
+    "h": 77
+   },
+   "sourceSize": {
+    "w": 67,
+    "h": 77
+   },
+   "pivot": {
+    "x": 1.6865671641791045,
+    "y": 1.1948051948051948
+   },
+   "duration": 83
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "hold-monster-bind.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 268,
+   "h": 308
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 113,
+   "y": 92
+  },
+  "frameTags": [
+   {
+    "name": "hold-monster-bind",
+    "from": 0,
+    "to": 13,
+    "direction": "forward"
+   }
+  ]
+ }
+}
