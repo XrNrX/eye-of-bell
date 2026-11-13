@@ -214,6 +214,7 @@ func restore(new_cell: Vector2i, new_facing: int) -> void:
 ## Done when a step STARTS: we already count as standing on the new tile.
 func _report_position() -> void:
 	DungeonMap.player_cell = cell
+	DungeonMap.mark_seen(cell, facing)
 	get_tree().call_group("dungeon", "refresh")
 
 
@@ -282,6 +283,7 @@ func _say(text: String) -> void:
 func _turn(direction: int) -> void:
 	_cue("turn")
 	facing = posmod(facing + direction, 4)
+	DungeonMap.mark_seen(cell, facing)
 	yaw_degrees += 90.0 * direction
 	tween = create_tween()
 	tween.tween_property(self, "rotation_degrees:y", yaw_degrees, MOVE_TIME)

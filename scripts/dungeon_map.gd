@@ -239,6 +239,9 @@ static var purify_pending := {}  # Walls whose purifying show is still running: 
 static var puzzles_done := {}    # Puzzles that have fired (id -> true); saved.
 static var puzzle_doors := {}    # DOOR_IDS doors a puzzle holds open (id -> true); saved.
 static var player_cell := Vector2i(-1, -1)  # Set by player.gd as it moves.
+static var explored := {}        # Cells the party has seen, for the map's fog of war (cell -> true); saved.
+
+const SIGHT := 6  # How far the party sees for the map (tiles): torchlight, not the whole corridor.
 
 
 ## The ID of a switch-controlled door, or "" for an ordinary door.
@@ -271,7 +274,29 @@ static func has_line_of_sight(a: Vector2i, b: Vector2i) -> bool:
 	return true
 
 
+## Mark what the party sees from `from` facing `facing` (0 N, 1 W, 2 S, 3 E) as explored: the eight cells round it
+## always (it sketches what it stands among), and in front, within SIGHT tiles and a cone about 50 degrees either
+## side, every cell with a clear line of sight (a wall is seen when its face is: the line stops short of it).
+static func mark_seen(from: Vector2i, facing: int) -> void:
+	var fwd := Vector2i([0, -1, 0, 1][facing], [-1, 0, 1, 0][facing])
+	var side := Vector2i(-fwd.y, fwd.x)
+	for dy in range(-SIGHT, SIGHT + 1):
+		for dx in range(-SIGHT, SIGHT + 1):
+			var d := Vector2i(dx, dy)
+			var ahead := d.x * fwd.x + d.y * fwd.y
+			var across := absi(d.x * side.x + d.y * side.y)
+			var near := maxi(absi(dx), absi(dy)) <= 1
+			if not near and (ahead < 1 or across > ahead * 1.2 + 0.5 or maxi(absi(dx), absi(dy)) > SIGHT):
+				continue
+			var c := from + d
+			if c.y < 0 or c.y >= MAP.size() or c.x < 0 or c.x >= MAP[c.y].size() or explored.has(c):
+				continue
+			if near or has_line_of_sight(from, c):
+				explored[c] = true
+
+
 static func reset_run() -> void:
+	explored.clear()
 	occupied.clear()
 	open_doors.clear()
 	unlocked_doors.clear()

@@ -147,7 +147,8 @@ static func serialize(tree: SceneTree) -> Dictionary:
 		"dungeon": {"items": piles, "open_doors": open_doors, "unlocked_doors": unlocked,
 				"levers": levers, "monsters": monsters, "broken_walls": broken,
 				"purified_walls": purified, "corruption": corruption,
-				"puzzles_done": DungeonMap.puzzles_done.keys(), "puzzle_doors": DungeonMap.puzzle_doors.keys()},
+				"puzzles_done": DungeonMap.puzzles_done.keys(), "puzzle_doors": DungeonMap.puzzle_doors.keys(),
+				"explored": DungeonMap.explored.keys().map(cell_to_data)},
 		"cursor": stack_to_data(cursor.held) if cursor else null,
 	}
 
@@ -260,6 +261,9 @@ static func apply(tree: SceneTree, data: Dictionary) -> String:
 	DungeonMap.puzzles_done.clear()
 	for id in d.get("puzzles_done", []):
 		DungeonMap.puzzles_done[str(id)] = true
+	DungeonMap.explored.clear()  # (An older save has no explored map: it starts blank and fills as the party looks.)
+	for c in d.get("explored", []):
+		DungeonMap.explored[data_to_cell(c)] = true
 	DungeonMap.puzzle_doors.clear()
 	for id in d.get("puzzle_doors", []):
 		DungeonMap.puzzle_doors[str(id)] = true

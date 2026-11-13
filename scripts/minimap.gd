@@ -2,8 +2,7 @@ extends Control
 ## The in-world map: the cells around the player, with the player always in the middle (north is up) and a
 ## triangle for the way they face, inked on a torn parchment inside a small rusted iron frame
 ## (art/ui/map_parchment.png and map_frame.png from tools/art/gen_map_art.py, native pixels).
-## STAGE 1 (frame and parchment only): the cells are still the plain ones, drawn as ink; fog of war, the icons
-## and the full-screen map come next. Drawn by debug_overlay.gd on Tab. Everything is palette colours.
+## Fog of war: only cells in DungeonMap.explored are drawn (floor as a light checker wash, walls inked); the rest is blank paper. Drawn by debug_overlay.gd on Tab. Everything is palette colours.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 
@@ -27,18 +26,26 @@ const RUST_300 := Color("a8673a")
 const RUST_500 := Color("7c4426")
 const TORCH_500 := Color("d99a36")
 const CURSE_700 := Color("3a6b4c")  # Palette curse_700: a corrupted wall.
+const BONE_700 := Color("6b6250")
 const RUST_700 := Color("4e2a1a")
 const BLOOD_500 := Color("7a2224")
 const TORCH_300 := Color("f5cf80")
 
 var player: Node3D  # Assigned by debug_overlay.gd.
 var icons := {}     # name -> Texture2D, loaded once.
+var wash: Texture2D # One cell of explored floor: a checker of dark paper pixels, an ink wash that stays in the palette.
 
 
 func _ready() -> void:
 	for n in ICON_NAMES:
 		icons[n] = load(ICON_DIR % n)
 	icons["arrow"] = load(ARROW)
+	var img := Image.create(CELL_PX, CELL_PX, false, Image.FORMAT_RGBA8)
+	for y in CELL_PX:
+		for x in CELL_PX:
+			if (x + y) % 2 == 0:
+				img.set_pixel(x, y, BONE_700)
+	wash = ImageTexture.create_from_image(img)
 	custom_minimum_size = FRAME.get_size()
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	clip_contents = true
@@ -59,9 +66,13 @@ func _draw() -> void:
 	for row in ROWS:
 		for col in COLS:
 			var c := origin + Vector2i(col, row)
+			if not DungeonMap.explored.has(c):
+				continue  # Fog of war: unexplored cells stay blank parchment.
 			if c.y < 0 or c.y >= DungeonMap.MAP.size() or c.x < 0 or c.x >= DungeonMap.MAP[c.y].size():
 				continue  # Off the edge of the level: empty.
 			var color := _cell_color(c)
+			if not DungeonMap.is_wall(c) and not DungeonMap.is_door(c):
+				draw_texture(wash, Vector2(col, row) * CELL_PX)  # Seen floor: a light ink wash.
 			if color.a > 0.0:
 				draw_rect(Rect2(Vector2(col, row) * CELL_PX, Vector2.ONE * CELL_PX), color)
 
@@ -70,11 +81,11 @@ func _draw() -> void:
 	for row in ROWS:
 		for col in COLS:
 			var icon := _cell_icon(origin + Vector2i(col, row))
-			if icon != "":
+			if icon != "" and DungeonMap.explored.has(origin + Vector2i(col, row)):
 				draw_texture(icons[icon], Vector2(col, row) * CELL_PX)
 	for lever in DungeonMap.LEVERS:
 		var at: Vector2i = lever.cell - origin
-		if at.x >= 0 and at.y >= 0 and at.x < COLS and at.y < ROWS:
+		if at.x >= 0 and at.y >= 0 and at.x < COLS and at.y < ROWS and DungeonMap.explored.has(lever.cell):
 			draw_texture(icons["lever"], Vector2(at) * CELL_PX)
 
 	# The party: the arrow, turned to the way they face (the art points north; facing 1 is west = a quarter turn left).
