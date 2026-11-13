@@ -1,0 +1,261 @@
+{
+ "frames": [
+  {
+   "filename": "hit-guard-axe 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 91,
+    "h": 83
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 91,
+    "h": 83
+   },
+   "sourceSize": {
+    "w": 91,
+    "h": 83
+   },
+   "pivot": {
+    "x": 1.1538461538461537,
+    "y": 1.5542168674698795
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-guard-axe 1.png",
+   "frame": {
+    "x": 91,
+    "y": 0,
+    "w": 91,
+    "h": 83
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 91,
+    "h": 83
+   },
+   "sourceSize": {
+    "w": 91,
+    "h": 83
+   },
+   "pivot": {
+    "x": 1.1538461538461537,
+    "y": 1.5542168674698795
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-guard-axe 2.png",
+   "frame": {
+    "x": 182,
+    "y": 0,
+    "w": 91,
+    "h": 83
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 91,
+    "h": 83
+   },
+   "sourceSize": {
+    "w": 91,
+    "h": 83
+   },
+   "pivot": {
+    "x": 1.1538461538461537,
+    "y": 1.5542168674698795
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-guard-axe 3.png",
+   "frame": {
+    "x": 0,
+    "y": 83,
+    "w": 91,
+    "h": 83
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 91,
+    "h": 83
+   },
+   "sourceSize": {
+    "w": 91,
+    "h": 83
+   },
+   "pivot": {
+    "x": 1.1538461538461537,
+    "y": 1.5542168674698795
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-guard-axe 4.png",
+   "frame": {
+    "x": 91,
+    "y": 83,
+    "w": 91,
+    "h": 83
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 91,
+    "h": 83
+   },
+   "sourceSize": {
+    "w": 91,
+    "h": 83
+   },
+   "pivot": {
+    "x": 1.1538461538461537,
+    "y": 1.5542168674698795
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-guard-axe 5.png",
+   "frame": {
+    "x": 182,
+    "y": 83,
+    "w": 91,
+    "h": 83
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 91,
+    "h": 83
+   },
+   "sourceSize": {
+    "w": 91,
+    "h": 83
+   },
+   "pivot": {
+    "x": 1.1538461538461537,
+    "y": 1.5542168674698795
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-guard-axe 6.png",
+   "frame": {
+    "x": 0,
+    "y": 166,
+    "w": 91,
+    "h": 83
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 91,
+    "h": 83
+   },
+   "sourceSize": {
+    "w": 91,
+    "h": 83
+   },
+   "pivot": {
+    "x": 1.1538461538461537,
+    "y": 1.5542168674698795
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-guard-axe 7.png",
+   "frame": {
+    "x": 91,
+    "y": 166,
+    "w": 91,
+    "h": 83
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 91,
+    "h": 83
+   },
+   "sourceSize": {
+    "w": 91,
+    "h": 83
+   },
+   "pivot": {
+    "x": 1.1538461538461537,
+    "y": 1.5542168674698795
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-guard-axe 8.png",
+   "frame": {
+    "x": 182,
+    "y": 166,
+    "w": 91,
+    "h": 83
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 91,
+    "h": 83
+   },
+   "sourceSize": {
+    "w": 91,
+    "h": 83
+   },
+   "pivot": {
+    "x": 1.1538461538461537,
+    "y": 1.5542168674698795
+   },
+   "duration": 63
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "hit-guard-axe.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 273,
+   "h": 249
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 105,
+   "y": 129
+  },
+  "frameTags": [
+   {
+    "name": "hit-guard-axe",
+    "from": 0,
+    "to": 8,
+    "direction": "forward"
+   }
+  ]
+ }
+}

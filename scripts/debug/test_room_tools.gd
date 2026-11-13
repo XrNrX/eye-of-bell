@@ -8,7 +8,8 @@ extends CanvasLayer
 ## list), B banter, N fog, J screen shake, P spell and torch shadows. Monster pacing: O picks a value (step interval, reaction
 ## delay, arrival recovery, flank delay), [ and ] lower or raise it by 0.1 s on every monster kind at once (the loaded
 ## MonsterDefs, so live monsters feel it on their next move; never saved: copy what feels right into data/monsters/*.tres),
-## Y puts the values from the files back, I spawns a pack of three skeletons ahead. Held monster: 9 holds the monster in front
+## Y puts the values from the files back, I spawns a pack of three skeletons ahead. Hit effects: - plays the next monster kind's
+## hit effect (MonsterDef.hit_effect) across the view, from the front, the left, the right and behind in turn, with no damage. Held monster: 9 holds the monster in front
 ## (Hold Monster's status and time, with no resistance roll and no mana), 0 frees every held monster. X and U wait for an XP system: they call Party.add_xp / Party.level_up_party when
 ## those exist and say so in the log until then. A new system gets a station in levels/test_room.gd and, if it needs one, a key here.
 ##
@@ -53,6 +54,7 @@ var ambush_active := false  # An ambush has sprung and its fight is not over: ba
 var ambush_age := 0.0
 var last_cell := Vector2i(-99, -99)
 var tune_index := 0       # Which of PACING_FIELDS [ and ] change.
+var hit_fx_turn := 0      # Which monster kind's hit effect (and which side) - plays next.
 
 
 func _ready() -> void:
@@ -178,6 +180,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_reset_pacing()
 		KEY_I:
 			_spawn_pack()
+		KEY_MINUS:
+			_next_hit_effect()
 		KEY_9:
 			_hold_ahead()
 		KEY_0:
@@ -297,6 +301,21 @@ func _spawn_pack() -> void:
 			dungeon.spawn_monster(load(PACK_MONSTER), cell)
 			made += 1
 	_say("A pack of %d appears." % made if made > 0 else "No room ahead for a pack.")
+
+
+## -: play the next monster kind's hit effect across the view, cycling through the sides, without hurting anyone.
+func _next_hit_effect() -> void:
+	var defs := _monster_defs().filter(func(e): return str(e[1].get("hit_effect")) != "")
+	var overlay := get_tree().get_first_node_in_group("hit_overlay")
+	if defs.is_empty() or overlay == null:
+		_say("No hit effects to show.")
+		return
+	var sides := ["front", "left", "right", "behind"]
+	var def: Resource = defs[hit_fx_turn % defs.size()][1]
+	var side: String = sides[(hit_fx_turn / defs.size()) % sides.size()]
+	hit_fx_turn += 1
+	overlay.play(def.hit_effect, side)
+	_say("%s hit effect, from the %s." % [def.display_name, side])
 
 
 ## 9: put Hold Monster's status on the monster in front, for the spell's time, with no roll (to look at the effect and tune it).
@@ -470,6 +489,7 @@ func _refresh_help() -> void:
 		"",
 		"MONSTER PACING (NOT SAVED)",
 		"I   PACK AHEAD    9 HOLD  0 FREE",
+		"-   SHOW NEXT MONSTER HIT EFFECT",
 		"O   TUNE          %s" % PACING_FIELDS[tune_index][1],
 		"[ ] -/+ 0.1S      Y FROM FILES",
 		_pacing_table(),

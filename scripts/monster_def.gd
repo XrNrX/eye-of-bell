@@ -45,6 +45,10 @@ extends Resource
 @export var boss := false
 @export var wall_monster := false
 
+## What its landed blow leaves across the 3D view with the red flash (hit_overlay.gd): a sheet in art/spells/hit_fx/, e.g.
+## "skeleton_claws". "" for none (the red flash alone).
+@export var hit_effect := ""
+
 @export_group("Drops")
 ## What it leaves on its tile when it dies, and how often (0..1): a skeleton guard may leave its rations.
 @export var drop_item: Resource

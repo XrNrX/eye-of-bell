@@ -41,4 +41,5 @@ status_overrides = {
 "message": "The {monster} oozes through the trap."
 }
 }
+hit_effect = "slime_splat"
 crit_chance = 2

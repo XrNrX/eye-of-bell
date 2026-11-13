@@ -1,0 +1,235 @@
+{
+ "frames": [
+  {
+   "filename": "hit-skeleton-claws 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 57,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 57,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 57,
+    "h": 64
+   },
+   "pivot": {
+    "x": 1.543859649122807,
+    "y": 1.796875
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-skeleton-claws 1.png",
+   "frame": {
+    "x": 57,
+    "y": 0,
+    "w": 57,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 57,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 57,
+    "h": 64
+   },
+   "pivot": {
+    "x": 1.543859649122807,
+    "y": 1.796875
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-skeleton-claws 2.png",
+   "frame": {
+    "x": 114,
+    "y": 0,
+    "w": 57,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 57,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 57,
+    "h": 64
+   },
+   "pivot": {
+    "x": 1.543859649122807,
+    "y": 1.796875
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-skeleton-claws 3.png",
+   "frame": {
+    "x": 0,
+    "y": 64,
+    "w": 57,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 57,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 57,
+    "h": 64
+   },
+   "pivot": {
+    "x": 1.543859649122807,
+    "y": 1.796875
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-skeleton-claws 4.png",
+   "frame": {
+    "x": 57,
+    "y": 64,
+    "w": 57,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 57,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 57,
+    "h": 64
+   },
+   "pivot": {
+    "x": 1.543859649122807,
+    "y": 1.796875
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-skeleton-claws 5.png",
+   "frame": {
+    "x": 114,
+    "y": 64,
+    "w": 57,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 57,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 57,
+    "h": 64
+   },
+   "pivot": {
+    "x": 1.543859649122807,
+    "y": 1.796875
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-skeleton-claws 6.png",
+   "frame": {
+    "x": 0,
+    "y": 128,
+    "w": 57,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 57,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 57,
+    "h": 64
+   },
+   "pivot": {
+    "x": 1.543859649122807,
+    "y": 1.796875
+   },
+   "duration": 63
+  },
+  {
+   "filename": "hit-skeleton-claws 7.png",
+   "frame": {
+    "x": 57,
+    "y": 128,
+    "w": 57,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 57,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 57,
+    "h": 64
+   },
+   "pivot": {
+    "x": 1.543859649122807,
+    "y": 1.796875
+   },
+   "duration": 63
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "hit-skeleton-claws.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 171,
+   "h": 192
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 88,
+   "y": 115
+  },
+  "frameTags": [
+   {
+    "name": "hit-skeleton-claws",
+    "from": 0,
+    "to": 7,
+    "direction": "forward"
+   }
+  ]
+ }
+}

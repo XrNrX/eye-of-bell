@@ -34,4 +34,5 @@ pixel_size = 0.00713
 drop_item = ExtResource("95_drop")
 drop_chance = 0.3
 tier = 2
+hit_effect = "guard_axe"
 crit_chance = 4

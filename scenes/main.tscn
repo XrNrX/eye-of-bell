@@ -1,9 +1,10 @@
-[gd_scene load_steps=21 format=3]
+[gd_scene load_steps=22 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/cursor_item.tscn" id="14_cursor"]
 [ext_resource type="Script" path="res://scripts/combat_feel.gd" id="20_feel"]
 [ext_resource type="Script" path="res://scripts/banter.gd" id="29_banter"]
 [ext_resource type="Script" path="res://scripts/direction_warning.gd" id="30_dir"]
+[ext_resource type="Script" path="res://scripts/hit_overlay.gd" id="31_hitfx"]
 [ext_resource type="Script" path="res://scripts/save_manager.gd" id="21_save"]
 [ext_resource type="Script" path="res://scripts/pause_menu.gd" id="27_pause"]
 [ext_resource type="Script" path="res://scripts/automap.gd" id="28_automap"]
@@ -113,6 +114,9 @@ script = ExtResource("29_banter")
 
 [node name="DirectionWarning" type="CanvasLayer" parent="."]
 script = ExtResource("30_dir")
+
+[node name="HitOverlay" type="CanvasLayer" parent="."]
+script = ExtResource("31_hitfx")
 
 [node name="PartyHud" parent="." instance=ExtResource("9_party_hud")]
 

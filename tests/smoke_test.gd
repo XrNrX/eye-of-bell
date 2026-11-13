@@ -187,6 +187,14 @@ func _check_monster_hit() -> void:
 		if m.slot >= 2 and m.hp < m.def.max_hp:
 			front_only = false
 	check("a monster in front hurts the front row only", front_only)
+	var overlay: Node = get_first_node_in_group("hit_overlay")
+	check("a landed blow plays the monster's hit effect across the view (%s)" % skeleton.def.hit_effect,
+			overlay != null and overlay.playing.size() >= 1 and overlay.playing[-1].sprite.texture.resource_path.ends_with("skeleton_claws_sheet.png"))
+	var every_effect := true
+	for file in ["skeleton", "skeleton_guard", "slime", "slime_acid"]:
+		var effect: String = load("res://data/monsters/%s.tres" % file).hit_effect
+		every_effect = every_effect and effect != "" and overlay.play(effect, "left", true)
+	check("every monster's hit effect exists and plays (crits and side hits too)", every_effect)
 	dungeon.clear_monsters()
 
 

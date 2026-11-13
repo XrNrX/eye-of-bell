@@ -249,6 +249,10 @@ func _check_game() -> void:
 	tools._refresh_help()
 	check("the help shows banter quiet and why", tools.help_label.text.contains("QUIET (test room check)"))
 	get_first_node_in_group("banter").set_quiet("test room check", false)
+	var hit_overlay: Node = get_first_node_in_group("hit_overlay")
+	var before_fx: int = hit_overlay.playing.size() if hit_overlay else 0
+	press.call(KEY_MINUS)
+	check("- plays a monster's hit effect", hit_overlay != null and hit_overlay.playing.size() == before_fx + 1)
 	press.call(KEY_J)
 	check("J switches screen shake off", not load("res://data/combat_feel.tres").screen_shake_enabled)
 	press.call(KEY_J)

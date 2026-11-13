@@ -85,3 +85,14 @@ static func get_config() -> Resource:
 @export var portrait_shake_min_damage := 1
 @export var portrait_shake_pixels := 2.0     # Amplitude at the smallest hit; grows a little with damage.
 @export var portrait_shake_seconds := 0.3
+
+@export_group("Hit effects")
+## A monster's landed blow plays its MonsterDef.hit_effect across the 3D view (hit_overlay.gd): claw rakes, an axe slash, a splat.
+@export var hit_fx_enabled := true
+@export var hit_fx_scale := 2.0          # UI units per art pixel (2: the chunky size of the UI art).
+@export var hit_fx_crit_scale := 1.35    # A crit plays this much bigger...
+@export var hit_fx_crit_hold := 0.12     # ...and holds its strongest frame this many seconds longer.
+@export var hit_fx_side_offset := 110.0  # A blow from the left or right is drawn this far towards that edge (UI units).
+@export var hit_fx_behind_offset := 60.0 # A blow from behind is drawn this far down.
+@export var hit_fx_reduced_scale := 0.75 # With Reduce flashing: smaller...
+@export var hit_fx_reduced_speed := 1.5  # ...and quicker.

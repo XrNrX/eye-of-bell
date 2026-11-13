@@ -49,6 +49,7 @@ signal food_tick(slot: int, amount: int)  # Food healed this much just now (the 
 signal sick_tick(slot: int, amount: int)  # Sickness took this much just now.
 signal hero_crit(slot: int, damage: int)  # A monster's crit landed on this hero (the HUD flashes the portrait red).
 signal hit_from(side: String, slot: int, damage: int)  # A monster's blow landed: "front", "behind", "left" or "right" of the party.
+signal monster_struck(monster: Node, side: String, damage: int, crit: bool)  # The same landed blow, naming the monster (hit_overlay.gd).
 signal critical_fail(slot: int, slipped: bool)  # A hero's attack went badly wrong (slipped: they dropped their weapon).
 signal wiped
 
@@ -1599,6 +1600,7 @@ func take_hit_from(monster: Node) -> void:
 	hero_hit.emit(m.slot, result.damage)
 	if result.hit:
 		hit_from.emit(side, m.slot, result.damage)
+		monster_struck.emit(monster, side, result.damage, result.crit)
 		if side == "behind" and not fight.behind_warned and not is_wiped():
 			fight.behind_warned = true
 			_say("Something's behind you!", "hurt")

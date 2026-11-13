@@ -1,0 +1,261 @@
+{
+ "frames": [
+  {
+   "filename": "hit-slime-splat 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 83,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 83,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 83,
+    "h": 90
+   },
+   "pivot": {
+    "x": 1.072289156626506,
+    "y": 1.2666666666666666
+   },
+   "duration": 67
+  },
+  {
+   "filename": "hit-slime-splat 1.png",
+   "frame": {
+    "x": 83,
+    "y": 0,
+    "w": 83,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 83,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 83,
+    "h": 90
+   },
+   "pivot": {
+    "x": 1.072289156626506,
+    "y": 1.2666666666666666
+   },
+   "duration": 67
+  },
+  {
+   "filename": "hit-slime-splat 2.png",
+   "frame": {
+    "x": 166,
+    "y": 0,
+    "w": 83,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 83,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 83,
+    "h": 90
+   },
+   "pivot": {
+    "x": 1.072289156626506,
+    "y": 1.2666666666666666
+   },
+   "duration": 67
+  },
+  {
+   "filename": "hit-slime-splat 3.png",
+   "frame": {
+    "x": 0,
+    "y": 90,
+    "w": 83,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 83,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 83,
+    "h": 90
+   },
+   "pivot": {
+    "x": 1.072289156626506,
+    "y": 1.2666666666666666
+   },
+   "duration": 67
+  },
+  {
+   "filename": "hit-slime-splat 4.png",
+   "frame": {
+    "x": 83,
+    "y": 90,
+    "w": 83,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 83,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 83,
+    "h": 90
+   },
+   "pivot": {
+    "x": 1.072289156626506,
+    "y": 1.2666666666666666
+   },
+   "duration": 67
+  },
+  {
+   "filename": "hit-slime-splat 5.png",
+   "frame": {
+    "x": 166,
+    "y": 90,
+    "w": 83,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 83,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 83,
+    "h": 90
+   },
+   "pivot": {
+    "x": 1.072289156626506,
+    "y": 1.2666666666666666
+   },
+   "duration": 67
+  },
+  {
+   "filename": "hit-slime-splat 6.png",
+   "frame": {
+    "x": 0,
+    "y": 180,
+    "w": 83,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 83,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 83,
+    "h": 90
+   },
+   "pivot": {
+    "x": 1.072289156626506,
+    "y": 1.2666666666666666
+   },
+   "duration": 67
+  },
+  {
+   "filename": "hit-slime-splat 7.png",
+   "frame": {
+    "x": 83,
+    "y": 180,
+    "w": 83,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 83,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 83,
+    "h": 90
+   },
+   "pivot": {
+    "x": 1.072289156626506,
+    "y": 1.2666666666666666
+   },
+   "duration": 67
+  },
+  {
+   "filename": "hit-slime-splat 8.png",
+   "frame": {
+    "x": 166,
+    "y": 180,
+    "w": 83,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 83,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 83,
+    "h": 90
+   },
+   "pivot": {
+    "x": 1.072289156626506,
+    "y": 1.2666666666666666
+   },
+   "duration": 67
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "hit-slime-splat.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 249,
+   "h": 270
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 89,
+   "y": 114
+  },
+  "frameTags": [
+   {
+    "name": "hit-slime-splat",
+    "from": 0,
+    "to": 8,
+    "direction": "forward"
+   }
+  ]
+ }
+}
