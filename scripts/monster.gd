@@ -1,8 +1,11 @@
 extends Node3D
 ## A monster: occupies one tile, blocks movement, shown as a billboard sprite.
-## Its AI acts on a timer. If the player is within sight_range tiles with a clear
-## line of sight it steps towards them, otherwise it wanders. Never diagonal.
-## Next to the party it stops moving and attacks every attack_interval seconds.
+## It moves on its own clock (MonsterDef.step_interval; nothing the party does resets it). If the
+## player is within sight_range tiles with a clear line of sight it chases them, otherwise it wanders.
+## Never diagonal. Next to the party it stops moving and attacks every attack_interval seconds.
+## Pacing (all on the MonsterDef): a reaction_delay before it follows a party that stepped out of
+## reach, an arrival_recovery after it steps up before its wind-up starts, and flanking only after
+## flank_after seconds held back, one monster at a time (data/monster_ai.tres; see "Movement AI").
 ## All stats and art come from a MonsterDef resource, so new monsters are data.
 
 const Events := preload("res://scripts/game_events.gd")
@@ -11,11 +14,8 @@ const FloatingText := preload("res://scripts/floating_text.gd")
 const CombatRules := preload("res://scripts/combat_rules.gd")
 const ItemStack := preload("res://scripts/item_stack.gd")
 const FeelConfigScript := preload("res://scripts/combat_feel_config.gd")
+const AiConfigScript := preload("res://scripts/monster_ai_config.gd")
 
-const AI_TICK := 0.8      # Seconds between actions at speed 1.0.
-const STEP_TIME := 0.3    # Seconds a step takes to animate.
-const WANDER_PAUSE := 0.3 # Chance a wandering monster just stands still this tick.
-const WIND_UP := 0.5      # Fraction of attack_interval it waits after reaching the party.
 const DAMAGE_COLOUR := Color(0.961, 0.812, 0.502)  # Palette torch_300.
 const MISS_COLOUR := Color(0.667, 0.663, 0.706)   # Palette stone_100.
 
@@ -28,8 +28,18 @@ const DIRS: Array[Vector2i] = [
 	Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0),
 ]
 
+## The monsters allowed to go round to another side of the party right now (at most max_flankers).
+static var _passes: Array = []
+
 var feel_cfg: Resource = FeelConfigScript.get_config()  # data/combat_feel.tres
+var ai_cfg: Resource = AiConfigScript.get_config()      # data/monster_ai.tres
 var def: Resource  # The MonsterDef.
+var move_wait := 0.0       # Seconds until its next move, on its own clock.
+var recovery_left := 0.0   # Arrival recovery left: its attack can't start until this runs out.
+var held_back := 0.0       # Seconds it has been queued behind a monster already at the party (flank_after unlocks a pass).
+var blows_struck := 0      # Attacks it has made (read by tests).
+var _was_in_reach := false
+var _queued := false       # Its last move found it held back (see _chase_dir).
 var cell: Vector2i
 var hp: int
 var dying := false
@@ -55,7 +65,8 @@ func _ready() -> void:
 	position = DungeonMap.cell_to_world(cell)
 	add_to_group("monsters")
 	DungeonMap.occupied[cell] = self
-	attack_cooldown = def.attack_interval * WIND_UP
+	attack_cooldown = def.attack_interval * def.wind_up
+	move_wait = randf_range(0.1, def.step_interval)  # Stagger so monsters don't move in step.
 
 	sprite = Sprite3D.new()
 	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -70,32 +81,47 @@ func _ready() -> void:
 	sprite.position.y = _sprite_height() / 2.0
 	add_child(sprite)
 
-	var timer := Timer.new()
-	timer.wait_time = AI_TICK / def.speed
-	add_child(timer)
-	timer.timeout.connect(_on_tick)
-	timer.start(randf_range(0.1, timer.wait_time))  # Stagger so monsters don't act in sync.
-
 
 func _exit_tree() -> void:
 	_release_tiles()
+	_drop_pass()
 
 
 func _process(delta: float) -> void:
 	_animate(delta)
 	if dying:
 		return
-	if _next_to_player():
+	# The party slipped out of reach: a beat before it follows. This only ever pushes the next move later.
+	var in_reach := _next_to_player()
+	if _was_in_reach and not in_reach:
+		move_wait = maxf(move_wait, def.reaction_delay)
+	held_back = held_back + delta if _queued else 0.0
+	move_wait -= delta
+	if move_wait <= 0.0:
+		move_wait = def.step_interval
+		_on_tick()
+	_was_in_reach = _next_to_player()
+	_fight(delta)
+
+
+## Attack while next to the party. Never while a step is animating or during the arrival recovery after one, so it can't step
+## up and strike in the same moment; the wind-up (MonsterDef.wind_up) is held until both are over.
+func _fight(delta: float) -> void:
+	var in_reach := _next_to_player()
+	if in_reach and not _walking and recovery_left <= 0.0:
 		attack_cooldown -= delta
 		# The swing starts early enough that its impact frame appears just as the blow lands (see _begin_swing).
 		if not _swinging and attack_cooldown <= _hit_delay():
 			_begin_swing()
 		if attack_cooldown <= 0.0:
 			_attack()
-	else:
+		return
+	if not in_reach:
 		_swinging = false  # The party moved away: no blow comes of it.
-		# Arriving next to the party: a short wind-up before the first blow.
-		attack_cooldown = maxf(attack_cooldown, def.attack_interval * WIND_UP)
+		recovery_left = 0.0
+	elif not _walking:
+		recovery_left -= delta
+	attack_cooldown = maxf(attack_cooldown, def.attack_interval * def.wind_up)
 
 
 ## Show the attack/hurt animation if one is playing, else the walk cycle while stepping (if the
@@ -195,6 +221,7 @@ func _begin_swing() -> void:
 func _attack() -> void:
 	attack_cooldown = def.attack_interval
 	_swinging = false
+	blows_struck += 1
 	get_tree().call_group("party", "cue_attack_from", self)
 	get_tree().call_group("party", "take_hit_from", self)
 
@@ -303,40 +330,151 @@ func _sprite_height() -> float:
 # Movement AI
 # --------------------------------------------------------------------------
 
-## One AI step: hold position next to the party, chase if it's close and visible,
+## One move, on the monster's own clock (_process): hold position next to the party, chase if it's close and visible,
 ## else wander.
 func _on_tick() -> void:
 	if dying:
 		return
+	_queued = false
 	if _next_to_player():
 		get_tree().call_group("fight_tracker", "noticed", self)  # (Keeps the fight on while it stands at the party's side.)
+		if _others_at(_around_party()).is_empty():
+			_drop_pass()  # It is simply the one at the party now: another may earn a pass.
 		return
 	var to_player := DungeonMap.player_cell - cell
 	var distance := absi(to_player.x) + absi(to_player.y)
 	var dir := Vector2i.ZERO
 	if distance <= def.sight_range and DungeonMap.has_line_of_sight(cell, DungeonMap.player_cell):
 		get_tree().call_group("fight_tracker", "noticed", self)
-		dir = _chase_dir(to_player)
+		dir = _chase_dir()
 	else:
+		_drop_pass()
 		dir = _wander_dir()
 	if dir != Vector2i.ZERO:
 		_step(dir)
 
 
-## Step along the axis with the longer gap first; if that's blocked try the other.
-func _chase_dir(to_player: Vector2i) -> Vector2i:
-	var along_x := Vector2i(signi(to_player.x), 0)
-	var along_y := Vector2i(0, signi(to_player.y))
-	var options := [along_x, along_y] if absi(to_player.x) >= absi(to_player.y) else [along_y, along_x]
-	for option in options:
-		if option != Vector2i.ZERO and _can_enter(cell + option):
-			return option
-	return Vector2i.ZERO
+## The chase. With nobody at the party yet (or holding a flank pass) it heads for the nearest free tile next to the party, the
+## one in front of the party when two are as near. Otherwise it queues: as close as it can get behind the monsters already at
+## the party, never onto another tile beside the party. After flank_after seconds queued it may take a pass (at most
+## max_flankers at once) and go round. Paths are found by a short breadth-first search (path_radius steps).
+func _chase_dir() -> Vector2i:
+	var around := _around_party()
+	var at_party := _others_at(around)
+	var may_close: bool = at_party.is_empty() or _has_pass()
+	if not may_close and held_back >= def.flank_after:
+		may_close = _take_pass()
+	if may_close:
+		var free := {}
+		for c in around:
+			if not DungeonMap.is_occupied(c):
+				free[c] = true
+		var dir := _path_dir(free, {})
+		if dir != Vector2i.ZERO:
+			return dir
+		_drop_pass()  # No way round from here: let another monster try.
+		if at_party.is_empty():
+			return Vector2i.ZERO  # Nobody is holding it back; the way is simply shut.
+	# Queue behind the monsters at the party.
+	_queued = true
+	var keep_off := {}
+	for c in around:
+		keep_off[c] = true
+	var line := {}
+	for m in at_party:
+		for d in DIRS:
+			var c: Vector2i = m.cell + d
+			if not keep_off.has(c) and not DungeonMap.is_blocked(c):
+				line[c] = true
+	if line.has(cell):
+		return Vector2i.ZERO  # In line already.
+	return _path_dir(line, keep_off)
+
+
+## The open tiles next to the party.
+func _around_party() -> Array:
+	var out := []
+	for d in DIRS:
+		var c: Vector2i = DungeonMap.player_cell + d
+		if not DungeonMap.is_blocked(c):
+			out.append(c)
+	return out
+
+
+## The other living monsters standing on (or stepping into) these tiles.
+func _others_at(tiles: Array) -> Array:
+	var out := []
+	for c in tiles:
+		var m = DungeonMap.occupied.get(c)
+		if m != null and m != self and is_instance_valid(m) and not m.dying and not out.has(m):
+			out.append(m)
+	return out
+
+
+## The first step of a shortest path to the nearest tile in `goals` (a set), through tiles it could enter and not through
+## `keep_off` (a set). Of goals equally near, the tile in front of the party wins. ZERO if none is within path_radius.
+func _path_dir(goals: Dictionary, keep_off: Dictionary) -> Vector2i:
+	if goals.is_empty():
+		return Vector2i.ZERO
+	var front := DungeonMap.player_cell + _party_forward()
+	var radius: int = ai_cfg.path_radius
+	var dist := {cell: 0}
+	var first := {cell: Vector2i.ZERO}
+	var frontier: Array[Vector2i] = [cell]
+	var best := cell
+	var best_d := -1
+	var head := 0
+	while head < frontier.size():
+		var c: Vector2i = frontier[head]
+		head += 1
+		var dc: int = dist[c]
+		if best_d >= 0 and dc > best_d:
+			break
+		if c != cell and goals.has(c):
+			if best_d < 0 or (c == front and best != front):
+				best = c
+				best_d = dc
+			continue
+		if dc >= radius:
+			continue
+		for d in DIRS:
+			var n: Vector2i = c + d
+			if dist.has(n) or not _can_enter(n) or (keep_off.has(n) and not goals.has(n)):
+				continue
+			dist[n] = dc + 1
+			first[n] = d if c == cell else first[c]
+			frontier.append(n)
+	return first[best] if best_d >= 0 else Vector2i.ZERO
+
+
+## The grid direction the party faces (DIRS order, the same as the player's).
+func _party_forward() -> Vector2i:
+	var player := get_tree().get_first_node_in_group("player") if is_inside_tree() else null
+	return DIRS[int(player.facing) % 4] if player != null else Vector2i.ZERO
+
+
+func _has_pass() -> bool:
+	return _passes.has(self)
+
+
+## Take a flank pass if fewer than max_flankers are out.
+func _take_pass() -> bool:
+	if _has_pass():
+		return true
+	_passes = _passes.filter(func(m): return is_instance_valid(m) and not m.dying and m.is_inside_tree())
+	if _passes.size() >= int(ai_cfg.max_flankers):
+		return false
+	_passes.append(self)
+	return true
+
+
+func _drop_pass() -> void:
+	_passes.erase(self)
 
 
 ## A random open neighbouring direction, or stand still sometimes.
 func _wander_dir() -> Vector2i:
-	if randf() < WANDER_PAUSE:
+	if randf() < ai_cfg.wander_pause:
 		return Vector2i.ZERO
 	var dirs := DIRS.duplicate()
 	dirs.shuffle()
@@ -361,9 +499,11 @@ func _step(dir: Vector2i) -> void:
 	_walking = true
 	_walk_time = 0.0
 	var tween := create_tween()
-	tween.tween_property(self, "position", DungeonMap.cell_to_world(cell), STEP_TIME)
+	tween.tween_property(self, "position", DungeonMap.cell_to_world(cell), ai_cfg.step_seconds)
 	tween.tween_callback(func():
 		_walking = false
+		if _next_to_player():
+			recovery_left = def.arrival_recovery  # Just stepped up: a moment before its wind-up can start.
 		if DungeonMap.occupied.get(old) == self:
 			DungeonMap.occupied.erase(old)
 		get_tree().call_group("dungeon", "refresh"))  # Doors re-check who's standing in them.

@@ -69,6 +69,7 @@ func _init() -> void:
 	_check_kill()
 	_check_monster_hit()
 	await _check_attack_timing()
+	await _check_pacing()
 	_check_hero_death()
 	_check_spells()
 	await _check_food()
@@ -218,6 +219,42 @@ func _check_attack_timing() -> void:
 		check("%s: the impact frame is on screen as it lands (frame %d, wanted %d)" % [file, seen.frame, impact], absi(seen.frame - impact) <= 1)
 		check("%s: no pull-back or stretch before the blow" % file, seen.drift < 0.001)
 	dungeon.clear_monsters()
+	_rest_everyone()
+
+
+## Monster pacing (MonsterDef step_interval, reaction_delay, arrival_recovery, wind_up): a monster that steps up to the party
+## can't strike in the same moment, waits out its arrival recovery, and a party step away never makes it move sooner.
+func _check_pacing() -> void:
+	_rest_everyone()
+	dungeon.clear_monsters()
+	player.restore(SPOT, EAST)
+	var monster: Node = _monster("skeleton", AHEAD_2)
+	var def: Resource = monster.def
+	await process_frame
+	monster.move_wait = 0.0
+	monster._process(0.0)  # Its move comes up: it steps next to the party...
+	monster._process(10.0)  # ...and even a huge frame in the same moment brings no blow.
+	check("pacing: a monster steps up to the party on its own clock", monster.cell == AHEAD_1)
+	check("pacing: a monster can't step and attack in the same tick", monster.blows_struck == 0 and not monster._swinging
+			and monster.attack_cooldown >= def.attack_interval * def.wind_up - 0.001)
+	await create_timer(def.arrival_recovery * 0.5 + 0.35).timeout  # (0.35: the step animation is 0.3 s.)
+	check("pacing: after the step it waits out its arrival recovery before the wind-up (%.2f s left)" % monster.recovery_left,
+			monster.recovery_left > 0.0 and monster.blows_struck == 0 and not monster._swinging
+			and monster.attack_cooldown >= def.attack_interval * def.wind_up - 0.001)
+	# The party steps back: a short beat before it follows, and never sooner than its own clock.
+	monster.move_wait = 0.05
+	player.restore(SPOT + Vector2i(0, -1), EAST)  # (6,12): north, out of its reach.
+	monster._process(0.0)
+	check("pacing: when the party steps out of reach it waits its reaction delay", monster.move_wait >= def.reaction_delay - 0.001)
+	player.restore(SPOT, EAST)
+	monster._process(0.0)
+	monster.move_wait = def.step_interval
+	player.restore(SPOT + Vector2i(0, -1), EAST)  # (6,12): north, out of its reach.
+	monster._process(0.0)
+	check("pacing: a party move never brings its next move forward", monster.move_wait >= def.step_interval - 0.001)
+	check("pacing: normal monsters are much slower than the party (step %.1f s)" % def.step_interval, def.step_interval >= 1.0)
+	dungeon.clear_monsters()
+	player.restore(SPOT, EAST)
 	_rest_everyone()
 
 

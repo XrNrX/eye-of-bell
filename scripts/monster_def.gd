@@ -9,10 +9,25 @@ extends Resource
 @export var damage_min := 1
 @export var damage_max := 4
 @export var attack_interval := 2.0  # Seconds between attacks while next to the party.
-## AI speed multiplier: the monster acts every (0.8 / speed) seconds.
-@export var speed := 1.0
 ## How many tiles away (steps along the grid) it notices the player.
 @export var sight_range := 4
+
+@export_group("Movement and pacing")
+## Seconds between its moves, on its own clock: a party move never resets or speeds it up. The party
+## walks a tile in about 0.2 s, so a monster at 1.2 s falls behind a party that keeps moving.
+## (The step itself animates in monster_ai.tres step_seconds.)
+@export var step_interval := 1.2
+## When the party steps out of its reach, it waits at least this long before following (only ever
+## pushes its next move later, never earlier).
+@export var reaction_delay := 0.5
+## After it steps next to the party, it can't start its attack until this many seconds after the step
+## animation ends; the wind-up below then runs on top of it.
+@export var arrival_recovery := 0.5
+## Fraction of attack_interval it waits before its first blow after coming within reach (the wind-up).
+@export var wind_up := 0.5
+## Seconds it must be held back (another monster already at the party, no way to the party) before it
+## may try to get round to another side of the party. Only monster_ai.tres max_flankers do so at once.
+@export var flank_after := 3.0
 
 ## Percent of its landed hits that are crits (x1.5, and never enough to kill a hero at half HP or more).
 @export var crit_chance := 0

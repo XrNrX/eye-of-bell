@@ -86,6 +86,64 @@ func _check_data() -> void:
 	check("puzzle door has a plate and a lever", DungeonMap.DOOR_IDS.values().has("puzzle_door") and DungeonMap.PLATES.size() == 1 and DungeonMap.LEVERS.size() == 1)
 
 
+## The monster pacing station: its tuning keys, the pack, and flanking (one monster at a time, only after being held back).
+func _check_pacing(tools: Node, press: Callable, player: Node) -> void:
+	for n in get_nodes_in_group("monsters"):
+		n.free()
+	var skel: Resource = load("res://data/monsters/skeleton.tres")
+	var step0: float = skel.step_interval
+	var react0: float = skel.reaction_delay
+	tools.tune_index = 0
+	press.call(KEY_BRACKETRIGHT)
+	check("] raises every monster's step interval", is_equal_approx(skel.step_interval, step0 + 0.1))
+	press.call(KEY_O)
+	press.call(KEY_BRACKETLEFT)
+	check("O then [ lowers the reaction delay", is_equal_approx(skel.reaction_delay, maxf(0.0, react0 - 0.1)))
+	tools._refresh_help()
+	check("the help shows the pacing table", tools.help_label.text.contains("MONSTER PACING") and tools.help_label.text.contains("SKELETON"))
+	press.call(KEY_Y)
+	check("Y puts the pacing back from the files", is_equal_approx(skel.step_interval, step0) and is_equal_approx(skel.reaction_delay, react0))
+	var station: Dictionary = DungeonMap.STATIONS.filter(func(s): return s.name == "Monster pacing")[0]
+	tools._teleport(station)
+	press.call(KEY_I)
+	check("I spawns a pack of three ahead", get_nodes_in_group("monsters").size() == 3)
+	for n in get_nodes_in_group("monsters"):
+		n.free()
+	# Flanking, in the open arena: the party faces north with a skeleton in front and two more coming from the sides.
+	var dungeon: Node = get_first_node_in_group("dungeon")
+	player.restore(Vector2i(6, 6), 0)
+	var lead: Node = dungeon.spawn_monster(skel, Vector2i(6, 5))
+	var second: Node = dungeon.spawn_monster(skel, Vector2i(8, 6))
+	var third: Node = dungeon.spawn_monster(skel, Vector2i(4, 6))
+	for m in [lead, second, third]:
+		m.move_wait = 999.0  # Their own clocks are stopped: the test moves them.
+	var beside := func(m: Node) -> bool:
+		var d: Vector2i = m.cell - player.cell
+		return absi(d.x) + absi(d.y) == 1
+	for i in 4:
+		second.held_back = 0.0
+		second._on_tick()
+		third.held_back = 0.0
+		third._on_tick()
+	check("monsters queue behind the one at the party instead of going round (%s, %s)" % [second.cell, third.cell],
+			not beside.call(second) and not beside.call(third))
+	for i in 3:
+		second.held_back = skel.flank_after + 0.1
+		second._on_tick()
+	check("after being held back a while one may go round to the party's side (%s)" % second.cell, beside.call(second) and second._has_pass())
+	for i in 3:
+		third.held_back = 99.0
+		third._on_tick()
+	check("only one monster at a time goes round (%s)" % third.cell, not beside.call(third))
+	for n in get_nodes_in_group("monsters"):
+		n.free()
+	var fight: Node = get_first_node_in_group("party").fight
+	var waited := 0.0
+	while fight.in_fight and waited < 8.0:  # Let the fight these monsters started end, so later checks start calm.
+		await create_timer(0.25).timeout
+		waited += 0.25
+
+
 func _check_game() -> void:
 	var scene: Node = load("res://scenes/main.tscn").instantiate()
 	root.add_child(scene)
@@ -169,6 +227,7 @@ func _check_game() -> void:
 	var fog_before: bool = Settings.fog
 	press.call(KEY_N)
 	check("N toggles fog without touching the saved setting", tools.fog_on != fog_before and Settings.fog == fog_before)
+	await _check_pacing(tools, press, player)
 	press.call(KEY_X)
 	press.call(KEY_U)
 	# The ambush: walk onto the trigger.

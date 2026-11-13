@@ -5,11 +5,13 @@ extends RefCounted
 ## the systems that exist, and add a station here whenever a new system lands (CLAUDE.md says so).
 ##
 ## A long hall (row 12 to 16) with a station off it at every doorway. North: combat arena, wall types, item table, legendary
-## items. South: ambush corridor, puzzle room, campfire, XP and levels, traps. A sign in the hall and one inside labels each.
+## items. South: ambush corridor, puzzle room, campfire, XP and levels, traps; through the XP room, monster pacing (a long
+## corridor to back away down, opening into a room for flanking). A sign in the hall and one inside labels each.
 ## "NOT BUILT YET" stations are empty rooms waiting for their system.
 ##
 ## Debug keys (scripts/debug/test_room_tools.gd, H shows them in the game): G god mode, R refill HP and mana, X +500 XP,
-## U level up, Z kill all monsters, V spawn a monster in front, T teleport to a station, B banter, N fog, J screen shake.
+## U level up, Z kill all monsters, V spawn a monster in front, T teleport to a station, B banter, N fog, J screen shake,
+## and for monster pacing O (which value), [ and ] (lower, raise), Y (reset from the files), I (a pack of three ahead).
 
 
 const MAP := [
@@ -38,10 +40,17 @@ const MAP := [
 	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1],  # 22
 	[1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 2, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1],  # 23
 	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1],  # 24
-	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 25
-	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 26
-	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 27
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 28
+	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 25
+	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 26
+	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 27
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 28
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 29
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 30
+	[1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 31
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 32
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 33
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 34
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 35
 ]
 
 const START_TILE := Vector2i(20, 14)
@@ -82,6 +91,10 @@ const TORCHES: Array[Vector3i] = [
 	Vector3i(32, 20, 1),
 	Vector3i(36, 20, 3),
 	Vector3i(8, 10, 2),
+	Vector3i(8, 31, 0),
+	Vector3i(16, 31, 2),
+	Vector3i(25, 29, 0),
+	Vector3i(31, 34, 2),
 ]
 
 # The corrupted wall of the wall-types station: one Bless burns it away.
@@ -194,6 +207,13 @@ THE LEVER."},
 !NOT BUILT YET"},
 	{"cell": Vector2i(33, 18), "side": 0, "text": "TRAPS
 !NOT BUILT YET"},
+	{"cell": Vector2i(4, 31), "side": 1, "text": "MONSTER PACING
+I = PACK AHEAD
+O [ ] Y = TUNE"},
+	{"cell": Vector2i(26, 29), "side": 0, "text": "OPEN ROOM
+FLANKING"},
+	{"cell": Vector2i(30, 24), "side": 3, "text": "PACING
+SOUTH"},
 ]
 
 # Stand-in ambush until the real system exists: stepping on the trigger tile spawns these (re-armed when the party leaves the
@@ -216,4 +236,5 @@ const STATIONS := [
 	{"name": "Campfire", "cell": Vector2i(21, 18), "facing": 2},
 	{"name": "XP and levels", "cell": Vector2i(28, 18), "facing": 2},
 	{"name": "Traps", "cell": Vector2i(34, 18), "facing": 2},
+	{"name": "Monster pacing", "cell": Vector2i(10, 31), "facing": 3},
 ]

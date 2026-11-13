@@ -1,0 +1,10 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/monster_ai_config.gd" id="1_cfg"]
+
+[resource]
+script = ExtResource("1_cfg")
+max_flankers = 1
+step_seconds = 0.3
+wander_pause = 0.3
+path_radius = 12

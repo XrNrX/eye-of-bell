@@ -5,7 +5,10 @@ extends CanvasLayer
 ##
 ## Keys (only inside the test room, so they never clash with play): H help, G god mode, R refill HP and mana, X +500 XP,
 ## U level up the party, Z kill all monsters, V spawn a monster in front (a pop-up list), T teleport to a station (a pop-up
-## list), B banter, N fog, J screen shake, P spell and torch shadows. X and U wait for an XP system: they call Party.add_xp / Party.level_up_party when
+## list), B banter, N fog, J screen shake, P spell and torch shadows. Monster pacing: O picks a value (step interval, reaction
+## delay, arrival recovery, flank delay), [ and ] lower or raise it by 0.1 s on every monster kind at once (the loaded
+## MonsterDefs, so live monsters feel it on their next move; never saved: copy what feels right into data/monsters/*.tres),
+## Y puts the values from the files back, I spawns a pack of three skeletons ahead. X and U wait for an XP system: they call Party.add_xp / Party.level_up_party when
 ## those exist and say so in the log until then. A new system gets a station in levels/test_room.gd and, if it needs one, a key here.
 ##
 ## The ambush corridor is a stand-in: stepping on a trigger tile in DungeonMap.AMBUSHES spawns its monsters.
@@ -16,6 +19,9 @@ const SpellEffectsConfigScript := preload("res://scripts/spell_effects_config.gd
 const FONT := preload("res://art/fonts/PressStart2P-Regular.ttf")
 const WARN_DISTANCE := 6  # Tiles from an ambush's trigger at which the party gets its warning.
 const MONSTER_DIR := "res://data/monsters"
+const PACING_FIELDS := [["step_interval", "STEP"], ["reaction_delay", "REACTION"], ["arrival_recovery", "RECOVERY"], ["flank_after", "FLANK DELAY"]]
+const PACING_STEP := 0.1
+const PACK_MONSTER := "res://data/monsters/skeleton.tres"
 
 const INK := Color("0b0a10")
 const STONE_900 := Color("14131b")
@@ -39,6 +45,7 @@ var warned := {}         # ambush index -> true once its warning has been given 
 var ambush_active := false  # An ambush has sprung and its fight is not over: banter is quiet
 var ambush_age := 0.0
 var last_cell := Vector2i(-99, -99)
+var tune_index := 0       # Which of PACING_FIELDS [ and ] change.
 
 
 func _ready() -> void:
@@ -152,6 +159,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			Settings.spell_shadows = not Settings.spell_shadows  # (Not saved.)
 			SpellEffectsConfigScript.refresh_shadows(get_tree())
 			_say("Shadows %s." % ("on" if Settings.spell_shadows else "off"))
+		KEY_O:
+			tune_index = (tune_index + 1) % PACING_FIELDS.size()
+			_say("Tuning %s." % str(PACING_FIELDS[tune_index][1]).to_lower())
+		KEY_BRACKETLEFT:
+			_tune(-1.0)
+		KEY_BRACKETRIGHT:
+			_tune(1.0)
+		KEY_Y:
+			_reset_pacing()
+		KEY_I:
+			_spawn_pack()
 		_:
 			handled = false
 	if handled:
@@ -192,6 +210,56 @@ func _spawn(path: String) -> void:
 	var def: Resource = load(path)
 	dungeon.spawn_monster(def, cell)
 	_say("A %s appears." % def.display_name)
+
+
+## Every MonsterDef in data/monsters as [path, the loaded (shared) resource], sorted by file name.
+func _monster_defs() -> Array:
+	var out := []
+	var dir := DirAccess.open(MONSTER_DIR)
+	if dir == null:
+		return out
+	var names := Array(dir.get_files()).filter(func(f): return f.ends_with(".tres") or f.ends_with(".tres.remap"))
+	names.sort()
+	for f in names:
+		var path := "%s/%s" % [MONSTER_DIR, f.trim_suffix(".remap")]
+		var def: Resource = load(path)
+		if def != null and def.get("step_interval") != null:
+			out.append([path, def])
+	return out
+
+
+## [ and ]: move the chosen pacing value by 0.1 s on every monster kind (each keeps its own value, all move together).
+func _tune(direction: float) -> void:
+	var field: String = PACING_FIELDS[tune_index][0]
+	var lowest := 0.1 if field == "step_interval" else 0.0  # A zero step interval would move every frame.
+	for e in _monster_defs():
+		e[1].set(field, maxf(lowest, snappedf(float(e[1].get(field)) + direction * PACING_STEP, 0.01)))
+	_say("%s %s. Not saved." % [str(PACING_FIELDS[tune_index][1]).capitalize(), "down" if direction < 0.0 else "up"])
+
+
+## Y: the pacing values from the files on disk again.
+func _reset_pacing() -> void:
+	for e in _monster_defs():
+		var fresh: Resource = ResourceLoader.load(e[0], "", ResourceLoader.CACHE_MODE_IGNORE)
+		for f in PACING_FIELDS:
+			e[1].set(f[0], fresh.get(f[0]))
+	_say("Monster pacing back to the files.")
+
+
+## I: three skeletons in a line, 3 to 5 tiles ahead (where there is floor), to back away from or be flanked by.
+func _spawn_pack() -> void:
+	var player := get_tree().get_first_node_in_group("player")
+	var dungeon := get_tree().get_first_node_in_group("dungeon")
+	var forward: Vector2i = player.DIRS[player.facing]
+	var made := 0
+	for i in range(3, 6):
+		var cell: Vector2i = player.cell + forward * i
+		if DungeonMap.is_blocked(cell):
+			break
+		if not DungeonMap.is_occupied(cell) and not DungeonMap.is_stairs(cell):
+			dungeon.spawn_monster(load(PACK_MONSTER), cell)
+			made += 1
+	_say("A pack of %d appears." % made if made > 0 else "No room ahead for a pack.")
 
 
 func _spring(a: Dictionary, index := 0) -> void:
@@ -340,6 +408,12 @@ func _refresh_help() -> void:
 		"J   SCREEN SHAKE  %s" % _on(shake_on),
 		"P   SHADOWS       %s" % _on(Settings.spell_shadows),
 		"",
+		"MONSTER PACING (NOT SAVED)",
+		"I   PACK OF THREE AHEAD",
+		"O   TUNE          %s" % PACING_FIELDS[tune_index][1],
+		"[ ] -/+ 0.1S      Y FROM FILES",
+		_pacing_table(),
+		"",
 		"FIGHT  %s" % _fight_status(),
 		"F12 LEAVE (FLOOR 1)",
 	])
@@ -347,6 +421,16 @@ func _refresh_help() -> void:
 
 
 # --- Helpers -------------------------------------------------------------------------------------
+
+## One row per monster kind: step interval, reaction delay, arrival recovery and flank delay, in seconds.
+func _pacing_table() -> String:
+	var rows := ["            STEP REACT RECOV FLANK"]
+	for e in _monster_defs():
+		var d: Resource = e[1]
+		rows.append("%-11s %4.1f %5.1f %5.1f %5.1f" % [str(d.display_name).to_upper().left(11), d.step_interval, d.reaction_delay, d.arrival_recovery, d.flank_after])
+	return "
+".join(rows)
+
 
 ## What the banter node says: "ON", "OFF" or "ON  QUIET (ambush)" (some system has switched banter quiet).
 func _banter_status() -> String:
