@@ -174,6 +174,14 @@ func _check_game() -> void:
 	var party: Node = get_first_node_in_group("party")
 	var player: Node = get_first_node_in_group("player")
 	var dungeon: Node = get_first_node_in_group("dungeon")
+	var in_packs := {}
+	for m in party.members:
+		for st in m.backpack:
+			if st != null:
+				in_packs[st.def.resource_path.get_file()] = true
+	var all_items := Array(DirAccess.open("res://data/items").get_files()).filter(func(f): return f.ends_with(".tres"))
+	var missing := all_items.filter(func(f): return not in_packs.has(f))
+	check("every item is in the backpacks on arrival (%d items, missing: %s)" % [all_items.size(), missing], missing.is_empty())
 	var signs := 0
 	for n in dungeon.get_children():
 		if n.name.begins_with("Sign_"):
@@ -277,6 +285,9 @@ func _check_game() -> void:
 		waited += 0.25
 	check("when the ambush's fight is over banter is let speak again", not tools.ambush_active and not banter.is_quiet())
 	check("...with the Cleric's grudging remark", banter.said.size() > said_before and (str(banter.said[-1]).contains("not so bad with a sword") or str(banter.said[-1]).contains("adequate")))
+	for m in party.members:  # (Empty the stocked packs: the checks below count the stones and arrows in them.)
+		for i in m.backpack.size():
+			m.backpack[i] = null
 	# The slingshot: fires a stone from the backpack at the first monster in line, spends it, needs ammo.
 	for n in get_nodes_in_group("monsters"):
 		n.free()

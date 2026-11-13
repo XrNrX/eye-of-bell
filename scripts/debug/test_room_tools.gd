@@ -12,6 +12,9 @@ extends CanvasLayer
 ## (Hold Monster's status and time, with no resistance roll and no mana), 0 frees every held monster. X and U wait for an XP system: they call Party.add_xp / Party.level_up_party when
 ## those exist and say so in the log until then. A new system gets a station in levels/test_room.gd and, if it needs one, a key here.
 ##
+## On arriving, every item in data/items is put in the heroes' backpacks (one of each, full stacks of stackables, shared round the
+## party; their hands are left alone), for quick access. The item table still has one of each on the floor.
+##
 ## The ambush corridor is a stand-in: stepping on a trigger tile in DungeonMap.AMBUSHES spawns its monsters.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
@@ -20,6 +23,8 @@ const SpellEffectsConfigScript := preload("res://scripts/spell_effects_config.gd
 const FONT := preload("res://art/fonts/PressStart2P-Regular.ttf")
 const WARN_DISTANCE := 6  # Tiles from an ambush's trigger at which the party gets its warning.
 const MONSTER_DIR := "res://data/monsters"
+const ITEM_DIR := "res://data/items"
+const ItemStack := preload("res://scripts/item_stack.gd")
 const PACING_FIELDS := [["step_interval", "STEP"], ["reaction_delay", "REACTION"], ["arrival_recovery", "RECOVERY"], ["flank_after", "FLANK DELAY"]]
 const PACING_STEP := 0.1
 const PACK_MONSTER := "res://data/monsters/skeleton.tres"
@@ -64,6 +69,7 @@ func _ready() -> void:
 	if bus != null:
 		bus.fight_ended.connect(_on_fight_ended)
 	_build_help()
+	_stock_backpacks.call_deferred()  # (Deferred: the party gives out its starting kit in its own _ready.)
 	_say("Test room. H shows the debug keys.")
 
 
@@ -184,6 +190,31 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 # --- Actions -------------------------------------------------------------------------------------
+
+## Every item in data/items into the backpacks: one of each (a full stack of a stackable), handed round the party so each pack gets a
+## share; one that doesn't fit its hero's pack tries the next. Returns how many items found a place.
+func _stock_backpacks() -> int:
+	var party := _party()
+	var dir := DirAccess.open(ITEM_DIR)
+	if party == null or dir == null:
+		return 0
+	var names := Array(dir.get_files()).filter(func(f): return f.ends_with(".tres") or f.ends_with(".tres.remap"))
+	names.sort()
+	var placed := 0
+	var turn := 0
+	for f in names:
+		var def: Resource = load("%s/%s" % [ITEM_DIR, f.trim_suffix(".remap")])
+		if def == null:
+			continue
+		var stack: RefCounted = ItemStack.of(def, maxi(1, def.max_stack))
+		for k in party.members.size():
+			if party.add_to_backpack((turn + k) % party.members.size(), stack):
+				placed += 1
+				break
+		turn += 1
+	party.formation_changed.emit()  # (The party panels and an open inventory redraw.)
+	return placed
+
 
 func _refill() -> void:
 	var party := _party()
