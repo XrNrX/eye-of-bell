@@ -34,7 +34,7 @@ const QUICK_COOLDOWN := 1.0   # Seconds a quick slot is unusable after an item i
 const MANA_REGEN_TIME := 2.5  # Seconds per point of mana regained (always; there's no resting yet).
 
 ## What clicking a hand does (see action_for).
-enum Act { NOTHING, MELEE, THROW, SPELLS, CANT_REACH, USE, FIRE }  # USE: a potion, food or scroll held in a hand.
+enum Act { NOTHING, MELEE, THROW, SPELLS, CANT_REACH, USE, FIRE, SET_TRAP }  # USE: a potion, food or scroll held in a hand.
 
 signal hp_changed(slot: int)
 signal formation_changed  # The party was rearranged (see set_formation); HUDs redraw every panel.
@@ -427,6 +427,8 @@ func action_for(slot: int, hand: int) -> int:
 		return Act.SPELLS
 	if def.type == ItemDef.Type.CONSUMABLE:
 		return Act.USE
+	if def.type == ItemDef.Type.TRAP:
+		return Act.SET_TRAP
 	if def.type != ItemDef.Type.WEAPON:
 		return Act.NOTHING
 	if def.ammo != null:
@@ -456,6 +458,8 @@ func act(slot: int, hand: int) -> void:
 			_use_from_hand(m, hand)
 		Act.FIRE:
 			_fire(m, hand)
+		Act.SET_TRAP:
+			_set_trap(m, {"where": "hand", "index": hand})
 
 
 ## A potion, food or scroll held in a hand is used by clicking the hand: one is spent only if it worked, and
@@ -550,6 +554,37 @@ func _fire(m: Member, hand: int) -> void:
 		_say_hit("%s kills the %s with the %s! (%s)" % [m.name(), target.def.display_name, weapon.display_name.to_lower(), left_text], m, weapon, result.crit)
 	else:
 		_say_hit("%s hits the %s with the %s for %d. (%s)" % [m.name(), target.def.display_name, weapon.display_name.to_lower(), result.damage, left_text], m, weapon, result.crit)
+
+
+## Set a trap from a hand or quick slot on the empty floor tile in front (trap_field.gd): one is taken from the stack at once and the
+## hero is busy for the setting time (the trap's set_seconds times their trap_set_time: the Thief takes half), which is their
+## action cooldown. Returns whether setting began; refused (nothing spent) on a tile that won't take a trap.
+func _set_trap(m: Member, source: Dictionary) -> bool:
+	var traps := get_tree().get_first_node_in_group("traps")
+	if traps == null:
+		return false
+	var front: Vector2i = player.cell + player.DIRS[player.facing]
+	var why: String = traps.can_set(front)
+	if why != "":
+		_say(why)
+		return false
+	var stack = _source_stack(m, source)
+	var def: Resource = stack.def
+	stack.count -= 1
+	if stack.count <= 0:
+		if source.where == "hand":
+			m.hands[source.index] = null
+		else:
+			m.quick[source.index] = null
+	if source.where == "quick":
+		quick_changed.emit(m.slot)
+	var seconds: float = def.set_seconds * float(m.def.get("trap_set_time") if m.def.get("trap_set_time") != null else 1.0)
+	m.cooldown_left = seconds
+	cooldown_started.emit(m.slot, seconds)
+	traps.begin_setting(front, def, m.hero_index, seconds, player.cell, player.facing)
+	_cue("trap_set")
+	_say("%s kneels to set the %s." % [m.name(), str(def.display_name).to_lower()])
+	return true
 
 
 func _throw(m: Member, hand: int) -> void:
@@ -886,7 +921,7 @@ func add_to_backpack(slot: int, stack: RefCounted) -> bool:
 ## Quick slots take consumables (potions, scrolls) and throwables (daggers, darts).
 func quick_accepts(item) -> bool:
 	var stack := ItemStack.wrap(item)
-	return stack != null and (stack.def.type == ItemDef.Type.CONSUMABLE or stack.def.can_throw())
+	return stack != null and (stack.def.type == ItemDef.Type.CONSUMABLE or stack.def.type == ItemDef.Type.TRAP or stack.def.can_throw())
 
 
 ## Put an item stack (or an ItemDef, or null to empty it) in a quick slot, replacing
@@ -1197,6 +1232,10 @@ func use_quick(slot: int, index: int) -> Dictionary:
 		if m.cooldown_left > 0.0:
 			return nothing
 		return {"used": _do_throw(m, {"where": "quick", "index": index}), "message": "", "close": false}
+	if stack.def.type == ItemDef.Type.TRAP:
+		if m.cooldown_left > 0.0:
+			return nothing
+		return {"used": _set_trap(m, {"where": "quick", "index": index}), "message": "", "close": false}
 	if stack.def.revive_percent > 0:  # Pick who to raise: the HUD enters target mode and calls revive_from_quick.
 		if fallen().is_empty():
 			_say("The scroll needs the fallen.")

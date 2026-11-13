@@ -14,7 +14,7 @@ extends Resource
 ## for a hero whose CharacterDef.magic matches.
 
 # New values go at the end: .tres files store the number.
-enum Type { WEAPON, ARMOUR, CONSUMABLE, KEY, FOCUS, AMMO }
+enum Type { WEAPON, ARMOUR, CONSUMABLE, KEY, FOCUS, AMMO, TRAP }  # New values go at the end (stored as numbers).
 enum Magic { NONE, ARCANE, DIVINE }
 
 @export var display_name := "Item"
@@ -72,6 +72,21 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export_group("Breaking")
 @export var breaks_walls := false     # A heavy weapon: one swing at a cracked wall breaks it (the war hammer).
 
+@export_group("Trap")
+## A trap (type TRAP: the rusty bear trap). Clicking it in a hand or quick slot sets it, armed, on the empty floor tile in front
+## (trap_field.gd); setting takes set_seconds (times the hero's CharacterDef.trap_set_time). The first monster to step on it takes
+## trap_damage and gets trap_status for trap_seconds, rolled on the tier table's trap_row (data/tiers.tres) through
+## Monster.try_status. Then it lies closed on the tile (its floor_icon) to be picked up again, unless its spring snaps (break_chance).
+## armed_icon is the open trap on the floor.
+@export var armed_icon: Texture2D
+@export var trap_status: Resource
+@export var trap_seconds := 3.0
+@export var trap_row := "trap"
+@export var trap_damage_min := 0
+@export var trap_damage_max := 0
+@export var set_seconds := 1.5
+@export var break_chance := 0.0
+
 @export_group("Magic")
 @export var magic: Magic = Magic.NONE  # A FOCUS: which kind of caster can use it.
 @export var spells: Array[Resource] = []  # SpellDef, in the order the pop-up lists them.
@@ -80,7 +95,7 @@ enum Magic { NONE, ARCANE, DIVINE }
 ## Which item types a hand slot / the armour slot will accept (see inventory_slot.gd).
 ## A backpack slot takes anything, so it has no such check.
 static func allowed_in_hand(item_type: Type) -> bool:
-	return item_type in [Type.WEAPON, Type.CONSUMABLE, Type.FOCUS]
+	return item_type in [Type.WEAPON, Type.CONSUMABLE, Type.FOCUS, Type.TRAP]
 
 
 ## The icon for the party panel's hand and quick slots.

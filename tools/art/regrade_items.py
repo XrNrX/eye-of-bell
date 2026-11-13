@@ -37,15 +37,21 @@ FLAIL_STEEL = {**PLAIN_STEEL, "bruise_500": "stone_300", "bruise_700": "stone_50
 # The bow came out bruise purple and blood red: back to wood and leather.
 BOW_WOOD = {"bruise_900": "soil_900", "bruise_700": "wood_700", "bruise_500": "wood_500", "blood_700": "wood_700", "blood_500": "leather_400"}
 
+# The bear trap is rusted iron: stray curse green and bruise purple back to grey, and on the open trap the torch gold (warm colours
+# are for torchlight only) to rust.
+RUSTY_TRAP = {**FLAIL_STEEL}
+RUSTY_TRAP_ARMED = {**FLAIL_STEEL, "torch_300": "rust_300", "torch_500": "rust_500", "torch_700": "rust_700"}
+
 REMAPS = {
     "stale_bread": GRIM_FOOD, "hard_cheese": GRIM_CHEESE,
     "short_sword": PLAIN_STEEL, "long_sword": PLAIN_STEEL, "flail": FLAIL_STEEL, "bow": BOW_WOOD, "arrow": PLAIN_STEEL, "dagger": PLAIN_STEEL, "mace": PLAIN_STEEL, "war_hammer": PLAIN_STEEL, "darts": PLAIN_STEEL,
+    "bear_trap": RUSTY_TRAP, "bear_trap_armed": RUSTY_TRAP_ARMED,
 }
 # No monsters: all four now use PixelLab animation sets with their own outline (gen_monster_sheets.py), and a second ring would
 # double it. (The skeletons used to be listed here; their untouched copies in pieces/regrade_src/monsters are gone.)
 MONSTERS = {}
 # Hand and quick-slot icons made natively at 32x32 (tools/art/pieces/items32/): already outlined and steel-grey, so left alone.
-NATIVE32 = {"short_sword", "long_sword", "flail", "slingshot", "stone", "bow", "arrow", "war_hammer", "mace", "dagger", "darts"}
+NATIVE32 = {"short_sword", "long_sword", "flail", "slingshot", "stone", "bow", "arrow", "war_hammer", "mace", "dagger", "darts", "bear_trap"}
 
 
 def source(rel):

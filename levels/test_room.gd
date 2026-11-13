@@ -113,6 +113,11 @@ const CORRUPTION := {
 
 const PUZZLES := []
 
+# The traps station: one bear trap already armed, and a skeleton at the far end to lure onto it (T: Traps, then step back).
+const ARMED_TRAPS := [
+	{"cell": Vector2i(34, 20), "def": "res://data/items/bear_trap.tres"},
+]
+
 # The puzzle room: the plate and the lever both hold this door open.
 const DOOR_IDS := {
 	Vector2i(11, 23): "puzzle_door",
@@ -155,6 +160,8 @@ const ITEMS := [
 	{"cell": Vector2i(23, 6), "def": "res://data/items/bow.tres"},
 	{"cell": Vector2i(23, 5), "def": "res://data/items/arrow.tres", "count": 20},
 	{"cell": Vector2i(23, 4), "def": "res://data/items/stone.tres", "count": 20},
+	{"cell": Vector2i(24, 2), "def": "res://data/items/bear_trap.tres", "count": 2},
+	{"cell": Vector2i(33, 22), "def": "res://data/items/bear_trap.tres", "count": 2},  # The traps station.
 	{"cell": Vector2i(11, 26), "def": "res://data/items/healing_potion.tres"},
 ]
 
@@ -168,6 +175,7 @@ const MONSTERS := [
 	{"cell": Vector2i(25, 39), "def": "res://data/monsters/skeleton.tres"},
 	{"cell": Vector2i(28, 39), "def": "res://data/monsters/skeleton_guard.tres"},
 	{"cell": Vector2i(31, 39), "def": "res://data/monsters/slime.tres"},
+	{"cell": Vector2i(34, 24), "def": "res://data/monsters/skeleton.tres"},  # The traps station: lure it onto the armed trap.
 ]
 
 const SIGNS := [
@@ -189,7 +197,7 @@ CORRIDOR"},
 	{"cell": Vector2i(29, 16), "side": 2, "text": "XP AND LEVELS
 !NOT BUILT YET"},
 	{"cell": Vector2i(35, 16), "side": 2, "text": "TRAPS
-!NOT BUILT YET"},
+BEAR TRAP"},
 	{"cell": Vector2i(4, 2), "side": 0, "text": "COMBAT ARENA
 V SPAWNS MONSTERS"},
 	{"cell": Vector2i(15, 2), "side": 0, "text": "< NORMAL
@@ -218,8 +226,9 @@ THE LEVER."},
 !NOT BUILT YET"},
 	{"cell": Vector2i(27, 18), "side": 0, "text": "XP AND LEVELS
 !NOT BUILT YET"},
-	{"cell": Vector2i(33, 18), "side": 0, "text": "TRAPS
-!NOT BUILT YET"},
+	{"cell": Vector2i(33, 18), "side": 0, "text": "BEAR TRAP: SET
+IT FROM A HAND.
+LURE ONE ON."},
 	{"cell": Vector2i(4, 31), "side": 1, "text": "MONSTER PACING
 I = PACK AHEAD
 O [ ] Y = TUNE"},

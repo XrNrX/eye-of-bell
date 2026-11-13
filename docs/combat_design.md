@@ -91,11 +91,35 @@ The table, one row per status (chance to land, and the share of the status's tim
 | Status | Tier 1 | Tier 2 | Tier 3 | Tier 4 |
 |---|---|---|---|---|
 | held | 90%, full | 65%, full | 35%, half | 15%, half |
+| trap (a bear trap's hold) | 95%, full | 83%, full | 68%, half | 58%, half |
 
 - **Rows:** `rows["held"] = {"chance": [90, 65, 35, 15], "duration": [1.0, 1.0, 0.5, 0.5]}`. A new status (slowed, poisoned, a bear trap's snare) needs only a new row; a status with no row always lands in full.
 - **Special cases:** `MonsterDef.status_overrides`, per status id: any of `chance`, `duration` and `message`. The slimes use `{"held": {"duration": 0.75, "message": "The {monster} quivers against the runes."}}`. `chance` 0 makes a monster immune.
 - **Wall monsters** are immune to every status.
-- **One way in:** `Monster.try_status(status, seconds, source)` rolls the table with the combat dice and returns `landed`, `resisted` or `immune` with the time it got; a resisted try plays the status's ending effect. Hold Monster calls it; a bear trap must call it too.
+- **One way in:** `Monster.try_status(status, seconds, source, row)` rolls the table with the combat dice and returns `landed`, `resisted` or `immune` with the time it got; `row` lets a source use its own row (the bear trap's `trap` row). A resisted try by a spell plays the status's ending effect. Hold Monster and the bear trap both call it.
 - The `boss` flag no longer changes a status (tier 4 does that); it still gives the wide named health bar.
 - The test room's spawn list (V) shows each monster's tier ("SKELETON  T1").
 - Hold Monster stays at 5 mana and a 12 s recast wait for now, to be judged in play now that fodder is held 90% of the time.
+
+## Bear trap
+
+**Rusty Bear Trap** (`data/items/bear_trap.tres`, item type TRAP, stacks to 2; `scripts/trap_field.gd`, the node "Traps" in the
+dungeon). Every number is on the item ("Trap" group) and the tier table's `trap` row.
+
+| | Value | Notes |
+|---|---|---|
+| Setting | 1.5 s (`set_seconds`) | Click the trap in a hand or a quick slot: it is set on the tile in front. The hero is busy for that long (their action cooldown); the Thief takes half (`CharacterDef.trap_set_time` 0.5). If the party moves or turns away, or the tile stops being free, the trap is left lying there unset |
+| Where | an empty floor tile | Not a wall or door, the stairs, a pressure plate, a monster, a tile with items on it, or another trap. Refused with a line, nothing spent |
+| Armed | lies open on the floor | `ItemDef.armed_icon`, unshaded and tipped slightly up so it reads from eye height. The party steps over it safely ("Brannoc steps carefully over the trap."). Clicking it in front with an empty hand picks it back up, disarmed |
+| Snap | the first monster to finish a step onto it | 1-3 damage (`trap_damage`, the setter named as the killer), then held for 3 s (`trap_status` held, `trap_seconds`) through `Monster.try_status` on the tier table's `trap` row: held's chance to resist, halved (tier 1 95%, 2 83%, 3 68%, 4 58%; tiers 3-4 half the time). "The trap snaps shut on the skeleton." / "...but the skeleton tears free." Starts a fight |
+| Slimes | ooze through | Their `status_overrides.trap` is chance 0: no damage, no hold, the trap stays armed. "The slime oozes through the trap." |
+| Wall monsters | never trigger it | They never step, and are immune anyway |
+| After | closed on the tile | It lies there as an ordinary item (its floor icon is the closed trap) to pick up and set again, unless its spring snaps (`break_chance` 10%): "The trap's spring snaps." and it is gone |
+
+- **Why these numbers:** the trap is a cheap, slow, one-tile ambush. Setting it costs a hero's action for 1.5 s, so it is set before a fight, not in one; the Thief, the party's trapper, does it in 0.75 s. It holds for 3 s, less than Hold Monster's 5 s, but it costs no mana and has no recast wait, and it is harder to resist (it is a steel jaw, not a spell). The 10% chance to break keeps two traps from lasting a whole floor.
+- **News:** `GameEvents.trap_triggered(trap, monster)` (the trap's ItemDef). Not sent when a slime oozes through.
+- **Saving:** armed traps, their tiles and who set them are saved under `dungeon.armed_traps` (one being set is saved as set); a closed trap is a floor item, saved with the piles. An older save has none.
+- **Look:** PixelLab art: the inventory and closed-floor icon, a 32x32 hand icon, the open trap (`art/items/bear_trap*.png`), and a VFX snap of iron jaws biting shut with sparks and a spatter (`art/spells/bear_trap/snap_sheet.png`, drawn normally, not added, because the jaws are dark iron), with a small screen shake. Sounds `trap_set` and `trap_snap` (`gen_sounds.py`).
+- **Banter:** `trap_triggered` when it holds (Fighter: "Ha. Stay.", Cleric: "Crude. But effective."), `trap_broke` (Thief: "Typical.").
+- **Where:** floor 1 has two lying about: beside the long corridor near the start, whose skeleton chases you (7,11), and in the east corridor above the skeleton guard (18,14). The test room has one on the item table and the Traps station (one armed, one to pick up, and a skeleton to lure onto it).
+- **Not built:** traps that catch the party (hidden traps, detecting, disarming); monsters do not avoid armed traps.

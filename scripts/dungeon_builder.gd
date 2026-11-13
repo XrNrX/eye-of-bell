@@ -5,6 +5,7 @@ extends Node3D
 
 const Events := preload("res://scripts/game_events.gd")
 const WallSigns := preload("res://scripts/wall_signs.gd")
+const TrapField := preload("res://scripts/trap_field.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const TorchLight := preload("res://scripts/torch.gd")
 const NormalMaps := preload("res://scripts/normal_maps.gd")
@@ -77,6 +78,7 @@ var _curse_tween: Tween
 var door_want := {}   # Vector2i cell -> true if the door is currently told to be open
 var plate_pressed := {}  # Vector2i cell -> true while the party stands on it (to sound the click once)
 var door_tweens := {} # Vector2i cell -> the Tween moving it
+var traps: Node3D      # The armed traps (trap_field.gd, group "traps").
 var items := {}        # Vector2i cell -> {"sprite": Sprite3D, "pile": Array of ItemStack, top last} on the floor
 var plates := {}      # Vector2i cell -> pressure plate MeshInstance3D
 var levers := {}      # Vector3i (x, z, side) -> lever Sprite3D
@@ -159,7 +161,11 @@ func _ready() -> void:
 	for torch in DungeonMap.TORCHES:
 		_add_torch(Vector2i(torch.x, torch.y), torch.z)
 	WallSigns.build(self)
+	traps = TrapField.new()
+	traps.name = "Traps"
+	add_child(traps)
 	if populate:
+		traps.place_level_traps()
 		for entry in DungeonMap.ITEMS:
 			place_item(entry.cell, ItemStack.of(load(entry.def), entry.get("count", 1)))
 		for entry in DungeonMap.MONSTERS:

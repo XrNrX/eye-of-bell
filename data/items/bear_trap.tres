@@ -1,0 +1,26 @@
+[gd_resource type="Resource" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/item_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/items/bear_trap.png" id="2_icon"]
+[ext_resource type="Texture2D" path="res://art/items/bear_trap_floor.png" id="3_floor"]
+[ext_resource type="Texture2D" path="res://art/items/bear_trap_hud.png" id="90_hud"]
+[ext_resource type="Texture2D" path="res://art/items/bear_trap_armed.png" id="4_armed"]
+[ext_resource type="Resource" path="res://data/statuses/held.tres" id="5_held"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Rusty Bear Trap"
+type = 6
+icon = ExtResource("2_icon")
+floor_icon = ExtResource("3_floor")
+hud_icon = ExtResource("90_hud")
+icon_pixel_size = 0.01
+max_stack = 2
+armed_icon = ExtResource("4_armed")
+trap_status = ExtResource("5_held")
+trap_seconds = 3.0
+trap_row = "trap"
+trap_damage_min = 1
+trap_damage_max = 3
+set_seconds = 1.5
+break_chance = 0.1

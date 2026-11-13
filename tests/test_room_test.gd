@@ -137,6 +137,11 @@ func _check_pacing(tools: Node, press: Callable, player: Node) -> void:
 	check("only one monster at a time goes round (%s)" % third.cell, not beside.call(third))
 	for n in get_nodes_in_group("monsters"):
 		n.free()
+	# The traps station: a bear trap already armed, and one to pick up.
+	var traps_room: Dictionary = DungeonMap.STATIONS.filter(func(s): return s.name == "Traps")[0]
+	tools._teleport(traps_room)
+	var trap_field: Node = get_first_node_in_group("traps")
+	check("the traps station has an armed bear trap", trap_field != null and trap_field.armed_at(Vector2i(34, 20)) != null)
 	# The held-monster room: 9 holds the monster in front, 0 frees it.
 	var held_room: Dictionary = DungeonMap.STATIONS.filter(func(s): return s.name == "Held monster")[0]
 	tools._teleport(held_room)

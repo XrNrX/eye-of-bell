@@ -27,6 +27,8 @@ extends Resource
 ## Added to the crit chance against a helpless monster (a held one: StatusDef.helpless), up to CombatRules.HELPLESS_CRIT_CAP:
 ## a stab in the back. The Thief's is the biggest.
 @export var helpless_crit := 10
+## How long this hero takes to set a trap, as a share of the trap's set_seconds (the Thief: 0.5, half the time).
+@export var trap_set_time := 1.0
 
 @export_group("Portrait")
 @export var portrait: Texture2D        # Shown while alive.

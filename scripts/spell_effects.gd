@@ -305,6 +305,23 @@ func status_ended(monster: Node3D, status: Resource) -> void:
 			holder.queue_free())
 
 
+## A bear trap goes off on a tile (trap_field.gd): its jaws snap shut with sparks and a spatter (PixelLab VFX, art/spells/bear_trap/
+## snap_sheet.png). Drawn normally, not added: the jaws are dark iron, which additive blending would make vanish.
+func trap_snap(cell: Vector2i) -> void:
+	var sheet := _sheet("bear_trap", "snap")
+	if sheet.is_empty():
+		return
+	var c := Config.get_config()
+	var flip: MeshInstance3D = Flipbook.new()
+	flip.setup(sheet.texture, sheet.frames, sheet.fps, false, c.fb_pixel_size, Color(1, 1, 1), false, c.trap_snap_scale)
+	flip.position = DungeonMap.cell_to_world(cell) + Vector3(0, c.trap_snap_height, 0)
+	add_child(flip)
+	live += 1
+	flip.finished.connect(func():
+		live -= 1)
+	get_tree().call_group("combat_feel", "shake_by", c.trap_snap_shake, 0.15, Vector2.UP)
+
+
 func _status_scale(monster: Node3D) -> float:
 	var c := Config.get_config()
 	var gap: float = c.status_ring_gap_px * c.fb_pixel_size

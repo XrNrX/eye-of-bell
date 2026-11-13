@@ -29,4 +29,5 @@ dexterity = 16
 crit_base = 8
 finesse_crit = 8
 helpless_crit = 25
+trap_set_time = 0.5
 spell_crit = 0

@@ -422,3 +422,8 @@ func glow(kind: String) -> Dictionary:
 @export var status_scale_max := 1.6
 @export var status_toward_camera := 0.18  # Drawn this far in front of the monster, towards the camera.
 @export var status_end_drop_px := 7.5
+
+@export_group("Bear trap")
+@export var trap_snap_scale := 1.0    # The snap flipbook's size (one art pixel = fb_pixel_size).
+@export var trap_snap_height := 0.28  # How high above the floor its centre is drawn.
+@export var trap_snap_shake := 0.6    # A small screen shake as it closes (CombatFeel.shake_by).

@@ -146,15 +146,15 @@ func _fight(delta: float) -> void:
 ## monster's tier, or its own MonsterDef.status_overrides, decides whether it lands and for how much of `seconds`. Returns
 ## {"outcome": "landed" / "resisted" / "immune", "seconds": the time it got, "chance": percent, "message": a flavour line or ""}.
 ## A resisted try plays the status's ending effect at once (the runes form and break). Rolled with the combat dice.
-func try_status(status: Resource, seconds: float, source := -1) -> Dictionary:
-	var odds: Dictionary = MonsterTiers.get_config().odds(status.id, def)
+func try_status(status: Resource, seconds: float, source := -1, row := "") -> Dictionary:
+	var odds: Dictionary = MonsterTiers.get_config().odds(row if row != "" else status.id, def)  # row: a source's own row (a trap).
 	var out := {"outcome": "immune", "seconds": 0.0, "chance": odds.chance, "message": odds.message}
 	if dying or odds.immune:
 		return out
 	if odds.chance < 100 and CombatRules.rng().randi_range(1, 100) > odds.chance:
 		out.outcome = "resisted"
 		var fx := get_tree().get_first_node_in_group("spell_effects")
-		if fx != null:
+		if fx != null and row == "":  # A spell's runes form and break at once (a trap has its own snap instead).
 			fx.status_ended(self, status)
 		return out
 	out.outcome = "landed"
@@ -642,6 +642,7 @@ func _step(dir: Vector2i) -> void:
 		_walking = false
 		if _next_to_player():
 			recovery_left = def.arrival_recovery  # Just stepped up: a moment before its wind-up can start.
+		get_tree().call_group("traps", "monster_entered", self)  # An armed trap on this tile snaps (trap_field.gd).
 		if DungeonMap.occupied.get(old) == self:
 			DungeonMap.occupied.erase(old)
 		get_tree().call_group("dungeon", "refresh"))  # Doors re-check who's standing in them.

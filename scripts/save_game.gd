@@ -154,7 +154,8 @@ static func serialize(tree: SceneTree) -> Dictionary:
 		"dungeon": {"items": piles, "open_doors": open_doors, "unlocked_doors": unlocked,
 				"levers": levers, "monsters": monsters, "broken_walls": broken,
 				"purified_walls": purified, "corruption": corruption,
-				"puzzles_done": DungeonMap.puzzles_done.keys(), "puzzle_doors": DungeonMap.puzzle_doors.keys()},
+				"puzzles_done": DungeonMap.puzzles_done.keys(), "puzzle_doors": DungeonMap.puzzle_doors.keys(),
+				"armed_traps": dungeon.traps.serialize() if dungeon.traps != null else []},
 		"flags": DungeonMap.flags.duplicate(),
 		"cursor": stack_to_data(cursor.held) if cursor else null,
 	}
@@ -296,6 +297,9 @@ static func apply(tree: SceneTree, data: Dictionary) -> String:
 			if stack != null:
 				stacks.append(stack)
 		dungeon.set_pile(data_to_cell(entry.cell), stacks)
+
+	if dungeon.traps != null:
+		dungeon.traps.restore(d.get("armed_traps", []))  # (An older save has none.)
 
 	dungeon.clear_monsters()
 	for mo in d.monsters:

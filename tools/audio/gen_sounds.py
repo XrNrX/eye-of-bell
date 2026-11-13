@@ -220,6 +220,19 @@ def plate():
     return finish(mix(decay(osc(glide(260, 120, 0.15), 0.18), 0.06), gain(decay(noise(0.04, 14), 0.01), 0.4)), 0.5)
 
 
+def trap_set():
+    """Setting a bear trap: the spring is cranked open, ratchet clicks, then a soft metal settle."""
+    clicks = mix(metal_click(41), (metal_click(42), 0.12), (metal_click(43), 0.24), (metal_click(44), 0.36))
+    return finish(mix(clicks, (thud(110, 70, 0.05, 0.18, 45, 0.5, 900), 0.5)), 0.5)
+
+
+def trap_snap():
+    """A bear trap snapping shut: a hard iron clack with a ring and a thud."""
+    clack = mix(decay(bandpass(noise(0.08, 46), 900, 4200), 0.02), gain(decay(osc(520, 0.3), 0.06), 0.5),
+                gain(decay(osc(1310, 0.3), 0.04), 0.35))
+    return finish(mix(clack, thud(140, 60, 0.06, 0.25, 47, 0.8, 800)), 0.85)
+
+
 def pickup():
     return finish(mix(decay(osc(660, 0.1), 0.05), (decay(osc(990, 0.14), 0.07), 0.06)), 0.45)
 
@@ -358,6 +371,7 @@ SOUNDS = {
     "turn": (turn, None), "bump": (bump, None),
     "door_open": (door_open, None), "door_close": (door_close, None), "door_locked": (door_locked, None),
     "unlock": (unlock, None), "lever": (lever, None), "plate": (plate, None),
+    "trap_set": (trap_set, None), "trap_snap": (trap_snap, None),
     "pickup": (pickup, None), "drop": (drop, None),
     "swing": (swing, None), "whiff": (whiff, None), "hit": (hit, None), "throw": (throw, None),
     "crit_hit": (crit_hit, None), "crit_hurt": (crit_hurt, None), "fumble": (fumble, None),

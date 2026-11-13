@@ -5,7 +5,7 @@ extends Node
 ##     get_tree().call_group("banter", "event", "crit", {"actor": "thief", "weapon": "Dagger", "target": "mage"})
 ##     get_tree().call_group("banter", "set_quiet", "ambush", true)     # no banter until set_quiet("ambush", false)
 ##
-## It also listens to GameEvents (monster_killed, monster_held, monster_released, hero_died, hero_revived, item_picked_up, door_unlocked, lever_pulled, wall_broken,
+## It also listens to GameEvents (monster_killed, monster_held, monster_released, trap_triggered, hero_died, hero_revived, item_picked_up, door_unlocked, lever_pulled, wall_broken,
 ## wall_purified, puzzle_solved, level_completed, fight_started, fight_ended, hero_hurt, mana_low): each becomes an event of the same
 ## name, with a context made from the signal's arguments (see CONTEXTS below), so a line for "hero_died" in the JSON just works.
 ##
@@ -328,6 +328,7 @@ func _listen() -> void:
 	bus.monster_killed.connect(_on_monster_killed)
 	bus.monster_held.connect(_on_monster_held)
 	bus.monster_released.connect(_on_monster_released)
+	bus.trap_triggered.connect(_on_trap_triggered)
 	bus.hero_died.connect(_on_hero_died)
 	bus.hero_revived.connect(_on_hero_revived)
 	bus.hero_hurt.connect(_on_hero_hurt)
@@ -353,6 +354,10 @@ func _on_monster_held(monster: Node, source: int) -> void:
 
 func _on_monster_released(monster: Node) -> void:
 	event("monster_released", {"monster": monster.def.display_name})
+
+
+func _on_trap_triggered(trap: Resource, monster: Node) -> void:
+	event("trap_triggered", {"monster": monster.def.display_name, "held": monster.has_status("held"), "trap": trap.display_name})
 
 
 func _on_hero_died(hero: int) -> void:

@@ -23,7 +23,7 @@ const CLOSETS: Array[Vector2i] = [Vector2i(18, 1), Vector2i(20, 1)]  # One-tile 
 const PLAIN_DOOR := Vector2i(16, 6)
 const LEVER := Vector3i(19, 7, 0)  # The north lever of gate_n: cell (19,7), side 0.
 
-const EVENTS := ["monster_killed", "monster_held", "monster_released", "hero_hurt", "mana_low", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
+const EVENTS := ["monster_killed", "monster_held", "monster_released", "trap_triggered", "hero_hurt", "mana_low", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
 		"wall_purified", "puzzle_solved", "level_completed"]
 const CRACKED_WALL := Vector2i(2, 6)
 const THICK_CORRUPTION := Vector2i(16, 4)  # Purifying it fires the puzzle "nook_blessing".
@@ -73,6 +73,7 @@ func _init() -> void:
 	_check_hero_death()
 	_check_spells()
 	_check_hold()
+	await _check_trap()
 	await _check_food()
 	_check_resurrection()
 	await _check_world_events()
@@ -400,7 +401,7 @@ func _check_hold() -> void:
 	var hud: Node = get_first_node_in_group("hud")
 	check("hold: a slime can be held, for less time, and quivers (%.2f s)" % slime.status_left("held"), slime.has_status("held")
 			and absf(slime.status_left("held") - spell.status_seconds * 0.75) < 0.01
-			and hud.lines.any(func(l): return str(l).contains("The slime quivers against the runes.")))
+			and hud.lines.any(func(l): return str(l.text).contains("The slime quivers against the runes.")))
 	dungeon.clear_monsters()
 	var skel: Node = _monster("skeleton", AHEAD_1)
 	var held_before: int = events.monster_held.size()
@@ -485,6 +486,84 @@ func _check_hold() -> void:
 	check("hold: a wall monster can't be held", not r.cast and not wall.has_status("held"))
 	dungeon.clear_monsters()
 	mage.spell_wait.clear()
+	_rest_everyone()
+
+
+## The rusty bear trap: setting it (only on a free tile; the Thief in half the time), stepping over it, disarming it by a click, a
+## monster snapped (damage, held through the tier table's trap row, the trap closed on the tile, trap_triggered), the spring snapping,
+## and the slime oozing through.
+func _check_trap() -> void:
+	_rest_everyone()
+	dungeon.clear_monsters()
+	player.restore(SPOT, EAST)
+	var trap_def: Resource = load("res://data/items/bear_trap.tres")
+	var traps: Node = get_first_node_in_group("traps")
+	var hud: Node = get_first_node_in_group("hud")
+	var cursor: Node = get_first_node_in_group("cursor")
+	check("trap: the dungeon has a trap field", traps != null)
+	if traps == null:
+		return
+	var thief = party.members.filter(func(m): return m.class_id() == "thief")[0]
+	thief.quick[0] = ItemStack.of(trap_def, 2)
+	var blocker: Node = _monster("skeleton", AHEAD_1)
+	thief.cooldown_left = 0.0
+	var r: Dictionary = party.use_quick(thief.slot, 0)
+	check("trap: it can't be set on a monster, and nothing is spent", not r.used and thief.quick[0].count == 2)
+	dungeon.clear_monsters()
+	thief.cooldown_left = 0.0
+	r = party.use_quick(thief.slot, 0)
+	check("trap: setting it takes one from the stack and the thief half the time (%.2f s)" % thief.cooldown_left,
+			r.used and thief.quick[0].count == 1 and is_equal_approx(thief.cooldown_left, trap_def.set_seconds * 0.5)
+			and traps.armed_at(AHEAD_1) == null)
+	traps._process(1.0)
+	check("trap: once the time is up it lies armed in front", traps.armed_at(AHEAD_1) == trap_def)
+	thief.cooldown_left = 0.0
+	r = party.use_quick(thief.slot, 0)
+	check("trap: not on a tile that already has one", not r.used and thief.quick[0].count == 1)
+	thief.quick[0] = null
+	player._try_move(Vector2i(1, 0))
+	check("trap: the party steps over its own trap safely", traps.armed_at(AHEAD_1) == trap_def and str(hud.last_message).ends_with("steps carefully over the trap."))
+	await create_timer(0.3).timeout
+	player.restore(SPOT, EAST)
+	player.world_click()
+	check("trap: clicking it picks it back up, disarmed", traps.armed_at(AHEAD_1) == null and cursor.is_holding() and cursor.held.def == trap_def)
+	cursor.release()
+	var saved_break: float = trap_def.break_chance
+	trap_def.break_chance = 0.0
+	traps.arm(AHEAD_1, trap_def, thief.hero_index)
+	var triggered_before: int = events.trap_triggered.size()
+	var skel: Node = _monster("skeleton", AHEAD_2, 50)
+	skel.move_wait = 999.0
+	skel._step(Vector2i(-1, 0))
+	await create_timer(0.45).timeout
+	var resisted: bool = hud.lines.any(func(l): return str(l.text).contains("tears free"))
+	check("trap: a monster stepping on it is snapped: hurt and held for %.1f s (or tears free)" % skel.status_left("held"),
+			skel.hp < 50 and (resisted or absf(skel.status_left("held") - trap_def.trap_seconds) < 0.3) and traps.armed_at(AHEAD_1) == null)
+	check("trap: it lies closed on the tile, to be picked up again", dungeon.item_at(AHEAD_1) != null and dungeon.item_at(AHEAD_1).def == trap_def)
+	check("trap: event trap_triggered once, naming the trap and the monster", events.trap_triggered.size() == triggered_before + 1
+			and events.trap_triggered[-1][0] == trap_def and events.trap_triggered[-1][1] == skel)
+	dungeon.clear_monsters()
+	dungeon.set_pile(AHEAD_1, [])
+	trap_def.break_chance = 1.0
+	traps.arm(AHEAD_1, trap_def, thief.hero_index)
+	skel = _monster("skeleton", AHEAD_2, 50)
+	skel.move_wait = 999.0
+	skel._step(Vector2i(-1, 0))
+	await create_timer(0.45).timeout
+	check("trap: sometimes its spring snaps and nothing is left", dungeon.item_at(AHEAD_1) == null and hud.lines.any(func(l): return str(l.text).contains("The trap's spring snaps.")))
+	trap_def.break_chance = saved_break
+	dungeon.clear_monsters()
+	traps.arm(AHEAD_1, trap_def, thief.hero_index)
+	var slime: Node = _monster("slime", AHEAD_2)
+	slime.move_wait = 999.0
+	var slime_hp: int = slime.hp
+	slime._step(Vector2i(-1, 0))
+	await create_timer(0.45).timeout
+	check("trap: the slime oozes through it and it stays armed", traps.armed_at(AHEAD_1) == trap_def and slime.hp == slime_hp
+			and not slime.has_status("held") and hud.lines.any(func(l): return str(l.text).contains("The slime oozes through the trap.")))
+	traps.disarm(AHEAD_1)
+	dungeon.clear_monsters()
+	dungeon.set_pile(AHEAD_1, [])
 	_rest_everyone()
 
 
@@ -851,6 +930,7 @@ func _check_save_load() -> void:
 	player.restore(Vector2i(9, 13), 1)
 	_monster("slime", CLOSETS[0], 3)
 	_monster("skeleton_guard", CLOSETS[1], 5).add_status(load("res://data/statuses/held.tres"), 4.0, 3)
+	get_first_node_in_group("traps").arm(Vector2i(11, 13), load("res://data/items/bear_trap.tres"), 2)
 
 	var saved := _snapshot()
 	var sent_before := _event_counts()
@@ -905,6 +985,9 @@ func _check_save_load() -> void:
 	check("load: levers", loaded.levers == saved.levers and saved.levers.size() == 1)
 	check("load: floor piles", loaded.piles == saved.piles)
 	check("load: monsters (kind, cell, hp)", loaded.monsters == saved.monsters and saved.monsters.size() == 2)
+	var loaded_traps: Node = get_first_node_in_group("traps")
+	check("load: an armed trap is still armed where it was set", loaded_traps != null and loaded_traps.armed_at(Vector2i(11, 13)) != null
+			and loaded_traps.armed[Vector2i(11, 13)].setter == 2)
 	var guard = DungeonMap.occupied.get(CLOSETS[1])
 	check("load: a held monster is still held, with its time left (%.2f s)" % (guard.status_left("held") if guard else -1.0),
 			guard != null and guard.has_status("held") and guard.status_left("held") > 2.5 and guard.status_left("held") <= 4.0

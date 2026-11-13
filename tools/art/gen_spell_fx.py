@@ -48,13 +48,27 @@ def slice_atlas(spell, name):
     return frames, fps
 
 
+# Palette names a sheet's snapped pixels are moved off, per effect folder: the bear trap's white-hot sparks snap to the pale curse
+# green, which is never used for anything but the curse (docs/art_style.md), so they become torch colours.
+RECOLOUR = {"bear_trap": {"curse_300": "torch_300", "curse_500": "torch_500", "curse_700": "rust_500"}}
+
+
 def build_sheet(spell, name):
     frames, fps = slice_atlas(spell, name)
     w, h = frames[0].size
     sheet = Image.new("RGBA", (w * len(frames), h), (0, 0, 0, 0))
     for i, f in enumerate(frames):
         sheet.paste(f, (i * w, 0))
-    written = [save_png(PAL.snap(sheet), f"spells/{spell}/{name}_sheet.png")]
+    sheet = PAL.snap(sheet)
+    table = RECOLOUR.get(spell, {})
+    if table:
+        px = sheet.load()
+        for y in range(sheet.height):
+            for x in range(sheet.width):
+                r, g, b, a = px[x, y]
+                if a and PAL.name_of((r, g, b)) in table:
+                    px[x, y] = (*PAL[table[PAL.name_of((r, g, b))]], a)
+    written = [save_png(sheet, f"spells/{spell}/{name}_sheet.png")]
     info = {"frames": len(frames), "fps": fps, "frame_w": w, "frame_h": h}
     path = ART_DIR / "spells" / spell / f"{name}_sheet.json"
     path.write_text(json.dumps(info, indent=2))
@@ -104,9 +118,10 @@ def build(scale=None):
     # Fireball: fire colours. Magic Missile: neutral grey and bone only; the game tints it cold pale blue (the palette has no blue).
     # The holy spells (heal, bless, shield, resurrection): gold, one animation each (see HOLY_SHEETS).
     # Hold Monster: grey and bone runes, tinted cold pale blue in the game like Magic Missile (bind, held loop, shatter).
-    for spell in ("fireball", "magic_missile", "heal", "bless", "shield", "resurrection", "hold_monster"):
+    # The bear trap's snap: rusted iron jaws, sparks and a spatter (drawn normally in the game, not added).
+    for spell in ("fireball", "magic_missile", "heal", "bless", "shield", "resurrection", "hold_monster", "bear_trap"):
         for name in ("cast", "projectile", "impact", "burst", "ring", "flash", "column", "portrait", "portrait_large",
-                     "bind", "held", "shatter"):
+                     "bind", "held", "shatter", "snap"):
             if (PIECES / spell / f"{name}.png").exists():
                 (ART_DIR / "spells" / spell).mkdir(parents=True, exist_ok=True)
                 written += build_sheet(spell, name)

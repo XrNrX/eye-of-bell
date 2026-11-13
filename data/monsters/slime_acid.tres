@@ -35,6 +35,10 @@ status_overrides = {
 "held": {
 "duration": 0.75,
 "message": "The {monster} quivers against the runes."
+},
+"trap": {
+"chance": 0,
+"message": "The {monster} oozes through the trap."
 }
 }
 crit_chance = 2

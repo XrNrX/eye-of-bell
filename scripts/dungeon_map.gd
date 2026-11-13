@@ -177,6 +177,8 @@ static var ITEMS := [
 	{"cell": Vector2i(8, 15), "def": "res://data/items/leather_armour.tres"},
 	{"cell": Vector2i(20, 19), "def": "res://data/items/healing_potion.tres"},  # The corridor to the far stairs.
 	{"cell": Vector2i(15, 9), "def": "res://data/items/long_sword.tres"},  # Room 3: a better sword than the short one, with the mace and hammer.
+	{"cell": Vector2i(7, 11), "def": "res://data/items/bear_trap.tres"},  # Beside the long corridor whose skeleton chases you.
+	{"cell": Vector2i(18, 14), "def": "res://data/items/bear_trap.tres"},  # The east corridor, above the skeleton guard.
 	{"cell": Vector2i(12, 10), "def": "res://data/items/war_hammer.tres"},  # Room 3, by the mace: the heavy weapon that breaks a cracked wall.
 	{"cell": Vector2i(2, 3), "def": "res://data/items/healing_potion.tres", "count": 3},  # The secret closet behind the cracked wall.
 	{"cell": Vector2i(2, 4), "def": "res://data/items/scroll.tres"},
@@ -221,6 +223,10 @@ static var MONSTERS := [
 # Floor 1 has none; the test room labels its stations with them (wall_signs.gd).
 static var SIGNS := []
 
+# Traps already set when the level starts ({"cell": Vector2i, "def": ItemDef path}): armed bear traps (trap_field.gd). Floor 1 has
+# none (its traps lie about as items to pick up); the test room's traps station sets one.
+static var ARMED_TRAPS := []
+
 # Test-room only (read by scripts/debug/, never by the game): trap tiles that spawn monsters when stepped on
 # ({"trigger": Vector2i, "text": String, "monsters": [{"cell": Vector2i, "def": String}]}, re-armed when the party leaves the
 # station's rows) and the named places T teleports to ({"name": String, "cell": Vector2i, "facing": int}).
@@ -232,7 +238,7 @@ static var level_path := ""
 const TEST_ROOM_PATH := "res://levels/test_room.gd"
 const TOOLS_PATH := "res://scripts/debug/test_room_tools.gd"  # F12, the debug keys and the help overlay (debug builds only).
 const LEVEL_FIELDS := ["MAP", "START_TILE", "START_FACING", "TORCHES", "CORRUPTION", "PUZZLES", "DOOR_IDS", "PLATES",
-		"STRUCTURES", "LEVERS", "ITEMS", "MONSTERS", "SIGNS", "AMBUSHES", "STATIONS"]
+		"STRUCTURES", "LEVERS", "ITEMS", "MONSTERS", "SIGNS", "ARMED_TRAPS", "AMBUSHES", "STATIONS"]
 static var _floor1 := {}
 
 
@@ -284,6 +290,8 @@ static func _field(f: String):
 			return MONSTERS
 		"SIGNS":
 			return SIGNS
+		"ARMED_TRAPS":
+			return ARMED_TRAPS
 		"AMBUSHES":
 			return AMBUSHES
 		"STATIONS":
@@ -319,6 +327,8 @@ static func _set_field(f: String, v) -> void:
 			MONSTERS = v
 		"SIGNS":
 			SIGNS = v
+		"ARMED_TRAPS":
+			ARMED_TRAPS = v
 		"AMBUSHES":
 			AMBUSHES = v
 		"STATIONS":

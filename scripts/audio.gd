@@ -46,6 +46,8 @@ const CUES := {
 	"monster_attack": {"db": -4.0},
 	"hero_hurt": {"db": -3.0, "pitch": 0.1},
 	"pickup": {"db": -6.0},
+	"trap_set": {"db": -6.0, "pitch": 0.05},
+	"trap_snap": {"db": -2.0, "pitch": 0.06},
 	"drop": {"db": -6.0},
 	"ui_click": {"db": -8.0, "pitch": 0.0, "gap": 0.03},
 	"ui_swap": {"db": -6.0, "pitch": 0.0},

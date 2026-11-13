@@ -8,6 +8,7 @@ extends Node3D
 const Events := preload("res://scripts/game_events.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
+const ItemStack := preload("res://scripts/item_stack.gd")
 
 const MOVE_TIME := 0.2  # Seconds per step or turn.
 
@@ -71,7 +72,21 @@ func world_click(shift := false) -> void:
 	if DungeonMap.is_corrupted(front):
 		_say("The stone is alive with pulsing green veins.")
 		return
+	if _click_trap(front):
+		return
 	_click_item(shift)
+
+
+## An armed trap in front, clicked with an empty hand: pick it up, disarmed. Returns whether it did.
+func _click_trap(front: Vector2i) -> bool:
+	var traps := get_tree().get_first_node_in_group("traps")
+	if traps == null or cursor == null or cursor.is_holding() or traps.armed_at(front) == null or DungeonMap.is_occupied(front):
+		return false
+	var def: Resource = traps.disarm(front)
+	cursor.hold(ItemStack.of(def, 1))
+	_cue("pickup")
+	_say("You disarm the %s and pick it up." % str(def.display_name).to_lower())
+	return true
 
 
 func _click_item(shift := false) -> void:
@@ -199,6 +214,7 @@ func _try_move(dir: Vector2i) -> void:
 	cell = target
 	_cue("step")
 	_report_position()
+	get_tree().call_group("traps", "party_entered", cell)  # The party steps over its own armed traps (trap_field.gd).
 	tween = create_tween()
 	tween.tween_property(self, "position", DungeonMap.cell_to_world(cell), MOVE_TIME)
 	tween.tween_callback(_arrive)

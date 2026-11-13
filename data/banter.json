@@ -243,5 +243,20 @@
 		"lines": [
 			{"speaker": "mage", "text": "It's moving again. It's moving again."}
 		]
+	},
+	"trap_triggered": {
+		"chance": 0.6,
+		"cooldown": 20,
+		"lines": [
+			{"speaker": "fighter", "if": {"held": true}, "text": "Ha. Stay."},
+			{"speaker": "cleric", "if": {"held": true}, "text": "Crude. But effective."}
+		]
+	},
+	"trap_broke": {
+		"chance": 0.8,
+		"cooldown": 10,
+		"lines": [
+			{"speaker": "thief", "text": "Typical."}
+		]
 	}
 }
