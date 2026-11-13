@@ -39,6 +39,10 @@ Where things really are (scripts are in one flat folder, `scripts/`, not subfold
 - Read design docs only when the task involves them.
 - Never open image files, sprite sheets or other binary assets unless the user asks to look at one. Measure art with a script instead (size, colours, brightness) and report numbers. When the user asks for screenshots or a visual check, that counts as asking.
 
+## Roadmap
+
+`docs/roadmap.md` is the plan: every phase, step and prompt, with ticks for what is done. **The user's Claude doc is the master copy, so never edit `docs/roadmap.md` yourself** (it is replaced by a fresh export when the plan changes; tell the user if a tick looks wrong instead). When the user gives you a step ("do 7k.2"), find its prompt there and, before starting, read the notes around it (a step's "before" notes, such as "Steps 7 to 12 each come before the phase named next to them") and the **Leftovers from finished phases** section at the top, which holds loose ends and corrections that may change the step.
+
 ## Design references
 
 **Game overview:** `docs/game_overview.md` has the pitch, tone rule, the four heroes, visual style, systems built so far and what is planned. **Update its "Systems built" list whenever a major feature lands.**
