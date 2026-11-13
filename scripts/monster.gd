@@ -280,6 +280,16 @@ func _die() -> void:
 	tween.tween_callback(queue_free)
 
 
+## A wall monster bursting out of its hole: it shoots up from nothing with a little overshoot.
+func emerge() -> void:
+	if sprite == null:
+		return
+	var rest := sprite.scale
+	sprite.scale = Vector3(rest.x, 0.05, rest.z)
+	var tween := create_tween()
+	tween.tween_property(sprite, "scale", rest, 0.4).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+
+
 ## Remove every tile this monster holds (it can hold two while mid-step).
 func _release_tiles() -> void:
 	for c in DungeonMap.occupied.keys():
@@ -306,7 +316,7 @@ func _sprite_height() -> float:
 ## One AI step: hold position next to the party, chase if it's close and visible,
 ## else wander.
 func _on_tick() -> void:
-	if dying or _next_to_player():
+	if dying or def.immobile or _next_to_player():
 		return
 	var to_player := DungeonMap.player_cell - cell
 	var distance := absi(to_player.x) + absi(to_player.y)

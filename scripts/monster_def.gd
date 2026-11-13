@@ -13,6 +13,14 @@ extends Resource
 @export var speed := 1.0
 ## How many tiles away (steps along the grid) it notices the player.
 @export var sight_range := 4
+## A wall monster (the tentacle of an ambush): it never moves, it only attacks whoever stands next to it.
+@export var immobile := false
+## While it is alive and next to the party, the party cannot walk away (it can still turn and fight):
+## "The tentacle holds you fast!" It forces the fight.
+@export var holds_party := false
+## The id of the DungeonMap.AMBUSHES entry this monster is the boss or trap of ("" for ordinary monsters).
+## The ambush's sealed doors stay shut while any living monster has its id.
+@export var ambush_id := ""
 
 @export_group("Sprite")
 ## Sprite sheet: one row of equally sized frames, side by side. Nothing in the code assumes how

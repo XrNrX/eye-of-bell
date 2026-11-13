@@ -1,0 +1,25 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/monster_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/monsters/warden/warden_sheet.png" id="2_sheet"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Cursed Warden"
+max_hp = 40
+attack = 4
+defence = 3
+damage_min = 3
+damage_max = 8
+attack_interval = 2.2
+speed = 0.85
+sight_range = 8
+ambush_id = "key_room"
+sheet = ExtResource("2_sheet")
+hframes = 11
+idle_frames = PackedInt32Array(0, 1)
+attack_frames = PackedInt32Array(2, 3, 4)
+walk_frames = PackedInt32Array(7, 8, 9, 10)
+hurt_frames = PackedInt32Array(5, 6)
+idle_fps = 1.5
+pixel_size = 0.0155

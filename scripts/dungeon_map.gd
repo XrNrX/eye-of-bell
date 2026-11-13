@@ -51,10 +51,10 @@ const MAP := [
 	[1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 0, 0, 0, 1],  # 5
 	[1, 1, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 5, 1],  # 6
 	[1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],  # 7
-	[1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],  # 8
+	[1, 1, 1, 1, 1, 1, 0, 1, 1, 6, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],  # 8
 	[1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 2, 0, 0, 0, 1],  # 9
 	[1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 2, 1, 1, 1],  # 10
-	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1],  # 11
+	[1, 1, 1, 1, 1, 1, 0, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1],  # 11
 	[1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1],  # 12
 	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1],  # 13
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1],  # 14
@@ -189,6 +189,8 @@ const MONSTERS := [
 static var occupied := {}        # Tiles holding a monster (cell -> monster node).
 static var open_doors := {}      # Doors that have finished opening (cell -> true).
 static var broken_walls := {}    # Cracked walls that have been broken (cell -> true); saved.
+static var fired_ambushes := {}  # Ambushes that have sprung (id -> true); saved: an ambush never fires twice.
+static var ambush_pending := false  # True from the moment an ambush springs until its monsters are out: the party is held.
 static var unlocked_doors := {}  # Locked doors a key has been used on (cell -> true).
 static var player_cell := Vector2i(-1, -1)  # Set by player.gd as it moves.
 
@@ -223,11 +225,98 @@ static func has_line_of_sight(a: Vector2i, b: Vector2i) -> bool:
 	return true
 
 
+# Ambushes: a cracked wall that is a trap. It springs when the party steps on `trigger` (a floor tile), takes the
+# item lying on `pickup`, or breaks the wall itself. Then any `seal` doors slam shut and stay shut until the
+# ambush's monsters are dead, the walls shake, the wall bursts into rubble and the monsters come out of the
+# niches behind it. Each fires once. `walls` lists {cell, def}: the cell must be a cracked wall (MAP tile 6) so
+# the burst reuses the destructible-wall show; the monster stands in that cell. A wall monster (MonsterDef.
+# immobile + holds_party) holds the party where it stands; a mobile boss comes for them. A monster whose
+# MonsterDef.ambush_id is the id belongs to the ambush (it keeps the doors sealed). Optional texts:
+# "warning" (during the build-up) and "burst" (when the monsters come out).
+const AMBUSHES := [
+	# The key room: take the key (the main item) and the door slams shut behind you; the back wall bursts and the
+	# Cursed Warden comes out. Room 5, key one, door at its only entrance.
+	{"id": "key_room", "pickup": Vector2i(10, 10), "seal": [Vector2i(7, 11)],
+	 "warning": "The door slams shut behind you! The room begins to shake...",
+	 "burst": "The back wall bursts open: the Cursed Warden claws its way out!",
+	 "walls": [{"cell": Vector2i(9, 8), "def": "res://data/monsters/warden.tres"}]},
+]
+
+
+static func ambush_at_trigger(cell: Vector2i) -> Dictionary:
+	for a in AMBUSHES:
+		if a.get("trigger", Vector2i(-99, -99)) == cell and not fired_ambushes.has(a.id):
+			return a
+	return {}
+
+
+static func ambush_at_pickup(cell: Vector2i) -> Dictionary:
+	for a in AMBUSHES:
+		if a.get("pickup", Vector2i(-99, -99)) == cell and not fired_ambushes.has(a.id):
+			return a
+	return {}
+
+
+## Are this ambush's monsters still alive (or still on their way out)? Derived from the monsters, never saved.
+static func ambush_alive(id: String) -> bool:
+	if ambush_pending:
+		return true
+	for m in occupied.values():
+		if is_instance_valid(m) and not m.dying and m.def.ambush_id == id:
+			return true
+	return false
+
+
+## Is this door held shut by a sprung ambush whose monsters are still alive?
+static func is_sealed(cell: Vector2i) -> bool:
+	for a in AMBUSHES:
+		if fired_ambushes.has(a.id) and cell in a.get("seal", []) and ambush_alive(a.id):
+			return true
+	return false
+
+
+static func ambush_with_wall(cell: Vector2i) -> Dictionary:
+	for a in AMBUSHES:
+		if fired_ambushes.has(a.id):
+			continue
+		for w in a.walls:
+			if w.cell == cell:
+				return a
+	return {}
+
+
+## Is the party held fast? From the moment an ambush springs until its monsters are out, and while any
+## living `holds_party` monster stands orthogonally next to the party. Derived from the monsters, so it
+## needs no saving. The party can still turn and fight; it just cannot walk away.
+static func party_held() -> bool:
+	if ambush_pending:
+		return true
+	for d in [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0)]:
+		var m = occupied.get(player_cell + d)
+		if m != null and is_instance_valid(m) and not m.dying and m.def.holds_party:
+			return true
+	return false
+
+
+## What the log says when the party tries to walk while held.
+static func held_message() -> String:
+	if ambush_pending:
+		return "You cannot move: the room is shaking!"
+	for d in [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0)]:
+		var m = occupied.get(player_cell + d)
+		if m != null and is_instance_valid(m) and not m.dying and m.def.holds_party:
+			return "The %s holds you fast!" % m.def.display_name.to_lower()
+	return "You are held fast!"
+
+
 static func reset_run() -> void:
 	occupied.clear()
 	open_doors.clear()
 	unlocked_doors.clear()
 	broken_walls.clear()
+	fired_ambushes.clear()
+	ambush_pending = false
+	player_cell = Vector2i(-1, -1)  # A static survives a scene reload: without this the new run briefly "stands" where the last one ended (an ambush's trigger tile would spring at once).
 
 
 ## True if the cell is a door of any kind (open, closed, locked or a portcullis).

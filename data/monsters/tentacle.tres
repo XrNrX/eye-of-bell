@@ -1,0 +1,25 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/monster_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/monsters/tentacle/tentacle_sheet.png" id="2_sheet"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Tentacle"
+max_hp = 18
+attack = 3
+defence = 1
+damage_min = 2
+damage_max = 5
+attack_interval = 1.8
+speed = 1.0
+sight_range = 1
+immobile = true
+holds_party = true
+sheet = ExtResource("2_sheet")
+hframes = 8
+idle_frames = PackedInt32Array(0, 1, 0, 2)
+attack_frames = PackedInt32Array(3, 4, 5)
+hurt_frames = PackedInt32Array(6, 7)
+idle_fps = 3.0
+pixel_size = 0.014

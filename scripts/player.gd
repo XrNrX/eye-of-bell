@@ -89,6 +89,7 @@ func _click_item(shift := false) -> void:
 			_stow(front, stack)
 			return
 		dungeon.take_item(front)
+		_announce_taken.call_deferred(front)  # (After this frame, so "Fighter stows the key." does not hide the trap's message.)
 		# A thrown item goes home to the hand or quick slot it was thrown from, if that
 		# slot is free (or holds the same stack); otherwise it comes onto the cursor.
 		var home: String = party.return_to_origin(stack) if party else ""
@@ -108,6 +109,11 @@ func _click_item(shift := false) -> void:
 		_say("You pick up the %s." % stack.label())
 
 
+## Tell the dungeon an item was taken from this tile (the main item can spring an ambush).
+func _announce_taken(tile: Vector2i) -> void:
+	get_tree().call_group("dungeon", "item_taken", tile)
+
+
 ## Shift+click: the party takes the item without it passing through the cursor. What
 ## doesn't fit anywhere stays on the floor.
 func _stow(front: Vector2i, stack: RefCounted) -> void:
@@ -116,6 +122,7 @@ func _stow(front: Vector2i, stack: RefCounted) -> void:
 		_cue("pickup")
 	if stack.count <= 0:
 		dungeon.take_item(front)  # All of it went; remove the empty stack from the pile.
+		_announce_taken.call_deferred(front)
 	if message == "":
 		message = "There's no room for the %s." % stack.def.display_name.to_lower()
 	elif stack.count > 0:
@@ -176,6 +183,10 @@ func command(kind: String) -> void:
 
 ## Step one tile in grid direction `dir`, unless a wall is in the way.
 func _try_move(dir: Vector2i) -> void:
+	if DungeonMap.party_held():  # A wall monster has the party: it can turn and fight, not walk away.
+		_say(DungeonMap.held_message())
+		_cue("bump")
+		return
 	var target := cell + dir
 	if DungeonMap.is_blocked(target) or DungeonMap.is_occupied(target):  # Walls, closed doors, monsters.
 		_cue("bump")  # (audio.gd limits how often, so holding W against a wall isn't a drum roll.)
@@ -228,6 +239,10 @@ func _interact() -> void:
 		return
 	if not DungeonMap.is_door(front) or DungeonMap.open_doors.has(front):
 		return
+	if DungeonMap.is_sealed(front):
+		_cue("door_locked")
+		_say("The door is sealed shut!")
+		return
 	if DungeonMap.is_portcullis(front):
 		_say("The portcullis won't budge.")  # Never by hand: only its linked lever or plate.
 		return
@@ -266,6 +281,23 @@ func _say(text: String) -> void:
 
 
 ## Turn 90 degrees: +1 = left (counter-clockwise), -1 = right.
+## Turn (with the usual animation) to face a grid direction, e.g. toward a monster that has just burst out
+## of a wall beside the party. Waits for a step in progress to finish first.
+func face_direction(dir: Vector2i) -> void:
+	var index := DIRS.find(Vector2i(signi(dir.x), signi(dir.y)))
+	if index < 0 or index == facing:
+		return
+	while tween and tween.is_running():
+		await get_tree().process_frame
+	var diff := posmod(index - facing, 4)
+	_cue("turn")
+	var turns := 1 if diff == 1 else (-1 if diff == 3 else 2)
+	facing = index
+	yaw_degrees += 90.0 * turns
+	tween = create_tween()
+	tween.tween_property(self, "rotation_degrees:y", yaw_degrees, MOVE_TIME * absi(turns))
+
+
 func _turn(direction: int) -> void:
 	_cue("turn")
 	facing = posmod(facing + direction, 4)
