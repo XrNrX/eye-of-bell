@@ -6,6 +6,11 @@ Starts in borderless fullscreen; Alt+Enter switches to a window.
 Goal: find your way through the dungeon to the stairs down (one of the keys opens the locked
 door in front of them). Levers, a pressure plate and a cracked wall (War Hammer or Fireball) help.
 
+NEW IN v0.9
+  A new screen: the dungeon view is in the middle, with the heroes down each side. The top hero
+  on each side is the front row; the two below are the back row. Each side has room for a third
+  hero, empty for now. A hero's hands are now beside the portrait, the quick slots under it.
+
 NEW IN v0.8
   The Cursed Warden guards the stairs: a mini-boss, far tougher than anything else down here.
   Mana comes back much more slowly, so spells are a choice now, and potions and food matter.
