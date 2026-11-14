@@ -6,6 +6,10 @@ Starts in borderless fullscreen; Alt+Enter switches to a window.
 Goal: find your way through the dungeon to the stairs down (one of the keys opens the locked
 door in front of them). Levers, a pressure plate and a cracked wall (War Hammer or Fireball) help.
 
+NEW IN v0.8
+  The Cursed Warden guards the stairs: a mini-boss, far tougher than anything else down here.
+  Mana comes back much more slowly, so spells are a choice now, and potions and food matter.
+
 NEW IN v0.7
   The dark is real now: carry a torch or a candle, and watch it burn down. Right-click an item on
   the floor to choose who carries it. A bear trap can be dropped in front to set it, and nothing
@@ -22,6 +26,13 @@ THE MONSTERS
   moment they arrive. Step back and you get a breather or a free swing; keep walking and you
   leave them behind. Only one at a time tries to get round to your side or back; the rest queue.
   When a blow lands you see what hit you: claw rakes, an axe swing, a splat of slime.
+
+THE CURSED WARDEN
+  He stands in the narrow corridor behind the locked door, in front of the stairs, and has a
+  health bar of his own across the top of the view. He hits hard and takes a lot of killing:
+  go in rested, with mana and something to eat.
+  Hold Monster works on him only about one time in three, and for half as long. A bear trap
+  always holds him, but only once a fight, and briefly: a second trap just bites.
 
 MOVING AND ACTING
   W / S          forward / back          A / D   sidestep        Q / E   turn
@@ -51,6 +62,8 @@ CASTING
   clear of the map (below it for the top row of heroes).
   The symbol must be in a hand, not the backpack: "You need your holy symbol."
   When the Cleric casts Heal or Bless the symbol glows and a gold light sweeps the corridor.
+  Mana comes back at 1 point every 6 seconds (it was every 2.5). A Heal's worth takes 24 seconds
+  to return, a Fireball's 36. Spell costs are unchanged.
 
 LIGHT AND DARKNESS
   No light follows the party any more. Your eyes adjust enough to make out the nearest walls and
