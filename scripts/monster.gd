@@ -382,7 +382,7 @@ func take_hit(result: Dictionary) -> void:
 	get_tree().call_group("fight_tracker", "blow")  # A hit or a miss, by a weapon, a missile or a spell: a fight is on.
 	if not result.hit:
 		if result.get("fail", false) and feel_cfg.fail_text_enabled:
-			_float_text("CRITICAL FAIL!", feel_cfg.fail_colour, 0.4, feel_cfg.fail_text_size)
+			_float_text("CRITICAL\nFAIL!", feel_cfg.fail_colour, 0.62, feel_cfg.fail_text_size)  # Two lines, so the end does not run under the corner map, and high enough to clear the health bar.
 		else:
 			_float_text("Miss", MISS_COLOUR)
 		return
