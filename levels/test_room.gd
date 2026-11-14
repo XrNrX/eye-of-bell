@@ -166,6 +166,10 @@ const ITEMS := [
 	{"cell": Vector2i(11, 26), "def": "res://data/items/healing_potion.tres"},
 	{"cell": Vector2i(23, 2), "def": "res://data/items/torch.tres"},
 	{"cell": Vector2i(23, 3), "def": "res://data/items/candle.tres"},
+	# A pile right in front of the Item table station (T), for the loot pop-up's "Take all" (right-click it).
+	{"cell": Vector2i(28, 9), "def": "res://data/items/healing_potion.tres", "count": 2},
+	{"cell": Vector2i(28, 9), "def": "res://data/items/stale_bread.tres", "count": 3},
+	{"cell": Vector2i(28, 9), "def": "res://data/items/dagger.tres"},
 	{"cell": Vector2i(10, 34), "def": "res://data/items/torch.tres", "count": 3},  # The light room.
 	{"cell": Vector2i(14, 34), "def": "res://data/items/candle.tres", "count": 5},
 ]
@@ -215,7 +219,8 @@ ONLY A BLESS"},
 	{"cell": Vector2i(21, 2), "side": 0, "text": "< SECRET
 !NOT BUILT YET"},
 	{"cell": Vector2i(28, 2), "side": 0, "text": "ITEM TABLE
-ONE OF EACH"},
+ONE OF EACH
+RIGHT-CLICK: WHO TAKES IT"},
 	{"cell": Vector2i(36, 2), "side": 0, "text": "!NOTHING HERE YET"},
 	{"cell": Vector2i(3, 19), "side": 1, "text": "AMBUSH TILE
 AHEAD"},

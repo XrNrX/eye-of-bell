@@ -972,6 +972,87 @@ func add_to_backpack(slot: int, stack: RefCounted) -> bool:
 	return true
 
 
+## Who carries loot, in the order the loot pop-up lists them (loot_menu.gd): the living in party order, then the dead (their
+## bodies are being dragged anyway, so their packs still take things).
+func carry_order() -> Array:
+	return members.filter(func(m): return m.is_alive()) + members.filter(func(m): return not m.is_alive())
+
+
+## Room in a hero's backpack for this stack, as the loot pop-up shows it: "3 FREE" (free slots), "STACKS" (no free slot, but a
+## matching stack there has room) or "FULL".
+func pack_room_text(m: Member, stack: RefCounted) -> String:
+	var free: int = m.backpack.count(null)
+	if free > 0:
+		return "%d FREE" % free
+	if m.backpack.any(func(s): return s != null and s.can_stack_with(stack) and s.room() > 0):
+		return "STACKS"
+	return "FULL"
+
+
+## Move as much of `stack` as fits into this hero's backpack (dead or alive): matching stacks first, then a free slot (one new
+## stack; a light keeps its burn time, and is put out). Takes it out of `stack` (its count drops). Returns how many moved.
+func pack_into(m: Member, stack: RefCounted) -> int:
+	var moved := 0
+	for s in m.backpack:
+		if stack.count <= 0:
+			return moved
+		if s != null and s.can_stack_with(stack):
+			moved += s.merge_from(stack)
+	if stack.count <= 0:
+		return moved
+	var i: int = m.backpack.find(null)
+	if i < 0:
+		return moved
+	var put := ItemStack.of(stack.def, stack.count)
+	put.burn_left = stack.burn_left
+	m.backpack[i] = put
+	moved += stack.count
+	stack.count = 0
+	return moved
+
+
+## Share a pile out among the backpacks (loot pop-up "Take all"): each stack in turn tops up matching stacks first, across the
+## heroes in carry_order, then takes free slots in that order. The stacks' counts drop by what was taken. Returns a report:
+## "Wren takes the dagger and 2 stale bread. Brannoc takes the bow. The war hammer won't fit."
+func share_out(stacks: Array) -> String:
+	var order := carry_order()
+	var taken := {}  # Member -> [labels]
+	var left_over := []
+	for stack in stacks:
+		var item: String = stack.def.display_name.to_lower()
+		for pass_free in [false, true]:
+			for m in order:
+				if stack.count <= 0:
+					break
+				var moved := 0
+				if not pass_free:
+					for s in m.backpack:
+						if s != null and s.can_stack_with(stack) and stack.count > 0:
+							moved += s.merge_from(stack)
+				elif m.backpack.has(null):
+					moved = pack_into(m, stack)
+				if moved > 0:
+					if not taken.has(m):
+						taken[m] = []
+					taken[m].append("the %s" % item if moved == 1 else "%d %s" % [moved, item])
+		if stack.count > 0:
+			left_over.append("the %s" % item)
+	var parts := []
+	for m in order:
+		if taken.has(m):
+			parts.append("%s takes %s." % [m.name(), _and_list(taken[m])])
+	if not left_over.is_empty():
+		var rest := _and_list(left_over)
+		parts.append("%s%s won't fit." % [rest.left(1).to_upper(), rest.substr(1)])
+	return " ".join(parts) if not parts.is_empty() else "Nothing fits."
+
+
+func _and_list(items: Array) -> String:
+	if items.size() <= 1:
+		return "".join(items)
+	return ", ".join(items.slice(0, items.size() - 1)) + " and " + items[-1]
+
+
 ## Quick slots take consumables (potions, scrolls), throwables (daggers, darts), traps and lights (torches, candles). (Swapping a light
 ## in from a quick slot may leave the hand's item there instead: see _swap_with_hand.)
 func quick_accepts(item) -> bool:

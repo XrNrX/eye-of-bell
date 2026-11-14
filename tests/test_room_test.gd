@@ -153,6 +153,66 @@ func _check_pacing(tools: Node, press: Callable, player: Node) -> void:
 	check("0 frees every held monster", not target.has_status("held"))
 	for n in get_nodes_in_group("monsters"):
 		n.free()
+	# The item table: right-click the pile in front for the loot pop-up.
+	var table: Dictionary = DungeonMap.STATIONS.filter(func(s): return s.name == "Item table")[0]
+	tools._teleport(table)
+	await process_frame
+	var the_party: Node = get_first_node_in_group("party")
+	var the_dungeon: Node = get_first_node_in_group("dungeon")
+	var front: Vector2i = player.cell + player.DIRS[player.facing]
+	var pile_before: int = the_dungeon.pile_at(front).size()
+	var loot: Node = player.world_right_click(Vector2(200, 120))
+	await process_frame
+	check("right-click on a pile opens the loot pop-up on the pop-up layer, a row per hero and Take all", loot != null and pile_before >= 2
+			and loot.get_parent() == get_first_node_in_group("popups") and loot.rows.size() == 4 and loot.take_all_button != null)
+	var first = loot.rows[0].member
+	var top = the_dungeon.item_at(front)
+	var pack_count := func(m, def): return m.backpack.filter(func(s): return s != null and s.def == def).reduce(func(a, s): return a + s.count, 0)
+	var had: int = pack_count.call(first, top.def)
+	var top_count: int = top.count
+	loot.choose(0)
+	await process_frame
+	check("choosing a hero puts the item in their backpack and takes it off the floor", pack_count.call(first, top.def) == had + top_count
+			and the_dungeon.pile_at(front).size() == pile_before - 1 and (not is_instance_valid(loot) or loot.is_queued_for_deletion()))
+	check("...with a line saying who stowed it", str(get_first_node_in_group("hud").last_message).begins_with("%s stows" % first.name()))
+	# A dead hero is listed last, and can still carry.
+	var thief = the_party.members.filter(func(m): return m.class_id() == "thief")[0]
+	thief.hp = 0
+	loot = player.world_right_click()
+	check("a dead hero is listed last", loot != null and loot.rows[-1].member == thief)
+	loot.take_all()
+	await process_frame
+	check("Take all shares the pile out and empties the tile", the_dungeon.item_at(front) == null
+			and str(get_first_node_in_group("hud").last_message).contains(" takes "))
+	thief.hp = thief.def.max_hp
+	# Can't use and full: the leather armour (the Mage can't wear it) and a full pack.
+	var armour: Resource = load("res://data/items/leather_armour.tres")
+	the_dungeon.place_item(front, armour)
+	var mage = the_party.members.filter(func(m): return m.class_id() == "mage")[0]
+	var saved_pack: Array = mage.backpack.duplicate()
+	for i in mage.backpack.size():
+		if mage.backpack[i] == null:
+			mage.backpack[i] = load("res://scripts/item_stack.gd").of(load("res://data/items/key.tres"), 1)
+	loot = player.world_right_click()
+	var mage_row: Dictionary = loot.rows.filter(func(r): return r.member == mage)[0]
+	check("the Mage's row says can't use and full, and is disabled", not mage_row.usable and mage_row.room == "FULL" and mage_row.button.disabled)
+	var esc := InputEventKey.new()
+	esc.physical_keycode = KEY_ESCAPE
+	esc.pressed = true
+	root.push_input(esc)
+	await process_frame
+	check("Esc closes it", not is_instance_valid(loot) or loot.is_queued_for_deletion())
+	loot = player.world_right_click()
+	var key2 := InputEventKey.new()
+	key2.physical_keycode = KEY_1
+	key2.pressed = true
+	var first_now = loot.rows[0].member
+	root.push_input(key2)
+	await process_frame
+	key2.pressed = false
+	root.push_input(key2)
+	check("1 gives it to the first hero listed", first_now.backpack.any(func(s): return s != null and s.def == armour) and the_dungeon.item_at(front) == null)
+	mage.backpack = saved_pack
 	# The light room: dark (no wall torch inside), a torch and candles to try, and = burns the lit lights down.
 	var light_room: Dictionary = DungeonMap.STATIONS.filter(func(s): return s.name == "Light and dark")[0]
 	tools._teleport(light_room)

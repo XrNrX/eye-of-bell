@@ -5,6 +5,7 @@ extends Node3D
 ## item on the tile in front, onto the cursor (see cursor_item.gd).
 ## Every move/turn is tweened; movement input is ignored while a tween is running.
 
+const LootMenu := preload("res://scripts/loot_menu.gd")
 const Events := preload("res://scripts/game_events.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
@@ -134,6 +135,32 @@ func _click_item(shift := false) -> void:
 		_say("You pick up the %s." % stack.label())
 
 
+## Right click on the 3D view: if an item lies on the tile in front, open the loot pop-up next to the mouse (screen position `at`), to
+## choose who carries it (loot_menu.gd). Returns the pop-up, or null if there was nothing to take.
+func world_right_click(at := Vector2(320, 140)) -> Node:
+	if dungeon == null or party == null:
+		return null
+	var front := cell + DIRS[facing]
+	if DungeonMap.is_blocked(front) or DungeonMap.is_occupied(front) or dungeon.item_at(front) == null:
+		return null
+	for old in get_tree().get_nodes_in_group("loot_menu"):
+		old.close()
+	var menu := LootMenu.new()
+	menu.setup(party, dungeon, self, front)
+	var popups := get_tree().get_first_node_in_group("popups")
+	var preferred := func(size: Vector2) -> Vector2:
+		return at + Vector2(8, -size.y / 2.0)  # Just right of the mouse, level with it.
+	if popups:
+		popups.open_popup(menu, preferred)
+	else:  # No pop-up layer (a bare test scene).
+		var layer := CanvasLayer.new()
+		layer.layer = 16
+		add_child(layer)
+		layer.add_child(menu)
+		menu.position = preferred.call(menu.get_combined_minimum_size())
+	return menu
+
+
 ## Shift+click: the party takes the item without it passing through the cursor. What
 ## doesn't fit anywhere stays on the floor.
 func _stow(front: Vector2i, stack: RefCounted) -> void:
@@ -166,9 +193,10 @@ func _process(_delta: float) -> void:
 	interact_was_down = interact_down
 
 	# 1-8: use that quick slot (two per hero, in party order). Real time, so this works mid-move too.
+	var loot_open := get_tree().get_first_node_in_group("loot_menu") != null  # Its 1-4 pick heroes instead (loot_menu.gd).
 	for i in 8:
 		var down := Input.is_physical_key_pressed(KEY_1 + i) and not Input.is_physical_key_pressed(KEY_SHIFT)  # (Shift+1..4 open the character sheets.)
-		if down and not quick_was_down[i]:
+		if down and not quick_was_down[i] and not loot_open:
 			get_tree().call_group("party", "use_quick", i >> 1, i & 1)
 		quick_was_down[i] = down
 

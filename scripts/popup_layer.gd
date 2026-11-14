@@ -52,7 +52,8 @@ func avoid_rects() -> Array:
 
 
 func _dim_avoided(on: bool) -> void:
-	get_tree().call_group("popup_avoid", "set_dimmed", on)
+	if is_inside_tree():  # (Quitting with a pop-up open: the layer is already leaving the tree.)
+		get_tree().call_group("popup_avoid", "set_dimmed", on)
 
 
 ## The extra candidates round the avoided rectangles: straight below each (same x) and to the left of each (same y), for

@@ -24,7 +24,7 @@ Dark, desaturated, cursed (`docs/art_style.md`). Sickly green means the curse an
 - Real shadows from spell lights and torches: walls, pillars, arches and doors block light (Options: SPELL SHADOWS, off for weaker machines).
 - Enemy health bars (small bar over damaged or front monsters, name strip, wide boss bar; Options: On / Boss only / Off).
 - Party: four heroes, front and back row, formation swapping, hands, throwing, quick slots.
-- Inventory, stacks, equipping, character sheet, food and sickness, potions, scrolls, resurrection.
+- Inventory, stacks, equipping, character sheet, food and sickness, potions, scrolls, resurrection. A right-click loot pop-up on floor items: choose which hero's backpack takes it (room and "can't use" shown, the dead listed last), or Take all to share a pile out.
 - Spells (Magic Missile, Fireball, Hold Monster, Heal, Bless, Shield) with synced lighting and pixel particles, holy light.
 - Banter system (crit, fail, hit from behind, eat, equip events).
 - Corrupted walls that only a cleric's Bless can burn away (two on floor 1), and a small data-driven puzzle system.

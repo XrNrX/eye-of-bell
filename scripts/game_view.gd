@@ -53,9 +53,11 @@ func _view_scale_changed(k: int) -> void:
 
 
 func _gui_input(event: InputEvent) -> void:
-	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+	if event is InputEventMouseButton and event.pressed and event.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]:
 		if player == null or not is_instance_valid(player):
 			player = get_tree().get_first_node_in_group("player")
-		if player:
+		if player and event.button_index == MOUSE_BUTTON_LEFT:
 			player.world_click(event.shift_pressed)
+		elif player:
+			player.world_right_click(get_global_transform_with_canvas() * event.position)  # Right click: who takes the item (loot_menu.gd).
 		accept_event()
