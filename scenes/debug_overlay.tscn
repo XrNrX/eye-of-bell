@@ -8,9 +8,9 @@ layer = 10
 script = ExtResource("1_overlay")
 
 [node name="Box" type="VBoxContainer" parent="."]
-offset_left = 300.0
+offset_left = 404.0
 offset_top = 38.0
-offset_right = 412.0
+offset_right = 516.0
 offset_bottom = 126.0
 mouse_filter = 2
 theme_override_constants/separation = 2

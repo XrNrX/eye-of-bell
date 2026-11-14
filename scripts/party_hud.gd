@@ -25,8 +25,8 @@ const SaveGame := preload("res://scripts/save_game.gd")
 
 # Sizes are in 640x360 pixels. The art is drawn at 2x (see ui_layout.gd), so each of these is the
 # art's own size: portraits 64x64, hand buttons 32x32.
-const PORTRAIT_SIZE := Vector2(64, 64)
-const HAND_SIZE := Vector2(40, 40)
+const PORTRAIT_SIZE := Vector2(52, 52)  # 64x64 before the six-hero layout (three panels a side leave 112 px of height each).
+const HAND_SIZE := Vector2(36, 36)
 const NAME_HOVER := Color(0.961, 0.812, 0.502)    # Palette torch_300: the name brightens to this on hover.
 const NAME_NORMAL := Color(0.92, 0.89, 0.82)
 const HOVER_BRIGHT := Color(1.22, 1.2, 1.15)      # Portraits, hands and quick slots brighten a little on hover.
@@ -35,16 +35,16 @@ const HAND_FRAME := preload("res://art/ui/handslot.png")
 const HINT_UP := Color(0.525, 0.651, 0.447)     # Palette slime_300: better (the palette has no pure green; the arrow and number say it too).
 const HINT_DOWN := Color(0.659, 0.404, 0.227)   # Palette rust_300: worse.
 const HINT_FLAT := Color(0.482, 0.478, 0.533)   # Palette stone_300: no change.
-const PANEL_SIZE := Vector2(98, 170)     # Two across, two down fill the party window (ui_layout.gd).
+const PANEL_SIZE := UiLayout.PANEL_SIZE  # 96x112: three down each side of the view (ui_layout.gd).
 # Content margins (left, top, right, bottom). Everything in a panel sits on EVEN pixel
 # coordinates, so the 2x2 blocks of the art line up with the frame's (a block starting on an
 # odd pixel would straddle two of the frame's blocks). The inner width of 88 centres the 64-wide
 # portrait, the 56-wide quick slots and the 68-wide hands on even x; every row height and gap is even.
-const MARGIN_LEFT := 6
+const MARGIN_LEFT := 3
 const MARGIN_TOP := 3
-const MARGIN_RIGHT := 4
+const MARGIN_RIGHT := 3
 const MARGIN_BOTTOM := 3
-const ROW_GAP := 1                       # Between the rows inside a panel.
+const ROW_GAP := 2                       # Between the rows inside a panel.
 const HP_HEIGHT := 6
 const MANA_HEIGHT := 3
 
@@ -66,9 +66,10 @@ const HURT_FLASH_TIME := 0.3  # How long the portrait shows its red-tinted varia
 
 var feel_cfg: Resource = FeelConfigScript.get_config()  # data/combat_feel.tres
 @onready var flash: ColorRect = %Flash
-@onready var panels_grid: GridContainer = %Panels
+@onready var panels_grid: Control = %Panels
 
 var party: Node
+var empty_panels := []  # The panels of party positions nobody stands in (the six-hero layout: positions 4 and 5).
 var panels := {}  # slot -> {root, portrait, buff_ring, quick, hp_bar, mana_bar, hands, cool_bar}
 
 # Casting state: the open pop-up, and the spell waiting for a target hero.
@@ -98,12 +99,13 @@ func _ready() -> void:
 	flash.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	flash.position = UiLayout.VIEW.position
 	flash.size = UiLayout.VIEW.size
-	panels_grid.position = UiLayout.PARTY.position
 	if party == null:
 		return
 	for m in party.members:
 		panels[m.slot] = _make_panel(m)
 		_update_hp(m.slot)
+	for pos in range(party.members.size(), UiLayout.PARTY_SLOTS):
+		_make_empty_panel(pos)
 	party.hp_changed.connect(_update_hp)
 	party.hero_hit.connect(_on_hero_hit)
 	party.hero_crit.connect(_on_hero_crit)
@@ -452,11 +454,13 @@ func _open_menu(slot: int, hand: int, spells: Array = []) -> void:
 	menu = SpellMenu.new()
 	menu.setup(party, slot, spells if not spells.is_empty() else party.spells_in(slot, hand))
 	menu.chosen.connect(_on_spell_chosen)
-	# Preferred: left of the whole party grid (so it never covers a panel), level with the caster's hands. The popup layer
-	# keeps it on screen and clear of the minimap, trying below and to the left of the map if that spot is covered.
+	# Preferred: beside the caster's panel, on the view's side of it (so it never covers a panel), level with the panel's top.
+	# The popup layer keeps it on screen and clear of the minimap, trying below and to the left of the map if that spot is covered.
 	var r: Rect2 = panels[slot].root.get_global_rect()
 	var preferred := func(size: Vector2) -> Vector2:
-		return Vector2(panels_grid.get_global_rect().position.x - size.x - 2, r.position.y + 30)
+		if UiLayout.on_left(slot):
+			return Vector2(r.end.x + 2, r.position.y + 8)
+		return Vector2(r.position.x - size.x - 2, r.position.y + 8)
 	var popups := get_tree().get_first_node_in_group("popups")
 	if popups:
 		popups.open_popup(menu, preferred)
@@ -1109,11 +1113,22 @@ func _make_panel(m) -> Dictionary:
 	root.custom_minimum_size = PANEL_SIZE
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panels_grid.add_child(root)
+	root.position = UiLayout.panel_rect(pos).position
+	root.size = PANEL_SIZE
 
+	# The six-hero layout: the name across the top; under it the portrait, bars and quick slots on the left and the two
+	# hands, one over the other, on the right. (`outer` holds the name row and `body`; `col` is the left side of the body.)
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", ROW_GAP)
+	outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.add_child(outer)
+	var body := HBoxContainer.new()
+	body.add_theme_constant_override("separation", 2)
+	body.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var col := VBoxContainer.new()
-	col.add_theme_constant_override("separation", ROW_GAP)
+	col.add_theme_constant_override("separation", 1)
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	root.add_child(col)
+	body.add_child(col)
 
 	# A button (not a plain TextureRect) so clicking it can open the inventory.
 	var portrait := TextureButton.new()
@@ -1190,12 +1205,11 @@ func _make_panel(m) -> Dictionary:
 	shaken.tooltip_text = "Too shaken to pray"
 	portrait.add_child(shaken)
 
-	# Two quick slots under the portrait (consumables; see quick_slot.gd).
+	# Two quick slots (consumables; see quick_slot.gd): made here, added under the bars below.
 	var quick_row := HBoxContainer.new()
 	quick_row.add_theme_constant_override("separation", 0)
 	quick_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	quick_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_child(quick_row)
 	var quick_slots := []
 	for qi in party.QUICK_SLOTS:
 		var qs := QuickSlot.new()
@@ -1242,7 +1256,8 @@ func _make_panel(m) -> Dictionary:
 			get_tree().call_group("inventory", "show_screen", pos, true))
 	_make_hoverable(scroll_button, scroll_button)
 	name_row.add_child(scroll_button)
-	col.add_child(name_row)
+	outer.add_child(name_row)
+	outer.add_child(body)
 	name_labels.append(name_label)
 
 	var hp_bar := _bar(HP_FILL, Vector2(0, HP_HEIGHT), m.def.max_hp)
@@ -1263,13 +1278,14 @@ func _make_panel(m) -> Dictionary:
 	var mana_bar := _bar(MANA_FILL, Vector2(0, MANA_HEIGHT), maxi(1, m.def.max_mana))
 	mana_bar.modulate.a = 1.0 if m.def.max_mana > 0 else 0.0
 	col.add_child(mana_bar)
+	col.add_child(quick_row)
 
-	# Two hands (left/right), each acting with the item it holds.
-	var hands_row := HBoxContainer.new()
-	hands_row.add_theme_constant_override("separation", 4)
-	hands_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	# Two hands (left/right), each acting with the item it holds: one over the other, right of the portrait.
+	var hands_row := VBoxContainer.new()
+	hands_row.add_theme_constant_override("separation", 2)
+	hands_row.alignment = BoxContainer.ALIGNMENT_BEGIN
 	hands_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_child(hands_row)
+	body.add_child(hands_row)
 	var hands := []
 	for i in party.HAND_SLOTS:
 		var hand := _make_hand(m, i)
@@ -1278,6 +1294,21 @@ func _make_panel(m) -> Dictionary:
 
 	return {"root": root, "box": box, "name_label": name_label, "portrait": portrait, "buff_ring": buff_ring, "ring_style": ring, "shaken": shaken, "food_mark": food_mark, "hands": hands,
 		"equip_hint": equip_hint, "hp_bar": hp_bar, "mana_bar": mana_bar, "quick": quick_slots}
+
+
+## A panel with nobody in it: the six-hero layout has room for six, the party is four. Just the dark box, dimmer.
+func _make_empty_panel(pos: int) -> void:
+	var root := Panel.new()
+	var box := StyleBoxFlat.new()
+	box.bg_color = Color(PANEL_BG, 0.5)
+	box.border_color = Color(PANEL_EDGE, 0.6)
+	box.set_border_width_all(2)
+	root.add_theme_stylebox_override("panel", box)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panels_grid.add_child(root)
+	root.position = UiLayout.panel_rect(pos).position
+	root.size = PANEL_SIZE
+	empty_panels.append(root)
 
 
 # --------------------------------------------------------------------------

@@ -26,7 +26,8 @@ from palette import PAL
 
 K = 2
 W, H = 640 * K, 360 * K
-VIEW = (8, 8, 416, 260)               # scripts/ui_layout.gd, canvas units.
+VIEW = (112, 8, 416, 260)             # scripts/ui_layout.gd, canvas units.
+ORIGIN = (VIEW[0] - 8, VIEW[1] - 8)   # Where the 432x276 canvas (the view and its 8 unit surround) sits on the screen.
 CW, CH = 432, 276                     # The view and its surround, canvas units.
 PIECES = Path(__file__).parent / "pieces" / "frame_wood"
 THICK = 16
@@ -180,11 +181,12 @@ def frame_wood(seed=SEED):
         stack += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
     xs, ys = [x for x, _ in seen], [y for _, y in seen]
     box = (min(xs), min(ys), max(xs) + 1, max(ys) + 1)
+    box = (box[0] + ORIGIN[0], box[1] + ORIGIN[1], box[2] + ORIGIN[0], box[3] + ORIGIN[1])
     assert box[0] >= VIEW[0] and box[1] >= VIEW[1] and box[2] <= VIEW[0] + VIEW[2] and box[3] <= VIEW[1] + VIEW[3], box
     print("opening", box, "of the view", (VIEW[0], VIEW[1], VIEW[0] + VIEW[2], VIEW[1] + VIEW[3]))
     big = img.resize((CW * K, CH * K), Image.NEAREST)
     out = Image.new("RGBA", (W, H))
-    out.paste(big, (0, 0))
+    out.paste(big, (ORIGIN[0] * K, ORIGIN[1] * K))
     return out
 
 

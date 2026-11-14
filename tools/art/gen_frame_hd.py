@@ -18,10 +18,11 @@ from palette import PAL
 K = 2                                   # Canvas units to texture pixels.
 W, H = 640 * K, 360 * K
 # scripts/ui_layout.gd's rectangles (x, y, w, h), canvas units.
-VIEW = (8, 8, 416, 260)
-LOG = (8, 276, 296, 76)
-ARROWS = (312, 276, 112, 76)
-PARTY = (432, 8, 200, 344)
+VIEW = (112, 8, 416, 260)
+LOG = (112, 276, 296, 76)
+ARROWS = (416, 276, 112, 76)
+PARTY_LEFT = (8, 8, 96, 344)            # The six-hero layout: a column of three hero panels each side of the view.
+PARTY_RIGHT = (536, 8, 96, 344)
 RING = 4                                # Each ring of a window's lip, in pixels.
 INK = PAL["ink"]
 TILE = Path(__file__).parent / "pieces" / "frame_stone_128.png"
@@ -130,14 +131,16 @@ def frame():
     panel = img.copy()  # The recessed panels' floor is the same blackened brick.
     recess(img, ARROWS, panel)
     recess(img, LOG, panel)
-    recess(img, PARTY, panel)
+    recess(img, PARTY_LEFT, panel)
+    recess(img, PARTY_RIGHT, panel)
     recess(img, VIEW, None)
     outer_bevel(img)
     # Studs at the T-junctions of the dividers (the corners get skulls).
-    x_div = (VIEW[0] + VIEW[2] + PARTY[0]) // 2 * K          # Between the view and the party well.
+    x_div = (VIEW[0] + VIEW[2] + PARTY_RIGHT[0]) // 2 * K    # Between the view and the right party well.
+    x_left = (PARTY_LEFT[0] + PARTY_LEFT[2] + VIEW[0]) // 2 * K  # Between the left party well and the view.
     y_div = (VIEW[1] + VIEW[3] + LOG[1]) // 2 * K            # Between the view and the log.
     x_mid = (LOG[0] + LOG[2] + ARROWS[0]) // 2 * K           # Between the log and the arrows.
-    for cx, cy in ((x_div, 6), (x_div, H - 7), (x_div, y_div), (x_mid, y_div), (x_mid, H - 7)):
+    for cx, cy in ((x_div, 6), (x_div, H - 7), (x_div, y_div), (x_left, 6), (x_left, H - 7), (x_left, y_div), (x_mid, y_div), (x_mid, H - 7)):
         rivet(img, cx, max(cy, 6) if cy < 20 else min(cy, H - 7))
     for x0, y0 in ((6, 6), (W - 18, 6), (6, H - 18), (W - 18, H - 18)):
         skull(img, x0, y0)

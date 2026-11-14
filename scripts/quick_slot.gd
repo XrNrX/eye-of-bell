@@ -26,8 +26,8 @@ const SWEEP_TEXTURE := preload("res://art/ui/quickslot_sweep.png")
 
 const UiLayout := preload("res://scripts/ui_layout.gd")
 
-const SLOT_SIZE := Vector2(36, 36)   # The frame art (14x14 logical, drawn at 2x); its 24x24 inside holds an item's hud icon.
-const BORDER := 2.0                  # The frame's border, in pixels.
+const SLOT_SIZE := Vector2(26, 26)   # The frame art scaled to the slot; its 24x24 inside holds an item's hud icon. (36x36 before the six-hero layout.)
+const BORDER := 1.0                  # The frame's border, in pixels.
 const SWEEP_TINT := Color(1, 1, 1, 0.65)
 
 var party: Node
