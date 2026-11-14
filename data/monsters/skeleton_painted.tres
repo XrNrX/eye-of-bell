@@ -1,0 +1,38 @@
+[gd_resource type="Resource" load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/monster_def.gd" id="1_def"]
+[ext_resource type="Resource" path="res://data/items/stale_bread.tres" id="95_drop"]
+[ext_resource type="Texture2D" path="res://art/monsters/skeleton_painted/skeleton_painted_sheet.png" id="2_sheet"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Painted Skeleton"
+max_hp = 12
+attack = 3
+defence = 2
+damage_min = 1
+damage_max = 6
+attack_interval = 2.0
+step_interval = 1.2
+reaction_delay = 0.5
+arrival_recovery = 0.5
+wind_up = 0.5
+flank_after = 3.0
+sight_range = 4
+sheet = ExtResource("2_sheet")
+hframes = 24
+idle_frames = PackedInt32Array(0, 1, 2, 3, 2, 1)
+attack_frames = PackedInt32Array(4, 5, 6, 7, 8, 9)
+walk_frames = PackedInt32Array(16, 17, 18, 19, 20, 21, 22, 23)
+hurt_frames = PackedInt32Array(10, 11, 12, 13, 14, 15)
+idle_fps = 5.0
+attack_fps = 10.0
+attack_hit_frame = 3
+hurt_fps = 12.0
+walk_fps = 18.0
+pixel_size = 0.01254
+drop_item = ExtResource("95_drop")
+drop_chance = 0.25
+tier = 1
+hit_effect = "skeleton_claws"
+crit_chance = 3

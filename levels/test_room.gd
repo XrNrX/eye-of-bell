@@ -179,6 +179,11 @@ const MONSTERS := [
 	{"cell": Vector2i(4, 4), "def": "res://data/monsters/skeleton.tres"},
 	{"cell": Vector2i(8, 4), "def": "res://data/monsters/slime.tres"},
 	{"cell": Vector2i(5, 7), "def": "res://data/monsters/skeleton_guard.tres"},
+	{"cell": Vector2i(6, 4), "def": "res://data/monsters/skeleton_painted.tres"},
+	{"cell": Vector2i(10, 4), "def": "res://data/monsters/slime_painted.tres"},
+	{"cell": Vector2i(11, 7), "def": "res://data/monsters/slime_acid_painted.tres"},
+	{"cell": Vector2i(3, 9), "def": "res://data/monsters/warden_painted.tres"},
+	{"cell": Vector2i(7, 7), "def": "res://data/monsters/skeleton_guard_painted.tres"},  # An art-style trial: the guard as a 'digitised painting' (tools/art/gen_painted_monster.py).
 	{"cell": Vector2i(9, 7), "def": "res://data/monsters/slime_acid.tres"},
 	# The held-monster room: different hold resistances (skeleton 35%, guard 45%, slime immune).
 	{"cell": Vector2i(25, 39), "def": "res://data/monsters/skeleton.tres"},

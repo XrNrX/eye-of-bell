@@ -1,0 +1,46 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/monster_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/monsters/slime_acid_painted/slime_acid_painted_sheet.png" id="2_sheet"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Painted Acid Slime"
+max_hp = 10
+attack = 2
+defence = 1
+damage_min = 2
+damage_max = 5
+attack_interval = 2.2
+step_interval = 1.5
+reaction_delay = 0.6
+arrival_recovery = 0.6
+wind_up = 0.5
+flank_after = 3.5
+sight_range = 4
+sheet = ExtResource("2_sheet")
+hframes = 40
+idle_frames = PackedInt32Array(0, 1, 2, 3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 2, 1)
+attack_frames = PackedInt32Array(9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21)
+walk_frames = PackedInt32Array(31, 32, 33, 34, 35, 36, 37, 38, 39)
+hurt_frames = PackedInt32Array(22, 23, 24, 25, 26, 27, 28, 29, 30)
+idle_fps = 8.0
+attack_fps = 14.0
+attack_hit_frame = 8
+hurt_fps = 14.0
+walk_fps = 16.0
+pixel_size = 0.02068
+tier = 1
+status_overrides = {
+"held": {
+"duration": 0.75,
+"message": "The {monster} quivers against the runes."
+},
+"trap": {
+"chance": 0,
+"message": "The {monster} oozes through the trap."
+}
+}
+hit_effect = "acid_splat"
+fears_fire = true
+crit_chance = 2

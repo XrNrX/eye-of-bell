@@ -142,3 +142,7 @@ None of these were made with the VFX suite, so they should be replaced.
 
 **Six-hero screen mock-ups (2026-11-14, 6 generations, not game art)**
 - Six `create_image_pixen` pictures (1 generation each) of a screen with three heroes down each side: four at 640x360 (all came out with the dungeon view doubled, not usable) and two at 320x180 (one usable). Idea sketches only, kept outside the repo; nothing went into `art/`.
+
+**Art-style trial: a painted monster (2026-11-14, 3 generations)**
+- `art/monsters/skeleton_guard_painted/skeleton_guard_painted_sheet.png` (27 frames of 128x128): the skeleton guard's own PixelLab animation sheet put through `tools/art/gen_painted_monster.py` (blur, a light from the upper left with the right side in shadow, half size, a fixed dither pattern onto the palette; the hurt frames washed red). No generations of its own. The same for `skeleton`, `slime`, `slime_acid` and `warden` (`art/monsters/<name>_painted/`; the Warden at full size, his old art is already coarse). Test room only (`data/monsters/<name>_painted.tres`, "Painted ...", in the arena).
+- The 3 generations went on a first version made from one still picture: `tools/art/pieces/painted/skeleton_guard.png` (`create_image_pixflux`, 200x200) and the two `create_image_pixen` candidates `skeleton_guard_alt1.png` and `_alt2.png` (256x256, both cropped at the knees). The pieces are kept; nothing in the game uses them now.
