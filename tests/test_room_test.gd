@@ -17,7 +17,7 @@ func _init() -> void:
 	DungeonMap.use_level(DungeonMap.TEST_ROOM_PATH)
 	_check_data()
 	DungeonMap.use_level("")
-	check("floor 1 comes back", DungeonMap.MAP.size() == 25 and DungeonMap.START_TILE == Vector2i(5, 9) and DungeonMap.SIGNS.is_empty() and DungeonMap.MONSTERS.size() == 15)
+	check("floor 1 comes back", DungeonMap.MAP.size() == 25 and DungeonMap.START_TILE == Vector2i(5, 9) and DungeonMap.SIGNS.is_empty() and DungeonMap.MONSTERS.size() == 14)
 	DungeonMap.use_level(DungeonMap.TEST_ROOM_PATH)
 	await _check_game()
 	DungeonMap.use_level("")

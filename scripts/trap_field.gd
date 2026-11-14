@@ -11,6 +11,7 @@ extends Node3D
 ##   through Monster.try_status on the tier table's trap row. A monster it can never hold (the slime oozes through) leaves it armed.
 ##   Once sprung the trap closes: it lies on the tile as an ordinary item to pick up and set again, unless its spring snaps.
 ## - Clicking an armed trap in front picks it back up, disarmed (Player.world_click).
+## - A monster of tier 3 or more (MonsterTiers.trap_once_from_tier) is held by a trap only once a fight: a second trap bites and it tears free.
 ## - Saved under dungeon.armed_traps (an older save has none).
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
@@ -24,10 +25,14 @@ const ARMED_SCALE := 1.3     # A touch bigger than the floor items, for the same
 
 var armed := {}    # cell -> {"def": ItemDef, "setter": hero_index, "sprite": Sprite3D}
 var setting := []  # [{"cell", "def", "setter", "left", "from", "facing"}]: traps being set right now
+var caught := {}   # Monster instance id -> true: tough monsters (tier 3 and up) a trap has already held this fight. Not saved.
 
 
 func _ready() -> void:
 	add_to_group("traps")
+	var bus := get_node_or_null("/root/GameEvents")
+	if bus != null:
+		bus.fight_ended.connect(func(): caught.clear())  # A new fight: a trap can hold the mini-boss again.
 
 
 ## Arm the traps the level starts with (DungeonMap.ARMED_TRAPS). Called by the dungeon builder.
@@ -148,7 +153,12 @@ func monster_entered(monster: Node) -> void:
 	if monster.dying:
 		text = "The trap snaps shut on the %s. It dies." % monster_name
 	elif def.trap_status != null:
-		var result: Dictionary = monster.try_status(def.trap_status, def.trap_seconds, entry.setter, def.trap_row)
+		var tough: bool = int(monster.def.tier) >= int(tiers.trap_once_from_tier)
+		var result := {"outcome": "resisted", "message": ""}  # A tough monster already caught this fight tears free at once.
+		if not (tough and caught.has(monster.get_instance_id())):
+			result = monster.try_status(def.trap_status, def.trap_seconds, entry.setter, def.trap_row)
+			if tough and result.outcome == "landed":
+				caught[monster.get_instance_id()] = true
 		if result.outcome == "resisted":
 			text = "The trap snaps shut, but the %s tears free." % monster_name
 		elif result.message != "":

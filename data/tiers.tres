@@ -4,6 +4,7 @@
 
 [resource]
 script = ExtResource("1_cfg")
+trap_once_from_tier = 3
 rows = {
 "held": {
 "chance": [90, 65, 35, 15],

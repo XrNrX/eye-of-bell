@@ -33,7 +33,7 @@ const MISSILE_RANGE := 4  # How many tiles down the corridor ahead a scroll's mi
 const QUICK_SLOTS := 2        # Quick slots per member (see use_quick), shown under their portrait.
 const QUICK_COOLDOWN := 1.0   # Seconds a quick slot is unusable after an item is used from it.
 const LIGHT_HAND := 1         # A light taken up from a quick slot goes into the second hand if no hand is free, so the weapon stays in the first.
-const MANA_REGEN_TIME := 2.5  # Seconds per point of mana regained (always; there's no resting yet).
+const MANA_REGEN_TIME := 6.0  # Seconds per point of mana regained (always). Was 2.5 until 14 Nov 2026: at that rate the Cleric out-healed every potion and meal by standing still (docs/design/expansion_design.md section 2).
 
 ## What clicking a hand does (see action_for).
 enum Act { NOTHING, MELEE, THROW, SPELLS, CANT_REACH, USE, FIRE, SET_TRAP }  # USE: a potion, food or scroll held in a hand.

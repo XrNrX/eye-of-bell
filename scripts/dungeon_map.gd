@@ -211,8 +211,7 @@ static var MONSTERS := [
 	{"cell": Vector2i(19, 3), "def": "res://data/monsters/slime_acid.tres"},
 	{"cell": Vector2i(19, 8), "def": "res://data/monsters/skeleton.tres"},
 	{"cell": Vector2i(19, 17), "def": "res://data/monsters/skeleton_guard.tres"},
-	{"cell": Vector2i(20, 21), "def": "res://data/monsters/slime_acid.tres"},
-	{"cell": Vector2i(20, 22), "def": "res://data/monsters/skeleton_guard.tres"},
+	{"cell": Vector2i(20, 22), "def": "res://data/monsters/warden.tres"},  # The Cursed Warden: the mini-boss, in the one-tile corridor before the stairs.
 	{"cell": Vector2i(17, 20), "def": "res://data/monsters/skeleton.tres"},
 	{"cell": Vector2i(13, 17), "def": "res://data/monsters/slime_acid.tres"},
 	{"cell": Vector2i(8, 16), "def": "res://data/monsters/skeleton_guard.tres"},

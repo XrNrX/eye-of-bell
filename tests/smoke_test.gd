@@ -76,6 +76,7 @@ func _init() -> void:
 	_check_spells()
 	_check_hold()
 	await _check_trap()
+	await _check_warden()
 	await _check_food()
 	_check_resurrection()
 	await _check_world_events()
@@ -738,6 +739,62 @@ func _check_trap() -> void:
 	check("trap: dropped where it can't be set, it stays on the cursor", cursor.is_holding() and cursor.held.count == 1 and traps.armed_at(AHEAD_1) == trap_def)
 	cursor.release()
 	traps.disarm(AHEAD_1)
+	_rest_everyone()
+
+
+## The mini-boss (the Cursed Warden, tier 3) and the mana rate that goes with him: he guards the stairs, a bear trap holds him
+## for half the time and only once a fight, and mana comes back at 1 point per 6 s.
+func _check_warden() -> void:
+	_rest_everyone()
+	dungeon.clear_monsters()
+	player.restore(SPOT, EAST)
+	var warden_def: Resource = load("res://data/monsters/warden.tres")
+	var placed: Array = DungeonMap.MONSTERS.filter(func(e): return e.def == "res://data/monsters/warden.tres")
+	check("warden: floor 1 has one, in the corridor before the stairs", placed.size() == 1 and placed[0].cell == Vector2i(20, 22))
+	check("warden: tier 3, a boss bar, 80 HP", warden_def.tier == 3 and warden_def.boss and warden_def.max_hp == 80)
+	var odds: Dictionary = load("res://data/tiers.tres").odds("held", warden_def)
+	check("warden: Hold Monster lands 35% of the time, for half as long", odds.chance == 35 and is_equal_approx(odds.duration, 0.5))
+	var trap_def: Resource = load("res://data/items/bear_trap.tres")
+	var traps: Node = get_first_node_in_group("traps")
+	var saved_break: float = trap_def.break_chance
+	trap_def.break_chance = 0.0
+	traps.caught.clear()
+	traps.arm(AHEAD_1, trap_def, -1)
+	var warden: Node = _monster("warden", AHEAD_2)
+	warden.move_wait = 999.0
+	warden.attack_cooldown = 999.0
+	warden._step(Vector2i(-1, 0))
+	await create_timer(0.45).timeout
+	check("warden: a trap holds him for %.1f s (half of %.1f)" % [warden.status_left("held"), trap_def.trap_seconds],
+			absf(warden.status_left("held") - trap_def.trap_seconds * 0.5) < 0.3)
+	warden.remove_status("held", false)
+	dungeon.set_pile(AHEAD_1, [])
+	traps.arm(AHEAD_2, trap_def, -1)
+	warden._step(Vector2i(1, 0))
+	await create_timer(0.45).timeout
+	var hud: Node = get_first_node_in_group("hud")
+	check("warden: a second trap in the same fight bites but does not hold him", not warden.has_status("held") and traps.armed_at(AHEAD_2) == null
+			and hud.lines.any(func(l): return str(l.text).contains("tears free")))
+	dungeon.set_pile(AHEAD_2, [])
+	root.get_node("GameEvents").fight_ended.emit()
+	traps.arm(AHEAD_1, trap_def, -1)
+	warden._step(Vector2i(-1, 0))
+	await create_timer(0.45).timeout
+	check("warden: in a new fight a trap holds him again", warden.has_status("held"))
+	trap_def.break_chance = saved_break
+	dungeon.clear_monsters()
+	dungeon.set_pile(AHEAD_1, [])
+	traps.caught.clear()
+	# Mana: 1 point per 6 s.
+	var mage = party.members.filter(func(m): return m.class_id() == "mage")[0]
+	mage.mana = 0.0
+	party._process(6.0)
+	check("mana: one point comes back in 6 s (%.2f)" % mage.mana, is_equal_approx(mage.mana, 1.0))
+	var fight: Node = party.fight
+	var waited := 0.0
+	while fight.in_fight and waited < 8.0:  # Let the fight the traps started end, so later checks start calm.
+		await create_timer(0.25).timeout
+		waited += 0.25
 	_rest_everyone()
 
 

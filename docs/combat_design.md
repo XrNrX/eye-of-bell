@@ -76,6 +76,29 @@ A monster that dies while held is not "released" (no signal, no shatter). Status
 - Every status source puts a status on through `Monster.try_status(status, seconds, source)`, which reads the tier table: the spell now, a bear trap or anything else later.
 - **Test room:** the "Held monster" station (a skeleton, a skeleton guard and a slime); 9 holds the monster in front without a roll or mana, 0 frees every held monster.
 
+## Mana
+
+Mana comes back at **1 point per 6 seconds** (`Party.MANA_REGEN_TIME`), always, in or out of a fight. It was 1 per 2.5 s until 14 Nov 2026.
+At that rate the Cleric healed about 7 HP every 10 seconds for ever, so potions, food and (later) a campfire all lost to standing still.
+Now a Heal (4 mana) takes 24 s to come back, a Fireball (6) 36 s, a full Cleric (10) a minute and a full Mage (12) 72 s. Waiting is
+still allowed; it costs torchlight. No spell's cost changed. To be judged in play: the Mage gets two Fireballs a fight, not three; if he
+feels weak, raise his mana from 12 to 14 before touching the rate. Reasons and the wider budget: `docs/design/expansion_design.md` section 2.
+
+## The Cursed Warden (floor 1's mini-boss)
+
+`data/monsters/warden.tres`, at (20,22): the one-tile corridor before the stairs, behind the locked door. Tier 3, a boss bar with his name.
+
+| HP | Attack | Defence | Damage | A blow every | A step every | Sight |
+|---|---|---|---|---|---|---|
+| 80 | 5 | 4 | 3-9 | 2.0 s | 1.3 s | 8 tiles |
+
+- **The budget (tier 3):** a fight of 12 to 18 s that costs a quarter to a third of the party's HP. A party with a long sword, a mace, darts and Magic Missile does about 5 to 8 damage a second, so 80 HP is about 14 s; he does about 1.7 to 2.0 a second to the front row. The parked version had 40 HP, which a level 3 party kills in six seconds.
+- **Hold Monster:** 35%, for 2.5 s (the tier table).
+- **Bear trap:** always holds him, for 1.5 s, but **only once a fight** (`MonsterTiers.trap_once_from_tier` 3; `trap_field.gd` forgets when `GameEvents.fight_ended` fires). A second trap in the same fight bites for its damage and he tears free. So two traps in his corridor are not a stun lock.
+- **Banter:** `boss_seen` the first time he sees the party (Thief: "He's bigger than the others." Fighter: "Good."), and a line when he falls (Cleric: "I softened him up." Fighter: "With what?"). Both once a run.
+- **Art:** the older single-pose picture from the parked `wip/boss-ambush` branch (11 frames of 96x128, bent and bobbed by `tools/art/gen_warden.py`), at half the pixel density of the other monsters and far fewer frames. A placeholder until he is redrawn like the others.
+- **Not built yet:** he does not carry the Unquenchable (7g), and his hall's sconces are not special (7l.2).
+
 ## Monster tiers
 
 Every monster has a tier (`MonsterDef.tier`), and every status effect reads one table by it: `data/tiers.tres` (`scripts/monster_tiers.gd`). **Rule of thumb: on tier 1 a spell almost always works; on tier 4 it is a gamble.**
@@ -84,7 +107,7 @@ Every monster has a tier (`MonsterDef.tier`), and every status effect reads one 
 |---|---|---|
 | 1 | fodder | Skeleton, Slime, Acid Slime (and the rat, when there is one) |
 | 2 | tough | Skeleton Guard |
-| 3 | elite or mini-boss | none yet (the floor 1 mini-boss, when it is built) |
+| 3 | elite or mini-boss | The Cursed Warden |
 | 4 | boss | none yet |
 
 The table, one row per status (chance to land, and the share of the status's time it lasts):
@@ -112,7 +135,7 @@ dungeon). Every number is on the item ("Trap" group) and the tier table's `trap`
 | Setting | 1.5 s (`set_seconds`) | Click the trap in a hand or a quick slot, or drop it from the cursor onto the tile in front (then the living hero who sets traps fastest does it: the Thief): it is set on the tile in front. The hero is busy for that long (their action cooldown); the Thief takes half (`CharacterDef.trap_set_time` 0.5). If the party moves or turns away, or the tile stops being free, the trap is left lying there unset |
 | Where | an empty floor tile | Not a wall or door, the stairs, a pressure plate, a monster, a tile with items on it, or another trap. Refused with a line, nothing spent |
 | Armed | lies open on the floor | `ItemDef.armed_icon`, unshaded and tipped slightly up so it reads from eye height. The party steps over it safely ("Brannoc steps carefully over the trap."). Clicking it in front with an empty hand picks it back up, disarmed |
-| Snap | the first monster to finish a step onto it | 1-3 damage (`trap_damage`, the setter named as the killer), then held for 3 s (`trap_status` held, `trap_seconds`) through `Monster.try_status` on the tier table's `trap` row: nothing gets past it (100% at every tier, changed from 95/83/68/58% on 14 Nov 2026; tiers 3-4 are held half the time). "The trap snaps shut on the skeleton." Starts a fight |
+| Snap | the first monster to finish a step onto it | 1-3 damage (`trap_damage`, the setter named as the killer), then held for 3 s (`trap_status` held, `trap_seconds`) through `Monster.try_status` on the tier table's `trap` row: nothing gets past it (100% at every tier, changed from 95/83/68/58% on 14 Nov 2026; tiers 3-4 are held half the time). A monster of tier 3 or more is held only once a fight; a second trap bites and it tears free. "The trap snaps shut on the skeleton." Starts a fight |
 | Slimes | ooze through | Their `status_overrides.trap` is chance 0: no damage, no hold, the trap stays armed. "The slime oozes through the trap." |
 | Wall monsters | never trigger it | They never step, and are immune anyway |
 | After | closed on the tile | It lies there as an ordinary item (its floor icon is the closed trap) to pick up and set again, unless its spring snaps (`break_chance` 10%): "The trap's spring snaps." and it is gone |

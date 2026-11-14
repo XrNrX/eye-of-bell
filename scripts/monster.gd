@@ -51,6 +51,7 @@ var anim_time := 0.0
 var attack_cooldown := 0.0
 var _status_tint := Color(1, 1, 1)  # From its statuses (_refresh_tint)...
 var _light := Color(1, 1, 1)        # ...times the light that reaches it (set_light).
+var _boss_seen := false  # A boss has had its first-sight banter (see _on_tick).
 var _walking := false  # True while a step between tiles is animating (plays def.walk_frames).
 var _walk_time := 0.0
 var _one_shot := PackedInt32Array()  # Frames of an attack/hurt animation playing now.
@@ -515,6 +516,9 @@ func _on_tick() -> void:
 	var dir := Vector2i.ZERO
 	if distance <= def.sight_range and DungeonMap.has_line_of_sight(cell, DungeonMap.player_cell):
 		get_tree().call_group("fight_tracker", "noticed", self)
+		if def.boss and not _boss_seen:  # The party's first look at a boss: one quick exchange before the fight (banter "boss_seen").
+			_boss_seen = true
+			get_tree().call_group("banter", "event", "boss_seen", {"monster": def.display_name})
 		dir = _chase_dir()
 	else:
 		_drop_pass()

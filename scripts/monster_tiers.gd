@@ -22,6 +22,11 @@ static func get_config() -> Resource:
 }
 
 
+## A bear trap holds a monster of this tier or more only once a fight (trap_field.gd): two traps in a corridor are not a way to
+## keep a mini-boss standing still.
+@export var trap_once_from_tier := 3
+
+
 ## What a status does to a monster of this definition: {"chance": percent, "duration": multiplier, "immune": bool,
 ## "message": a flavour line or ""}. Tier first, then the monster's own override; a wall monster is always immune.
 func odds(status_id: String, def: Resource) -> Dictionary:  # status_id: a row name (a status id, or a source's row like "trap").

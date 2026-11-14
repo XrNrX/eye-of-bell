@@ -272,5 +272,19 @@
 		"lines": [
 			{"speaker": "fighter", "in_fight": true, "text": "Brilliant."}
 		]
+	},
+	"boss_seen": {
+		"chance": 1.0,
+		"cooldown": 0,
+		"lines": [
+			{"speaker": "thief", "once": true, "id": "warden_seen", "if": {"monster": "Cursed Warden"}, "text": "He's bigger than the others.", "reply": [{"speaker": "fighter", "delay": 0.9, "text": "Good."}]}
+		]
+	},
+	"monster_killed": {
+		"chance": 1.0,
+		"cooldown": 0,
+		"lines": [
+			{"speaker": "cleric", "once": true, "id": "warden_dead", "if": {"monster": "Cursed Warden"}, "text": "I softened him up.", "reply": [{"speaker": "fighter", "text": "With what?"}]}
+		]
 	}
 }
