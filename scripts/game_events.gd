@@ -21,6 +21,11 @@ signal monster_killed(def: Resource, cell: Vector2i, killer: int)
 signal monster_held(monster: Node, source: int)
 ## A monster stepped on an armed trap and it went off (trap_field.gd): trap is its ItemDef (the rusty bear trap).
 signal trap_triggered(trap: Resource, monster: Node)
+## A hero's light burned out in their hand (Party._tick_lights): hero is their hero_index.
+signal light_out(hero: int)
+## The party's light changed: a light was taken up, put away or burned out (Party.light_level: 0 is dark, else the brightest held
+## light's energy, plus a little for each extra one). Not sent as it flickers, nor while a save loads.
+signal light_changed(level: float)
 ## A held monster can move again: the hold ran out (not when it died holding). Sent by Monster (StatusDef.ended_event).
 signal monster_released(monster: Node)
 ## A hero's HP reached 0.

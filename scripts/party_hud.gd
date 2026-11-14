@@ -11,6 +11,7 @@ extends CanvasLayer
 ## click anywhere else cancels the pop-up or target mode. Otherwise a portrait click
 ## opens that hero's inventory (group "inventory"). The game keeps running throughout.
 
+const LightConfig := preload("res://scripts/light_config.gd")
 const CombatRules := preload("res://scripts/combat_rules.gd")
 const QuickSlot := preload("res://scripts/quick_slot.gd")
 const SpellMenu := preload("res://scripts/spell_menu.gd")
@@ -311,6 +312,7 @@ func _show_hand(m, i: int, hand: TextureButton) -> void:
 	if hand.texture_normal != tex:
 		hand.texture_normal = tex
 	hand.get_child(0).set_count(stack.count if stack else 0)
+	_show_light(m, stack, hand)
 	match party.action_for(m.slot, i):
 		party.Act.MELEE: hand.tooltip_text = "Attack"
 		party.Act.THROW: hand.tooltip_text = "Throw"
@@ -319,6 +321,90 @@ func _show_hand(m, i: int, hand: TextureButton) -> void:
 		party.Act.CANT_REACH: hand.tooltip_text = "Can't reach"
 		party.Act.USE: hand.tooltip_text = "Use (right-click to take it out)"
 		_: hand.tooltip_text = ""
+
+
+# --------------------------------------------------------------------------
+# A lit torch or candle in a hand: the PixelLab flame over its icon and a thin bar of burn time left
+# --------------------------------------------------------------------------
+
+const FLAME_SHEET := "res://art/spells/light/flame_sheet"  # png + json (8 frames of 16x30), shared with light_field.gd.
+const FLAME_SCALE := 0.5          # UI units per flame art pixel (1:1 on screen at 1280x720).
+const FLAME_FOOT := Vector2(8, 26)  # Where the flame's root sits in its frame (the effect's anchor).
+const BURN_FILL := Color(0.851, 0.604, 0.212)  # Palette torch_500, like the mana bar.
+const BURN_BACK := Color(0.043, 0.039, 0.063)  # Palette ink.
+const BURN_BAR := Rect2(6, 35, 28, 2)          # Inside the 40x40 hand button, along its foot.
+var flame_frames: Array[Texture2D] = []
+var flame_fps := 12.0
+var icon_tops := {}  # hud texture -> where its drawing starts (the flame's root goes on top of it)
+
+
+## Show or hide the flame and the burn bar on a hand button. A light in a dead hero's hand is out: neither shows.
+func _show_light(m, stack, hand: TextureButton) -> void:
+	var lit: bool = stack != null and stack.def.is_light() and m.is_alive()
+	var bar: ColorRect = hand.get_meta("burn_bar") if hand.has_meta("burn_bar") else null
+	if not lit:
+		if bar != null:
+			bar.visible = false
+			hand.get_meta("flame").visible = false
+		return
+	if bar == null:
+		bar = _make_burn_bar(hand)
+	var c: Resource = LightConfig.get_config()
+	var left: float = stack.seconds_left()
+	var fill: ColorRect = bar.get_child(0)
+	fill.size.x = maxf(1.0, round(BURN_BAR.size.x * clampf(left / stack.def.burn_seconds, 0.0, 1.0)))
+	var blink: bool = left < c.gutter_seconds and not Settings.reduce_flashing and int(Time.get_ticks_msec() / 250) % 2 == 0
+	bar.visible = true
+	fill.visible = not blink  # Near its end the bar blinks.
+	var flame: TextureRect = hand.get_meta("flame")
+	flame.visible = not flame_frames.is_empty()
+	if flame.visible:
+		flame.texture = flame_frames[int(Time.get_ticks_msec() / 1000.0 * flame_fps) % flame_frames.size()]
+		var top: Vector2 = _icon_top(stack.def.hud_texture())
+		flame.position = (HAND_SIZE - Vector2(32, 32)) / 2.0 + top - FLAME_FOOT * FLAME_SCALE
+
+
+func _make_burn_bar(hand: TextureButton) -> ColorRect:
+	var bar := ColorRect.new()
+	bar.color = BURN_BACK
+	bar.position = BURN_BAR.position
+	bar.size = BURN_BAR.size
+	bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var fill := ColorRect.new()
+	fill.color = BURN_FILL
+	fill.size = BURN_BAR.size
+	fill.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	bar.add_child(fill)
+	hand.add_child(bar)
+	hand.set_meta("burn_bar", bar)
+	if flame_frames.is_empty() and ResourceLoader.exists(FLAME_SHEET + ".png") and FileAccess.file_exists(FLAME_SHEET + ".json"):
+		var info = JSON.parse_string(FileAccess.get_file_as_string(FLAME_SHEET + ".json"))
+		var sheet: Texture2D = load(FLAME_SHEET + ".png")
+		flame_fps = float(info.fps)
+		for i in int(info.frames):
+			var atlas := AtlasTexture.new()
+			atlas.atlas = sheet
+			atlas.region = Rect2(i * int(info.frame_w), 0, int(info.frame_w), int(info.frame_h))
+			flame_frames.append(atlas)
+	var flame := TextureRect.new()
+	flame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	flame.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	flame.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	flame.size = Vector2(16, 30) * FLAME_SCALE
+	var mat := CanvasItemMaterial.new()
+	mat.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD  # It glows over the icon (its dark outline adds nothing).
+	flame.material = mat
+	hand.add_child(flame)
+	hand.set_meta("flame", flame)
+	return bar
+
+
+## Where the flame's root goes on a 32x32 hud icon: the middle of the top of its drawing.
+func _icon_top(tex: Texture2D) -> Vector2:
+	if not icon_tops.has(tex):
+		var used := tex.get_image().get_used_rect()
+		icon_tops[tex] = Vector2(used.position.x + used.size.x / 2.0, used.position.y + 1)
+	return icon_tops[tex]
 
 
 # --------------------------------------------------------------------------

@@ -14,7 +14,7 @@ extends Resource
 ## for a hero whose CharacterDef.magic matches.
 
 # New values go at the end: .tres files store the number.
-enum Type { WEAPON, ARMOUR, CONSUMABLE, KEY, FOCUS, AMMO, TRAP }  # New values go at the end (stored as numbers).
+enum Type { WEAPON, ARMOUR, CONSUMABLE, KEY, FOCUS, AMMO, TRAP, LIGHT }  # New values go at the end (stored as numbers).
 enum Magic { NONE, ARCANE, DIVINE }
 
 @export var display_name := "Item"
@@ -87,6 +87,20 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export var set_seconds := 1.5
 @export var break_chance := 0.0
 
+@export_group("Light")
+## A light (type LIGHT: the torch and the candle). It shines only while held in a living hero's hand, taking that hand; the party's
+## light is the brightest one held (Party.light_level, party_light.gd). It burns burn_seconds in all, only while lit (in a hand, or
+## dropped burning on the floor by a slip: light_field.gd); the time left is on the ItemStack (burn_left), so stowing it puts it out
+## and keeps it. Its hand action is a weak swing (damage_min/max in Stats) that adds fire_damage on a hit; a monster that
+## fears_fire recoils from it. Rules: docs/combat_design.md "Light and darkness".
+@export var light_energy := 0.0
+@export var light_range := 0.0
+@export var light_attenuation := 1.5
+@export var light_color := Color(0.78, 0.74, 0.70)
+@export var burn_seconds := 0.0
+@export var fire_damage_min := 0
+@export var fire_damage_max := 0
+
 @export_group("Magic")
 @export var magic: Magic = Magic.NONE  # A FOCUS: which kind of caster can use it.
 @export var spells: Array[Resource] = []  # SpellDef, in the order the pop-up lists them.
@@ -95,7 +109,7 @@ enum Magic { NONE, ARCANE, DIVINE }
 ## Which item types a hand slot / the armour slot will accept (see inventory_slot.gd).
 ## A backpack slot takes anything, so it has no such check.
 static func allowed_in_hand(item_type: Type) -> bool:
-	return item_type in [Type.WEAPON, Type.CONSUMABLE, Type.FOCUS, Type.TRAP]
+	return item_type in [Type.WEAPON, Type.CONSUMABLE, Type.FOCUS, Type.TRAP, Type.LIGHT]
 
 
 ## The icon for the party panel's hand and quick slots.
@@ -106,6 +120,11 @@ func hud_texture() -> Texture2D:
 ## A food (see the Food group): eaten, it heals over time.
 func is_food() -> bool:
 	return food_seconds > 0.0
+
+
+## A torch or candle (the Light group).
+func is_light() -> bool:
+	return type == Type.LIGHT
 
 
 func can_throw() -> bool:

@@ -9,6 +9,7 @@ extends Node3D
 ## It also puts the bloom and fog from that file on this viewport's WorldEnvironment at startup.
 ## Purely visual: Party has already decided what the spell did.
 
+const LightConfig := preload("res://scripts/light_config.gd")
 const Config := preload("res://scripts/spell_effects_config.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const Settings := preload("res://scripts/settings.gd")
@@ -30,6 +31,7 @@ func _ready() -> void:
 	var env_node := get_parent().get_node_or_null("WorldEnvironment")
 	if env_node:
 		Config.apply_environment(env_node.environment, Settings.fog)
+		LightConfig.apply_ambient(env_node.environment)  # The dark: a faint cold ambient (data/light.tres).
 
 
 func _process(_delta: float) -> void:

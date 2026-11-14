@@ -27,10 +27,12 @@ const SpellDef := preload("res://scripts/spell_def.gd")
 const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
 const FightTracker := preload("res://scripts/fight_tracker.gd")
 const MonsterTiers := preload("res://scripts/monster_tiers.gd")
+const LightConfig := preload("res://scripts/light_config.gd")
 const NO_CELL := Vector2i(-1, -1)
 const MISSILE_RANGE := 4  # How many tiles down the corridor ahead a scroll's missile reaches.
 const QUICK_SLOTS := 2        # Quick slots per member (see use_quick), shown under their portrait.
 const QUICK_COOLDOWN := 1.0   # Seconds a quick slot is unusable after an item is used from it.
+const LIGHT_HAND := 1         # A light taken up from a quick slot goes into the second hand if no hand is free, so the weapon stays in the first.
 const MANA_REGEN_TIME := 2.5  # Seconds per point of mana regained (always; there's no resting yet).
 
 ## What clicking a hand does (see action_for).
@@ -99,6 +101,7 @@ class Member:
 	var sick_acc := 0.0
 	var spell_wait := {}    # SpellDef -> seconds before this hero may cast it again (SpellDef.recast_seconds).
 	var shaken_left := 0.0  # A resurrected Cleric: seconds until their faith steadies (no mana, no prayer until then).
+	var had_light := false  # Held a lit light last frame (banter when one is taken up; see _tick_lights).
 
 	func is_alive() -> bool:
 		return hp > 0
@@ -132,6 +135,7 @@ class Stats:
 var last_hit_side := "front"  # Where the latest blow came from (the HUD's full-view flash is for the front only).
 var fight: Node               # The fight tracker (fight_tracker.gd): is the party in a fight, and has "Something's behind you!" been said in it.
 var _wipe_shown := false      # The party is wiped and Game over has been shown (see _check_wiped).
+var _light_level := 0.0       # The light level last sent with GameEvents.light_changed (see light_level).
 var members: Array = []  # Member per position (slot), front row first. Reordered by set_formation.
 
 ## The formation: the hero_index standing in each position, e.g. [0, 1, 2, 3] by default
@@ -164,8 +168,14 @@ func _ready() -> void:
 			if item != null:
 				var n: int = m.def.start_hand_counts[h] if h < m.def.start_hand_counts.size() else 1
 				m.hands[h] = ItemStack.of(item, maxi(1, n))
+		for q in mini(QUICK_SLOTS, m.def.start_quick.size()):
+			var item: Resource = m.def.start_quick[q]
+			if item != null:
+				var n: int = m.def.start_quick_counts[q] if q < m.def.start_quick_counts.size() else 1
+				m.quick[q] = ItemStack.of(item, maxi(1, n))
 		members.append(m)
 		formation.append(i)
+	sync_light_level()  # The light the party starts with is not news.
 
 
 func _process(delta: float) -> void:
@@ -190,6 +200,8 @@ func _process(delta: float) -> void:
 		for b in m.buffs:
 			b.left -= delta
 		m.buffs = m.buffs.filter(func(b): return b.left > 0.0)
+		_tick_lights(m, delta)
+	_check_light_level()
 
 
 # --------------------------------------------------------------------------
@@ -396,7 +408,9 @@ func effective_stats(m: Member, hand := -1, with_buffs := true) -> Stats:
 
 func _melee_weapon_in(m: Member, hand: int) -> Resource:
 	var stack = m.hands[hand]
-	if stack != null and stack.def.type == ItemDef.Type.WEAPON and stack.def.melee and stack.def.damage_max > 0:
+	if stack == null or stack.def.damage_max <= 0:
+		return null
+	if (stack.def.type == ItemDef.Type.WEAPON and stack.def.melee) or stack.def.type == ItemDef.Type.LIGHT:
 		return stack.def
 	return null
 
@@ -430,6 +444,8 @@ func action_for(slot: int, hand: int) -> int:
 		return Act.USE
 	if def.type == ItemDef.Type.TRAP:
 		return Act.SET_TRAP
+	if def.type == ItemDef.Type.LIGHT:  # A torch or candle: a weak swing (a torch's adds a little fire).
+		return Act.MELEE if can_melee(slot) else Act.CANT_REACH
 	if def.type != ItemDef.Type.WEAPON:
 		return Act.NOTHING
 	if def.ammo != null:
@@ -919,10 +935,11 @@ func add_to_backpack(slot: int, stack: RefCounted) -> bool:
 	return true
 
 
-## Quick slots take consumables (potions, scrolls) and throwables (daggers, darts).
+## Quick slots take consumables (potions, scrolls), throwables (daggers, darts), traps and lights (torches, candles). (Swapping a light
+## in from a quick slot may leave the hand's item there instead: see _swap_with_hand.)
 func quick_accepts(item) -> bool:
 	var stack := ItemStack.wrap(item)
-	return stack != null and (stack.def.type == ItemDef.Type.CONSUMABLE or stack.def.type == ItemDef.Type.TRAP or stack.def.can_throw())
+	return stack != null and (stack.def.type in [ItemDef.Type.CONSUMABLE, ItemDef.Type.TRAP, ItemDef.Type.LIGHT] or stack.def.can_throw())
 
 
 ## Put an item stack (or an ItemDef, or null to empty it) in a quick slot, replacing
@@ -1229,6 +1246,8 @@ func use_quick(slot: int, index: int) -> Dictionary:
 	var stack = m.quick[index]
 	if stack == null or not m.is_alive() or m.quick_cooldown[index] > 0.0:
 		return nothing
+	if stack.def.is_light() or not quick_accepts(stack):  # A light, or what a light swapped out of the hand: swap back.
+		return {"used": _swap_with_hand(m, index), "message": "", "close": false}
 	if stack.def.can_throw():
 		if m.cooldown_left > 0.0:
 			return nothing
@@ -1253,6 +1272,127 @@ func use_quick(slot: int, index: int) -> Dictionary:
 	if result.message != "":
 		_say(result.message)
 	return result
+
+
+## A light in a quick slot, clicked: it goes into a hand (_light_hand), lit, and whatever that hand held takes its place
+## in the quick slot, so the next click swaps them back (the shield in, the light out and put out, keeping its time). From a stack of
+## several (two candles) one is taken and the hand's item goes into the backpack instead. Returns whether anything moved.
+func _swap_with_hand(m: Member, index: int) -> bool:
+	var stack: RefCounted = m.quick[index]
+	var hand := _light_hand(m)
+	var old = m.hands[hand]
+	if stack.count > 1:
+		if old != null:
+			if not add_to_backpack(m.slot, old):
+				_say("%s's backpack is full." % m.name())
+				return false
+		m.hands[hand] = stack.take_one()
+	else:
+		m.quick[index] = old
+		m.hands[hand] = stack
+	var new_item: String = m.hands[hand].def.display_name.to_lower()
+	if old != null and old.def.is_light():
+		_say("%s puts out the %s and takes up the %s." % [m.name(), old.def.display_name.to_lower(), new_item])
+	elif m.hands[hand].def.is_light():
+		_say("%s lights the %s." % [m.name(), new_item])
+	else:
+		_say("%s takes up the %s." % [m.name(), new_item])
+	quick_changed.emit(m.slot)
+	hp_changed.emit(m.slot)
+	_cue("pickup")
+	return true
+
+
+## Which hand a light from a quick slot goes into: the one already holding a light (they swap), else an empty one, else LIGHT_HAND
+## (the second hand, so a weapon in the first stays put).
+func _light_hand(m: Member) -> int:
+	for h in HAND_SLOTS:
+		if m.hands[h] != null and m.hands[h].def.is_light():
+			return h
+	if m.hands[LIGHT_HAND] == null:
+		return LIGHT_HAND
+	for h in HAND_SLOTS:
+		if m.hands[h] == null:
+			return h
+	return LIGHT_HAND
+
+
+# --------------------------------------------------------------------------
+# Light: torches and candles held in a hand (rules in docs/combat_design.md "Light and darkness")
+# --------------------------------------------------------------------------
+
+## The lit lights: every light in a living hero's hand (a dead hero's light goes out with them).
+func held_lights() -> Array:
+	var out := []
+	for m in members:
+		if m.is_alive():
+			for stack in m.hands:
+				if stack != null and stack.def.is_light():
+					out.append(stack)
+	return out
+
+
+## The brightest light held (an ItemStack), or null in the dark: what the party's light shines with (party_light.gd).
+func brightest_light():
+	var best = null
+	for stack in held_lights():
+		if best == null or stack.def.light_energy > best.def.light_energy:
+			best = stack
+	return best
+
+
+## How much light the party holds: 0 in the dark, else the brightest light's energy, plus LightConfig.extra_light_bonus of it for
+## each other light held, at most extra_light_cap in all (two torches are a little brighter than one, never twice as bright).
+func light_level() -> float:
+	var lights := held_lights()
+	var best = brightest_light()
+	if best == null:
+		return 0.0
+	var c: Resource = LightConfig.get_config()
+	var bonus: float = minf(c.extra_light_cap, c.extra_light_bonus * (lights.size() - 1))
+	return snappedf(best.def.light_energy * (1.0 + bonus), 0.01)
+
+
+## Take the light as it is now without any news (a new run, a loaded save).
+func sync_light_level() -> void:
+	_light_level = light_level()
+	for m in members:
+		m.had_light = _holds_light(m)
+
+
+func _holds_light(m: Member) -> bool:
+	return m.is_alive() and m.hands.any(func(s): return s != null and s.def.is_light())
+
+
+func _check_light_level() -> void:
+	var level := light_level()
+	if not is_equal_approx(level, _light_level):
+		_light_level = level
+		Events.send(get_tree(), "light_changed", [level])
+
+
+## Burn down the lights in a living hero's hands. One that burns out is gone: "{name}'s torch gutters out.", GameEvents.light_out and
+## a remark. Taking one up (from anywhere) may get a remark too.
+func _tick_lights(m: Member, delta: float) -> void:
+	if not m.is_alive():
+		m.had_light = false
+		return
+	var light: Resource = null
+	for h in HAND_SLOTS:
+		var stack = m.hands[h]
+		if stack == null or not stack.def.is_light():
+			continue
+		stack.burn_left = stack.seconds_left() - delta
+		if stack.burn_left > 0.0:
+			light = stack.def
+			continue
+		m.hands[h] = null  # The stub is gone.
+		_say("%s's %s gutters out." % [m.name(), stack.def.display_name.to_lower()])
+		Events.send(get_tree(), "light_out", [m.hero_index])
+		_banter("light_out", m, stack.def, {"item": stack.def.display_name.to_lower()})
+	if light != null and not m.had_light:
+		_banter("light_taken", m, light, {"item": light.display_name.to_lower()})
+	m.had_light = light != null
 
 
 ## Use a consumable on behalf of a member. Returns {used: bool, message: String,
@@ -1496,7 +1636,14 @@ func _melee(m: Member, hand: int) -> void:
 	var result := CombatRules.resolve_attack(effective_stats(m, hand), target.def, CombatRules.crit_chance(m.def, weapon, 0, helpless))
 	result.fail = not result.hit and CombatRules.roll_fumble()
 	result.by = m.hero_index  # Who struck: GameEvents.monster_killed names the killer.
+	var fire := 0  # A torch's flame adds a little to a landed blow.
+	if result.hit and weapon != null and weapon.is_light() and weapon.fire_damage_max > 0:
+		fire = CombatRules.rng().randi_range(weapon.fire_damage_min, weapon.fire_damage_max)
+		result.damage += fire
 	target.take_hit(result)
+	var recoiled: bool = fire > 0 and target.hp > 0 and target.def.fears_fire
+	if recoiled:
+		target.recoil(player.cell)
 	if helpless and result.hit:
 		_banter("hit_held", m, weapon)
 	if result.hit and not result.crit:
@@ -1509,6 +1656,8 @@ func _melee(m: Member, hand: int) -> void:
 		_say_hit("%s kills the %s!" % [m.name(), target.def.display_name], m, weapon, result.crit)
 	else:
 		_say_hit("%s hits the %s for %d." % [m.name(), target.def.display_name, result.damage], m, weapon, result.crit)
+	if recoiled:
+		_say("The %s recoils from the flame." % target.def.display_name.to_lower())
 
 
 ## The line for a landed attack; a crit gets the CRITICAL! prefix and colour, and maybe a remark.
@@ -1534,10 +1683,15 @@ func _critical_fail(m: Member, hand: int, weapon: Resource, thrown: bool, cell: 
 		var stack: RefCounted = m.hands[index]
 		m.hands[index] = null
 		stack.origin = {"hero": m.hero_index, "where": "hand", "index": index}
+		stack.burning = stack.def.is_light()  # A light rolls away still lit (and never merges into a pile while it burns).
 		var dungeon := get_tree().get_first_node_in_group("dungeon")
 		if dungeon != null:
 			dungeon.place_item(cell, stack)
+			if stack.burning and dungeon.get("lights") != null:
+				dungeon.lights.drop(cell, stack)
 		text = "The %s slips from %s's hand!" % [weapon.display_name, who]
+		if stack.burning:
+			text += " It rolls away, still burning."
 	else:
 		_start_cooldown(m, 2.0)
 		if weapon != null and weapon.never_slips:

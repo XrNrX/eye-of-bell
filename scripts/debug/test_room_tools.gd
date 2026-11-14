@@ -182,6 +182,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_spawn_pack()
 		KEY_MINUS:
 			_next_hit_effect()
+		KEY_EQUAL:
+			_burn_lights_down()
 		KEY_9:
 			_hold_ahead()
 		KEY_0:
@@ -301,6 +303,20 @@ func _spawn_pack() -> void:
 			dungeon.spawn_monster(load(PACK_MONSTER), cell)
 			made += 1
 	_say("A pack of %d appears." % made if made > 0 else "No room ahead for a pack.")
+
+
+## =: every lit light (in a hand or on the floor) burns down to its last few seconds.
+func _burn_lights_down() -> void:
+	var party := _party()
+	var left := 10.0  # Inside the gutter time: the flame stutters and the hand bar blinks, then it goes out.
+	var stacks: Array = party.held_lights() if party != null else []
+	var lights := get_tree().get_first_node_in_group("lights")
+	if lights != null:
+		for e in lights.burning:
+			stacks.append(e.stack)
+	for stack in stacks:
+		stack.burn_left = minf(stack.seconds_left(), left)
+	_say("%d lights burn low." % stacks.size() if not stacks.is_empty() else "No light is burning.")
 
 
 ## -: play the next monster kind's hit effect across the view, cycling through the sides, without hurting anyone.
@@ -490,6 +506,7 @@ func _refresh_help() -> void:
 		"MONSTER PACING (NOT SAVED)",
 		"I   PACK AHEAD    9 HOLD  0 FREE",
 		"-   SHOW NEXT MONSTER HIT EFFECT",
+		"=   BURN LIGHTS DOWN",
 		"O   TUNE          %s" % PACING_FIELDS[tune_index][1],
 		"[ ] -/+ 0.1S      Y FROM FILES",
 		_pacing_table(),

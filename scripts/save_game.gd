@@ -175,6 +175,10 @@ static func stack_to_data(stack):
 	var d := {"def": stack.def.resource_path, "count": stack.count}
 	if not stack.origin.is_empty():
 		d["origin"] = stack.origin.duplicate()
+	if stack.burn_left >= 0.0:  # A light that has burned a while (a fresh one has none).
+		d["burn"] = stack.burn_left
+	if stack.burning:
+		d["burning"] = true      # Lying lit on the floor (light_field.gd lights it again).
 	return d
 
 
@@ -186,6 +190,8 @@ static func data_to_stack(data) -> RefCounted:
 	var o = data.get("origin")
 	if o is Dictionary and o.has("hero"):
 		stack.origin = {"hero": int(o.hero), "where": str(o.where), "index": int(o.index)}
+	stack.burn_left = float(data.get("burn", -1.0))
+	stack.burning = bool(data.get("burning", false))
 	return stack
 
 
@@ -300,6 +306,8 @@ static func apply(tree: SceneTree, data: Dictionary) -> String:
 
 	if dungeon.traps != null:
 		dungeon.traps.restore(d.get("armed_traps", []))  # (An older save has none.)
+	if dungeon.get("lights") != null:
+		dungeon.lights.restore()  # Lights lying lit in the piles burn again.
 
 	dungeon.clear_monsters()
 	for mo in d.monsters:
@@ -311,6 +319,9 @@ static func apply(tree: SceneTree, data: Dictionary) -> String:
 
 	# --- player and cursor ---
 	player.restore(data_to_cell(data.player.cell), int(data.player.facing))
+	var party_node := tree.get_first_node_in_group("party")
+	if party_node != null:
+		party_node.sync_light_level()  # The light held after loading is not news.
 	var cursor := tree.get_first_node_in_group("cursor")
 	if cursor:
 		cursor.release()

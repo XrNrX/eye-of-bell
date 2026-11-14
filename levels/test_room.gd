@@ -7,13 +7,14 @@ extends RefCounted
 ## A long hall (row 12 to 16) with a station off it at every doorway. North: combat arena, wall types, item table, legendary
 ## items. South: ambush corridor, puzzle room, campfire, XP and levels, traps; through the XP room, monster pacing (a long
 ## corridor to back away down, opening into a room for flanking), and south of that the held-monster room (Hold Monster:
-## a skeleton, a skeleton guard and a slime, which can't be held). A sign in the hall and one inside labels each.
+## a skeleton, a skeleton guard and a slime, which can't be held), and off the pacing corridor the light room (dark, no wall
+## torches: torches and candles to try, and a slime that fears fire). A sign in the hall and one inside labels each.
 ## "NOT BUILT YET" stations are empty rooms waiting for their system.
 ##
 ## Debug keys (scripts/debug/test_room_tools.gd, H shows them in the game): G god mode, R refill HP and mana, X +500 XP,
 ## U level up, Z kill all monsters, V spawn a monster in front, T teleport to a station, B banter, N fog, J screen shake,
 ## and for monster pacing O (which value), [ and ] (lower, raise), Y (reset from the files), I (a pack of three ahead);
-## 9 holds the monster in front (no roll, no mana), 0 frees every held monster.
+## 9 holds the monster in front (no roll, no mana), 0 frees every held monster; = burns every lit light down to its last seconds.
 
 
 const MAP := [
@@ -49,13 +50,13 @@ const MAP := [
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 29
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 30
 	[1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 31
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 32
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 33
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 34
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 35
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 36
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 37
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 38
+	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 32
+	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 33
+	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 34
+	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 35
+	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 36
+	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 37
+	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 38
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 39
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 40
 ]
@@ -163,6 +164,10 @@ const ITEMS := [
 	{"cell": Vector2i(24, 2), "def": "res://data/items/bear_trap.tres", "count": 2},
 	{"cell": Vector2i(33, 22), "def": "res://data/items/bear_trap.tres", "count": 2},  # The traps station.
 	{"cell": Vector2i(11, 26), "def": "res://data/items/healing_potion.tres"},
+	{"cell": Vector2i(23, 2), "def": "res://data/items/torch.tres"},
+	{"cell": Vector2i(23, 3), "def": "res://data/items/candle.tres"},
+	{"cell": Vector2i(10, 34), "def": "res://data/items/torch.tres", "count": 3},  # The light room.
+	{"cell": Vector2i(14, 34), "def": "res://data/items/candle.tres", "count": 5},
 ]
 
 # The combat arena. (V spawns more.)
@@ -176,6 +181,7 @@ const MONSTERS := [
 	{"cell": Vector2i(28, 39), "def": "res://data/monsters/skeleton_guard.tres"},
 	{"cell": Vector2i(31, 39), "def": "res://data/monsters/slime.tres"},
 	{"cell": Vector2i(34, 24), "def": "res://data/monsters/skeleton.tres"},  # The traps station: lure it onto the armed trap.
+	{"cell": Vector2i(18, 38), "def": "res://data/monsters/slime.tres"},  # The light room: it fears fire (a torch's hit makes it recoil).
 ]
 
 const SIGNS := [
@@ -239,6 +245,11 @@ FLANKING"},
 0 = FREE ALL"},
 	{"cell": Vector2i(30, 24), "side": 3, "text": "PACING
 SOUTH"},
+	{"cell": Vector2i(13, 31), "side": 2, "text": "LIGHT AND DARK
+SOUTH"},
+	{"cell": Vector2i(8, 33), "side": 0, "text": "LIGHT AND DARK
+NO WALL TORCHES
+= BURNS LIGHTS DOWN"},
 ]
 
 # Stand-in ambush until the real system exists: stepping on the trigger tile spawns these (re-armed when the party leaves the
@@ -263,4 +274,5 @@ const STATIONS := [
 	{"name": "Traps", "cell": Vector2i(34, 18), "facing": 2},
 	{"name": "Monster pacing", "cell": Vector2i(10, 31), "facing": 3},
 	{"name": "Held monster", "cell": Vector2i(28, 36), "facing": 2},
+	{"name": "Light and dark", "cell": Vector2i(12, 33), "facing": 2},
 ]

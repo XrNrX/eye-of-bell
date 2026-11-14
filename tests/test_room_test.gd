@@ -153,6 +153,16 @@ func _check_pacing(tools: Node, press: Callable, player: Node) -> void:
 	check("0 frees every held monster", not target.has_status("held"))
 	for n in get_nodes_in_group("monsters"):
 		n.free()
+	# The light room: dark (no wall torch inside), a torch and candles to try, and = burns the lit lights down.
+	var light_room: Dictionary = DungeonMap.STATIONS.filter(func(s): return s.name == "Light and dark")[0]
+	tools._teleport(light_room)
+	var room_torches: Array = DungeonMap.TORCHES.filter(func(t): return t.y >= 33 and t.y <= 38 and t.x >= 6 and t.x <= 19)
+	var dungeon_node: Node = get_first_node_in_group("dungeon")
+	var on_table = dungeon_node.item_at(Vector2i(10, 34))
+	check("the light room is dark and has torches to pick up", room_torches.is_empty() and on_table != null and on_table.def.is_light())
+	var lit: Array = get_first_node_in_group("party").held_lights()
+	press.call(KEY_EQUAL)
+	check("= burns every lit light down to its last seconds", not lit.is_empty() and lit.all(func(s): return s.seconds_left() <= 10.0))
 	var fight: Node = get_first_node_in_group("party").fight
 	var waited := 0.0
 	while fight.in_fight and waited < 8.0:  # Let the fight these monsters started end, so later checks start calm.

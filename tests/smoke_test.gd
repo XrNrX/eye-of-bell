@@ -23,7 +23,7 @@ const CLOSETS: Array[Vector2i] = [Vector2i(18, 1), Vector2i(20, 1)]  # One-tile 
 const PLAIN_DOOR := Vector2i(16, 6)
 const LEVER := Vector3i(19, 7, 0)  # The north lever of gate_n: cell (19,7), side 0.
 
-const EVENTS := ["monster_killed", "monster_held", "monster_released", "trap_triggered", "hero_hurt", "mana_low", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
+const EVENTS := ["monster_killed", "monster_held", "monster_released", "trap_triggered", "light_out", "light_changed", "hero_hurt", "mana_low", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
 		"wall_purified", "puzzle_solved", "level_completed"]
 const CRACKED_WALL := Vector2i(2, 6)
 const THICK_CORRUPTION := Vector2i(16, 4)  # Purifying it fires the puzzle "nook_blessing".
@@ -66,6 +66,7 @@ func _init() -> void:
 
 	dungeon.clear_monsters()
 	player.restore(SPOT, EAST)
+	_check_light()
 	_check_kill()
 	_check_monster_hit()
 	await _check_attack_timing()
@@ -149,6 +150,124 @@ func _total_hp() -> int:
 	for m in party.members:
 		total += m.hp
 	return total
+
+
+# --------------------------------------------------------------------------
+# Light and darkness (torches and candles)
+# --------------------------------------------------------------------------
+
+## The party's light is what it holds: the start (a lit torch, two candles), burning only while held, stowing keeps the time, the
+## brightest counts with a capped bonus, a quick-slot candle swaps in, burning out (light_out, the stub gone), light_changed only
+## when the light really changes, the torch's fire and a slime recoiling, a slipped torch burning on the floor and going home lit,
+## and a light's burn time and floor flame surviving a save.
+func _check_light() -> void:
+	_rest_everyone()
+	dungeon.clear_monsters()
+	player.restore(SPOT, EAST)
+	var torch: Resource = load("res://data/items/torch.tres")
+	var candle: Resource = load("res://data/items/candle.tres")
+	var holy: Resource = load("res://data/items/holy_symbol.tres")
+	var cleric = party.members.filter(func(m): return m.class_id() == "cleric")[0]
+	var fighter = party.members.filter(func(m): return m.class_id() == "fighter")[0]
+	var hud: Node = get_first_node_in_group("hud")
+	var light_node: Node = get_first_node_in_group("party_light")
+	check("light: the cleric starts with a lit torch in hand and two candles in a quick slot", cleric.hands[0] != null and cleric.hands[0].def == torch
+			and cleric.quick[0] != null and cleric.quick[0].def == candle and cleric.quick[0].count == 2)
+	check("light: the party's light is the torch (level %.2f)" % party.light_level(), is_equal_approx(party.light_level(), torch.light_energy)
+			and party.brightest_light() == cleric.hands[0])
+	light_node._process(0.0)
+	check("light: the party light node shines with it", light_node != null and light_node.visible and is_equal_approx(light_node.omni_range, torch.light_range))
+	check("light: a torch is a weak swing from the front row", party.action_for(cleric.slot, 0) == (party.Act.MELEE if party.can_melee(cleric.slot) else party.Act.CANT_REACH))
+	var lit = cleric.hands[0]
+	lit.burn_left = -1.0
+	party._process(10.0)
+	check("light: it burns while held (%.1f s left)" % lit.seconds_left(), is_equal_approx(lit.seconds_left(), torch.burn_seconds - 10.0))
+	# Stowed: out, its time kept; the light goes with it.
+	var changed_before: int = events.light_changed.size()
+	cleric.hands[0] = null
+	cleric.backpack[11] = lit
+	party._process(5.0)
+	check("light: stowed, it stops burning and keeps its time", is_equal_approx(lit.seconds_left(), torch.burn_seconds - 10.0) and lit.burn_left > 0.0)
+	check("light: the party is dark, and light_changed said so once", party.light_level() == 0.0 and events.light_changed.size() == changed_before + 1
+			and is_zero_approx(float(events.light_changed[-1][0])))
+	light_node._process(0.0)
+	check("light: the party light node is off in the dark", not light_node.visible)
+	party._process(1.0)
+	check("light: no light_changed while nothing changes", events.light_changed.size() == changed_before + 1)
+	check("light: a used torch does not stack with a fresh one", not lit.can_stack_with(ItemStack.of(torch, 1)) and ItemStack.of(torch, 1).can_stack_with(ItemStack.of(torch, 1)))
+	# A candle from the quick slot: one comes off the stack into the free hand, lit.
+	cleric.cooldown_left = 0.0
+	var r: Dictionary = party.use_quick(cleric.slot, 0)
+	check("light: a quick-slot candle goes lit into the free hand", r.used and cleric.hands[0] != null and cleric.hands[0].def == candle
+			and cleric.hands[1].def == holy and cleric.quick[0].count == 1 and is_equal_approx(party.light_level(), candle.light_energy))
+	# Two lights: the brightest counts, a little brighter, capped.
+	fighter.hands[1] = ItemStack.of(torch, 1)
+	var cfg: Resource = load("res://data/light.tres")
+	check("light: two lights: the brightest, a little brighter (%.2f)" % party.light_level(),
+			is_equal_approx(party.light_level(), snappedf(torch.light_energy * (1.0 + minf(cfg.extra_light_cap, cfg.extra_light_bonus)), 0.01)))
+	# Burning out.
+	var out_before: int = events.light_out.size()
+	fighter.hands[1].burn_left = 0.05
+	party._process(0.1)
+	check("light: a light that burns out is gone, with a line", fighter.hands[1] == null
+			and hud.lines.any(func(l): return str(l.text) == "%s's torch gutters out." % fighter.name()))
+	check("light: light_out once, naming the hero", events.light_out.size() == out_before + 1 and events.light_out[-1][0] == fighter.hero_index)
+	# A single light in a quick slot swaps with the light in hand, which is put out into the slot.
+	cleric.quick[0] = ItemStack.of(torch, 1)
+	r = party.use_quick(cleric.slot, 0)
+	check("light: a quick-slot torch swaps with the candle in hand, which goes out into the slot", r.used and cleric.hands[0].def == torch
+			and cleric.quick[0] != null and cleric.quick[0].def == candle)
+	# The torch's fire: a hit on a slime makes it recoil a tile.
+	var slime: Node = _monster("slime", AHEAD_1, 50)
+	fighter.hands[0] = ItemStack.of(torch, 1)
+	var hit := false
+	for i in 40:
+		fighter.cooldown_left = 0.0
+		var hp_before: int = slime.hp
+		party._melee(fighter, 0)
+		if slime.hp < hp_before:
+			hit = true
+			check("light: a torch hit adds fire (%d damage, at least %d)" % [hp_before - slime.hp, torch.damage_min + torch.fire_damage_min],
+					hp_before - slime.hp >= torch.damage_min + torch.fire_damage_min)
+			break
+	check("light: the torch hit the slime", hit)
+	check("light: the slime fears fire and recoils a tile", hit and slime.cell == AHEAD_2
+			and hud.lines.any(func(l): return str(l.text) == "The slime recoils from the flame."))
+	dungeon.clear_monsters()
+	# A slip: the torch rolls onto the tile in front still burning, and goes home lit.
+	var slipped := false
+	for i in 60:
+		fighter.cooldown_left = 0.0
+		if fighter.hands[0] == null:
+			break
+		party._critical_fail(fighter, 0, torch, false, AHEAD_1)
+		slipped = fighter.hands[0] == null
+		if slipped:
+			break
+	var lights: Node = get_first_node_in_group("lights")
+	var on_floor = dungeon.item_at(AHEAD_1)
+	check("light: a slipped torch lies in front, still burning", slipped and on_floor != null and on_floor.def == torch and on_floor.burning
+			and lights != null and lights.burning.size() == 1)
+	var floor_left: float = on_floor.seconds_left() if on_floor != null else 0.0
+	lights._process(2.0)
+	check("light: it burns down on the floor", on_floor != null and is_equal_approx(on_floor.seconds_left(), floor_left - 2.0))
+	var data = SaveGame.stack_to_data(on_floor)
+	var back: RefCounted = SaveGame.data_to_stack(data)
+	check("light: its burn time and floor flame survive a save", back != null and back.burning and is_equal_approx(back.burn_left, on_floor.burn_left))
+	lights.restore()
+	check("light: after a load the burning lights are lit again", lights.burning.size() == 1)
+	var picked: RefCounted = dungeon.take_item(AHEAD_1)
+	var home: String = party.return_to_origin(picked)
+	lights._process(0.0)
+	check("light: picked up, it goes back to the hand it slipped from, lit there", home != "" and fighter.hands[0] == picked
+			and not picked.burning and lights.burning.is_empty())
+	# Put the party back as it started.
+	fighter.hands = [null, null]
+	cleric.hands = [ItemStack.of(torch, 1), ItemStack.of(holy, 1)]
+	cleric.quick[0] = ItemStack.of(candle, 2)
+	cleric.backpack[11] = null
+	party._process(0.0)
+	_rest_everyone()
 
 
 # --------------------------------------------------------------------------

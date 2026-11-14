@@ -1,4 +1,4 @@
-[gd_resource type="Resource" load_steps=7 format=3]
+[gd_resource type="Resource" load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/character_def.gd" id="1_def"]
 [ext_resource type="Texture2D" path="res://art/ui/hand_sword_small.png" id="2_hand"]
@@ -6,6 +6,8 @@
 [ext_resource type="Texture2D" path="res://art/portraits/cleric/portrait_hurt.png" id="4_hurt"]
 [ext_resource type="Texture2D" path="res://art/portraits/cleric/portrait_dead.png" id="5_dead"]
 [ext_resource type="Resource" path="res://data/items/holy_symbol.tres" id="21_kit"]
+[ext_resource type="Resource" path="res://data/items/torch.tres" id="22_torch"]
+[ext_resource type="Resource" path="res://data/items/candle.tres" id="23_candle"]
 
 [resource]
 script = ExtResource("1_def")
@@ -24,7 +26,9 @@ portrait_hurt = ExtResource("4_hurt")
 portrait_dead = ExtResource("5_dead")
 max_mana = 10
 magic = 2
-start_hands = Array[Resource]([null, ExtResource("21_kit")])
+start_hands = Array[Resource]([ExtResource("22_torch"), ExtResource("21_kit")])
+start_quick = Array[Resource]([ExtResource("23_candle")])
+start_quick_counts = Array[int]([2])
 dexterity = 10
 crit_base = 3
 finesse_crit = 0

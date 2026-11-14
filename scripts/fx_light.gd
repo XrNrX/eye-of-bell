@@ -59,3 +59,7 @@ func _sample_c(pos: float) -> Color:
 	var n := colours.size()
 	var i := int(floor(pos)) % n if loops else mini(int(floor(pos)), n - 1)
 	return colours[i].lerp(colours[_next(i, n)], pos - floor(pos))
+
+
+func _enter_tree() -> void:
+	add_to_group("sprite_lights")  # A spell's light lights the monsters it passes (sprite_lighting.gd).

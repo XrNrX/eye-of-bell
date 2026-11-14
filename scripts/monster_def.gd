@@ -42,6 +42,7 @@ extends Resource
 
 ## A boss, or a monster that is part of a wall (giant hand, tentacles): it gets the wide named bar
 ## across the top of the view, not a small bar over its sprite (enemy_bars.gd). Needs no other change.
+@export var fears_fire := false  # A torch's fire makes it recoil: it backs off a tile if it can and its next blow comes later (slimes).
 @export var boss := false
 @export var wall_monster := false
 

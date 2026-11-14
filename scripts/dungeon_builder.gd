@@ -6,6 +6,8 @@ extends Node3D
 const Events := preload("res://scripts/game_events.gd")
 const WallSigns := preload("res://scripts/wall_signs.gd")
 const TrapField := preload("res://scripts/trap_field.gd")
+const LightField := preload("res://scripts/light_field.gd")
+const SpriteLighting := preload("res://scripts/sprite_lighting.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const TorchLight := preload("res://scripts/torch.gd")
 const NormalMaps := preload("res://scripts/normal_maps.gd")
@@ -79,6 +81,7 @@ var door_want := {}   # Vector2i cell -> true if the door is currently told to b
 var plate_pressed := {}  # Vector2i cell -> true while the party stands on it (to sound the click once)
 var door_tweens := {} # Vector2i cell -> the Tween moving it
 var traps: Node3D      # The armed traps (trap_field.gd, group "traps").
+var lights: Node3D     # Lights burning on the floor (light_field.gd, group "lights").
 var items := {}        # Vector2i cell -> {"sprite": Sprite3D, "pile": Array of ItemStack, top last} on the floor
 var plates := {}      # Vector2i cell -> pressure plate MeshInstance3D
 var levers := {}      # Vector3i (x, z, side) -> lever Sprite3D
@@ -164,6 +167,12 @@ func _ready() -> void:
 	traps = TrapField.new()
 	traps.name = "Traps"
 	add_child(traps)
+	lights = LightField.new()
+	lights.name = "Lights"
+	add_child(lights)
+	var sprite_lighting := SpriteLighting.new()
+	sprite_lighting.name = "SpriteLighting"
+	add_child(sprite_lighting)
 	if populate:
 		traps.place_level_traps()
 		for entry in DungeonMap.ITEMS:
@@ -291,7 +300,7 @@ func _add_lever(cell: Vector2i, side: int) -> void:
 	sprite.hframes = 2
 	sprite.pixel_size = LEVER_PIXEL_SIZE
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
-	sprite.shaded = false
+	sprite.shaded = false  # Tinted by the light that reaches it instead (sprite_lighting.gd).
 	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
 	sprite.position = _wall_point(cell, side, LEVER_HEIGHT)
 	sprite.rotation.y = _face_yaw(side)
@@ -356,7 +365,7 @@ func place_item(cell: Vector2i, item) -> void:
 	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	sprite.shaded = false
+	sprite.shaded = false  # Tinted by the light that reaches it instead (sprite_lighting.gd).
 	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
 	sprite.position = DungeonMap.cell_to_world(cell) + Vector3(0, ITEM_HEIGHT, 0)
 	add_child(sprite)
@@ -384,7 +393,7 @@ func show_throw(from_cell: Vector2i, to_cell: Vector2i, def: Resource) -> void:
 	sprite.pixel_size = def.icon_pixel_size
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	sprite.shaded = false
+	sprite.shaded = false  # Tinted by the light that reaches it instead (sprite_lighting.gd).
 	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
 	sprite.position = DungeonMap.cell_to_world(from_cell) + Vector3(0, THROW_HEIGHT, 0)
 	add_child(sprite)

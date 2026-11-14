@@ -13,6 +13,7 @@ const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const FloatingText := preload("res://scripts/floating_text.gd")
 const CombatRules := preload("res://scripts/combat_rules.gd")
 const ItemStack := preload("res://scripts/item_stack.gd")
+const LightConfig := preload("res://scripts/light_config.gd")
 const FeelConfigScript := preload("res://scripts/combat_feel_config.gd")
 const AiConfigScript := preload("res://scripts/monster_ai_config.gd")
 const MonsterTiers := preload("res://scripts/monster_tiers.gd")
@@ -48,6 +49,8 @@ var dying := false
 var sprite: Sprite3D
 var anim_time := 0.0
 var attack_cooldown := 0.0
+var _status_tint := Color(1, 1, 1)  # From its statuses (_refresh_tint)...
+var _light := Color(1, 1, 1)        # ...times the light that reaches it (set_light).
 var _walking := false  # True while a step between tiles is animating (plays def.walk_frames).
 var _walk_time := 0.0
 var _one_shot := PackedInt32Array()  # Frames of an attack/hurt animation playing now.
@@ -78,6 +81,7 @@ func _ready() -> void:
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	sprite.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y  # Always faces the camera, stays upright.
 	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	# Unshaded: sprite_lighting.gd tints it by the light that reaches it (set_light): a dim silhouette in the dark, bone by torchlight.
 	# Stand on the floor: lift by half the frame height (the lowest opaque pixel of each frame is then
 	# dropped to the floor in _set_frame).
 	sprite.position.y = _sprite_height() / 2.0
@@ -257,7 +261,15 @@ func _refresh_tint() -> void:
 	var tint := Color(1, 1, 1)
 	for entry in statuses.values():
 		tint = entry.def.tint
-	sprite.modulate = tint
+	_status_tint = tint
+	sprite.modulate = _status_tint * _light
+
+
+## How much light reaches it (sprite_lighting.gd, every frame). Its status tint (held blue) is kept on top.
+func set_light(light: Color) -> void:
+	_light = light
+	if sprite != null:
+		sprite.modulate = _status_tint * _light
 
 
 ## Show the attack/hurt animation if one is playing, else the walk cycle while stepping (if the
@@ -396,6 +408,25 @@ func take_hit(result: Dictionary) -> void:
 		_play(_held(def.hurt_frames, hold), def.hurt_fps)
 	if hp <= 0:
 		_die(crit and feel_cfg.crit_death_enabled, int(result.get("by", -1)))
+
+
+## A torch's fire struck a monster that fears it (MonsterDef.fears_fire): it flinches from the flame. A swing it had started is
+## lost, its next blow comes LightConfig.recoil_delay later, and it backs off one tile, straight away from `from_cell`, if that tile
+## is free and it can move. Returns whether it stepped back.
+func recoil(from_cell: Vector2i) -> bool:
+	if dying or not def.fears_fire:
+		return false
+	var c: Resource = LightConfig.get_config()
+	_swinging = false
+	attack_cooldown = maxf(attack_cooldown, def.attack_interval * def.wind_up) + c.recoil_delay
+	var away := cell - from_cell
+	if not c.recoil_steps_back or _walking or _status_flag("stops_moving") or absi(away.x) + absi(away.y) != 1:
+		return false
+	if not _can_enter(cell + away):
+		return false
+	_step(away)
+	move_wait = maxf(move_wait, def.step_interval)
+	return true
 
 
 ## These frames with the last one repeated `extra` more times: a crit holds the hurt frame a moment longer.

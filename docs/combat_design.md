@@ -140,3 +140,47 @@ When a monster's blow lands, its own effect plays across the 3D view with the re
 - **Reduce flashing:** 75% size, 1.5 times as fast.
 - **Code:** `scripts/hit_overlay.gd` (node `HitOverlay` in `main.tscn`, canvas layer 2, above the view and under the frame), fed by `Party.monster_struck(monster, side, damage, crit)`. Numbers in the "Hit effects" group of `data/combat_feel.tres`. Frames step, no alpha fades.
 - **Test room:** the minus key plays the next monster kind's effect, cycling front, left, right and behind, without damage.
+
+## Light and darkness
+
+Light is something the party carries (roadmap 7l.1). The always-on light that followed the party is gone: a torch or a candle takes up
+a hero's hand, so lighting the way costs a weapon, a focus or a backup, and who carries it is a choice. Every number is in
+`data/light.tres` (`scripts/light_config.gd`) or on the light's own item (`ItemDef` "Light" group).
+
+**The dark.** A faint cold ambient, "eyes adjusted" (`ambient_color` (0.17, 0.18, 0.25), picked from before-and-after shots on
+14 Nov 2026): the nearest walls and a silhouette can be made out, nothing more. Everything else is the wall torches and what the party
+holds. Monsters, floor items, armed traps and levers are tinted by the light that reaches them (`sprite_lighting.gd`: each light in
+range whose tile can see theirs adds its colour x energy x (1 - distance / range) ^ falloff), never below `sprite_min_light` 0.35, a
+cold dim silhouette that still reads (the art style's readability rule). They stay unshaded sprites: Godot lights a billboard sprite from
+behind, so a lit sprite in front of a torch-bearing party came out a silhouette lit by the wall torch beyond it.
+
+| | Torch | Candle | Notes |
+|---|---|---|---|
+| Light | energy 1.6, range 9, falloff 1.5, the old party light's colour | energy 0.8, range 5, warmer | The party's light (`party_light.gd`, the Player's `Torch` node) shines as the brightest one held |
+| Burns | 240 s (`burn_seconds`) | 600 s | Only while lit: held in a living hero's hand, or burning on the floor. The time left is on the stack (`ItemStack.burn_left`), so a light put away keeps it |
+| Stack | 3 | 5 | Fresh ones only: a used light never stacks with fresh ones |
+| Hand action | a weak swing: 1-2, -1 attack, +1-2 fire on a hit | a weak swing: 1, -2 attack | From the front row; the back row "can't reach" |
+
+- **Holding:** a light works only in a hand, and it takes that hand. Several held: the brightest counts, plus 10% of it for each extra
+  light, at most +20% (`extra_light_bonus`, `extra_light_cap`). A dead hero's light goes out (it neither shines nor burns).
+- **Quick slots** take torches and candles. Clicking one puts it lit into a hand: the one already holding a light, else a free one, else
+  the second hand. A single light swaps with what was there, which waits in the quick slot (so the next click brings the shield back and
+  puts the light out, keeping its time); from a stack of several, one comes off and the hand's item goes into the backpack.
+- **Running out:** in its last 15 s (`gutter_seconds`) the flame flickers hard and its hand bar blinks (not with Reduce flashing), then
+  "{name}'s torch gutters out." and the stub is gone. A thin bar along the foot of the hand slot shows the time left; a PixelLab flame
+  plays over the icon while it is lit.
+- **Fire:** a torch's landed blow adds 1-2 fire damage. A monster with `MonsterDef.fears_fire` (both slimes; the rat when it exists)
+  recoils: a swing it had started is lost, its next blow comes 1 s later (`recoil_delay`), and it backs off one tile if the tile behind
+  it is free. "The slime recoils from the flame."
+- **Critical fails:** a missed torch swing can slip like any melee weapon (half of the 8% fails): the torch rolls onto the tile in front
+  still burning ("It rolls away, still burning."), and the light is there now, not with the party (`light_field.gd`, 70% of its
+  energy). It burns down there; burned out on the floor it is gone. Picked up, it goes back to the hand it slipped from, lit again.
+- **News:** `GameEvents.light_out(hero)` when a held light burns out; `light_changed(level)` when the party's light really changes (0 is
+  dark, else the brightest's energy with the bonus), never as it flickers, never for a new run or while a save loads.
+- **Saving:** each stack's burn time (`burn`) and whether it lies burning on the floor (`burning`); burning floor lights are lit again
+  after a load. An older save has none (fresh lights).
+- **Start:** the Cleric holds a lit torch and carries two candles in a quick slot.
+- **Banter:** `light_taken` (the Cleric with a torch: "I am a priest, not a lamp."), `light_out` (the Fighter, in a fight: "Brilliant.").
+- **Why these numbers:** a torch lasts about one long stretch of the floor, a candle about the floor but barely lights past the next
+  tile, so a party in a hurry burns torches and a careful one walks by candle. The fire is a nudge (a slime backs off, it doesn't run).
+- **Not built yet:** wall sconces, curse zones that snuff flames, throwing torches, oil, monsters that avoid fire (roadmap 7l.2-7l.6).

@@ -258,5 +258,19 @@
 		"lines": [
 			{"speaker": "thief", "text": "Typical."}
 		]
+	},
+	"light_taken": {
+		"chance": 0.7,
+		"cooldown": 60,
+		"lines": [
+			{"speaker": "cleric", "about": "self", "if": {"item": "torch"}, "text": "I am a priest, not a lamp."}
+		]
+	},
+	"light_out": {
+		"chance": 0.8,
+		"cooldown": 20,
+		"lines": [
+			{"speaker": "fighter", "in_fight": true, "text": "Brilliant."}
+		]
 	}
 }

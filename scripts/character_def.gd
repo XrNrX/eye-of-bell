@@ -16,6 +16,8 @@ extends Resource
 @export var magic := 0            # ItemDef.Magic: which FOCUS items this hero can cast from.
 @export var start_hands: Array[Resource] = []  # ItemDef per hand (null for empty), at the start of a run.
 @export var start_hand_counts: Array[int] = []  # Stack size per hand (missing or 0 means 1), e.g. 6 darts.
+@export var start_quick: Array[Resource] = []  # ItemDef per quick slot (null for empty), at the start of a run (the Cleric's candles).
+@export var start_quick_counts: Array[int] = []  # Stack size per quick slot (missing or 0 means 1).
 
 @export_group("Crits")
 ## Crit chance (CombatRules.crit_chance) = crit_base + (dexterity - 10) + weapon bonus + finesse_crit with a finesse

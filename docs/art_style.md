@@ -65,6 +65,10 @@ blue pixels, or the palette snap turns them green or purple.
 - Torchlight is the only warm colour and it is weak: dull amber, not golden or cheerful.
 - Magic and curses give off their own faint **cold green** light (sometimes bruised purple),
   which is how they read in the dark.
+- **In the game the dark is real** (7l.1): no light follows the party. A faint cold ambient lets the nearest
+  walls and a silhouette show; the rest is wall torches and the torch or candle a hero holds. Monsters and
+  floor items are tinted by the light that reaches them, down to a dim cold silhouette (`data/light.tres`:
+  `ambient_color`, `sprite_min_light`). Judge new art in the dark and by torchlight, not only lit.
 
 ## Monsters
 

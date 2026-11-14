@@ -1,0 +1,235 @@
+{
+ "frames": [
+  {
+   "filename": "held-flame-torch-and-candle 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 30
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8666666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "held-flame-torch-and-candle 1.png",
+   "frame": {
+    "x": 16,
+    "y": 0,
+    "w": 16,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 30
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8666666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "held-flame-torch-and-candle 2.png",
+   "frame": {
+    "x": 32,
+    "y": 0,
+    "w": 16,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 30
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8666666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "held-flame-torch-and-candle 3.png",
+   "frame": {
+    "x": 0,
+    "y": 30,
+    "w": 16,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 30
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8666666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "held-flame-torch-and-candle 4.png",
+   "frame": {
+    "x": 16,
+    "y": 30,
+    "w": 16,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 30
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8666666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "held-flame-torch-and-candle 5.png",
+   "frame": {
+    "x": 32,
+    "y": 30,
+    "w": 16,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 30
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8666666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "held-flame-torch-and-candle 6.png",
+   "frame": {
+    "x": 0,
+    "y": 60,
+    "w": 16,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 30
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8666666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "held-flame-torch-and-candle 7.png",
+   "frame": {
+    "x": 16,
+    "y": 60,
+    "w": 16,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 16,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 16,
+    "h": 30
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.8666666666666667
+   },
+   "duration": 83
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "held-flame-torch-and-candle.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 48,
+   "h": 90
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 8,
+   "y": 26
+  },
+  "frameTags": [
+   {
+    "name": "held-flame-torch-and-candle",
+    "from": 0,
+    "to": 7,
+    "direction": "forward"
+   }
+  ]
+ }
+}

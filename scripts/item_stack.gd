@@ -14,6 +14,12 @@ var count := 1
 ## or {} for "nowhere in particular". Cleared as soon as it is picked up.
 var origin := {}
 
+## A light (ItemDef.is_light): seconds of burning left, or -1 for a fresh one (all of ItemDef.burn_seconds). It only counts down while
+## the light is lit, so a light put away keeps its time. A used light never stacks with fresh ones.
+var burn_left := -1.0
+## A light lying lit on a floor tile (it slipped from a hand): light_field.gd keeps it burning there until it is picked up.
+var burning := false
+
 
 static func of(item_def: Resource, n := 1) -> RefCounted:
 	var s := new()
@@ -32,7 +38,14 @@ static func wrap(item) -> RefCounted:
 
 ## Same kind of item, and a kind that stacks at all (max_stack > 1).
 func can_stack_with(other: RefCounted) -> bool:
-	return other != null and other.def == def and def.max_stack > 1
+	if other == null or other.def != def or def.max_stack <= 1:
+		return false
+	return burn_left < 0.0 and other.burn_left < 0.0 and not burning and not other.burning  # Only fresh lights stack.
+
+
+## A light's seconds of burning left (all of them if it is fresh).
+func seconds_left() -> float:
+	return def.burn_seconds if burn_left < 0.0 else burn_left
 
 
 func room() -> int:

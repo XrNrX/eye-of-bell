@@ -11,6 +11,7 @@ var time := randf() * 100.0
 
 
 func _ready() -> void:
+	add_to_group("sprite_lights")  # Monsters and items near it are lit by it (sprite_lighting.gd).
 	if shadow_kind != "":
 		SpellEffectsConfigScript.apply_shadow(self, shadow_kind)
 

@@ -1,0 +1,26 @@
+[gd_resource type="Resource" load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/item_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/items/candle.png" id="2_icon"]
+[ext_resource type="Texture2D" path="res://art/items/candle_floor.png" id="3_floor"]
+[ext_resource type="Texture2D" path="res://art/items/candle_hud.png" id="90_hud"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Candle"
+type = 7
+icon = ExtResource("2_icon")
+floor_icon = ExtResource("3_floor")
+hud_icon = ExtResource("90_hud")
+icon_pixel_size = 0.01
+max_stack = 5
+attack_bonus = -2
+damage_min = 1
+damage_max = 1
+light_energy = 0.8
+light_range = 5.0
+light_attenuation = 1.5
+light_color = Color(0.8, 0.72, 0.6, 1)
+burn_seconds = 600.0
+fire_damage_min = 0
+fire_damage_max = 0

@@ -42,4 +42,5 @@ status_overrides = {
 }
 }
 hit_effect = "slime_splat"
+fears_fire = true
 crit_chance = 2
