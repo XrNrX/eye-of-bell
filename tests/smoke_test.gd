@@ -67,6 +67,7 @@ func _init() -> void:
 	dungeon.clear_monsters()
 	player.restore(SPOT, EAST)
 	_check_light()
+	_check_focus_hands()
 	_check_kill()
 	_check_monster_hit()
 	await _check_attack_timing()
@@ -268,6 +269,27 @@ func _check_light() -> void:
 	cleric.backpack[11] = null
 	party._process(0.0)
 	_rest_everyone()
+
+
+## A spellbook or holy symbol only goes in the hand of a hero who casts that magic; anyone may carry one in a backpack.
+func _check_focus_hands() -> void:
+	var book: Resource = load("res://data/items/spellbook.tres")
+	var symbol: Resource = load("res://data/items/holy_symbol.tres")
+	var by_class := {}
+	for m in party.members:
+		by_class[m.class_id()] = m
+	check("focus: only the Mage can hold the spellbook, only the Cleric the holy symbol",
+			party.can_equip(by_class.mage, book) and not party.can_equip(by_class.fighter, book) and not party.can_equip(by_class.thief, book)
+			and not party.can_equip(by_class.cleric, book) and party.can_equip(by_class.cleric, symbol) and not party.can_equip(by_class.mage, symbol))
+	var cursor: Node = get_first_node_in_group("cursor")
+	var fighter = by_class.fighter
+	var before = fighter.hands[1]
+	cursor.hold(ItemStack.of(book, 1))
+	var why: String = party.place_in_hand(fighter.slot, 1, cursor)
+	check("focus: the Fighter's hand refuses the spellbook, and it stays on the cursor (%s)" % why,
+			why == "Brannoc can't make use of the spellbook." and fighter.hands[1] == before and cursor.is_holding())
+	check("focus: but it fits in his backpack", party.add_to_backpack(fighter.slot, cursor.release()))
+	fighter.backpack[fighter.backpack.find(fighter.backpack.filter(func(s): return s != null and s.def == book)[0])] = null
 
 
 # --------------------------------------------------------------------------

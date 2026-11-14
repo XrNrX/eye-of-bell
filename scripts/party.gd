@@ -1115,8 +1115,21 @@ func hand_refusal(stack: RefCounted) -> String:
 # --------------------------------------------------------------------------
 
 ## Can this hero wear or wield the item (ItemDef.cant_use lists the classes that can't)?
+## A spellbook or holy symbol (a FOCUS) only goes in the hand of a hero who casts that kind of magic (CharacterDef.magic): the Fighter
+## and the Thief can carry one in a backpack, never hold it.
 func can_equip(m: Member, def: Resource) -> bool:
+	if def.type == ItemDef.Type.FOCUS and def.magic != m.def.magic:
+		return false
 	return not (m.class_id() in def.cant_use)
+
+
+## Why this hero can't hold or wear it (class rules only, dead or alive), or "".
+func class_refusal(m: Member, def: Resource) -> String:
+	if can_equip(m, def):
+		return ""
+	if def.type == ItemDef.Type.FOCUS:
+		return "%s can't make use of the %s." % [m.name(), def.display_name.to_lower()]
+	return "%s can't %s that." % [m.name(), "wear" if def.type == ItemDef.Type.ARMOUR else "use"]
 
 
 ## Armour and melee-or-thrown weapons can be equipped straight from the cursor (focus items, keys and the rest cannot).
@@ -1142,9 +1155,7 @@ func equip_change(m: Member, def: Resource) -> Dictionary:
 func equip_refusal(m: Member, def: Resource) -> String:
 	if not m.is_alive():
 		return "%s is dead." % m.name()
-	if not can_equip(m, def):
-		return "%s can't %s that." % [m.name(), "wear" if def.type == ItemDef.Type.ARMOUR else "use"]
-	return ""
+	return class_refusal(m, def)
 
 
 ## The item on the cursor, clicked onto a hero's portrait: it goes into that hero's backpack (matching stacks first). What does not fit
@@ -1239,6 +1250,8 @@ func place_in_hand(slot: int, hand: int, cursor: Node) -> String:
 		return "%s is dead." % m.name()
 	var held: RefCounted = cursor.held
 	var why := hand_refusal(held)
+	if why == "":
+		why = class_refusal(m, held.def)  # A spellbook won't go in the Fighter's hand.
 	if why != "":
 		return why
 	var here = m.hands[hand]
