@@ -6,9 +6,14 @@ Starts in borderless fullscreen; Alt+Enter switches to a window.
 Goal: find your way through the dungeon to the stairs down (one of the keys opens the locked
 door in front of them). Levers, a pressure plate and a cracked wall (War Hammer or Fireball) help.
 
+NEW IN v0.7
+  The dark is real now: carry a torch or a candle, and watch it burn down. Right-click an item on
+  the floor to choose who carries it. A bear trap can be dropped in front to set it, and nothing
+  gets past one. Details below.
+
 NEW IN v0.6
   Hold Monster (the Mage's new spell), a rusty bear trap to set, monsters that move at their own
-  slower pace, a party that talks, and you see what hit you. Details below.
+  slower pace, a party that talks, and you see what hit you.
 
 THE MONSTERS
   Skeletons, skeleton guards, slimes and acid slimes all have detailed art with full animation:
@@ -25,10 +30,12 @@ MOVING AND ACTING
   Left click     pick up / put down an item on the tile in front
                (a key goes straight to a backpack: "Key picked up!")
   Shift+click    send a floor item straight to a quick slot or backpack
+  Right-click    on a floor item: choose which hero carries it (see LOOT below)
 
 THE PARTY
   Click a hero's hand button to attack, throw, or cast (see below)
-  1 - 8          the quick slots under the portraits (potions, scrolls, darts, daggers)
+  1 - 8          the quick slots under the portraits (potions, scrolls, darts, daggers, traps,
+                 torches and candles)
   Click a portrait or name   open that hero's inventory / character sheet
   C              character sheet          Shift+1 - 4   that hero's sheet
   Drag a portrait onto another   swap their places in the formation
@@ -45,6 +52,24 @@ CASTING
   The symbol must be in a hand, not the backpack: "You need your holy symbol."
   When the Cleric casts Heal or Bless the symbol glows and a gold light sweeps the corridor.
 
+LIGHT AND DARKNESS
+  No light follows the party any more. Your eyes adjust enough to make out the nearest walls and
+  a shape in the dark; the rest is the wall torches and whatever a hero holds. The Cleric starts
+  with a lit torch and two candles in a quick slot.
+  A torch or candle only shines in a hand, and it takes that hand: no weapon or holy symbol there.
+  It burns only while held (a thin bar under the hand shows what is left; near the end the flame
+  sputters), then "...'s torch gutters out." Put it away and it goes out, keeping its time.
+  Torch: bright, about 4 minutes. Candle: dim and close, about 10 minutes. Click one in a quick
+  slot to take it up; click again to swap back to what that hand held.
+  A torch is a poor weapon with a little fire in it: slimes hate fire and back away from it.
+  Fumble with a torch and it rolls onto the floor ahead, still burning. Pick it up again.
+
+LOOT
+  Right-click an item on the floor in front: a list of the heroes opens, with how much room each
+  has in their backpack and who can't use it. Click a hero (or press 1 - 4) to put it straight
+  in their pack. With several items on the tile, TAKE ALL shares them out. The dead can still
+  carry (they are listed last). Esc or a click elsewhere closes it.
+
 HOLD MONSTER
   The Mage binds the monster directly in front in cold blue runes for 5 seconds: it can't move
   or strike, and blows on it crit far more often (the Thief most of all). 5 mana, then 12 seconds
@@ -52,11 +77,11 @@ HOLD MONSTER
   a little sooner); a skeleton guard shrugs it off now and then.
 
 THE BEAR TRAP
-  Two rusty bear traps lie in the dungeon. Click one in a hand or quick slot to set it on the empty
-  tile in front (it takes a moment; the Thief is quicker). The first monster to step on it is
-  snapped: hurt and held for 3 seconds. Then it lies closed on the floor to pick up and set again,
-  unless the spring snaps. The party steps over its own traps; click an armed trap to take it back.
-  Slimes ooze straight through.
+  Two rusty bear traps lie in the dungeon. Click one in a hand or quick slot, or drop it from your
+  cursor onto the empty tile in front, to set it there (it takes a moment; the Thief is quicker).
+  Nothing gets past it: the first monster to step on it is snapped, hurt and held for 3 seconds.
+  Then it lies closed on the floor to pick up and set again, unless the spring snaps. The party
+  steps over its own traps; click an armed trap to take it back. Slimes ooze straight through.
 
 THE PARTY TALKS
   The four heroes comment on deaths, revivals, empty mana, a good hit and a clumsy one, a held
