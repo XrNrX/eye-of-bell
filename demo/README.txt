@@ -6,9 +6,17 @@ Starts in borderless fullscreen; Alt+Enter switches to a window.
 Goal: find your way through the dungeon to the stairs down (one of the keys opens the locked
 door in front of them). Levers, a pressure plate and a cracked wall (War Hammer or Fireball) help.
 
+NEW IN v0.6
+  Hold Monster (the Mage's new spell), a rusty bear trap to set, monsters that move at their own
+  slower pace, a party that talks, and you see what hit you. Details below.
+
 THE MONSTERS
-  Skeletons, skeleton guards, slimes and acid slimes all have new, more detailed art with full
-  animation: they idle, walk, attack (the acid slime spits) and react when hit.
+  Skeletons, skeleton guards, slimes and acid slimes all have detailed art with full animation:
+  they idle, walk, attack (the acid slime spits) and react when hit.
+  They move on their own, slower clock, pause a moment before following, and can't strike the
+  moment they arrive. Step back and you get a breather or a free swing; keep walking and you
+  leave them behind. Only one at a time tries to get round to your side or back; the rest queue.
+  When a blow lands you see what hit you: claw rakes, an axe swing, a splat of slime.
 
 MOVING AND ACTING
   W / S          forward / back          A / D   sidestep        Q / E   turn
@@ -29,13 +37,30 @@ THE PARTY
   Shift+right-click   use one item from a stack
 
 CASTING
-  The Mage casts from a spellbook (Magic Missile, Shield, Fireball); the Cleric from a holy
-  symbol (Heal, Bless). Click the hand holding it and a spell list opens: each spell has its own
+  The Mage casts from a spellbook (Magic Missile, Shield, Fireball, Hold Monster); the Cleric
+  from a holy symbol (Heal, Bless). Click the hand holding it and a spell list opens: each spell has its own
   icon and mana cost, the hero's mana is at the top, and spells you cannot afford are greyed.
   Pick a spell, then a hero if it needs one. The list always opens on top of everything and keeps
   clear of the map (below it for the top row of heroes).
   The symbol must be in a hand, not the backpack: "You need your holy symbol."
   When the Cleric casts Heal or Bless the symbol glows and a gold light sweeps the corridor.
+
+HOLD MONSTER
+  The Mage binds the monster directly in front in cold blue runes for 5 seconds: it can't move
+  or strike, and blows on it crit far more often (the Thief most of all). 5 mana, then 12 seconds
+  before he can cast it again. Skeletons and slimes are held almost every time (slimes wobble free
+  a little sooner); a skeleton guard shrugs it off now and then.
+
+THE BEAR TRAP
+  Two rusty bear traps lie in the dungeon. Click one in a hand or quick slot to set it on the empty
+  tile in front (it takes a moment; the Thief is quicker). The first monster to step on it is
+  snapped: hurt and held for 3 seconds. Then it lies closed on the floor to pick up and set again,
+  unless the spring snaps. The party steps over its own traps; click an armed trap to take it back.
+  Slimes ooze straight through.
+
+THE PARTY TALKS
+  The four heroes comment on deaths, revivals, empty mana, a good hit and a clumsy one, a held
+  monster, a sprung trap, and the end of a fight. They keep quiet when it matters.
 
 RAISING THE FALLEN
   Two Scrolls of Resurrection lie hidden on the floor. With one on your cursor, click a fallen
