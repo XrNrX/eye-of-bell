@@ -18,7 +18,7 @@ static func get_config() -> Resource:
 
 @export var rows := {
 	"held": {"chance": [90, 65, 35, 15], "duration": [1.0, 1.0, 0.5, 0.5]},
-	"trap": {"chance": [95, 83, 68, 58], "duration": [1.0, 1.0, 0.5, 0.5]},  # A bear trap's hold: held's chance to resist, halved.
+	"trap": {"chance": [100, 100, 100, 100], "duration": [1.0, 1.0, 0.5, 0.5]},  # A bear trap's hold: nothing gets past it (tiers 3-4 held half the time).
 }
 
 

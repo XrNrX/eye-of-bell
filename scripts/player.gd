@@ -95,6 +95,11 @@ func _click_item(shift := false) -> void:
 	var front := cell + DIRS[facing]
 	if DungeonMap.is_blocked(front) or DungeonMap.is_occupied(front):
 		return
+	if cursor.is_holding() and cursor.held.def.type == ItemDef.Type.TRAP:  # A trap put down in front is set there (the Thief, fastest).
+		var party_node := get_tree().get_first_node_in_group("party")
+		if party_node != null:
+			party_node.set_trap_from_cursor(cursor)
+		return
 	if cursor.is_holding():  # Goes on top of anything already there (a tile holds a pile).
 		var stack: RefCounted = cursor.release()
 		dungeon.place_item(front, stack)

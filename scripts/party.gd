@@ -595,13 +595,50 @@ func _set_trap(m: Member, source: Dictionary) -> bool:
 			m.quick[source.index] = null
 	if source.where == "quick":
 		quick_changed.emit(m.slot)
-	var seconds: float = def.set_seconds * float(m.def.get("trap_set_time") if m.def.get("trap_set_time") != null else 1.0)
+	_begin_trap(traps, m, def, front)
+	return true
+
+
+## A trap dropped from the cursor onto the tile in front is set there, as from a hand: by the living hero who sets traps fastest
+## (CharacterDef.trap_set_time: the Thief), who is busy for the time it takes. Refused with the reason, and kept on the cursor, if the
+## tile won't take a trap. Returns whether it is being set.
+func set_trap_from_cursor(cursor: Node) -> bool:
+	var traps := get_tree().get_first_node_in_group("traps")
+	var held: RefCounted = cursor.held if cursor != null else null
+	if traps == null or held == null or held.def.type != ItemDef.Type.TRAP:
+		return false
+	var front: Vector2i = player.cell + player.DIRS[player.facing]
+	var why: String = traps.can_set(front)
+	var setter: Member = null
+	for m in members:
+		if m.is_alive() and (setter == null or _trap_time(m) < _trap_time(setter)):
+			setter = m
+	if why == "" and setter == null:
+		why = "Nobody is left to set it."
+	if why != "":
+		_say(why)
+		return false
+	if held.count > 1:
+		held.count -= 1
+		cursor.refresh()
+	else:
+		cursor.release()
+	_begin_trap(traps, setter, held.def, front)
+	return true
+
+
+func _trap_time(m: Member) -> float:
+	return float(m.def.get("trap_set_time") if m.def.get("trap_set_time") != null else 1.0)
+
+
+## Start setting `def` on `front`: the hero is busy for set_seconds x their trap_set_time, then it is armed (trap_field.gd).
+func _begin_trap(traps: Node, m: Member, def: Resource, front: Vector2i) -> void:
+	var seconds: float = def.set_seconds * _trap_time(m)
 	m.cooldown_left = seconds
 	cooldown_started.emit(m.slot, seconds)
 	traps.begin_setting(front, def, m.hero_index, seconds, player.cell, player.facing)
 	_cue("trap_set")
 	_say("%s kneels to set the %s." % [m.name(), str(def.display_name).to_lower()])
-	return true
 
 
 func _throw(m: Member, hand: int) -> void:

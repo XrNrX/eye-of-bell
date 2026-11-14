@@ -663,9 +663,8 @@ func _check_trap() -> void:
 	skel.move_wait = 999.0
 	skel._step(Vector2i(-1, 0))
 	await create_timer(0.45).timeout
-	var resisted: bool = hud.lines.any(func(l): return str(l.text).contains("tears free"))
-	check("trap: a monster stepping on it is snapped: hurt and held for %.1f s (or tears free)" % skel.status_left("held"),
-			skel.hp < 50 and (resisted or absf(skel.status_left("held") - trap_def.trap_seconds) < 0.3) and traps.armed_at(AHEAD_1) == null)
+	check("trap: a monster stepping on it is snapped: hurt and held for %.1f s" % skel.status_left("held"),
+			skel.hp < 50 and absf(skel.status_left("held") - trap_def.trap_seconds) < 0.3 and traps.armed_at(AHEAD_1) == null)
 	check("trap: it lies closed on the tile, to be picked up again", dungeon.item_at(AHEAD_1) != null and dungeon.item_at(AHEAD_1).def == trap_def)
 	check("trap: event trap_triggered once, naming the trap and the monster", events.trap_triggered.size() == triggered_before + 1
 			and events.trap_triggered[-1][0] == trap_def and events.trap_triggered[-1][1] == skel)
@@ -691,6 +690,32 @@ func _check_trap() -> void:
 	traps.disarm(AHEAD_1)
 	dungeon.clear_monsters()
 	dungeon.set_pile(AHEAD_1, [])
+	# Nothing gets past it: a tougher monster (the guard, tier 2) is held every time.
+	trap_def.break_chance = 0.0
+	var held_every_time := true
+	for i in 6:
+		traps.arm(AHEAD_1, trap_def, thief.hero_index)
+		var guard: Node = _monster("skeleton_guard", AHEAD_2, 99)
+		guard.move_wait = 999.0
+		guard._step(Vector2i(-1, 0))
+		await create_timer(0.45).timeout
+		held_every_time = held_every_time and guard.has_status("held")
+		dungeon.clear_monsters()
+		dungeon.set_pile(AHEAD_1, [])
+	trap_def.break_chance = saved_break
+	check("trap: nothing gets past it: a skeleton guard is held every time (6 of 6)", held_every_time)
+	# Dropped from the cursor onto the tile in front, it is set there, by the Thief (fastest).
+	_rest_everyone()
+	cursor.hold(ItemStack.of(trap_def, 2))
+	player.world_click()
+	check("trap: dropped in front, it is being set by the Thief and one stays on the cursor", traps.setting.size() == 1
+			and traps.setting[0].setter == thief.hero_index and thief.cooldown_left > 0.0 and cursor.is_holding() and cursor.held.count == 1)
+	traps._process(2.0)
+	check("trap: ...and then lies armed", traps.armed_at(AHEAD_1) == trap_def)
+	player.world_click()  # Onto a tile that has a trap already: refused, kept on the cursor.
+	check("trap: dropped where it can't be set, it stays on the cursor", cursor.is_holding() and cursor.held.count == 1 and traps.armed_at(AHEAD_1) == trap_def)
+	cursor.release()
+	traps.disarm(AHEAD_1)
 	_rest_everyone()
 
 
