@@ -6,6 +6,15 @@ Starts in borderless fullscreen; Alt+Enter switches to a window.
 Goal: find your way through the dungeon to the stairs down (one of the keys opens the locked
 door in front of them). Levers, a pressure plate and a cracked wall (War Hammer or Fireball) help.
 
+NEW IN v0.10
+  Plague rats nest in the cave: small, quick and fond of biting. A bite can leave a hero sick for
+  a few seconds. They are afraid of fire. They may leave raw rat meat behind.
+  The wall torches are sconces now. Many are dark (an unlit torch, or just an empty bracket), so
+  the dungeon is darker than before, and you can light them, take their torches, or hang one back.
+  Fireballs and Magic Missiles send a ripple through the picture where they land (switched off by
+  FLASHING: REDUCED). The map marks the sconces you have seen. Saving is sturdier: a damaged save
+  file is refused with a message instead of half loading, and old saves still load.
+
 NEW IN v0.9
   A new screen: the dungeon view is in the middle, with the heroes down each side. The top hero
   on each side is the front row; the two below are the back row. Each side has room for a third
@@ -82,6 +91,23 @@ LIGHT AND DARKNESS
   A torch is a poor weapon with a little fire in it: slimes hate fire and back away from it.
   Fumble with a torch and it rolls onto the floor ahead, still burning. Pick it up again.
 
+WALL SCONCES
+  Each wall torch is one of three: burning, unlit (a torch sits in it, not burning) or an empty
+  bracket. Eight burn at the start, seven are unlit and ten are bare.
+  Light an unlit one: right-click it (the wall in front of you) while a hero holds a lit torch or
+  candle, or cast a Fireball at it. It stays lit and nothing is used up.
+  Take the torch from a burning or unlit one: left-click it with an empty cursor. You get a torch
+  with 120 seconds on it, and the bracket is bare.
+  Hang a torch: left-click a bare bracket with a torch on your cursor. It lights that stretch for
+  good, keeps the time it had, and burns none while it hangs there. Take it out again and it has
+  the same time. A candle will not fit. No torch is ever made: what is in the dungeon is all there is.
+
+THE PLAGUE RAT
+  Three nest in the cave. Weak (5 health), but quick, and a landed bite has a one in five chance
+  of leaving the hero sick: a few points of health lost over six seconds, never enough to kill.
+  They back away from a torch. Raw rat meat heals a little over a few seconds and may make the
+  eater sick too; there is no way to cook it yet.
+
 LOOT
   Right-click an item on the floor in front: a list of the heroes opens, with how much room each
   has in their backpack and who can't use it. Click a hero (or press 1 - 4) to put it straight
@@ -137,7 +163,8 @@ THE MAP
   The party sketches the dungeon as it goes: a small map on stained parchment sits in the top
   right of the 3D view (floors are an ink wash, walls thin ink lines, doors drawn as bars across
   the gap, red dot = locked, stairs / levers / found secrets as small symbols, a red arrow for
-  where you face). The torchlight flickers faintly over it.
+  where you face). The torchlight flickers faintly over it. Sconces you have seen are small
+  squares against the wall: gold burning, grey unlit, dark an empty bracket.
   M              full-screen map of the whole level, with a legend (M or Esc closes it)
   Tab            show / hide the small map        Shift+Tab   show / hide coordinates (debug)
   This demo has no fog of war yet, so the map shows the whole level around you.
