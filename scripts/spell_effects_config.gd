@@ -136,6 +136,15 @@ func glow(kind: String) -> Dictionary:
 @export var blast_shake_strength := 0.2                  # Screen shake (camera offset, world units; a heavy hit is 0.05).
 @export var blast_shake_seconds := 0.6
 
+@export_group("Shockwave (spell impacts, scripts/shockwave.gd)")
+@export var shock_enabled := true
+@export var shock_strength := 4.0        # Logical view pixels the ring pushes the picture at its start (whole pixels on screen).
+@export var shock_start_radius := 6.0    # Logical view pixels: the ring's radius as it begins...
+@export var shock_radius := 90.0         # ...and as it ends (the view is 416x260).
+@export var shock_width := 12.0          # How thick the ring of pushed pixels is (logical view pixels).
+@export var shock_seconds := 0.3         # How long it ripples outward.
+@export var shock_reduced_scale := 0.0   # Strength under Reduce flashing and screen shake (0: no wave at all).
+
 @export_group("Heal glow")
 @export var heal_color := Color(1.0, 0.85, 0.45)        # The light's colour.
 @export var heal_light_energy := 2.4

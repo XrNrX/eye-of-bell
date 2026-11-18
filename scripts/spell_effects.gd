@@ -399,6 +399,7 @@ func explosion(cell: Vector2i) -> void:
 	get_tree().call_group("combat_feel", "jolt", Vector3(0, 0, c.blast_kick_distance), c.blast_kick_seconds)  # Knocked back, away from the blast.
 	if c.blast_pause_seconds > 0.0:
 		get_tree().call_group("combat_feel", "hit_pause", c.blast_pause_seconds)
+	get_tree().call_group("shockwave", "burst", at)
 	var flip := _flipbook(sheet, false, c.fb_impact_scale)
 	flip.position = at
 	add_child(flip)
@@ -540,6 +541,7 @@ func _explosion_basic(cell: Vector2i) -> void:
 	var at := _cell_pos(cell, c.bolt_height)
 	get_tree().call_group("audio", "play", "explosion")
 	get_tree().call_group("combat_feel", "shake_by", c.blast_shake_strength, c.blast_shake_seconds)
+	get_tree().call_group("shockwave", "burst", at)
 	var flash := OmniLight3D.new()
 	flash.position = at
 	flash.light_color = c.blast_light_color

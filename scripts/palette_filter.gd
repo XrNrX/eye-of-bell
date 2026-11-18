@@ -31,5 +31,8 @@ func _ready() -> void:
 	mat.set_shader_parameter("palette_size", PALETTE.size())
 	mat.set_shader_parameter("dither", SpellEffectsConfig.get_config().palette_dither)
 	rect.material = mat
+	var copy := BackBufferCopy.new()  # Read the screen afresh, so a shockwave drawn on a lower layer is snapped too.
+	copy.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
+	add_child(copy)
 	add_child(rect)
 	visible = Settings.palette_filter

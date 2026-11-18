@@ -78,6 +78,7 @@ func _init() -> void:
 	await _check_trap()
 	await _check_warden()
 	await _check_rat()
+	await _check_shockwave()
 	await _check_food()
 	_check_resurrection()
 	await _check_world_events()
@@ -800,6 +801,28 @@ func _check_warden() -> void:
 
 
 ## The plague rat (tier 1, fast, fears fire): its numbers, its nest, a bite that may make a hero sick, and the raw meat it leaves.
+## The Fireball's shockwave: an explosion starts a ring that is gone after shock_seconds; Reduce flashing (with
+## shock_reduced_scale 0) starts none.
+func _check_shockwave() -> void:
+	dungeon.clear_monsters()
+	player.restore(SPOT, EAST)
+	var wave: Node = root.find_child("Shockwave", true, false)
+	var fx: Node = get_first_node_in_group("spell_effects")
+	check("shockwave: the layer is in the dungeon view", wave != null and wave.get_viewport() is SubViewport)
+	if wave == null or fx == null:
+		return
+	var before: int = wave.started
+	fx.explosion(SPOT + Vector2i(2, 0))
+	check("shockwave: a Fireball explosion starts one", wave.started == before + 1 and wave.rect.visible)
+	await create_timer(SpellEffectsConfig.get_config().shock_seconds + 0.15).timeout
+	check("shockwave: it is over after shock_seconds", wave.waves.is_empty() and not wave.rect.visible)
+	Settings.reduce_flashing = true
+	before = wave.started
+	fx.explosion(SPOT + Vector2i(2, 0))
+	check("shockwave: none with Reduce flashing", wave.started == before)
+	Settings.reduce_flashing = false
+
+
 func _check_rat() -> void:
 	_rest_everyone()
 	dungeon.clear_monsters()

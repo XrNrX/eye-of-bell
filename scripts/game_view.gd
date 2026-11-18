@@ -14,6 +14,7 @@ extends SubViewportContainer
 
 const UiLayout := preload("res://scripts/ui_layout.gd")
 const PaletteFilter := preload("res://scripts/palette_filter.gd")
+const Shockwave := preload("res://scripts/shockwave.gd")
 const EnemyBars := preload("res://scripts/enemy_bars.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const UiScale := preload("res://scripts/ui_scale.gd")
@@ -30,6 +31,9 @@ func _ready() -> void:
 	UiScale.keep_fitted(self, UiLayout.VIEW.position, UiLayout.VIEW.size, _view_scale_changed)
 	var port := get_node_or_null("Port")
 	if port:
+		var wave := Shockwave.new()  # Spell impact ripples; hidden while none runs.
+		wave.name = "Shockwave"
+		port.add_child(wave)
 		var filter := PaletteFilter.new()  # Hidden unless Options: PALETTE FILTER is on.
 		filter.name = "PaletteFilter"
 		port.add_child(filter)
