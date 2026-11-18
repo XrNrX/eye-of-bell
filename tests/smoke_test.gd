@@ -83,6 +83,7 @@ func _init() -> void:
 	await _check_food()
 	_check_resurrection()
 	await _check_world_events()
+	_check_puzzles()
 	await _check_save_load()
 	_check_stairs()
 	await _check_hurt_and_heal()
@@ -956,6 +957,47 @@ func _check_sconces() -> void:
 	player.restore(Vector2i(3, 7), 0)
 	r = _cast("fireball")
 	check("sconces: a Fireball at a wall with a lit sconce has nothing to target and costs nothing", not r.cast)
+
+
+## Puzzles listen to the event bus (S7): any event re-checks them. The real puzzle is covered with the world events; here a made-up
+## table checks conditions with memory (levers pulled in order, kept in the run flags), a flag condition, a chain (one puzzle's effect
+## makes another true in the same check) and that a puzzle fires once. Levers are not really pulled (the state the later checks
+## expect stays), only the news that they were is sent.
+func _check_puzzles() -> void:
+	var real_puzzles: Array = DungeonMap.PUZZLES
+	var a := {"cell": Vector2i(19, 7), "side": 0}
+	var b := {"cell": Vector2i(20, 5), "side": 3}
+	DungeonMap.PUZZLES = [
+		{"id": "smoke_order", "when": [{"kind": "lever_order", "levers": [a, b]}], "then": [{"kind": "set_flag", "name": "smoke.order", "value": true}]},
+		{"id": "smoke_chain", "when": [{"kind": "flag", "name": "smoke.order"}], "then": [{"kind": "set_flag", "name": "smoke.chain", "value": 7}]},
+	]
+	var pulled := func(lever: Dictionary):
+		root.get_node("GameEvents").lever_pulled.emit(lever.cell, lever.side, true)
+	var solved_before: int = events.get("puzzle_solved", []).size()
+	pulled.call(b)
+	pulled.call(a)
+	pulled.call(a)  # (Starting over: a pulled twice is a first pull again.)
+	check("puzzles: levers pulled in the wrong order do not solve it", not DungeonMap.puzzles_done.has("smoke_order") and DungeonMap.flag("puzzle.smoke_order.step") == 1)
+	pulled.call(b)
+	check("puzzles: pulled in order they do, from the event alone, and the progress is a run flag", DungeonMap.puzzles_done.has("smoke_order") and DungeonMap.flag("smoke.order", false) == true
+			and DungeonMap.flag("puzzle.smoke_order.step") == 2)
+	check("puzzles: one puzzle's effect makes another true in the same check (a chain)", DungeonMap.puzzles_done.has("smoke_chain") and DungeonMap.flag("smoke.chain") == 7)
+	check("puzzles: each fired once, and puzzle_solved was sent for each", events.get("puzzle_solved", []).size() == solved_before + 2)
+	pulled.call(a)
+	pulled.call(b)
+	check("puzzles: a solved puzzle does not fire again", events.get("puzzle_solved", []).size() == solved_before + 2)
+	# Any event re-checks: a flag set by hand and then any news at all.
+	DungeonMap.PUZZLES = [{"id": "smoke_any", "when": [{"kind": "flag", "name": "smoke.go"}], "then": [{"kind": "set_flag", "name": "smoke.went"}]}]
+	DungeonMap.set_flag("smoke.go", true)
+	check("puzzles: a flag alone does nothing until some news arrives", not DungeonMap.puzzles_done.has("smoke_any"))
+	root.get_node("GameEvents").fight_ended.emit()
+	check("puzzles: any event at all re-checks them", DungeonMap.puzzles_done.has("smoke_any") and DungeonMap.flag("smoke.went", false) == true)
+	DungeonMap.PUZZLES = real_puzzles
+	for id in ["smoke_order", "smoke_chain", "smoke_any"]:
+		DungeonMap.puzzles_done.erase(id)
+	for flag_name in ["puzzle.smoke_order.step", "smoke.order", "smoke.chain", "smoke.go", "smoke.went"]:
+		DungeonMap.flags.erase(flag_name)
+	check("puzzles: the real puzzle is back in place and still done", DungeonMap.PUZZLES.size() == 1 and DungeonMap.puzzles_done.has("nook_blessing"))
 
 
 ## The shockwave: a Fireball explosion starts a ring (a Magic Missile impact a smaller one) that is gone after shock_seconds; Reduce flashing (with

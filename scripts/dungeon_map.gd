@@ -101,10 +101,16 @@ static var CORRUPTION := {
 # A puzzle is data: when every condition in "when" holds, its "then" effects run, once (scripts/puzzles.gd).
 #   conditions: {"kind": "wall_purified", "cell": Vector2i}   a corrupted wall has been burned away
 #               {"kind": "lever_on", "cell": Vector2i, "side": int}   a wall lever is switched on
+#               {"kind": "flag", "name": String, "value": true}   a run flag has this value (memory: see below)
+#               {"kind": "lever_order", "levers": [{"cell": Vector2i, "side": int}, ...]}   those levers pulled one after another
+#   Puzzles listen to the event bus and are re-checked on ANY event (scripts/puzzles.gd), so a condition needs no call site.
+#   A condition that needs memory keeps it in the run flags (DungeonMap.flags, saved), "puzzle.<id>.<what>": lever_order keeps
+#   its progress in "puzzle.<id>.step".
 #   effects:    {"kind": "message", "text": String}           a line in the log
 #               {"kind": "open_door", "id": String}           a DOOR_IDS door stays open for good (as if a switch held it)
 #               {"kind": "break_wall", "cell": Vector2i}      a cracked wall breaks
 #               {"kind": "purify_wall", "cell": Vector2i}     a corrupted wall is purified (a lever or plate can do it)
+#               {"kind": "set_flag", "name": String, "value": true}   set a run flag (another puzzle can wait on it)
 static var PUZZLES := [
 	{"id": "nook_blessing", "when": [{"kind": "wall_purified", "cell": Vector2i(16, 4)}], "then": [
 		{"kind": "message", "text": "The curse bleeds out of the stone. Somewhere in the dark, a latch gives way."},

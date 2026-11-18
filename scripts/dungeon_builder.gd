@@ -176,6 +176,9 @@ func _ready() -> void:
 	lights = LightField.new()
 	lights.name = "Lights"
 	add_child(lights)
+	var puzzles := Puzzles.new()  # Listens to the event bus and re-checks every puzzle on any news (S7).
+	puzzles.name = "Puzzles"
+	add_child(puzzles)
 	var sprite_lighting := SpriteLighting.new()
 	sprite_lighting.name = "SpriteLighting"
 	add_child(sprite_lighting)
@@ -506,7 +509,6 @@ func pull_lever(cell: Vector2i, side: int) -> void:
 	get_tree().call_group("audio", "play", "lever")
 	Events.send(get_tree(), "lever_pulled", [cell, side, lever_on[key]])
 	refresh()
-	Puzzles.check(self)
 
 
 ## Should the door with this ID be open? Yes if any of its levers is on or the
@@ -754,8 +756,7 @@ func _purify(cell: Vector2i, show: bool) -> void:
 		corrupt.erase(cell)
 		refresh()
 		if show:  # (Not when a save puts a purified wall back.)
-			Events.send(get_tree(), "wall_purified", [cell])
-		Puzzles.check(self)
+			Events.send(get_tree(), "wall_purified", [cell])  # (Puzzles hear it: puzzles.gd listens to the bus.)
 	if show and node != null:
 		node.purify(func(): _open_cell(cell), finish)
 	else:
