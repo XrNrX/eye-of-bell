@@ -1,0 +1,287 @@
+{
+ "frames": [
+  {
+   "filename": "eye-of-bell-oil-burst 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 70,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 70,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 70,
+    "h": 56
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-oil-burst 1.png",
+   "frame": {
+    "x": 70,
+    "y": 0,
+    "w": 70,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 70,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 70,
+    "h": 56
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-oil-burst 2.png",
+   "frame": {
+    "x": 140,
+    "y": 0,
+    "w": 70,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 70,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 70,
+    "h": 56
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-oil-burst 3.png",
+   "frame": {
+    "x": 210,
+    "y": 0,
+    "w": 70,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 70,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 70,
+    "h": 56
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-oil-burst 4.png",
+   "frame": {
+    "x": 0,
+    "y": 56,
+    "w": 70,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 70,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 70,
+    "h": 56
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-oil-burst 5.png",
+   "frame": {
+    "x": 70,
+    "y": 56,
+    "w": 70,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 70,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 70,
+    "h": 56
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-oil-burst 6.png",
+   "frame": {
+    "x": 140,
+    "y": 56,
+    "w": 70,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 70,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 70,
+    "h": 56
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-oil-burst 7.png",
+   "frame": {
+    "x": 210,
+    "y": 56,
+    "w": 70,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 70,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 70,
+    "h": 56
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-oil-burst 8.png",
+   "frame": {
+    "x": 0,
+    "y": 112,
+    "w": 70,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 70,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 70,
+    "h": 56
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  },
+  {
+   "filename": "eye-of-bell-oil-burst 9.png",
+   "frame": {
+    "x": 70,
+    "y": 112,
+    "w": 70,
+    "h": 56
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 70,
+    "h": 56
+   },
+   "sourceSize": {
+    "w": 70,
+    "h": 56
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 71
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "eye-of-bell-oil-burst.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 280,
+   "h": 168
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 35,
+   "y": 28
+  },
+  "frameTags": [
+   {
+    "name": "eye-of-bell-oil-burst",
+    "from": 0,
+    "to": 9,
+    "direction": "forward"
+   }
+  ]
+ }
+}

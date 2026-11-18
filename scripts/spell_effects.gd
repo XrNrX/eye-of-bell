@@ -325,6 +325,21 @@ func trap_snap(cell: Vector2i) -> void:
 	get_tree().call_group("combat_feel", "shake_by", c.trap_snap_shake, 0.15, Vector2.UP)
 
 
+## A flask of oil smashes on a tile (oil_field.gd): the splash plays (PixelLab VFX, art/spells/oil/burst_sheet.png), drawn normally, not added.
+func oil_burst(cell: Vector2i) -> void:
+	var sheet := _sheet("oil", "burst")
+	if sheet.is_empty():
+		return
+	var c := Config.get_config()
+	var flip: MeshInstance3D = Flipbook.new()
+	flip.setup(sheet.texture, sheet.frames, sheet.fps, false, c.fb_pixel_size, Color(1, 1, 1), false, 1.6)
+	flip.position = DungeonMap.cell_to_world(cell) + Vector3(0, 0.3, 0)
+	add_child(flip)
+	live += 1
+	flip.finished.connect(func():
+		live -= 1)
+
+
 func _status_scale(monster: Node3D) -> float:
 	var c := Config.get_config()
 	var gap: float = c.status_ring_gap_px * c.fb_pixel_size
@@ -396,6 +411,7 @@ func explosion(cell: Vector2i) -> void:
 	live += 1
 	var at := _cell_pos(cell, c.bolt_height)
 	get_tree().call_group("dungeon", "ignite_near", cell, 1)  # Unlit sconces on the walls beside the blast catch.
+	get_tree().call_group("oil", "ignite_near", cell, 1)      # ...and so does any oil on the floor there.
 	get_tree().call_group("audio", "play", "explosion")
 	get_tree().call_group("combat_feel", "shake_by", c.blast_shake_strength * (_light_strength() if Settings.reduce_flashing else 1.0), c.blast_shake_seconds)
 	get_tree().call_group("combat_feel", "jolt", Vector3(0, 0, c.blast_kick_distance), c.blast_kick_seconds)  # Knocked back, away from the blast.
@@ -542,6 +558,7 @@ func _explosion_basic(cell: Vector2i) -> void:
 	live += 1
 	var at := _cell_pos(cell, c.bolt_height)
 	get_tree().call_group("dungeon", "ignite_near", cell, 1)
+	get_tree().call_group("oil", "ignite_near", cell, 1)
 	get_tree().call_group("audio", "play", "explosion")
 	get_tree().call_group("combat_feel", "shake_by", c.blast_shake_strength, c.blast_shake_seconds)
 	get_tree().call_group("shockwave", "burst", at)

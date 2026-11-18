@@ -100,6 +100,13 @@ Older PixelLab art (items, monsters, portraits, walls, decals, the title screen,
 **Curse zone haze (2026-11-19, 0 generations: a free tool)**
 - `art/spells/curse/haze_sheet.png` (source `tools/art/pieces/spells/curse/haze.png` + `.json`, 20 frames of 162x75 at 12 fps, a loop; `gen_spell_fx.py` slices it and snaps it to the palette): a low, thin cloud of sickly pale green mist drifting sideways (`poison_cloud` with the bubbles at 0, size 2.4, thickness 0.75, the curse greens `#3a6b4c #7fb88a #cdeec0`). Laid flat on the floor of a curse zone, additive, two patches a tile (`curse_zones.gd`). `vfx_workbench`, My effects id 8b77b47e-86cc-49a3-b805-f9f5c7124d9b.
 
+**The Flask of oil (2026-11-19, 3 generations; the burst and the flames are free tools)**
+- `art/items/oil_flask.png` / `oil_flask_floor.png` (48x48; source `tools/art/pieces/items48/oil_flask.png`, `create_image_pixflux`, seed 8101, 1 generation) and `oil_flask_hud.png` (32x32 native; source `pieces/items32/oil_flask.png`, seed 8102, 1 generation): a grimy round glass flask of lamp oil with a rag round its neck. Installed with `tools/art/add_item_art.py oil_flask` and the outline pass (`regrade_items.py`, `oil_flask` in `NATIVE32`).
+- `art/decals/oil_slick.png` (128x128; `tools/art/gen_oil_slick.py` from `pieces/decals/oil_slick_raw.png`, `create_image_pixflux`, seed 8103, 1 generation): a black puddle seen from above. It came out flat black, which vanishes on the dark floor, so the script adds a dithered brown rim, a gloss arc and a few amber glints.
+- `art/spells/oil/burst_sheet.png` (10 frames of 70x56, 14 fps, one-shot; source `pieces/spells/oil/burst.png` + `.json`): a flask smashing, a crown of droplets and ripples in dark oil and amber (`water_splash` recoloured). My effects id de5bc52a-0659-4962-b2d2-cc32cb5cc154. `vfx_workbench`, 0 generations.
+- `art/spells/oil/flames_sheet.png` (8 frames of 56x40, 12 fps, loop; source `pieces/spells/oil/flames.png` + `.json`): a low wall of flames for a burning tile and for a burning monster (`fire_wall`, flicker 0.7). `gen_spell_fx.py` moves the white-hot core off the curse green it snaps to (bone and gold, `RECOLOUR["oil"]`). My effects id 69b6aff3-b23d-4ab8-b157-3c7d39f028dd. `vfx_workbench`, 0 generations.
+- Placeholder: the whoosh when oil catches reuses the Fireball's sound (no oil sound exists yet).
+
 **The niche with its candle out (2026-11-19, 0 generations)**
 - `art/decals/niche_out.png`: `art/decals/niche.png` with the candle flame cut away and a dark wick, made by `tools/art/gen_niche_out.py` (no PixelLab); shown instead of the niche while a curse zone is within 2 tiles. Its normal map `art/normals/decals/niche_out_n.png` is the niche's own.
 

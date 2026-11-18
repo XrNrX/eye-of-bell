@@ -14,3 +14,4 @@ damage_max = 11
 breaks_walls = true
 splash_radius = 1
 splash_percent = 50
+fire = true

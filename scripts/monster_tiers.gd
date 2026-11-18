@@ -19,6 +19,8 @@ static func get_config() -> Resource:
 @export var rows := {
 	"held": {"chance": [90, 65, 35, 15], "duration": [1.0, 1.0, 0.5, 0.5]},
 	"trap": {"chance": [100, 100, 100, 100], "duration": [1.0, 1.0, 0.5, 0.5]},  # A bear trap's hold: nothing gets past it (tiers 3-4 held half the time).
+	"doused": {"chance": [100, 100, 100, 100], "duration": [1.0, 1.0, 1.0, 1.0]},  # A thrown flask of oil: it sticks to anything, slimes and the Warden too (wall monsters are immune).
+	"burning": {"chance": [100, 100, 100, 100], "duration": [1.0, 1.0, 1.0, 1.0]},  # What a doused monster does when fire touches it.
 }
 
 

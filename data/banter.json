@@ -312,5 +312,25 @@
 			{"speaker": "fighter", "in_fight": false, "text": "Torch back. Good."},
 			{"speaker": "cleric", "in_fight": false, "text": "The Light returns. As I foretold."}
 		]
+	},
+	"oil_ignited": {
+		"chance": 0.7,
+		"cooldown": 30,
+		"lines": [
+			{"speaker": "mage", "text": "Technically, that went to plan."},
+			{"speaker": "thief", "text": "Oil burns. Who knew."},
+			{"speaker": "fighter", "text": "Good."},
+			{"speaker": "cleric", "text": "I did say to stand well back."}
+		]
+	},
+	"walked_into_fire": {
+		"chance": 1.0,
+		"cooldown": 20,
+		"lines": [
+			{"speaker": "thief", "about": "other", "text": "{actor} has made a terrible decision."},
+			{"speaker": "fighter", "about": "other", "text": "Daft."},
+			{"speaker": "mage", "about": "other", "text": "That is fire. It is called fire."},
+			{"speaker": "cleric", "about": "other", "text": "I did say it was fire."}
+		]
 	}
 }

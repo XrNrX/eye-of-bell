@@ -24,7 +24,7 @@ const PLAIN_DOOR := Vector2i(16, 6)
 const LEVER := Vector3i(19, 7, 0)  # The north lever of gate_n: cell (19,7), side 0.
 
 const EVENTS := ["monster_killed", "monster_held", "monster_released", "trap_triggered", "light_out", "light_changed", "hero_hurt", "mana_low", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
-		"wall_purified", "puzzle_solved", "level_completed", "entered_curse_zone", "left_curse_zone"]
+		"wall_purified", "puzzle_solved", "level_completed", "entered_curse_zone", "left_curse_zone", "oil_ignited"]
 const CRACKED_WALL := Vector2i(2, 6)
 const THICK_CORRUPTION := Vector2i(16, 4)  # Purifying it fires the puzzle "nook_blessing".
 const SWORD_TILE := Vector2i(6, 10)        # The short sword in front of the start.
@@ -81,6 +81,7 @@ func _init() -> void:
 	await _check_shockwave()
 	await _check_sconces()
 	await _check_curse_zones()
+	await _check_oil()
 	await _check_food()
 	_check_resurrection()
 	await _check_world_events()
@@ -835,6 +836,148 @@ func _all_torch_stacks() -> Array:
 	for cell in dungeon.items:
 		stacks += dungeon.items[cell].pile
 	return stacks.filter(func(s): return s != null and s.def.fits_sconce)
+
+
+## The Flask of oil (7l.5): thrown at the floor it lands on the tile in front and leaves a slick; thrown at a monster it is doused; fire (a
+## Fireball, a torch swing, a burning torch lying there) lights a slick, which burns 6 s and hurts what stands on it; a doused monster hit by
+## fire takes +6 and burns; oil on a weapon; refused in a curse zone; monsters that fear fire will not cross it; saved (see _check_save_load).
+func _check_oil() -> void:
+	var flask: Resource = load("res://data/items/oil_flask.tres")
+	var doused_def: Resource = load("res://data/statuses/doused.tres")
+	var fighter = null
+	for m in party.members:
+		if m.class_id() == "fighter":
+			fighter = m
+	var held_before := []
+	for m in party.members:
+		held_before.append(m.hands.duplicate())
+	dungeon.clear_monsters()
+	dungeon.oil.load_state({"slicks": [], "burning": []})
+	fighter.hands = [ItemStack.of(load("res://data/items/short_sword.tres"), 1), ItemStack.of(flask, 3)]
+	check("oil: a flask stacks to 3, can be thrown, and a hand click throws it", flask.max_stack == 3 and flask.is_oil and flask.can_throw() and party.action_for(fighter.slot, 1) == party.Act.THROW
+			and party.quick_accepts(ItemStack.of(flask, 1)))
+	player.restore(SPOT, EAST)
+	var ignited_before: int = events.get("oil_ignited", []).size()
+
+	# Thrown at the floor: it always lands on the tile in front, never under the party.
+	fighter.cooldown_left = 0.0
+	party.act(fighter.slot, 1)
+	check("oil: thrown at the floor it leaves a slick on the tile in front, not under the party, and the flask is spent",
+			dungeon.oil.has_slick(AHEAD_1) and not dungeon.oil.has_slick(SPOT) and fighter.hands[1].count == 2 and dungeon.oil.slicks[AHEAD_1].left > 119.0
+			and get_first_node_in_group("hud").lines.any(func(l): return str(l.text).contains("Oil spreads")))
+
+	# Thrown at a monster: doused for 30 s (a tier table row of its own; slimes too).
+	var skeleton: Node = _monster("skeleton", AHEAD_2, 99)
+	skeleton.add_status(load("res://data/statuses/held.tres"), 30.0, 1)  # (Held, so it stays on its tile.)
+	fighter.cooldown_left = 0.0
+	party.act(fighter.slot, 1)
+	check("oil: thrown at a monster it is doused for 30 s, and the flask is spent", skeleton.has_status("doused") and skeleton.status_left("doused") > 29.0 and skeleton.status_left("doused") <= 30.0
+			and fighter.hands[1].count == 1 and not dungeon.oil.has_slick(AHEAD_2))
+	var odds_slime: Dictionary = load("res://data/tiers.tres").odds("doused", load("res://data/monsters/slime.tres"))
+	var odds_warden: Dictionary = load("res://data/tiers.tres").odds("doused", load("res://data/monsters/warden.tres"))
+	check("oil: doused has its own row in the tier table: slimes and the Warden can be doused", odds_slime.chance == 100 and not odds_slime.immune and odds_warden.chance == 100 and not odds_warden.immune)
+
+	# Fire: a Fireball at the doused monster does +6 and sets it burning, and its blast lights the slick a tile away.
+	var hp_before: int = skeleton.hp
+	var r := _cast("fireball")
+	await create_timer(1.2).timeout
+	var after_blast: int = skeleton.hp
+	check("oil: a Fireball on a doused monster does +6 (at least 11 in all) and sets it burning; it is no longer doused",
+			r.cast and hp_before - after_blast >= 11 and skeleton.has_status("burning") and not skeleton.has_status("doused"))
+	check("oil: the blast lit the slick beside it: it burns now, as a light in sprite_lights, and oil_ignited was sent once for that tile",
+			dungeon.oil.is_burning(AHEAD_1) and not dungeon.oil.has_slick(AHEAD_1) and dungeon.oil.burning[AHEAD_1].light.is_in_group("sprite_lights")
+			and events.get("oil_ignited", []).size() == ignited_before + 1 and events["oil_ignited"][-1][0] == AHEAD_1)
+	await create_timer(3.2).timeout
+	check("oil: burning does 2 a second for 3 s (about 6 in all, some of it before the blast was measured) and then stops", skeleton.hp <= after_blast - 3 and skeleton.hp >= after_blast - 8 and not skeleton.has_status("burning"))
+	dungeon.clear_monsters()
+
+	# A burning tile hurts a monster on it (a held one on a slick can be lit), lasts 6 s and then it is out.
+	dungeon.oil.load_state({"slicks": [], "burning": []})
+	var trapped: Node = _monster("skeleton", Vector2i(10, 13), 50)
+	trapped.add_status(load("res://data/statuses/held.tres"), 30.0, 1)
+	dungeon.oil.add_slick(Vector2i(10, 13))
+	check("oil: fire on a tile with no oil does nothing, and a slick catches when fire touches it", not dungeon.oil.ignite(Vector2i(9, 13)) and dungeon.oil.has_slick(Vector2i(10, 13)))
+	dungeon.oil.ignite(Vector2i(10, 13))
+	await create_timer(2.3).timeout
+	check("oil: a monster held on the slick takes 2 a second while it burns (the trap combo)", trapped.hp <= 46 and trapped.hp >= 44 and dungeon.oil.is_burning(Vector2i(10, 13)))
+	dungeon.oil.burning[Vector2i(10, 13)].left = 1.4
+	await create_timer(1.8).timeout
+	check("oil: and then it is out", not dungeon.oil.is_burning(Vector2i(10, 13)) and not dungeon.fire_at(Vector2i(10, 13)))
+	dungeon.clear_monsters()
+
+	# Monsters that fear fire will not step onto it: burning oil, or a burning torch lying there.
+	var slime: Node = _monster("slime", Vector2i(11, 13), 20)
+	var plain: Node = _monster("skeleton", Vector2i(12, 13), 20)
+	dungeon.oil.add_slick(Vector2i(10, 13))
+	dungeon.oil.ignite(Vector2i(10, 13))
+	var torch_def: Resource = load("res://data/items/torch.tres")
+	var lying: RefCounted = ItemStack.of(torch_def, 1)
+	dungeon.place_item(Vector2i(9, 13), lying)
+	dungeon.lights.drop(Vector2i(9, 13), lying)
+	check("oil: a slime will not step onto burning oil or onto a burning torch lying there", dungeon.fire_at(Vector2i(10, 13)) and dungeon.fire_at(Vector2i(9, 13))
+			and not slime._can_enter(Vector2i(10, 13)) and not slime._can_enter(Vector2i(9, 13)))
+	check("oil: a monster that does not fear fire may enter a burning tile", plain._can_enter(Vector2i(10, 13)) and not plain.def.fears_fire)
+	dungeon.take_item(Vector2i(9, 13))
+	dungeon.clear_monsters()
+
+	# A burning torch lying on a slick lights it (a thrown torch landing there).
+	dungeon.oil.load_state({"slicks": [], "burning": []})
+	dungeon.oil.add_slick(Vector2i(8, 13))
+	var dropped: RefCounted = ItemStack.of(torch_def, 1)
+	dungeon.place_item(Vector2i(8, 13), dropped)
+	dungeon.lights.drop(Vector2i(8, 13), dropped)
+	await create_timer(0.3).timeout
+	check("oil: a burning torch lying on a slick lights it", dungeon.oil.is_burning(Vector2i(8, 13)))
+	dungeon.take_item(Vector2i(8, 13))
+	dungeon.oil.load_state({"slicks": [], "burning": []})
+
+	# The party standing in burning oil: each hero loses 1 a second.
+	var hp_total_before := _total_hp()
+	dungeon.oil.add_slick(SPOT)
+	dungeon.oil.ignite(SPOT)
+	await create_timer(1.3).timeout
+	var alive: int = party.members.filter(func(m): return m.is_alive()).size()
+	check("oil: the party standing on burning oil loses 1 HP a second each (%d lost, %d heroes)" % [hp_total_before - _total_hp(), alive], hp_total_before - _total_hp() == alive)
+	dungeon.oil.load_state({"slicks": [], "burning": []})
+	_rest_everyone()
+
+	# Oil on a weapon: the next 3 landed hits do +2 fire; fire on a doused monster burns it.
+	var blade: Dictionary = party.use_item(fighter.slot, flask)
+	check("oil: used on a weapon (the inventory's use) it oils the next 3 hits, and a second flask is refused", blade.used and fighter.oiled_hits == 3 and not party.use_item(fighter.slot, flask).used)
+	var target: Node = _monster("skeleton", AHEAD_1, 99)
+	target.add_status(load("res://data/statuses/held.tres"), 60.0, 1)
+	target.add_status(doused_def, 30.0, 1)
+	var swings := 0
+	while fighter.oiled_hits == 3 and swings < 60:
+		fighter.cooldown_left = 0.0
+		party.act(fighter.slot, 0)
+		swings += 1
+	check("oil: the first landed hit on a doused monster burns it (+6 and burning) and uses one of the three", fighter.oiled_hits == 2 and target.has_status("burning") and not target.has_status("doused"))
+	while fighter.oiled_hits > 0 and swings < 200:
+		fighter.cooldown_left = 0.0
+		party.act(fighter.slot, 0)
+		swings += 1
+	check("oil: each landed hit used one (never a miss), and then the blade is plain", fighter.oiled_hits == 0)
+	dungeon.clear_monsters()
+
+	# Refused in a curse zone, and nothing spent; a slick will not catch there.
+	var real_zones: Array = DungeonMap.CURSE_ZONES
+	DungeonMap.CURSE_ZONES = [{"id": "smoke_oil", "tiles": [SPOT, AHEAD_1, AHEAD_2]}]
+	dungeon.curse.pocket_left = 0.0
+	fighter.hands[1] = ItemStack.of(flask, 3)
+	fighter.cooldown_left = 0.0
+	party.act(fighter.slot, 1)
+	check("oil: the throw is refused with a line while the party stands in a curse zone, and nothing is spent",
+			fighter.hands[1].count == 3 and not dungeon.oil.has_slick(AHEAD_1) and get_first_node_in_group("hud").lines.any(func(l): return str(l.text).begins_with("The air here hates fire.")))
+	dungeon.oil.add_slick(AHEAD_2)
+	check("oil: a slick will not catch in a zone", not dungeon.oil.ignite(AHEAD_2) and dungeon.oil.has_slick(AHEAD_2))
+	DungeonMap.CURSE_ZONES = real_zones
+	dungeon.oil.load_state({"slicks": [], "burning": []})
+
+	for i in party.members.size():
+		party.members[i].hands = held_before[i]
+	_rest_everyone()
+	player.restore(SPOT, EAST)
 
 
 ## Curse zones (7l.3): flames die inside one. A made-up zone along the long corridor (x 8-12, row 13) and the sconce at (12,14): held flames
@@ -1663,6 +1806,17 @@ func _check_save_load() -> void:
 	DungeonMap.sconce_seen.clear()
 	DungeonMap.sconce_seen[Vector3i(19, 3, 0)] = true
 
+	# Oil: a slick, a tile burning (4 s left), a doused monster and a hero's oiled weapon.
+	dungeon.oil.load_state({"slicks": [], "burning": []})
+	dungeon.oil.add_slick(Vector2i(7, 13))
+	dungeon.oil.add_slick(Vector2i(10, 13))
+	dungeon.oil.ignite(Vector2i(10, 13))
+	dungeon.oil.burning[Vector2i(10, 13)].left = 4.0
+	DungeonMap.occupied.get(CLOSETS[0]).add_status(load("res://data/statuses/doused.tres"), 20.0, 2)
+	for m in party.members:
+		if m.class_id() == "fighter":
+			m.oiled_hits = 2
+
 	var saved := _snapshot()
 	var sent_before := _event_counts()
 	var error: String = SaveGame.save(self)
@@ -1758,6 +1912,15 @@ func _check_save_load() -> void:
 			and dungeon.sconce_at(Vector3i(19, 3, 0)) == DungeonMap.SCONCE_LIT and is_equal_approx(dungeon.sconce_time(Vector3i(19, 3, 0)), 77.0)
 			and dungeon.sconces[Vector3i(19, 3, 0)].light != null and dungeon.sconce_at(Vector3i(12, 9, 1)) == DungeonMap.SCONCE_EMPTY
 			and DungeonMap.sconce_seen.has(Vector3i(19, 3, 0)) and not DungeonMap.sconce_seen.has(Vector3i(20, 22, 3)))
+	var doused_back = DungeonMap.occupied.get(CLOSETS[0])
+	var oiled_back := 0
+	for m in party.members:
+		if m.class_id() == "fighter":
+			oiled_back = m.oiled_hits
+	check("load: a slick (still about 2 minutes), a burning tile (a few seconds left, lit, flames), a doused monster and an oiled weapon all come back",
+			dungeon.oil.has_slick(Vector2i(7, 13)) and dungeon.oil.slicks[Vector2i(7, 13)].left > 50.0 and dungeon.oil.is_burning(Vector2i(10, 13))
+			and dungeon.oil.burning[Vector2i(10, 13)].left > 0.0 and dungeon.oil.burning[Vector2i(10, 13)].left <= 4.0 and dungeon.oil.burning[Vector2i(10, 13)].light.is_in_group("sprite_lights")
+			and doused_back != null and doused_back.has_status("doused") and doused_back.status_left("doused") > 10.0 and oiled_back == 2)
 	var level_text := FileAccess.get_file_as_string(SaveGame.path)
 	var written = JSON.parse_string(level_text)
 	check("the save stores its version and level path", written is Dictionary and int(written.version) == SaveGame.VERSION and written.level == DungeonMap.level_path

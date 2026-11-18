@@ -103,6 +103,7 @@ class Member:
 	var sick_rate := 0.0
 	var sick_acc := 0.0
 	var spell_wait := {}    # SpellDef -> seconds before this hero may cast it again (SpellDef.recast_seconds).
+	var oiled_hits := 0     # Oil on the weapon: this many more landed melee hits do +2 fire (a flask used on it: LightConfig "Oil").
 	var shaken_left := 0.0  # A resurrected Cleric: seconds until their faith steadies (no mana, no prayer until then).
 	var had_light := false  # Held a lit light last frame (banter when one is taken up; see _tick_lights).
 
@@ -372,7 +373,7 @@ func save_state() -> Dictionary:
 		for b in m.buffs:
 			buffs.append({"spell": b.spell.resource_path, "left": b.left})
 		heroes.append({
-			"hero": m.hero_index, "hp": m.hp, "mana": m.mana, "shaken": m.shaken_left,
+			"hero": m.hero_index, "hp": m.hp, "mana": m.mana, "shaken": m.shaken_left, "oiled": m.oiled_hits,
 			"food": {"left": m.food_left, "rate": m.food_rate, "sick_left": m.sick_left, "sick_rate": m.sick_rate},
 			"hands": m.hands.map(SaveData.stack_to_data), "armour": SaveData.stack_to_data(m.armour),
 			"backpack": m.backpack.map(SaveData.stack_to_data), "quick": m.quick.map(SaveData.stack_to_data),
@@ -443,6 +444,7 @@ func load_state(d: Dictionary) -> void:
 		m.mana = clampf(float(h.mana), 0.0, float(m.def.max_mana))
 		var alive: bool = m.hp > 0
 		m.shaken_left = maxf(0.0, float(h.get("shaken", 0.0))) if alive else 0.0  # (An older save has none.)
+		m.oiled_hits = maxi(0, int(h.get("oiled", 0))) if alive else 0
 		var food: Dictionary = h.get("food", {})  # (So does an older save: no food or sickness running.)
 		m.food_left = maxf(0.0, float(food.get("left", 0.0))) if alive else 0.0
 		m.food_rate = maxf(0.0, float(food.get("rate", 0.0)))
@@ -557,6 +559,8 @@ func action_for(slot: int, hand: int) -> int:
 	var def: Resource = stack.def
 	if def.type == ItemDef.Type.FOCUS:
 		return Act.SPELLS
+	if def.is_oil:  # A flask of oil is thrown (at the floor or at a monster); using it on a weapon is the inventory's shift+right-click.
+		return Act.THROW
 	if def.type == ItemDef.Type.CONSUMABLE:
 		return Act.USE
 	if def.type == ItemDef.Type.TRAP:
@@ -762,6 +766,87 @@ func _throw(m: Member, hand: int) -> void:
 	_do_throw(m, {"where": "hand", "index": hand})
 
 
+const DOUSED := "res://data/statuses/doused.tres"
+
+
+## Throw a Flask of oil (docs/combat_design.md "Oil and fire"). At a monster in line (within MISSILE_RANGE): it bursts on it and the monster is
+## DOUSED for 30 s (the tier table's row "doused": the next fire that touches it does +6 and sets it burning). Otherwise it is thrown AT THE FLOOR:
+## it always lands on the tile in front, never under the party, and leaves a slick. Refused, and nothing spent, with no room to throw or while the
+## party stands in a curse zone (the air will not let oil catch). Returns whether it was thrown.
+func _throw_oil(m: Member, source: Dictionary) -> bool:
+	var dungeon = get_tree().get_first_node_in_group("dungeon")
+	if dungeon == null or dungeon.get("oil") == null:
+		return false
+	if dungeon.flame_blocked(player.cell):
+		_say("The air here hates fire. The flask stays corked.")
+		return false
+	var dir: Vector2i = player.DIRS[player.facing]
+	var front: Vector2i = player.cell + dir
+	if DungeonMap.is_blocked(front):
+		_say("There's no room to throw.")
+		return false
+	var land: Vector2i = front
+	var target = null
+	for i in range(1, MISSILE_RANGE + 1):
+		var cell: Vector2i = player.cell + dir * i
+		if DungeonMap.is_blocked(cell):
+			break
+		var monster = DungeonMap.occupied.get(cell)
+		if monster != null and is_instance_valid(monster) and not monster.dying:
+			target = monster
+			land = cell
+			break
+	var stack = _source_stack(m, source)
+	var def: Resource = stack.def
+	_start_cooldown(m)
+	stack.take_one()  # The flask is spent: it breaks, it does not lie on the floor to be picked up.
+	if stack.count <= 0:
+		if source.where == "hand":
+			m.hands[source.index] = null
+		else:
+			m.quick[source.index] = null
+	if source.where == "quick":
+		quick_changed.emit(m.slot)
+	_cue("throw")
+	dungeon.show_throw(player.cell, land, def)
+	dungeon.oil.burst(land)
+	if target == null:
+		dungeon.oil.add_slick(front)
+		_say("%s throws the flask at the floor. Oil spreads across the stones." % m.name())
+		return true
+	var result: Dictionary = target.try_status(load(DOUSED), LightConfig.get_config().doused_seconds, m.hero_index)
+	if result.outcome == "landed":
+		_say("%s throws the oil at the %s. It is soaked." % [m.name(), target.def.display_name.to_lower()])
+	else:
+		_say("The oil runs off the %s." % target.def.display_name.to_lower())
+	return true
+
+
+## Fire under the party (oil_field.gd): each living hero loses `amount` HP (source "fire"), and someone remarks on it.
+func burn_party(amount: int) -> void:
+	var front = null
+	for m in members:
+		if m.is_alive():
+			if front == null:
+				front = m
+			hurt(m, amount, "fire")
+	if front != null:
+		get_tree().call_group("banter", "event", "walked_into_fire", {"actor": front.class_id()})
+
+
+## A flask of oil used on this hero's weapon (the inventory's shift+right-click, `use_item`): the next LightConfig.oiled_hits landed melee hits
+## do +oiled_bonus fire. Returns {used, message, close}.
+func _oil_weapon(m: Member) -> Dictionary:
+	var weapon := equipped_weapon(m)
+	if weapon == null:
+		return {"used": false, "message": "%s has no weapon to oil." % m.name(), "close": false}
+	var hits: int = LightConfig.get_config().oiled_hits
+	if m.oiled_hits >= hits:
+		return {"used": false, "message": "The %s is already oiled." % weapon.display_name.to_lower(), "close": false}
+	m.oiled_hits = hits
+	return {"used": true, "message": "%s oils the %s. The next %d hits will burn." % [m.name(), weapon.display_name.to_lower(), hits], "close": false}
+
+
 ## The item a throw would take from: {"where": "hand" or "quick", "index": n}.
 func _source_stack(m: Member, source: Dictionary):
 	return m.hands[source.index] if source.where == "hand" else m.quick[source.index]
@@ -772,6 +857,8 @@ func _source_stack(m: Member, source: Dictionary):
 func _do_throw(m: Member, source: Dictionary) -> bool:
 	var stack = _source_stack(m, source)
 	var def: Resource = stack.def
+	if def.is_oil:
+		return _throw_oil(m, source)
 	var dir: Vector2i = player.DIRS[player.facing]
 	if DungeonMap.is_blocked(player.cell + dir):
 		_say("There's no room to throw.")
@@ -951,12 +1038,12 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 				var damage := CombatRules.roll_damage(spell.damage_min, spell.damage_max)
 				var crit := CombatRules.roll_crit(m.def.spell_crit)
 				var dealt := CombatRules.crit_damage(damage, CombatRules.SPELL_CRIT_MULT) if crit else damage
-				monster.take_hit({"hit": true, "damage": dealt, "chance": 100, "crit": crit, "by": m.hero_index})
+				monster.take_hit({"hit": true, "damage": dealt, "chance": 100, "crit": crit, "by": m.hero_index, "fire": spell.fire})
 				if crit:
 					spell_crit = true
 				var caught := 0  # (The splash below is half the plain roll: a crit is for the main target alone.)
 				if spell.splash_radius > 0:
-					caught = _splash(monster, spell.splash_radius, maxi(1, ceili(damage * spell.splash_percent / 100.0)), m.hero_index)
+					caught = _splash(monster, spell.splash_radius, maxi(1, ceili(damage * spell.splash_percent / 100.0)), m.hero_index, spell.fire)
 				var opened := 0
 				if spell.breaks_walls:  # The shockwave cracks open any cracked wall beside the target.
 					opened = _break_walls_near(monster.cell, maxi(1, spell.splash_radius))
@@ -1692,6 +1779,8 @@ func use_item(slot: int, def: Resource) -> Dictionary:
 				else "Click a fallen hero's portrait with it."}
 	if not m.is_alive():
 		return {"used": false, "message": "%s is dead." % m.name(), "close": false}
+	if def.is_oil:
+		return _oil_weapon(m)
 	if def.is_food():
 		return eat(slot, def)
 	if def.heal_amount > 0:
@@ -1785,14 +1874,14 @@ func _read_scroll(m: Member, def: Resource) -> Dictionary:
 ## A blast's splash: every other living monster within `radius` tiles (the 8 around, for 1) of
 ## the target takes `damage` (already worked out: no roll, no hit chance). Returns how many were hit.
 ## Walls and closed doors hold no monsters, so nothing passes through them; the party is never hurt.
-func _splash(target: Node, radius: int, damage: int, by := -1) -> int:
+func _splash(target: Node, radius: int, damage: int, by := -1, fire := false) -> int:
 	var count := 0
 	for other in DungeonMap.occupied.values().duplicate():
 		if other == target or not is_instance_valid(other) or other.dying:
 			continue
 		var d: Vector2i = (other.cell - target.cell).abs()
 		if maxi(d.x, d.y) <= radius:
-			other.take_hit({"hit": true, "damage": damage, "chance": 100, "by": by})
+			other.take_hit({"hit": true, "damage": damage, "chance": 100, "by": by, "fire": fire})
 			count += 1
 	return count
 
@@ -1928,6 +2017,9 @@ func _melee(m: Member, hand: int) -> void:
 	_start_cooldown(m)
 	_cue("swing")
 	var front: Vector2i = player.cell + player.DIRS[player.facing]
+	var swung: Resource = equipped_weapon(m) if hand < 0 else _melee_weapon_in(m, hand)
+	if swung != null and swung.is_light() and (not flames_out or swung.curse_proof):  # A lit torch's swing at a slick lights it, hit or miss.
+		get_tree().call_group("oil", "ignite", front)
 	var target = DungeonMap.occupied.get(front)
 	if target == null or not is_instance_valid(target) or target.dying:
 		_swing_at_wall(m, hand, front)
@@ -1941,6 +2033,13 @@ func _melee(m: Member, hand: int) -> void:
 	if result.hit and weapon != null and weapon.is_light() and weapon.fire_damage_max > 0:
 		fire = CombatRules.rng().randi_range(weapon.fire_damage_min, weapon.fire_damage_max)
 		result.damage += fire
+	var oil_fire := 0  # A weapon with oil on it: its next landed hits burn.
+	if result.hit and m.oiled_hits > 0 and weapon != null and not weapon.is_light():
+		oil_fire = int(LightConfig.get_config().oiled_bonus)
+		result.damage += oil_fire
+		m.oiled_hits -= 1
+	if fire > 0 or oil_fire > 0:
+		result.fire = true  # Fire: a doused monster takes the bonus and burns (Monster.take_hit).
 	target.take_hit(result)
 	var recoiled: bool = fire > 0 and target.hp > 0 and target.def.fears_fire
 	if recoiled:
@@ -1959,6 +2058,8 @@ func _melee(m: Member, hand: int) -> void:
 		_say_hit("%s hits the %s for %d." % [m.name(), target.def.display_name, result.damage], m, weapon, result.crit)
 	if recoiled:
 		_say("The %s recoils from the flame." % target.def.display_name.to_lower())
+	if oil_fire > 0:
+		_say("The oil on the %s burns." % weapon.display_name.to_lower() if m.oiled_hits > 0 else "The last of the oil on the %s burns." % weapon.display_name.to_lower())
 
 
 ## The line for a landed attack; a crit gets the CRITICAL! prefix and colour, and maybe a remark.

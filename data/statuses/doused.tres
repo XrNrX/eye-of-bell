@@ -1,0 +1,11 @@
+[gd_resource type="Resource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/status_def.gd" id="1_def"]
+
+[resource]
+script = ExtResource("1_def")
+id = "doused"
+display_name = "Doused"
+resist_message = "The {monster} shrugs the oil off."
+immune_message = "The oil will not stick to the {monster}."
+tint = Color(0.8, 0.72, 0.62, 1)

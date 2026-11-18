@@ -1,0 +1,235 @@
+{
+ "frames": [
+  {
+   "filename": "eye-of-bell-oil-flames 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 56,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 56,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 40
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-oil-flames 1.png",
+   "frame": {
+    "x": 56,
+    "y": 0,
+    "w": 56,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 56,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 40
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-oil-flames 2.png",
+   "frame": {
+    "x": 112,
+    "y": 0,
+    "w": 56,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 56,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 40
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-oil-flames 3.png",
+   "frame": {
+    "x": 0,
+    "y": 40,
+    "w": 56,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 56,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 40
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-oil-flames 4.png",
+   "frame": {
+    "x": 56,
+    "y": 40,
+    "w": 56,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 56,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 40
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-oil-flames 5.png",
+   "frame": {
+    "x": 112,
+    "y": 40,
+    "w": 56,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 56,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 40
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-oil-flames 6.png",
+   "frame": {
+    "x": 0,
+    "y": 80,
+    "w": 56,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 56,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 40
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-oil-flames 7.png",
+   "frame": {
+    "x": 56,
+    "y": 80,
+    "w": 56,
+    "h": 40
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 56,
+    "h": 40
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 40
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.875
+   },
+   "duration": 83
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "eye-of-bell-oil-flames.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 168,
+   "h": 120
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 28,
+   "y": 35
+  },
+  "frameTags": [
+   {
+    "name": "eye-of-bell-oil-flames",
+    "from": 0,
+    "to": 7,
+    "direction": "forward"
+   }
+  ]
+ }
+}

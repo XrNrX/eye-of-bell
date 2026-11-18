@@ -242,3 +242,39 @@ behind, so a lit sprite in front of a torch-bearing party came out a silhouette 
 - **Why these numbers:** a torch lasts about one long stretch of the floor, a candle about the floor but barely lights past the next
   tile, so a party in a hurry burns torches and a careful one walks by candle. The fire is a nudge (a slime backs off, it doesn't run).
 - **Not built yet:** wall sconces, curse zones that snuff flames, throwing torches, oil, monsters that avoid fire (roadmap 7l.2-7l.6).
+
+## Oil and fire
+
+Roadmap 7l.5; the numbers are in `docs/design/expansion_design.md` section 2 and live in `data/light.tres` ("Oil"), the code is `scripts/oil_field.gd`
+(the node "Oil", `Dungeon.oil`), `Party._throw_oil` / `_oil_weapon` / `burn_party`, and `Monster.take_hit`.
+
+| | Number |
+|---|---|
+| Flask of oil (`data/items/oil_flask.tres`, `ItemDef.is_oil`) | Stacks to 3. A quick slot or a hand takes it; clicking it throws it |
+| Oil slick | Lasts until lit or 120 s (`slick_seconds`) |
+| Burning tile | 6 s (`burn_seconds`); 2 fire a second to a monster on it, 1 a second to each hero when the party stands on it (source `"fire"`); a light of energy 1.2, range 6 in the `sprite_lights` group |
+| Doused monster | 30 s (`doused_seconds`); the next fire that touches it does +6 and sets it burning: 2 a second for 3 s (status `burning`) |
+| Oiled weapon | The next 3 landed melee hits do +2 fire (`oiled_hits`, `oiled_bonus`) |
+
+- **Throwing.** A hand or quick-slot click throws a flask (`Party._throw_oil`, the hero's action cooldown, one flask spent). **At a monster in line**
+  (within `MISSILE_RANGE` 4): it bursts on it and the monster is DOUSED (`try_status` on the tier table's row `doused`: 100% at every tier, slimes and
+  the Warden included; a wall monster is immune, "The oil runs off"). **Otherwise it is thrown AT THE FLOOR: it always lands on the tile in front, never
+  under the party**, and leaves a slick there (more oil on a slick makes it a fresh 120 s). Refused, and nothing spent, with no room to throw or while
+  **the party stands in a curse zone** ("The air here hates fire. The flask stays corked."). The splash is a PixelLab VFX (`art/spells/oil/burst_sheet.png`).
+- **Lighting a slick** (`OilField.ignite`, the news `GameEvents.oil_ignited(cell)`, "The oil catches!" if the party sees it): **a Fireball** (its blast lights
+  every slick within a tile of where it lands, `spell_effects.explosion`), **a lit torch's swing at that tile** (`Party._melee`: hit or miss), and **a burning
+  torch lying on it** (a slipped one, or one thrown there: `LightField.drop`; 7l.4 will throw torches the same way). A slick in a curse zone will not catch,
+  and neither will a doused monster there.
+- **A burning tile** shows PixelLab flames (`art/spells/oil/flames_sheet.png`) and lights its surroundings for 6 s. Each second it does 2 to a monster
+  standing on it (a doused one catches and takes +6) and 1 to each hero if the party is on it; someone remarks on the party's own fire (banter
+  `walked_into_fire`). **Monsters that fear fire** (slimes, acid slimes, plague rats) **will not step onto a burning tile or a tile with a burning
+  torch** (`Dungeon.fire_at`, `Monster._can_enter`): a one-wide corridor with a burning tile is a wall to them for 6 s. Intended: it is what oil is for.
+- **Doused** (`data/statuses/doused.tres`, no effect of its own but a darker tint) **and burning** (`data/statuses/burning.tres`: 2 a second, flames on the monster)
+  are `StatusDef`s with rows in `data/tiers.tres`. A hit counts as FIRE when it carries `fire: true`: a Fireball (`SpellDef.fire`), a torch's flame, oil on a
+  weapon, or standing in burning oil. Fire on a doused monster: +6 damage, `doused` ends, `burning` begins; fire on a plain monster does only its own damage.
+- **Oil on a weapon:** use a flask on a hero (the inventory's shift+right-click: `Party.use_item` -> `_oil_weapon`, which needs a weapon in a hand and
+  refuses a second coat): the next 3 landed melee hits do +2 and count as fire (so they light a doused monster). Saved per hero (`oiled`).
+- **The trap combo:** a monster held by a bear trap on a slick can be lit and takes 2 a second while it burns; with a Fireball on a doused Warden that is
+  about 20 damage (+6 and the burning) for one flask, one trap and 6 mana. Intended: the best trick in the game.
+- **Saving:** slicks and burning tiles (with the time left) are saved under the dungeon's `oil`; doused and burning monsters ride on their `statuses`;
+  an older save has none.

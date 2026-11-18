@@ -12,6 +12,7 @@ enum Target { AHEAD, HERO, PARTY }  # First monster ahead / one hero you pick / 
 @export var target: Target = Target.AHEAD
 @export var damage_min := 0      # AHEAD: never misses, like the scroll.
 @export var damage_max := 0
+@export var fire := false  # Its blast is fire: it lights oil, and a doused monster it hits takes the bonus and burns (Fireball).
 @export var pocket_seconds := 0.0  # Bless: for this long the tile the party stands on and the ones beside it are free of any curse zone (flames live there).
 @export var purifies_corruption := false  # A divine caster's cast also sends its light into a corrupted wall in front (one tile): Bless.
 @export var breaks_walls := false  # AHEAD: can also be cast at a cracked wall, and its blast breaks cracked walls beside a target.

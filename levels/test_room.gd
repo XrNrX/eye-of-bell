@@ -182,6 +182,7 @@ const ITEMS := [
 	{"cell": Vector2i(23, 5), "def": "res://data/items/arrow.tres", "count": 20},
 	{"cell": Vector2i(23, 4), "def": "res://data/items/stone.tres", "count": 20},
 	{"cell": Vector2i(24, 2), "def": "res://data/items/bear_trap.tres", "count": 2},
+	{"cell": Vector2i(25, 2), "def": "res://data/items/oil_flask.tres", "count": 3},
 	{"cell": Vector2i(33, 22), "def": "res://data/items/bear_trap.tres", "count": 2},  # The traps station.
 	{"cell": Vector2i(11, 26), "def": "res://data/items/healing_potion.tres"},
 	{"cell": Vector2i(23, 2), "def": "res://data/items/torch.tres"},
@@ -192,6 +193,8 @@ const ITEMS := [
 	{"cell": Vector2i(28, 9), "def": "res://data/items/dagger.tres"},
 	{"cell": Vector2i(10, 34), "def": "res://data/items/torch.tres", "count": 3},  # The light room.
 	{"cell": Vector2i(14, 34), "def": "res://data/items/candle.tres", "count": 5},
+	{"cell": Vector2i(12, 35), "def": "res://data/items/oil_flask.tres", "count": 3},  # Flasks of oil: throw at the floor, at the slime, or use on a weapon; light them with a torch, a swing or a Fireball.
+	{"cell": Vector2i(9, 36), "def": "res://data/items/bear_trap.tres"},               # ...and a trap, for the best trick: a held monster on a slick.
 ]
 
 # The combat arena. (V spawns more.)

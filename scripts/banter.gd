@@ -342,6 +342,7 @@ func _listen() -> void:
 	bus.level_completed.connect(_on_level_completed)
 	bus.fight_started.connect(_on_fight_started)
 	bus.fight_ended.connect(_on_fight_ended)
+	bus.oil_ignited.connect(func(cell: Vector2i): event("oil_ignited", {"cell": str(cell)}))
 	bus.entered_curse_zone.connect(func(id: String): event("entered_curse_zone", {"zone": id}))
 	bus.left_curse_zone.connect(func(id: String): event("left_curse_zone", {"zone": id}))
 

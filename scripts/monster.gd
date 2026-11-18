@@ -33,6 +33,7 @@ const DIRS: Array[Vector2i] = [
 ## The monsters allowed to go round to another side of the party right now (at most max_flankers).
 static var _passes: Array = []
 
+const BURNING := "res://data/statuses/burning.tres"  # What a doused monster becomes when fire touches it (2 a second for 3 s).
 var feel_cfg: Resource = FeelConfigScript.get_config()  # data/combat_feel.tres
 var ai_cfg: Resource = AiConfigScript.get_config()      # data/monster_ai.tres
 var def: Resource  # The MonsterDef.
@@ -405,6 +406,11 @@ func take_hit(result: Dictionary) -> void:
 			_float_text("Miss", MISS_COLOUR)
 		return
 	var crit: bool = result.get("crit", false)
+	if result.get("fire", false) and has_status("doused") and not _flame_blocked():  # Fire touches a doused monster: more damage, and it burns.
+		var c: Resource = LightConfig.get_config()
+		result.damage += int(c.doused_fire_bonus)
+		remove_status("doused")
+		try_status(load(BURNING), c.burning_seconds, int(result.get("by", -1)))
 	hp -= result.damage
 	get_tree().call_group("enemy_bars", "monster_hit", self, result.damage, crit)
 	if crit and feel_cfg.crit_text_enabled:
@@ -678,7 +684,19 @@ func _wander_dir() -> Vector2i:
 ## Monsters stop at walls and closed doors, and at other monsters and the player.
 func _can_enter(target: Vector2i) -> bool:
 	return not DungeonMap.is_blocked(target) and not DungeonMap.is_occupied(target) \
-			and target != DungeonMap.player_cell
+			and target != DungeonMap.player_cell and not (def.fears_fire and _fire_at(target))
+
+
+## Is there fire on this tile (burning oil, a burning torch lying there)? A monster that fears fire will not step onto it.
+func _fire_at(tile: Vector2i) -> bool:
+	var dungeon := get_parent()
+	return dungeon != null and dungeon.has_method("fire_at") and dungeon.fire_at(tile)
+
+
+## Does a curse zone's air stop fire catching on it (a doused monster will not catch there)?
+func _flame_blocked() -> bool:
+	var dungeon := get_parent()
+	return dungeon != null and dungeon.has_method("flame_blocked") and dungeon.flame_blocked(cell)
 
 
 ## Claim the new tile at once (so nobody else can step in) and free the old

@@ -50,7 +50,8 @@ def slice_atlas(spell, name):
 
 # Palette names a sheet's snapped pixels are moved off, per effect folder: the bear trap's white-hot sparks snap to the pale curse
 # green, which is never used for anything but the curse (docs/art_style.md), so they become torch colours.
-RECOLOUR = {"bear_trap": {"curse_300": "torch_300", "curse_500": "torch_500", "curse_700": "rust_500"}}
+RECOLOUR = {"bear_trap": {"curse_300": "torch_300", "curse_500": "torch_500", "curse_700": "rust_500"},
+           "oil": {"curse_300": "bone_300", "curse_500": "torch_300", "curse_700": "torch_500"}}  # Burning oil: the white-hot core snaps to curse green, so it becomes bone and gold.
 
 
 def build_sheet(spell, name):
@@ -120,9 +121,9 @@ def build(scale=None):
     # Hold Monster: grey and bone runes, tinted cold pale blue in the game like Magic Missile (bind, held loop, shatter).
     # The bear trap's snap: rusted iron jaws, sparks and a spatter (drawn normally in the game, not added).
     # hit_fx: what a monster's landed blow leaves across the view (MonsterDef.hit_effect; hit_overlay.gd), drawn normally.
-    for spell in ("fireball", "magic_missile", "heal", "bless", "shield", "resurrection", "hold_monster", "bear_trap", "hit_fx", "light", "curse"):
+    for spell in ("fireball", "magic_missile", "heal", "bless", "shield", "resurrection", "hold_monster", "bear_trap", "hit_fx", "light", "curse", "oil"):
         for name in ("cast", "projectile", "impact", "burst", "ring", "flash", "column", "portrait", "portrait_large",
-                     "bind", "held", "shatter", "snap", "skeleton_claws", "guard_axe", "slime_splat", "acid_splat", "rat_bite", "flame", "haze"):
+                     "bind", "held", "shatter", "snap", "skeleton_claws", "guard_axe", "slime_splat", "acid_splat", "rat_bite", "flame", "haze", "flames"):
             if (PIECES / spell / f"{name}.png").exists():
                 (ART_DIR / "spells" / spell).mkdir(parents=True, exist_ok=True)
                 written += build_sheet(spell, name)
