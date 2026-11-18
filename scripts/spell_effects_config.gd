@@ -144,6 +144,8 @@ func glow(kind: String) -> Dictionary:
 @export var shock_width := 12.0          # How thick the ring of pushed pixels is (logical view pixels).
 @export var shock_seconds := 0.3         # How long it ripples outward.
 @export var shock_reduced_scale := 0.0   # Strength under Reduce flashing and screen shake (0: no wave at all).
+@export var mm_shock_power := 0.5        # The Magic Missile's wave (and its scroll's): this share of shock_strength...
+@export var mm_shock_size := 0.55        # ...and of the radius (the ring still starts at shock_start_radius x this).
 
 @export_group("Heal glow")
 @export var heal_color := Color(1.0, 0.85, 0.45)        # The light's colour.

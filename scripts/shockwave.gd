@@ -1,6 +1,6 @@
 extends CanvasLayer
 ## Shockwave on spell impacts (the Fireball so far): a ring that ripples outward from the impact point across the
-## dungeon view for about 0.3 s. A full-screen ColorRect running shaders/shockwave.gdshader inside the dungeon's
+## dungeon view for about 0.3 s (the Fireball's, and a smaller one for the Magic Missile and its scroll). A full-screen ColorRect running shaders/shockwave.gdshader inside the dungeon's
 ## SubViewport, added by game_view.gd; it is hidden (and costs nothing) while no wave is running.
 ## Strength, radius, ring width and duration are in the "Shockwave" group of data/spell_effects.tres. Reduce flashing
 ## scales the strength by shock_reduced_scale (0: no wave at all).
@@ -13,7 +13,7 @@ const MAX_WAVES := 4
 const VIEW_WIDTH := 416.0  # The view's logical width (ui_layout.gd VIEW); the render is a whole multiple of it.
 
 var rect: ColorRect
-var waves := []  # [{at: Vector2 (logical view px), t: float, strength: float}]
+var waves := []  # [{at: Vector2 (logical view px), t: float, strength: float, size: float}]
 var started := 0  # Waves started (tests read this).
 
 
@@ -30,11 +30,12 @@ func _ready() -> void:
 	add_child(rect)
 
 
-## Starts a wave centred on where `world_pos` shows in the view. Does nothing behind the camera, with the wave
-## switched off, or with Reduce flashing on and shock_reduced_scale 0.
-func burst(world_pos: Vector3) -> bool:
+## Starts a wave centred on where `world_pos` shows in the view; `power` scales its strength and `size` its radius
+## (the Magic Missile's is smaller than the Fireball's). Does nothing behind the camera, with the wave switched off,
+## or with Reduce flashing on and shock_reduced_scale 0.
+func burst(world_pos: Vector3, power := 1.0, size := 1.0) -> bool:
 	var c := Config.get_config()
-	var strength: float = c.shock_strength * (c.shock_reduced_scale if Settings.reduce_flashing else 1.0)
+	var strength: float = c.shock_strength * power * (c.shock_reduced_scale if Settings.reduce_flashing else 1.0)
 	if not c.shock_enabled or strength <= 0.0 or c.shock_seconds <= 0.0:
 		return false
 	var cam := get_viewport().get_camera_3d()
@@ -43,7 +44,7 @@ func burst(world_pos: Vector3) -> bool:
 	var at := cam.unproject_position(world_pos) / _step()
 	if waves.size() >= MAX_WAVES:
 		waves.pop_front()
-	waves.append({"at": at, "t": 0.0, "strength": strength})
+	waves.append({"at": at, "t": 0.0, "strength": strength, "size": size})
 	started += 1
 	rect.visible = true
 	_push()
@@ -79,7 +80,7 @@ func _push() -> void:
 		var w: Dictionary = waves[i]
 		var p := clampf(w.t / c.shock_seconds, 0.0, 1.0)
 		var ease_out := 1.0 - pow(1.0 - p, 2.0)
-		var radius: float = lerpf(c.shock_start_radius, c.shock_radius, ease_out)
+		var radius: float = lerpf(c.shock_start_radius, c.shock_radius, ease_out) * w.size
 		var amp: float = w.strength * (1.0 - p)
 		data[i] = Vector4(w.at.x * k, w.at.y * k, radius * k, amp * k)
 	var mat := rect.material as ShaderMaterial

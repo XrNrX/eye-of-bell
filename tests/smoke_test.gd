@@ -801,7 +801,7 @@ func _check_warden() -> void:
 
 
 ## The plague rat (tier 1, fast, fears fire): its numbers, its nest, a bite that may make a hero sick, and the raw meat it leaves.
-## The Fireball's shockwave: an explosion starts a ring that is gone after shock_seconds; Reduce flashing (with
+## The shockwave: a Fireball explosion starts a ring (a Magic Missile impact a smaller one) that is gone after shock_seconds; Reduce flashing (with
 ## shock_reduced_scale 0) starts none.
 func _check_shockwave() -> void:
 	dungeon.clear_monsters()
@@ -816,6 +816,11 @@ func _check_shockwave() -> void:
 	check("shockwave: a Fireball explosion starts one", wave.started == before + 1 and wave.rect.visible)
 	await create_timer(SpellEffectsConfig.get_config().shock_seconds + 0.15).timeout
 	check("shockwave: it is over after shock_seconds", wave.waves.is_empty() and not wave.rect.visible)
+	before = wave.started
+	fx._missile_impact(SPOT + Vector2i(2, 0))
+	var c: Resource = SpellEffectsConfig.get_config()
+	check("shockwave: a Magic Missile impact starts a smaller one", wave.started == before + 1 and wave.waves.size() > 0 			and wave.waves[-1].strength < c.shock_strength and wave.waves[-1].size < 1.0)
+	await create_timer(c.shock_seconds + 0.15).timeout
 	Settings.reduce_flashing = true
 	before = wave.started
 	fx.explosion(SPOT + Vector2i(2, 0))

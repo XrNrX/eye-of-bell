@@ -25,7 +25,7 @@ Dark, desaturated, cursed (`docs/art_style.md`). Sickly green means the curse an
 - Enemy health bars (small bar over damaged or front monsters, name strip, wide boss bar; Options: On / Boss only / Off).
 - Party: four heroes, front and back row, formation swapping, hands, throwing, quick slots.
 - Inventory, stacks, equipping, character sheet, food and sickness, potions, scrolls, resurrection. A right-click loot pop-up on floor items: choose which hero's backpack takes it (room and "can't use" shown, the dead listed last), or Take all to share a pile out.
-- Spells (Magic Missile, Fireball, Hold Monster, Heal, Bless, Shield) with synced lighting and pixel particles, holy light, and a pixel-exact shockwave ripple on the Fireball's impact.
+- Spells (Magic Missile, Fireball, Hold Monster, Heal, Bless, Shield) with synced lighting and pixel particles, holy light, and a pixel-exact shockwave ripple on Fireball and Magic Missile impacts.
 - Banter system (crit, fail, hit from behind, eat, equip events).
 - Corrupted walls that only a cleric's Bless can burn away (two on floor 1), and a small data-driven puzzle system.
 - Intro cutscene: 14 painted shots with fog, rain, lightning and thunder, played once on first launch and from the menu.

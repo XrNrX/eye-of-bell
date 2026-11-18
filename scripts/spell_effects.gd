@@ -169,6 +169,7 @@ func _missile_impact(cell: Vector2i) -> void:
 	get_tree().call_group("combat_feel", "jolt", Vector3(0, 0, c.mm_impact_kick_distance), c.mm_impact_kick_seconds)  # The camera is knocked back, away from the impact.
 	if c.mm_impact_pause_seconds > 0.0:
 		get_tree().call_group("combat_feel", "hit_pause", c.mm_impact_pause_seconds)
+	get_tree().call_group("shockwave", "burst", at, c.mm_shock_power, c.mm_shock_size)
 	var flip := _flipbook(sheet, false, c.mm_impact_scale, c.mm_tint)
 	flip.position = at
 	add_child(flip)
@@ -604,6 +605,7 @@ func impact(cell: Vector2i) -> void:
 	var c := Config.get_config()
 	live += 1
 	var at := _cell_pos(cell, c.bolt_height)
+	get_tree().call_group("shockwave", "burst", at, c.mm_shock_power, c.mm_shock_size)
 	var flash := OmniLight3D.new()
 	flash.position = at
 	flash.light_color = c.impact_flash_color
