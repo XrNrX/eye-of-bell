@@ -1870,6 +1870,12 @@ func take_hit_from(monster: Node) -> void:
 		if result.crit:
 			result.damage = CombatRules.cap_monster_crit(result.damage, m.hp, m.def.max_hp)
 		hurt(m, result.damage, "monster")
+		var bitten_sick := false
+		if m.hp > 0 and monster.def.sick_chance > 0.0 and CombatRules.rng().randf() < monster.def.sick_chance:
+			bitten_sick = true  # (Only a monster that can do it rolls, so the seeded dice of every other fight are untouched.)
+			m.sick_left = monster.def.sick_seconds
+			m.sick_rate = float(monster.def.sick_damage) / monster.def.sick_seconds
+			m.sick_acc = 0.0
 		if m.hp == 0:
 			_cue_from("hero_die", side)
 		else:
@@ -1879,6 +1885,8 @@ func take_hit_from(monster: Node) -> void:
 			hero_crit.emit(m.slot, result.damage)
 		else:
 			_say("The %s hits %s for %d." % [monster.def.display_name, m.name(), result.damage])
+		if bitten_sick:
+			_say("The bite festers: %s feels sick." % m.name())
 	else:
 		_cue_from("whiff", side)
 		_say("The %s misses %s." % [monster.def.display_name, m.name()], "miss")

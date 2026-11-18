@@ -215,7 +215,10 @@ static var MONSTERS := [
 	{"cell": Vector2i(17, 20), "def": "res://data/monsters/skeleton.tres"},
 	{"cell": Vector2i(13, 17), "def": "res://data/monsters/slime_acid.tres"},
 	{"cell": Vector2i(8, 16), "def": "res://data/monsters/skeleton_guard.tres"},
-	{"cell": Vector2i(9, 18), "def": "res://data/monsters/skeleton.tres"},
+	# The rats' nest in the cave: three plague rats (they replace the skeleton that stood at (9,18)).
+	{"cell": Vector2i(8, 17), "def": "res://data/monsters/plague_rat.tres"},
+	{"cell": Vector2i(7, 18), "def": "res://data/monsters/plague_rat.tres"},
+	{"cell": Vector2i(8, 18), "def": "res://data/monsters/plague_rat.tres"},
 ]
 
 # Wall signs: {"cell": the floor tile you stand on, "side": the wall it hangs on (0 north, 1 west, 2 south, 3 east), "text": String}.

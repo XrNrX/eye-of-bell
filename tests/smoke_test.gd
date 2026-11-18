@@ -77,6 +77,7 @@ func _init() -> void:
 	_check_hold()
 	await _check_trap()
 	await _check_warden()
+	await _check_rat()
 	await _check_food()
 	_check_resurrection()
 	await _check_world_events()
@@ -796,6 +797,76 @@ func _check_warden() -> void:
 		await create_timer(0.25).timeout
 		waited += 0.25
 	_rest_everyone()
+
+
+## The plague rat (tier 1, fast, fears fire): its numbers, its nest, a bite that may make a hero sick, and the raw meat it leaves.
+func _check_rat() -> void:
+	_rest_everyone()
+	dungeon.clear_monsters()
+	player.restore(SPOT, EAST)
+	var def: Resource = load("res://data/monsters/plague_rat.tres")
+	check("rat: tier 1, 5 HP, attack 2, defence 1, bites for 1-3", def.tier == 1 and def.max_hp == 5 and def.attack == 2 and def.defence == 1 			and def.damage_min == 1 and def.damage_max == 3)
+	check("rat: a blow every 1.4 s, a step every 0.7 s, fears fire", is_equal_approx(def.attack_interval, 1.4) and is_equal_approx(def.step_interval, 0.7) and def.fears_fire)
+	var nest: Array = DungeonMap.MONSTERS.filter(func(e): return e.def == "res://data/monsters/plague_rat.tres").map(func(e): return e.cell)
+	check("rat: three nest in the cave, and no skeleton stands at (9,18)", nest.size() == 3 and Vector2i(8, 17) in nest 			and DungeonMap.MONSTERS.filter(func(e): return e.cell == Vector2i(9, 18)).is_empty())
+	check("rat: its bite effect sheet exists", load("res://art/spells/hit_fx/rat_bite_sheet.png") != null and def.hit_effect == "rat_bite")
+	# A bite: 20% of landed blows leave the food sickness (6 HP over 6 s).
+	var rat: Node = _monster("plague_rat", AHEAD_1)
+	rat.move_wait = 999.0
+	rat.attack_cooldown = 999.0
+	var landed := 0
+	var sick := 0
+	var sick_ok := true
+	var shown := false
+	for i in 400:
+		_rest_everyone()
+		var before: int = _total_hp()
+		party.take_hit_from(rat)
+		if _total_hp() < before:
+			landed += 1
+			for m in party.members:
+				if m.sick_left > 0.0:
+					sick += 1
+					sick_ok = sick_ok and is_equal_approx(m.sick_left, 6.0) and is_equal_approx(m.sick_rate, 1.0)
+			shown = shown or get_first_node_in_group("hud").lines.any(func(l): return str(l.text).contains("The bite festers"))
+	check("rat: about one landed bite in five makes a hero sick (%d of %d)" % [sick, landed], landed > 100 and float(sick) / landed > 0.12 and float(sick) / landed < 0.28)
+	check("rat: a sick bite gives 6 HP over 6 s, and the log says so", sick_ok and shown)
+	_rest_everyone()
+	var tough: Node = _monster("skeleton", AHEAD_2)
+	var plain := 0
+	for i in 100:
+		_rest_everyone()
+		tough.move_wait = 999.0
+		party.take_hit_from(tough)
+		for m in party.members:
+			plain += 1 if m.sick_left > 0.0 else 0
+	check("rat: no other monster's bite makes anyone sick", plain == 0)
+	dungeon.clear_monsters()
+	# What it leaves: raw rat meat, 40% of the time.
+	var meat: Resource = load("res://data/items/raw_rat_meat.tres")
+	check("rat: it drops raw rat meat 40% of the time", def.drop_item == meat and is_equal_approx(def.drop_chance, 0.4))
+	var drops := 0
+	for i in 150:
+		var r: Node = _monster("plague_rat", AHEAD_1)
+		r.move_wait = 999.0
+		r._drop_loot()
+		if dungeon.item_at(AHEAD_1) != null:
+			drops += 1
+		dungeon.set_pile(AHEAD_1, [])
+		dungeon.clear_monsters()
+	check("rat: the drops come about 40%% of the time (%d of 150)" % drops, drops > 40 and drops < 80)
+	# The meat: 6 HP over 6 s, and half the time the food sickness.
+	check("meat: 6 HP over 6 s, 50% sickness of 6 HP over 6 s", meat.food_heal == 6 and is_equal_approx(meat.food_seconds, 6.0) and is_equal_approx(meat.food_sick_chance, 0.5) 			and meat.food_sick_damage == 6 and is_equal_approx(meat.food_sick_seconds, 6.0))
+	var sick_eats := 0
+	for i in 200:
+		_rest_everyone()
+		var eater = party.members[0]
+		eater.hp = eater.def.max_hp - 10
+		party.eat(0, meat)
+		sick_eats += 1 if eater.sick_left > 0.0 else 0
+	check("meat: eaten raw it makes half the eaters sick (%d of 200)" % sick_eats, sick_eats > 70 and sick_eats < 130)
+	_rest_everyone()
+	await create_timer(0.1).timeout
 
 
 func _check_food() -> void:

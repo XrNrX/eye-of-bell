@@ -84,7 +84,7 @@ def outlined(img):
 
 # Floor sprites of the items that were hard to see on a dark floor (under about 2.3:1 at two tiles): their dark pixels are lifted
 # one step and the lit top-left edge gets a pale rim just inside the outline.
-LIFT_FLOOR = {"mace", "key", "darts", "spellbook", "dried_meat", "withered_apple", "holy_symbol", "war_hammer", "leather_armour"}
+LIFT_FLOOR = {"mace", "key", "darts", "spellbook", "dried_meat", "raw_rat_meat", "withered_apple", "holy_symbol", "war_hammer", "leather_armour"}
 LIFT = {"stone_800": "stone_700", "stone_700": "stone_500", "stone_500": "stone_300", "wood_700": "wood_500", "wood_500": "leather_400",
         "rust_700": "rust_500", "rust_500": "rust_300", "moss_700": "moss_500", "soil_900": "wood_700", "bruise_700": "bruise_500",
         "blood_700": "blood_500", "curse_700": "curse_500"}

@@ -159,6 +159,7 @@ const ITEMS := [
 	{"cell": Vector2i(33, 6), "def": "res://data/items/flail.tres"},
 	{"cell": Vector2i(33, 4), "def": "res://data/items/slingshot.tres"},
 	{"cell": Vector2i(23, 6), "def": "res://data/items/bow.tres"},
+	{"cell": Vector2i(24, 5), "def": "res://data/items/raw_rat_meat.tres"},
 	{"cell": Vector2i(23, 5), "def": "res://data/items/arrow.tres", "count": 20},
 	{"cell": Vector2i(23, 4), "def": "res://data/items/stone.tres", "count": 20},
 	{"cell": Vector2i(24, 2), "def": "res://data/items/bear_trap.tres", "count": 2},
@@ -180,6 +181,7 @@ const MONSTERS := [
 	{"cell": Vector2i(8, 4), "def": "res://data/monsters/slime.tres"},
 	{"cell": Vector2i(5, 7), "def": "res://data/monsters/skeleton_guard.tres"},
 	{"cell": Vector2i(9, 7), "def": "res://data/monsters/slime_acid.tres"},
+	{"cell": Vector2i(11, 5), "def": "res://data/monsters/plague_rat.tres"},
 	# The held-monster room: different hold resistances (skeleton 35%, guard 45%, slime immune).
 	{"cell": Vector2i(25, 39), "def": "res://data/monsters/skeleton.tres"},
 	{"cell": Vector2i(28, 39), "def": "res://data/monsters/skeleton_guard.tres"},

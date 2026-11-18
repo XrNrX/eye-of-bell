@@ -50,6 +50,13 @@ extends Resource
 ## "skeleton_claws". "" for none (the red flash alone).
 @export var hit_effect := ""
 
+@export_group("Bite")
+## A landed blow may leave the hero sick (the food sickness: Member.sick_*: `sick_damage` HP over `sick_seconds`, never kills): the
+## chance is 0..1. 0 for most monsters. The plague rat's is 0.2.
+@export var sick_chance := 0.0
+@export var sick_damage := 6
+@export var sick_seconds := 6.0
+
 @export_group("Drops")
 ## What it leaves on its tile when it dies, and how often (0..1): a skeleton guard may leave its rations.
 @export var drop_item: Resource

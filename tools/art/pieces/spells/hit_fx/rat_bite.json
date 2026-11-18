@@ -1,0 +1,391 @@
+{
+ "frames": [
+  {
+   "filename": "rat-bite 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 66
+   },
+   "pivot": {
+    "x": 0.46,
+    "y": 0.3787878787878788
+   },
+   "duration": 50
+  },
+  {
+   "filename": "rat-bite 1.png",
+   "frame": {
+    "x": 50,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 66
+   },
+   "pivot": {
+    "x": 0.46,
+    "y": 0.3787878787878788
+   },
+   "duration": 50
+  },
+  {
+   "filename": "rat-bite 2.png",
+   "frame": {
+    "x": 100,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 66
+   },
+   "pivot": {
+    "x": 0.46,
+    "y": 0.3787878787878788
+   },
+   "duration": 50
+  },
+  {
+   "filename": "rat-bite 3.png",
+   "frame": {
+    "x": 150,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 66
+   },
+   "pivot": {
+    "x": 0.46,
+    "y": 0.3787878787878788
+   },
+   "duration": 50
+  },
+  {
+   "filename": "rat-bite 4.png",
+   "frame": {
+    "x": 0,
+    "y": 66,
+    "w": 50,
+    "h": 66
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 66
+   },
+   "pivot": {
+    "x": 0.46,
+    "y": 0.3787878787878788
+   },
+   "duration": 50
+  },
+  {
+   "filename": "rat-bite 5.png",
+   "frame": {
+    "x": 50,
+    "y": 66,
+    "w": 50,
+    "h": 66
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 66
+   },
+   "pivot": {
+    "x": 0.46,
+    "y": 0.3787878787878788
+   },
+   "duration": 50
+  },
+  {
+   "filename": "rat-bite 6.png",
+   "frame": {
+    "x": 100,
+    "y": 66,
+    "w": 50,
+    "h": 66
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 66
+   },
+   "pivot": {
+    "x": 0.46,
+    "y": 0.3787878787878788
+   },
+   "duration": 50
+  },
+  {
+   "filename": "rat-bite 7.png",
+   "frame": {
+    "x": 150,
+    "y": 66,
+    "w": 50,
+    "h": 66
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 66
+   },
+   "pivot": {
+    "x": 0.46,
+    "y": 0.3787878787878788
+   },
+   "duration": 50
+  },
+  {
+   "filename": "rat-bite 8.png",
+   "frame": {
+    "x": 0,
+    "y": 132,
+    "w": 50,
+    "h": 66
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 66
+   },
+   "pivot": {
+    "x": 0.46,
+    "y": 0.3787878787878788
+   },
+   "duration": 50
+  },
+  {
+   "filename": "rat-bite 9.png",
+   "frame": {
+    "x": 50,
+    "y": 132,
+    "w": 50,
+    "h": 66
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 66
+   },
+   "pivot": {
+    "x": 0.46,
+    "y": 0.3787878787878788
+   },
+   "duration": 50
+  },
+  {
+   "filename": "rat-bite 10.png",
+   "frame": {
+    "x": 100,
+    "y": 132,
+    "w": 50,
+    "h": 66
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 66
+   },
+   "pivot": {
+    "x": 0.46,
+    "y": 0.3787878787878788
+   },
+   "duration": 50
+  },
+  {
+   "filename": "rat-bite 11.png",
+   "frame": {
+    "x": 150,
+    "y": 132,
+    "w": 50,
+    "h": 66
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 66
+   },
+   "pivot": {
+    "x": 0.46,
+    "y": 0.3787878787878788
+   },
+   "duration": 50
+  },
+  {
+   "filename": "rat-bite 12.png",
+   "frame": {
+    "x": 0,
+    "y": 198,
+    "w": 50,
+    "h": 66
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 66
+   },
+   "pivot": {
+    "x": 0.46,
+    "y": 0.3787878787878788
+   },
+   "duration": 50
+  },
+  {
+   "filename": "rat-bite 13.png",
+   "frame": {
+    "x": 50,
+    "y": 198,
+    "w": 50,
+    "h": 66
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 50,
+    "h": 66
+   },
+   "sourceSize": {
+    "w": 50,
+    "h": 66
+   },
+   "pivot": {
+    "x": 0.46,
+    "y": 0.3787878787878788
+   },
+   "duration": 50
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "rat-bite.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 200,
+   "h": 264
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 23,
+   "y": 25
+  },
+  "frameTags": [
+   {
+    "name": "rat-bite",
+    "from": 0,
+    "to": 13,
+    "direction": "forward"
+   }
+  ]
+ }
+}

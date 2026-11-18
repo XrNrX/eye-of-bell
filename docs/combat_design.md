@@ -25,6 +25,7 @@ The aim is the Eye of the Beholder dance: step back or sidestep and get a free s
 | Skeleton guard | 1.1 s | 0.4 s | 0.5 s | 0.5 × 1.8 s = 0.9 s | 2.5 s |
 | Slime | 1.6 s | 0.6 s | 0.6 s | 0.5 × 2.5 s = 1.25 s | 3.5 s |
 | Acid slime | 1.5 s | 0.6 s | 0.6 s | 0.5 × 2.2 s = 1.1 s | 3.5 s |
+| Plague rat | 0.7 s | 0.3 s | 0.3 s | 0.4 × 1.4 s = 0.56 s | 2.0 s |
 
 Shared (`data/monster_ai.tres`): `max_flankers` 1, `step_seconds` 0.3 (the step animation), `wander_pause` 0.3, `path_radius` 12.
 
@@ -105,7 +106,7 @@ Every monster has a tier (`MonsterDef.tier`), and every status effect reads one 
 
 | Tier | Meaning | Monsters |
 |---|---|---|
-| 1 | fodder | Skeleton, Slime, Acid Slime (and the rat, when there is one) |
+| 1 | fodder | Skeleton, Slime, Acid Slime, Plague Rat |
 | 2 | tough | Skeleton Guard |
 | 3 | elite or mini-boss | The Cursed Warden |
 | 4 | boss | none yet |
@@ -148,6 +149,14 @@ dungeon). Every number is on the item ("Trap" group) and the tier table's `trap`
 - **Where:** floor 1 has two lying about: beside the long corridor near the start, whose skeleton chases you (7,11), and in the east corridor above the skeleton guard (18,14). The test room has one on the item table and the Traps station (one armed, one to pick up, and a skeleton to lure onto it).
 - **Not built:** traps that catch the party (hidden traps, detecting, disarming); monsters do not avoid armed traps.
 
+## The plague rat
+
+`data/monsters/plague_rat.tres`, tier 1: 5 HP, attack 2, defence 1, damage 1-3, a blow every 1.4 s, a step every 0.7 s (the fastest thing on the floor), sight 4, fears fire (a torch's hit makes it recoil, like the slimes). Caught by a bear trap and held like anything else (it does not ooze). Three nest in the cave at (8,17), (7,18) and (8,18).
+
+- **The bite:** a landed blow has a 20% chance of the food sickness: 6 HP over 6 s, never kills (`MonsterDef.sick_chance`, `sick_damage`, `sick_seconds`; rolled in `Party.take_hit_from`, and only for a monster that has a chance, so every other fight's dice are untouched). The log adds "The bite festers: {name} feels sick."
+- **What it leaves:** raw rat meat 40% of the time (`data/items/raw_rat_meat.tres`): 6 HP over 6 s, and 50% of the food sickness. Cooking it (12 HP over 6 s, no sickness) belongs to resting (7h), which does not exist yet.
+- **Art:** PixelLab picture, four animations and its own hit effect (`rat_bite`); see `docs/asset_log.md`.
+
 ## Monster hit effects
 
 When a monster's blow lands, its own effect plays across the 3D view with the red flash, so you feel what hit you (feedback only, no rule changes). Each monster names one (`MonsterDef.hit_effect`, a PixelLab VFX sheet in `art/spells/hit_fx/`); a monster with none gets the red flash alone.
@@ -158,6 +167,7 @@ When a monster's blow lands, its own effect plays across the 3D view with the re
 | Skeleton Guard (axe) | `guard_axe`: a heavy crescent axe swing with sparks |
 | Slime | `slime_splat`: a wet glob slapping across and dripping off |
 | Acid Slime | `acid_splat`: the same in its sicklier acid green, the other way round |
+| Plague Rat | `rat_bite`: two rows of fangs snapping shut, with a few drops |
 
 - **Placement:** centred for a blow from the front, towards that edge for the left or right (mirrored for the right), low for behind, matching the direction glow.
 - **Crits** play 35% bigger and hold their strongest frame 0.12 s longer. **Misses** play nothing, so a landed hit always reads.
