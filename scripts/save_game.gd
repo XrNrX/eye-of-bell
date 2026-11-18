@@ -1,34 +1,40 @@
 extends RefCounted
-## Save and load the run (7.3). One slot, JSON, at user://savegame.json.
+## Save and load the run (7.3; per-system states since docs/code_review.md S1). One slot, JSON, at user://savegame.json.
 ## Use it via preload (like DungeonMap):
 ##     const SaveGame := preload("res://scripts/save_game.gd")
 ##     SaveGame.save(tree)        # -> "" or an error message
 ##     SaveGame.load_game(tree)   # reloads the scene and applies the file -> "" or an error
 ##
-## What is saved (everything that changes during a run; level layout, art and item and
-## monster definitions are data and come back from the game files):
-##   party      the formation (hero_index per position) and, per hero: hp, mana, hands,
-##              armour, backpack, quick slots, active buffs
-##   player     cell and facing
-##   dungeon    items lying on the floor (piles, with where thrown items came from),
-##              which doors are open or unlocked, which levers are on, live monsters
-##              (kind, cell, hp, attack timer)
-##   cursor     the item held on the cursor
+## This file only GATHERS: each system writes and reads its own part, `save_state()` / `load_state(d)` / static
+## `validate_state(d)`, and a new system adds its own functions and one line here (and one in `validate`):
+##   party      Party:        the formation and, per hero: hp, mana, hands, armour, backpack, quick slots, buffs, food and
+##                            sickness, shaken
+##   player     Player:       cell and facing
+##   dungeon    Dungeon (dungeon_builder.gd): floor piles (where thrown items came from, lights' burn time and whether
+##                            they lie lit), open and unlocked doors, levers, live monsters (Monster.save_state: kind, cell,
+##                            hp, attack timer, statuses with the time left, boss greeting), broken, purified and corrupted
+##                            walls, solved puzzles, armed bear traps
+##   cursor     CursorItem:   the item held on the cursor ({"held": stack or null})
 ##   flags      the run flags (DungeonMap.flags: things that have happened, by name)
-## Not saved: cooldowns (they restart ready), animations in flight, floating text.
+##   level      the level's script path ("" = floor 1; the test room cannot be saved)
+## Not saved: cooldowns (they restart ready), animations in flight, floating text, fights.
 ##
-## Loading reloads main.tscn (a clean, fully built dungeon) and then applies the file to
-## it once everything is ready: see save_manager.gd, which calls apply() for `pending`.
-## Items and spells are stored by resource path; numbers come back from JSON as floats,
-## so every integer is converted on the way in.
+## VALIDATE FIRST: `validate` checks the whole file (every key and its type) before anything in the game is touched, and a
+## bad file is refused with a message and changes nothing. It runs on the file before the scene reloads, and again in
+## apply() against the real game (hero count) before the first load_state. Versions: 2 is current (it adds `level` and
+## wraps the cursor as {"held"}); version 1 files are accepted (`upgrade` converts them); a newer one is refused.
+##
+## Loading reloads main.tscn (a clean, fully built dungeon) and then applies the file to it once everything is ready: see
+## save_manager.gd, which calls apply() for `pending`. Items and spells are stored by resource path; numbers come back from
+## JSON as floats, so every integer is converted on the way in.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
-const ItemStack := preload("res://scripts/item_stack.gd")
-const MonsterScript := preload("res://scripts/monster.gd")
+const SaveData := preload("res://scripts/save_data.gd")
 
 ## Where the save lives. A var so tests can point it elsewhere and never touch a real save.
 static var path := "user://savegame.json"
-const VERSION := 1
+const VERSION := 2
+const OLDEST_VERSION := 1  # Saves back to this version still load.
 const MAIN_SCENE := "res://scenes/main.tscn"
 
 ## The save waiting to be applied after the scene reloads (set by load_game).
@@ -58,27 +64,80 @@ static func save(tree: SceneTree) -> String:
 	return ""
 
 
-## Read the file. Returns {} with `error` explaining if it can't be used.
+## Read the file. Returns {} with `error` explaining if it can't be used. A usable file is upgraded to the current layout
+## and has passed `validate`.
 static func read_file() -> Dictionary:
 	if not has_save():
 		return {"error": "There is no saved game."}
 	var text := FileAccess.get_file_as_string(path)
-	var parsed = JSON.parse_string(text)
+	var parsed = JSON.parse_string(text)  # (A truncated file does not parse.)
 	if not (parsed is Dictionary):
 		return {"error": "The save file is damaged."}
-	if int(parsed.get("version", 0)) != VERSION:
+	if not SaveData.is_number(parsed.get("version")):
+		return {"error": "The save file is damaged (no version)."}
+	var version := int(parsed.version)
+	if version < OLDEST_VERSION:
 		return {"error": "The save file is from another version."}
-	return parsed
+	if version > VERSION:
+		return {"error": "The save file is from a newer version of the game."}
+	var data := upgrade(parsed)
+	var problem := validate(data)
+	if problem != "":
+		return {"error": problem}
+	return data
+
+
+## Bring an older save up to the current layout (a copy; idempotent). Version 1 -> 2: no `level` (floor 1) and the cursor's
+## stack was stored bare instead of as {"held": stack}.
+static func upgrade(data: Dictionary) -> Dictionary:
+	var d := data.duplicate(true)
+	if SaveData.is_number(d.get("version")) and int(d.version) < 2:
+		d["cursor"] = {"held": d.get("cursor")}
+		d["level"] = str(d.get("level", ""))
+		d["version"] = 2
+	return d
+
+
+## Is the whole file usable? "" if so, else a message. Checks every system's part with that system's own validate_state, so
+## nothing is read without a default part-way through a load. `hero_count` is how many heroes this game has (-1: skip, for
+## a check made before the game is running).
+static func validate(data: Dictionary, hero_count := -1) -> String:
+	var version = data.get("version")
+	if not SaveData.is_number(version) or int(version) < OLDEST_VERSION or int(version) > VERSION:
+		return "The save file is from another version."
+	for key in ["party", "player", "dungeon", "cursor"]:
+		if not data.get(key) is Dictionary:
+			return "The save file is damaged (no %s)." % key
+	var problem: String = SaveData.maybe(data, "flags", "dict", "save file")
+	if problem == "":
+		problem = SaveData.maybe(data, "level", "string", "save file")
+	if problem == "" and str(data.get("level", "")) != "" and not ResourceLoader.exists(str(data.level)):
+		problem = "The saved level is not in this game."
+	if problem == "":
+		problem = _script("res://scripts/party.gd").validate_state(data.party, hero_count)
+	if problem == "":
+		problem = _script("res://scripts/player.gd").validate_state(data.player)
+	if problem == "":
+		problem = _script("res://scripts/dungeon_builder.gd").validate_state(data.dungeon)
+	if problem == "":
+		problem = _script("res://scripts/cursor_item.gd").validate_state(data.cursor)
+	return problem
+
+
+## A system's script, looked up when needed (not preloaded: those scripts preload most of the game, and the pause menu and
+## main menu preload this one).
+static func _script(script_path: String) -> GDScript:
+	return load(script_path)
 
 
 ## Load the saved game: reload the main scene and apply the file to it. Returns ""
-## on success or why it can't.
+## on success or why it can't (the file is checked first: a bad one changes nothing).
 static func load_game(tree: SceneTree) -> String:
 	var data := read_file()
 	if data.has("error"):
 		return data.error
 	pending = data
-	DungeonMap.use_level("")  # Saves are floor 1's (the test room cannot be saved).
+	DungeonMap.use_level(str(data.get("level", "")))  # "" is floor 1 (the test room cannot be saved).
 	tree.paused = false
 	if tree.current_scene != null and tree.current_scene.scene_file_path == MAIN_SCENE:
 		tree.reload_current_scene()
@@ -98,234 +157,64 @@ static func serialize(tree: SceneTree) -> Dictionary:
 	if party == null or player == null or dungeon == null:
 		return {}
 	var cursor := tree.get_first_node_in_group("cursor")
-
-	var heroes := []
-	for m in party.members:
-		var buffs := []
-		for b in m.buffs:
-			buffs.append({"spell": b.spell.resource_path, "left": b.left})
-		heroes.append({
-			"hero": m.hero_index, "hp": m.hp, "mana": m.mana, "shaken": m.shaken_left,
-			"food": {"left": m.food_left, "rate": m.food_rate, "sick_left": m.sick_left, "sick_rate": m.sick_rate},
-			"hands": m.hands.map(stack_to_data), "armour": stack_to_data(m.armour),
-			"backpack": m.backpack.map(stack_to_data), "quick": m.quick.map(stack_to_data),
-			"buffs": buffs,
-		})
-
-	var piles := []
-	for cell in dungeon.items:
-		piles.append({"cell": cell_to_data(cell), "pile": dungeon.items[cell].pile.map(stack_to_data)})
-	var broken := []
-	for cell in DungeonMap.broken_walls:
-		broken.append(cell_to_data(cell))
-	var purified := []  # (A wall whose purifying show is still running counts as burned away.)
-	for cell in DungeonMap.purified:
-		purified.append(cell_to_data(cell))
-	for cell in DungeonMap.purify_pending:
-		if not DungeonMap.purified.has(cell):
-			purified.append(cell_to_data(cell))
-	var corruption := []  # The corrupted walls still standing and the Blesses each still needs.
-	for cell in DungeonMap.corrupted_left:
-		if int(DungeonMap.corrupted_left[cell]) > 0 and not DungeonMap.purify_pending.has(cell):
-			corruption.append({"cell": cell_to_data(cell), "left": int(DungeonMap.corrupted_left[cell])})
-	var open_doors := []
-	for cell in DungeonMap.open_doors:
-		open_doors.append(cell_to_data(cell))
-	var unlocked := []
-	for cell in DungeonMap.unlocked_doors:
-		unlocked.append(cell_to_data(cell))
-	var levers := []
-	for key in dungeon.lever_on:
-		if dungeon.lever_on[key]:
-			levers.append([key.x, key.y, key.z])
-	var monsters := []
-	for n in dungeon.get_children():
-		if n.has_method("take_hit") and not n.dying:
-			var statuses := []  # Held and any other status, with the time left (an older save has none).
-			for entry in n.statuses.values():
-				statuses.append({"def": entry.def.resource_path, "left": entry.left, "source": entry.source})
-			monsters.append({"def": n.def.resource_path, "cell": cell_to_data(n.cell),
-					"hp": n.hp, "attack_cooldown": n.attack_cooldown, "statuses": statuses})
-
 	return {
 		"version": VERSION,
-		"party": {"formation": party.formation.duplicate(), "heroes": heroes},
-		"player": {"cell": cell_to_data(player.cell), "facing": player.facing},
-		"dungeon": {"items": piles, "open_doors": open_doors, "unlocked_doors": unlocked,
-				"levers": levers, "monsters": monsters, "broken_walls": broken,
-				"purified_walls": purified, "corruption": corruption,
-				"puzzles_done": DungeonMap.puzzles_done.keys(), "puzzle_doors": DungeonMap.puzzle_doors.keys(),
-				"armed_traps": dungeon.traps.serialize() if dungeon.traps != null else []},
+		"level": DungeonMap.level_path,
+		"party": party.save_state(),
+		"player": player.save_state(),
+		"dungeon": dungeon.save_state(),
 		"flags": DungeonMap.flags.duplicate(),
-		"cursor": stack_to_data(cursor.held) if cursor else null,
+		"cursor": cursor.save_state() if cursor else {"held": null},
 	}
 
 
+# (Thin wrappers: the helpers live in save_data.gd so the systems can use them without loading this file.)
 static func cell_to_data(cell: Vector2i) -> Array:
-	return [cell.x, cell.y]
+	return SaveData.cell_to_data(cell)
 
 
 static func data_to_cell(data) -> Vector2i:
-	return Vector2i(int(data[0]), int(data[1]))
+	return SaveData.data_to_cell(data)
 
 
 static func stack_to_data(stack):
-	if stack == null:
-		return null
-	var d := {"def": stack.def.resource_path, "count": stack.count}
-	if not stack.origin.is_empty():
-		d["origin"] = stack.origin.duplicate()
-	if stack.burn_left >= 0.0:  # A light that has burned a while (a fresh one has none).
-		d["burn"] = stack.burn_left
-	if stack.burning:
-		d["burning"] = true      # Lying lit on the floor (light_field.gd lights it again).
-	return d
+	return SaveData.stack_to_data(stack)
 
 
-## Rebuild an ItemStack from saved data, or null if it's empty or its item no longer exists.
 static func data_to_stack(data) -> RefCounted:
-	if not (data is Dictionary) or not ResourceLoader.exists(str(data.get("def", ""))):
-		return null
-	var stack: RefCounted = ItemStack.of(load(data.def), maxi(1, int(data.get("count", 1))))
-	var o = data.get("origin")
-	if o is Dictionary and o.has("hero"):
-		stack.origin = {"hero": int(o.hero), "where": str(o.where), "index": int(o.index)}
-	stack.burn_left = float(data.get("burn", -1.0))
-	stack.burning = bool(data.get("burning", false))
-	return stack
+	return SaveData.data_to_stack(data)
 
 
 # --------------------------------------------------------------------------
 # Applying
 # --------------------------------------------------------------------------
 
-## Put a saved game onto a freshly built main scene. Returns "" or why it couldn't.
+## Put a saved game onto a freshly built main scene. Returns "" or why it couldn't. The whole file is checked against the
+## running game first; nothing changes unless it all passes.
 static func apply(tree: SceneTree, data: Dictionary) -> String:
 	var party := tree.get_first_node_in_group("party")
 	var player := tree.get_first_node_in_group("player")
 	var dungeon := tree.get_first_node_in_group("dungeon")
 	if party == null or player == null or dungeon == null:
 		return "The game isn't ready to load."
-	var hero_data: Array = data.party.heroes
-	if hero_data.size() != party.members.size():
-		return "The saved party doesn't match this game."
-	# Check the formation before changing anything: a bad file must not half-load.
-	var order := []
-	var seen := {}
-	for h in data.party.formation:
-		order.append(int(h))
-		seen[int(h)] = true
-	if order.size() != party.members.size() or seen.size() != order.size() 			or not order.all(func(h): return h >= 0 and h < party.members.size()):
-		return "The saved formation is invalid."
+	data = upgrade(data)
+	var problem := validate(data, party.members.size())
+	if problem != "":
+		return problem
 
-	# --- party (by hero, whatever position they were standing in) ---
-	var by_hero := {}
-	for m in party.members:
-		by_hero[m.hero_index] = m
-	for h in hero_data:
-		var m = by_hero.get(int(h.hero))
-		if m == null:
-			return "The saved party doesn't match this game."
-		m.hp = clampi(int(h.hp), 0, m.def.max_hp)
-		m.mana = clampf(float(h.mana), 0.0, float(m.def.max_mana))
-		m.shaken_left = maxf(0.0, float(h.get("shaken", 0.0))) if m.hp > 0 else 0.0  # (An older save has none.)
-		var food: Dictionary = h.get("food", {})  # (So does an older save: no food or sickness running.)
-		var alive: bool = m.hp > 0
-		m.food_left = maxf(0.0, float(food.get("left", 0.0))) if alive else 0.0
-		m.food_rate = maxf(0.0, float(food.get("rate", 0.0)))
-		m.sick_left = maxf(0.0, float(food.get("sick_left", 0.0))) if alive else 0.0
-		m.sick_rate = maxf(0.0, float(food.get("sick_rate", 0.0)))
-		m.food_acc = 0.0
-		m.sick_acc = 0.0
-		m.cooldown_left = 0.0
-		for i in m.hands.size():
-			m.hands[i] = data_to_stack(h.hands[i]) if i < h.hands.size() else null
-		m.armour = data_to_stack(h.armour)
-		for i in m.backpack.size():
-			m.backpack[i] = data_to_stack(h.backpack[i]) if i < h.backpack.size() else null
-		for i in m.quick.size():
-			m.quick[i] = data_to_stack(h.quick[i]) if i < h.quick.size() else null
-			m.quick_cooldown[i] = 0.0
-		m.buffs.clear()
-		for b in h.buffs:
-			if ResourceLoader.exists(str(b.spell)):
-				m.buffs.append({"spell": load(b.spell), "left": float(b.left)})
-	party.set_formation(order)  # Also redraws the HUD. (Validated above.)
-	for m in party.members:
-		party.hp_changed.emit(m.slot)
-
-	# --- dungeon ---
-	var d: Dictionary = data.dungeon
-	DungeonMap.unlocked_doors.clear()
-	for c in d.unlocked_doors:
-		DungeonMap.unlocked_doors[data_to_cell(c)] = true
-	var open := {}
-	for c in d.open_doors:
-		open[data_to_cell(c)] = true
-	var broken_cells := []
-	for c in d.get("broken_walls", []):  # (An older save has none.)
-		broken_cells.append(data_to_cell(c))
-	dungeon.restore_broken_walls(broken_cells)
-	var left := {}
-	for entry in d.get("corruption", []):  # (An older save has none: every corrupted wall starts fresh.)
-		left[data_to_cell(entry.cell)] = int(entry.left)
-	var purified_cells := []
-	for c in d.get("purified_walls", []):
-		purified_cells.append(data_to_cell(c))
-	DungeonMap.puzzles_done.clear()
-	for id in d.get("puzzles_done", []):
-		DungeonMap.puzzles_done[str(id)] = true
-	DungeonMap.puzzle_doors.clear()
-	for id in d.get("puzzle_doors", []):
-		DungeonMap.puzzle_doors[str(id)] = true
+	party.load_state(data.party)
+	dungeon.load_state(data.dungeon)
 	DungeonMap.flags.clear()  # (An older save has none: the run starts with no flags set.)
 	var saved_flags = data.get("flags", {})
-	if saved_flags is Dictionary:
-		for name in saved_flags:
-			var value = saved_flags[name]
-			if value is float and value == floorf(value) and absf(value) < 1.0e15:
-				value = int(value)  # JSON gives every number back as a float.
-			if typeof(value) in [TYPE_BOOL, TYPE_INT, TYPE_FLOAT, TYPE_STRING]:
-				DungeonMap.flags[str(name)] = value
-	dungeon.restore_corruption(left, purified_cells)
-	dungeon.restore_doors(open)
-	var on := {}
-	for l in d.levers:
-		on[Vector3i(int(l[0]), int(l[1]), int(l[2]))] = true
-	dungeon.restore_levers(on)
-
-	for cell in dungeon.items.keys():
-		dungeon.set_pile(cell, [])
-	for entry in d.items:
-		var stacks := []
-		for s in entry.pile:
-			var stack := data_to_stack(s)
-			if stack != null:
-				stacks.append(stack)
-		dungeon.set_pile(data_to_cell(entry.cell), stacks)
-
-	if dungeon.traps != null:
-		dungeon.traps.restore(d.get("armed_traps", []))  # (An older save has none.)
-	if dungeon.get("lights") != null:
-		dungeon.lights.restore()  # Lights lying lit in the piles burn again.
-
-	dungeon.clear_monsters()
-	for mo in d.monsters:
-		if ResourceLoader.exists(str(mo.def)):
-			var monster: Node = dungeon.spawn_monster(load(mo.def), data_to_cell(mo.cell), int(mo.hp), float(mo.attack_cooldown))
-			for st in mo.get("statuses", []):
-				if ResourceLoader.exists(str(st.def)):
-					monster.add_status(load(st.def), float(st.left), int(st.source), true)  # Quiet: no news, no binding again.
-
-	# --- player and cursor ---
-	player.restore(data_to_cell(data.player.cell), int(data.player.facing))
-	var party_node := tree.get_first_node_in_group("party")
-	if party_node != null:
-		party_node.sync_light_level()  # The light held after loading is not news.
+	for name in saved_flags:
+		var value = saved_flags[name]
+		if value is float and value == floorf(value) and absf(value) < 1.0e15:
+			value = int(value)  # JSON gives every number back as a float.
+		if typeof(value) in [TYPE_BOOL, TYPE_INT, TYPE_FLOAT, TYPE_STRING]:
+			DungeonMap.flags[str(name)] = value
+	player.load_state(data.player)  # After the dungeon: standing on a tile refreshes its doors and plates.
+	party.sync_light_level()  # The light held (and lit lights seen) after loading is not news.
 	var cursor := tree.get_first_node_in_group("cursor")
 	if cursor:
-		cursor.release()
-		var held := data_to_stack(data.cursor)
-		if held != null:
-			cursor.hold(held)
+		cursor.load_state(data.cursor)
 	return ""

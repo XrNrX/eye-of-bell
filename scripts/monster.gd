@@ -168,6 +168,24 @@ func try_status(status: Resource, seconds: float, source := -1, row := "") -> Di
 	return out
 
 
+## What a living monster is, as plain data (the dungeon's save_state lists these): its kind, tile, hit points, attack timer,
+## timed statuses (held, with the time left) and whether a boss has already had its first-sight banter.
+func save_state() -> Dictionary:
+	var list := []
+	for entry in statuses.values():
+		list.append({"def": entry.def.resource_path, "left": entry.left, "source": entry.source})
+	return {"def": def.resource_path, "cell": [cell.x, cell.y], "hp": hp, "attack_cooldown": attack_cooldown,
+			"statuses": list, "boss_seen": _boss_seen}
+
+
+## The part of a saved monster the dungeon's spawn_monster does not set (kind, tile, hp and attack timer it does).
+func load_state(d: Dictionary) -> void:
+	_boss_seen = bool(d.get("boss_seen", false))  # (An older save has none: the boss may greet the party again.)
+	for st in d.get("statuses", []):
+		if ResourceLoader.exists(str(st.def)):
+			add_status(load(st.def), float(st.left), int(st.source), true)  # Quiet: no news, no binding again.
+
+
 ## Put a status on (or refresh it to `seconds` if it is already on: the longer of the two). source: the hero_index who did it
 ## (-1: nobody). quiet: no signal and no starting effect (loading a save).
 func add_status(status: Resource, seconds: float, source := -1, quiet := false) -> void:

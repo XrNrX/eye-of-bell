@@ -6,6 +6,7 @@ extends Node3D
 ## Every move/turn is tweened; movement input is ignored while a tween is running.
 
 const LootMenu := preload("res://scripts/loot_menu.gd")
+const SaveData := preload("res://scripts/save_data.gd")
 const Events := preload("res://scripts/game_events.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
@@ -251,6 +252,26 @@ func _try_move(dir: Vector2i) -> void:
 	tween = create_tween()
 	tween.tween_property(self, "position", DungeonMap.cell_to_world(cell), MOVE_TIME)
 	tween.tween_callback(_arrive)
+
+
+## Where the party stands: the tile and the way it faces.
+func save_state() -> Dictionary:
+	return {"cell": [cell.x, cell.y], "facing": facing}
+
+
+static func validate_state(d) -> String:
+	if not d is Dictionary:
+		return "The save has no player."
+	var problem: String = SaveData.need(d, "cell", "cell", "saved player")
+	if problem == "":
+		problem = SaveData.need(d, "facing", "number", "saved player")
+	if problem == "" and (int(d.facing) < 0 or int(d.facing) > 3):
+		problem = "The saved player faces nowhere."
+	return problem
+
+
+func load_state(d: Dictionary) -> void:
+	restore(SaveData.data_to_cell(d.cell), int(d.facing))
 
 
 ## Put the party at a cell and facing at once (loading a save).

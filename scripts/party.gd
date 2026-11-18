@@ -23,6 +23,7 @@ const CombatRules := preload("res://scripts/combat_rules.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
 const ItemStack := preload("res://scripts/item_stack.gd")
 const SpellDef := preload("res://scripts/spell_def.gd")
+const SaveData := preload("res://scripts/save_data.gd")
 
 const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
 const FightTracker := preload("res://scripts/fight_tracker.gd")
@@ -354,6 +355,120 @@ func set_formation(order: Array) -> bool:
 		quick_changed.emit(pos)  # Quick-slot widgets are keyed by position: redraw them.
 	formation_changed.emit()
 	return true
+
+
+# --------------------------------------------------------------------------
+# Saving (docs/code_review.md S1; save_game.gd gathers this with the other systems' states)
+# --------------------------------------------------------------------------
+
+## The party as plain data: the formation and every hero (hp, mana, hands, armour, backpack, quick slots, buffs, food and
+## sickness, shaken). Cooldowns restart ready. Heroes are keyed by hero_index, whatever position they stand in.
+func save_state() -> Dictionary:
+	var heroes := []
+	for m in members:
+		var buffs := []
+		for b in m.buffs:
+			buffs.append({"spell": b.spell.resource_path, "left": b.left})
+		heroes.append({
+			"hero": m.hero_index, "hp": m.hp, "mana": m.mana, "shaken": m.shaken_left,
+			"food": {"left": m.food_left, "rate": m.food_rate, "sick_left": m.sick_left, "sick_rate": m.sick_rate},
+			"hands": m.hands.map(SaveData.stack_to_data), "armour": SaveData.stack_to_data(m.armour),
+			"backpack": m.backpack.map(SaveData.stack_to_data), "quick": m.quick.map(SaveData.stack_to_data),
+			"buffs": buffs,
+		})
+	return {"formation": formation.duplicate(), "heroes": heroes}
+
+
+## Is this saved party usable? "" if so, else why not. Static and node-free, so a whole file can be checked before the
+## game is touched. `count` is how many heroes this game has (-1: don't compare).
+static func validate_state(d, count := -1) -> String:
+	if not d is Dictionary:
+		return "The save has no party."
+	var problem: String = SaveData.need(d, "formation", "array", "saved party")
+	if problem == "":
+		problem = SaveData.need(d, "heroes", "array", "saved party")
+	if problem != "":
+		return problem
+	var n: int = d.heroes.size()
+	if n == 0 or (count >= 0 and n != count):
+		return "The saved party doesn't match this game."
+	var seen := {}
+	for h in d.heroes:
+		if not h is Dictionary:
+			return "The saved party is damaged."
+		for key in ["hero", "hp", "mana"]:
+			problem = SaveData.need(h, key, "number", "saved hero")
+			if problem != "":
+				return problem
+		for key in ["hands", "backpack", "quick", "buffs"]:
+			problem = SaveData.need(h, key, "array", "saved hero")
+			if problem != "":
+				return problem
+		problem = SaveData.need(h, "armour", "stack", "saved hero")
+		if problem == "":
+			for key in ["hands", "backpack", "quick"]:
+				problem = SaveData.each(h[key], func(e): return SaveData.kind_error(e, "stack", "saved " + key))
+				if problem != "":
+					break
+		if problem == "":
+			problem = SaveData.each(h.buffs, func(b): return "" if b is Dictionary and b.get("spell") is String and SaveData.is_number(b.get("left")) else "The saved buffs are damaged.")
+		if problem == "" and h.has("food"):
+			problem = SaveData.kind_error(h.food, "dict", "saved food")
+		if problem != "":
+			return problem
+		var index := int(h.hero)
+		if index < 0 or index >= n or seen.has(index):
+			return "The saved party doesn't match this game."
+		seen[index] = true
+	var order := {}
+	for h in d.formation:
+		if not SaveData.is_number(h) or int(h) < 0 or int(h) >= n:
+			return "The saved formation is invalid."
+		order[int(h)] = true
+	if d.formation.size() != n or order.size() != n:
+		return "The saved formation is invalid."
+	return ""
+
+
+## Put a saved party (already checked with validate_state) onto this one.
+func load_state(d: Dictionary) -> void:
+	var by_hero := {}
+	for m in members:
+		by_hero[m.hero_index] = m
+	for h in d.heroes:
+		var m = by_hero[int(h.hero)]
+		m.hp = clampi(int(h.hp), 0, m.def.max_hp)
+		m.mana = clampf(float(h.mana), 0.0, float(m.def.max_mana))
+		var alive: bool = m.hp > 0
+		m.shaken_left = maxf(0.0, float(h.get("shaken", 0.0))) if alive else 0.0  # (An older save has none.)
+		var food: Dictionary = h.get("food", {})  # (So does an older save: no food or sickness running.)
+		m.food_left = maxf(0.0, float(food.get("left", 0.0))) if alive else 0.0
+		m.food_rate = maxf(0.0, float(food.get("rate", 0.0)))
+		m.sick_left = maxf(0.0, float(food.get("sick_left", 0.0))) if alive else 0.0
+		m.sick_rate = maxf(0.0, float(food.get("sick_rate", 0.0)))
+		m.food_acc = 0.0
+		m.sick_acc = 0.0
+		m.cooldown_left = 0.0
+		m.spell_wait.clear()
+		for i in m.hands.size():
+			m.hands[i] = SaveData.data_to_stack(h.hands[i]) if i < h.hands.size() else null
+		m.armour = SaveData.data_to_stack(h.armour)
+		for i in m.backpack.size():
+			m.backpack[i] = SaveData.data_to_stack(h.backpack[i]) if i < h.backpack.size() else null
+		for i in m.quick.size():
+			m.quick[i] = SaveData.data_to_stack(h.quick[i]) if i < h.quick.size() else null
+			m.quick_cooldown[i] = 0.0
+		m.buffs.clear()
+		for b in h.buffs:
+			if ResourceLoader.exists(str(b.spell)):
+				m.buffs.append({"spell": load(b.spell), "left": float(b.left)})
+	var order := []
+	for h in d.formation:
+		order.append(int(h))
+	set_formation(order)  # Also redraws the HUD.
+	for m in members:
+		hp_changed.emit(m.slot)
+	sync_light_level()  # The light held after loading is not news.
 
 
 func member(slot: int) -> Member:

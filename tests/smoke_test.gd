@@ -1182,6 +1182,13 @@ func _check_stairs() -> void:
 # Save and load
 # --------------------------------------------------------------------------
 
+## Replace the save file's contents (a test of damaged files).
+func _write_save(text: String) -> void:
+	var f := FileAccess.open(SaveGame.path, FileAccess.WRITE)
+	f.store_string(text)
+	f.close()
+
+
 func _stack_text(stack) -> String:
 	return "-" if stack == null else "%s x%d" % [stack.def.resource_path, stack.count]
 
@@ -1261,6 +1268,34 @@ func _check_save_load() -> void:
 	_monster("slime", CLOSETS[0], 3)
 	_monster("skeleton_guard", CLOSETS[1], 5).add_status(load("res://data/statuses/held.tres"), 4.0, 3)
 	get_first_node_in_group("traps").arm(Vector2i(11, 13), load("res://data/items/bear_trap.tres"), 2)
+	# Added since the code review: the Warden (greeted already, held), a plague rat (held), a hero's food and sickness running,
+	# torch and candle burn times, and a torch lying lit on the floor.
+	var warden: Node = _monster("warden", Vector2i(8, 13), 41)
+	warden._boss_seen = true
+	warden.add_status(load("res://data/statuses/held.tres"), 4.0, 1)
+	var rat: Node = _monster("plague_rat", Vector2i(12, 13), 2)
+	rat.add_status(load("res://data/statuses/held.tres"), 4.0, 0)
+	var sick = party.members[party.formation.find(1)]
+	sick.food_left = 5.0
+	sick.food_rate = 2.0
+	sick.sick_left = 4.0
+	sick.sick_rate = 1.5
+	var torch: Resource = load("res://data/items/torch.tres")
+	var candle: Resource = load("res://data/items/candle.tres")
+	var torch_holder = null
+	for m in party.members:
+		for stack in m.hands:
+			if stack != null and stack.def == torch:
+				stack.burn_left = 123.0
+				torch_holder = m
+	var candle_stack: RefCounted = ItemStack.of(candle, 1)
+	candle_stack.burn_left = 40.0
+	var candle_holder = party.members[party.formation.find(2)]
+	candle_holder.backpack[5] = candle_stack
+	var floor_torch: RefCounted = ItemStack.of(torch, 1)
+	floor_torch.burn_left = 77.0
+	dungeon.place_item(Vector2i(12, 13), floor_torch)
+	dungeon.lights.drop(Vector2i(12, 13), floor_torch)
 
 	var saved := _snapshot()
 	var sent_before := _event_counts()
@@ -1314,7 +1349,7 @@ func _check_save_load() -> void:
 	check("load: open doors", loaded.doors == saved.doors and saved.doors.size() >= 2)
 	check("load: levers", loaded.levers == saved.levers and saved.levers.size() == 1)
 	check("load: floor piles", loaded.piles == saved.piles)
-	check("load: monsters (kind, cell, hp)", loaded.monsters == saved.monsters and saved.monsters.size() == 2)
+	check("load: monsters (kind, cell, hp)", loaded.monsters == saved.monsters and saved.monsters.size() == 4)
 	var loaded_traps: Node = get_first_node_in_group("traps")
 	check("load: an armed trap is still armed where it was set", loaded_traps != null and loaded_traps.armed_at(Vector2i(11, 13)) != null
 			and loaded_traps.armed[Vector2i(11, 13)].setter == 2)
@@ -1326,6 +1361,87 @@ func _check_save_load() -> void:
 		if loaded[key] != saved[key]:
 			print("  ", key, " saved:  ", saved[key])
 			print("  ", key, " loaded: ", loaded[key])
+
+	# What was added after the code review survives too.
+	var warden_back = DungeonMap.occupied.get(Vector2i(8, 13))
+	check("load: the Warden is back with his hit points, held, and does not greet the party again",
+			warden_back != null and warden_back.def.boss and warden_back.hp == 41 and warden_back.has_status("held") and warden_back._boss_seen)
+	var rat_back = DungeonMap.occupied.get(Vector2i(12, 13))
+	check("load: a plague rat is back with its hit points, held", rat_back != null and rat_back.def.resource_path == "res://data/monsters/plague_rat.tres"
+			and rat_back.hp == 2 and rat_back.has_status("held") and rat_back.statuses.held.source == 0)
+	var sick_back = party.members[party.formation.find(1)]
+	check("load: a hero's food and sickness are still running",
+			sick_back.food_left > 3.0 and is_equal_approx(sick_back.food_rate, 2.0) and sick_back.sick_left > 2.0 and is_equal_approx(sick_back.sick_rate, 1.5))
+	var held_torch: RefCounted = null
+	for m in party.members:
+		for stack in m.hands:
+			if stack != null and stack.def == torch:
+				held_torch = stack
+	check("load: a held torch keeps its burn time (%.1f s left)" % (held_torch.burn_left if held_torch else -1.0),
+			held_torch != null and held_torch.burn_left > 115.0 and held_torch.burn_left <= 123.0)
+	var candle_back: RefCounted = party.members[party.formation.find(2)].backpack[5]
+	check("load: a candle in a backpack keeps its burn time, unlit", candle_back != null and candle_back.def == candle and is_equal_approx(candle_back.burn_left, 40.0) and not candle_back.burning)
+	var lying: RefCounted = null
+	for stack in dungeon.items[Vector2i(12, 13)].pile:
+		if stack.def == torch:
+			lying = stack
+	check("load: a torch lying lit on the floor still burns there, with its time left (%.1f s)" % (lying.burn_left if lying else -1.0),
+			lying != null and lying.burning and lying.burn_left > 60.0 and lying.burn_left <= 77.0 and dungeon.lights.burning.size() == 1)
+	var level_text := FileAccess.get_file_as_string(SaveGame.path)
+	var written = JSON.parse_string(level_text)
+	check("the save stores its version and level path", written is Dictionary and int(written.version) == SaveGame.VERSION and written.level == DungeonMap.level_path
+			and written.cursor is Dictionary and written.cursor.has("held"))
+
+	# A bad file is refused cleanly and changes nothing.
+	var good_text := level_text
+	party.members[0].hp = 3
+	var monsters_before: int = get_nodes_in_group("monsters").size()
+	_write_save(good_text.substr(0, good_text.length() / 2))  # Cut off half way, as a crash while writing would leave it.
+	var read: Dictionary = SaveGame.read_file()
+	check("a truncated save file is refused with a message", read.has("error") and str(read.error) != "")
+	error = SaveGame.load_game(self)
+	await process_frame
+	check("loading a truncated file refuses, leaves nothing pending and does not reload the game",
+			error != "" and SaveGame.pending.is_empty() and get_first_node_in_group("party") == party and party.members[0].hp == 3)
+	var missing_parts := []
+	for part in [["party"], ["player"], ["dungeon"], ["cursor"], ["party", "heroes"], ["party", "formation"], ["dungeon", "monsters"], ["dungeon", "items"], ["dungeon", "levers"]]:
+		var broken: Dictionary = JSON.parse_string(good_text)
+		var holder: Dictionary = broken
+		for i in part.size() - 1:
+			holder = holder[part[i]]
+		holder.erase(part[part.size() - 1])
+		_write_save(JSON.stringify(broken))
+		var refused: bool = SaveGame.read_file().has("error") and SaveGame.apply(self, broken) != ""
+		if not refused:
+			missing_parts.append("/".join(part))
+	check("a file missing a key is refused by read_file and apply (not refused: %s)" % str(missing_parts), missing_parts.is_empty())
+	var wrong: Dictionary = JSON.parse_string(good_text)
+	wrong.party.heroes[2].hp = "lots"
+	error = SaveGame.apply(self, wrong)
+	check("a file with a wrong kind of value is refused", error != "")
+	var half_bad: Dictionary = JSON.parse_string(good_text)  # The party part is fine, the dungeon part is not: nothing loads at all.
+	half_bad.party.heroes[0].hp = 9
+	half_bad.dungeon.monsters[0].erase("cell")
+	error = SaveGame.apply(self, half_bad)
+	check("a bad dungeon part stops the good party part loading too (nothing changed)", error != "" and party.members[0].hp == 3
+			and get_nodes_in_group("monsters").size() == monsters_before)
+	var newer: Dictionary = JSON.parse_string(good_text)
+	newer.version = 99
+	_write_save(JSON.stringify(newer))
+	check("a save from a newer version is refused", SaveGame.read_file().has("error"))
+	# A version 1 save (no level, the cursor's stack bare) still loads.
+	var old: Dictionary = JSON.parse_string(good_text)
+	old.version = 1
+	old.erase("level")
+	old.cursor = old.cursor.held
+	_write_save(JSON.stringify(old))
+	var old_read: Dictionary = SaveGame.read_file()
+	check("a version 1 save is accepted and brought up to date", not old_read.has("error") and int(old_read.version) == SaveGame.VERSION
+			and old_read.level == "" and old_read.cursor is Dictionary and old_read.cursor.has("held"))
+	party.members[0].hp = 3
+	error = SaveGame.apply(self, old_read)
+	check("a version 1 save applies", error == "" and party.members[0].hp != 3 and DungeonMap.occupied.get(Vector2i(8, 13)) != null)
+	_write_save(good_text)
 
 	# A save from before run flags existed has no "flags": it loads, with none set.
 	var old_save: Dictionary = SaveGame.read_file()

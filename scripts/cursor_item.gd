@@ -11,6 +11,7 @@ extends CanvasLayer
 
 const ItemStack := preload("res://scripts/item_stack.gd")
 const StackCount := preload("res://scripts/stack_count.gd")
+const SaveData := preload("res://scripts/save_data.gd")
 
 @onready var icon: TextureRect = %Icon
 
@@ -76,6 +77,24 @@ func hold(item) -> void:
 	refresh()
 	_follow_mouse()  # Appear at the mouse straight away, not at the old spot for a frame.
 	icon.visible = true
+
+
+## The held stack as plain data ({"held": stack or null}).
+func save_state() -> Dictionary:
+	return {"held": SaveData.stack_to_data(held)}
+
+
+static func validate_state(d) -> String:
+	if not d is Dictionary:
+		return "The save has no cursor."
+	return SaveData.need(d, "held", "stack", "saved cursor")
+
+
+func load_state(d: Dictionary) -> void:
+	release()
+	var stack := SaveData.data_to_stack(d.held)
+	if stack != null:
+		hold(stack)
 
 
 ## Take the held stack off the cursor and return it (null if nothing was held).
