@@ -22,14 +22,35 @@ First floor is done when: a stranger can start from the menu, reach the stairs, 
 
 Finished phases (1 to 8 and the test room), with every prompt, now live in the Done tab: Done
 
+## Build order: what's next
+
+Work down this list. It comes from Fable's expansion design (docs/design/expansion\_design.md, section 6) and the classes plan (docs/design/new\_classes\_plan.md). Each phase ends by placing its own things on floor 1 and playing it, so the floor is never half-furnished.
+
+1. Foundations Step 7 (Tolerant saves)
+2. Mana prompt (Slower mana) and Mini-boss prompt (The Cursed Warden), both in Leftovers. Playtest before going on.
+3. 7l.2 (Wall sconces) and 7l.4 (Throwing torches)
+4. Foundations Step 9, then Phase 7e (Puzzles)
+5. 7l.3 (Curse zones), 7l.5 (Flask of oil), Plague rat prompt (in Leftovers), then 7l.6 (Light on floor 1)
+6. Foundations Step 10, then Phase 7d (Ambushes)
+7. Phase 7j (Fallen adventurers)
+8. Phase 7h (Resting)
+9. Foundations Step 8, then Phase 7i (Levelling)
+10. Foundations Step 11, then Phase 7g (Legendaries)
+11. A balance pass and demo v0.8: the whole floor three times (rushing, thorough, careless with light)
+12. Phase 8b (Party screen)
+13. Phase C (New classes)
+
+Any time: 7b.8 (Dead weight), 7f.3 to 7f.5 (more banter), 7k.3 (Bear trap: what is left), VFX.9 to VFX.11. Later: Foundations Step 12 and Phase 9.
+
 ## Leftovers from finished phases
 
 Loose ends from phases that are otherwise done, plus things the 13 Nov tech brief showed don't match the roadmap. Their phases moved to the Done tab; the steps and prompts live here until they're ticked.
 
 - [x] 5.7 Enemy health bars (Phase 5)
 - [ ] 7b.8 Dead weight: the party slows while carrying a dead character (Phase 7b)
-- [ ] Mini-boss: 8.2 is ticked, but the 13 Nov tech brief says there's no mini-boss and tiers 3-4 are empty. Check the floor 1 map, and build one near the stairs if it's missing.
-- [ ] Plague rat: planned in 4.3 and 7c.2 but not in the game (the acid slime took its place). The tier table and the bear trap expect one, as a tier 1 monster.
+- [ ] Mini-boss: the Cursed Warden at the stairs (prompt below)
+- [ ] Plague rat: tier 1, fears fire, nests in the cave (prompt below)
+- [ ] Slower mana: 1 point per 6 s instead of 2.5 s (prompt below)
 - [x] Parked work: turn the git stashes (boss-room ambush, fog of war) into named branches, e.g. wip/boss-ambush and wip/fog-of-war, and list them in CLAUDE.md under "Parked work". Do this before Step 7, so the refactors don't make them harder to apply.
 
 **5.7 prompt (Enemy health bars)**
@@ -75,6 +96,51 @@ carrying their body, so movement slows until they're resurrected.
   "Heavier than he looks. Must be all the smugness."
 - Make sure save/load keeps it consistent, and add it to the test room.
 Keep it a nudge to resurrect, not a chore.
+```
+
+**Mana prompt (Slower mana)**
+
+```
+Change mana regeneration from 1 point per 2.5 s to 1 per 6 s
+(Party.MANA_REGEN_TIME), as docs/design/expansion_design.md section 2
+explains. Update the combat design page and the blueprint artifact, the
+smoke test, and any README text that quotes the old rate. Do not change
+any spell's cost. Then tell me how long a full Heal and a full Fireball
+take to come back, so I can playtest it.
+```
+
+**Mini-boss prompt (The Cursed Warden)**
+
+```
+Add the floor 1 mini-boss from docs/design/expansion_design.md (sections 2
+and 5). Bring the Cursed Warden's data and art over from the branch
+wip/boss-ambush (data/monsters/warden.tres, its sheet and gen_warden.py);
+do not bring its ambush code.
+- Stats: tier 3, 80 HP, attack 5, defence 4, damage 3-9, a blow every
+  2.0 s, sight 8. Set attack_hit_frame for his attack animation.
+- He stands at (20,22) in the stairs corridor. Remove the acid slime at
+  (20,21) and the guard at (20,22).
+- Tier table: a monster of tier 3 or more can be caught by a bear trap
+  once per fight (the fight tracker says when a fight ends). Add that
+  rule and a smoke check for it.
+- The sconces at (20,19) and (20,22) stay lit.
+- Banter (read docs/tone.md first): one line when he is first seen, one
+  when he falls.
+- Add him to the test room's combat arena spawn list, run the tests, and
+  redo the walk-through check of floor 1.
+```
+
+**Plague rat prompt (Plague rat)**
+
+```
+Add the plague rat from docs/design/expansion_design.md section 2: tier
+1, 5 HP, attack 2, defence 1, damage 1-3, a blow every 1.4 s, a step
+every 0.7 s, fears fire. A bite has a 20% chance of the food sickness (6
+HP over 6 s, never kills). Drops raw rat meat 40% of the time (6 HP over
+6 s, 50% sickness; cooked, 12 HP and none). Art and all four animations
+from PixelLab following docs/art_style.md, one picture first for my OK;
+a hit effect from the VFX tool; log it. Three nest in the cave at
+(8,17), replacing the skeleton at (9,18). Run the tests.
 ```
 
 ## Spell VFX pass
@@ -446,7 +512,7 @@ Done when: all thirteen steps are ticked, the three tests pass, and floor 1 play
 
 ## Floor 1 expansion: phases 7d to 7l
 
-Floor 1 is built and shipped. These phases add new features on top of it, in this order: ambushes, puzzles, banter, legendaries, campfire, levelling, fallen adventurers. Do them after the current queue is clear.
+Floor 1 is built and shipped. These phases add new features on top of it, but build them in the order of the Build order list at the top, not the order they appear here.
 
 ## Phase 7d: Ambushes and jump scares
 
@@ -454,103 +520,114 @@ The dungeon fights back: build-up, silence, then something bursts out of the wal
 
 Design rules: one or two per floor at most; always leave a clue for observant players; a surprise should hurt, never wipe the party; and players can turn down flashes and shake in Options.
 
-- [ ] 7d.1 Ambush design pass (Opus)
+Updated 18 Nov from docs/design/expansion\_design.md (section 3 "7d" and section 5): two ambushes on floor 1, the giant hand by the key room and the double tap into room 2. Do Foundations Step 10 first.
+
+- [ ] 7d.1 Ambush rules into the combat page
 - [ ] 7d.2 Trigger tiles and the scare sequence
-- [ ] 7d.3 Wall-grab monsters: giant hand and tentacles
+- [ ] 7d.3 The giant hand and the tentacles
 - [ ] 7d.4 Locking the party in
-- [ ] 7d.5 Clues, accessibility and tuning
+- [ ] 7d.5 Clues and tuning
 - [ ] 7d.5b Fake-out, then the real scare (double tap)
 - [ ] 7d.6 Place ambushes in the floor 1 map
 
-**7d.1 prompt (Ambush design pass, Opus)**
+**7d.1 prompt (Ambush rules into the combat page)**
 
 ```
-Read docs/combat_design.md. I want ambushes where a monster (a giant
-cursed hand, tentacles) bursts out of a wall beside the party and forces
-a fight. Before any code, extend the design doc with:
-
-- Side attacks: a wall monster on the party's left or right attacks the
-  character on that side of the 2x2 formation (front or back row), so
-  formation swapping (6.9) matters.
-- How the party fights back against a side threat: can everyone hit it,
-  or only the characters on that side? Keep it simple.
-- A "grabbed" state: what it does (the character can't act, takes
-  damage over time) and how it ends (the limb takes enough damage).
-- Damage limits so an ambush hurts but can't wipe a healthy party.
-- How ambushes interact with save/load (a triggered ambush never fires
-  again).
-Wait for my OK before coding.
+Copy the ambush rules from docs/design/expansion_design.md (section 3,
+"7d", and the tier and monster tables in section 2) into
+docs/combat_design.md and the combat blueprint artifact, replacing the
+parked boss-ambush rules there. No code. Show me the two sections before
+you publish the artifact.
 ```
 
-**7d.2 prompt (Trigger tiles and scare sequence)**
+**7d.2 prompt (Trigger tiles and the scare sequence)**
 
 ```
-Add ambush trigger tiles to the level data: invisible tiles linked by
-ID to an ambush definition (which wall tile, which monster, which side).
-When the party steps on one, play the scare sequence:
+Do Foundations step 10 first if it is not ticked.
 
-1. Build-up (about 1.5-2 seconds): the torchlight dims and flickers,
-   ambient sound and music fade out, a faint scraping sound plays. An ambush can include a setup exchange
-   from the banter system here (e.g. cleric: "I smell evil." fighter:
-   "Shut up."); the burst cuts in straight after the last line, so the
-   joke lowers the player's guard.
-   Player input is ignored during this.
-2. Burst: the wall tile breaks apart using the destructible wall cubes
-   from 7b, with a loud audio sting, a screen shake and a brief flash.
-3. The camera snaps to face the threat with a quick turn, and the wall
-   monster's reach-out animation plays.
-4. Torchlight returns to normal and tense combat music starts.
-
-Keep every timing, sound and effect in an ambush resource so I can tune
-them. Each ambush fires only once and is saved as triggered. Sounds can
-be placeholders for now.
+Build ambushes as data, following docs/design/expansion_design.md section
+3 "7d". Start from the DungeonMap.AMBUSHES shape on the branch
+wip/boss-ambush (pickup, trigger, seal, walls) and from the test room's
+stand-in ambush, which already drives the banter quiet switch and the
+ambush_warning / ambush_started / ambush_over events. Use those; add no
+second set.
+- An ambush has: id, armed_by (nothing, or picking up an item on a cell),
+  trigger tiles, monsters, a lock-in kind, and its timings in a config.
+- State is one run flag, ambush.<id>: armed, sprung or done.
+- The sequence: build-up 1.8 s (input ignored, the party's light and
+  sconces within 3 tiles sink to 30%, music and ambience fade, a scrape),
+  burst (the cracked wall's cubes, a sting, a shake, a flash), snap (the
+  party turns to face it in 0.15 s), fight.
+- If the party holds no light, pulse the ambient green during the
+  build-up instead.
+- Reduce flashing: no flash or shake; the light sinks without flicker.
+- Saving is refused during the build-up only. A save made while sprung
+  restores the monsters and the lock-in on load, with no second scare.
+- 60 XP when the last ambush monster dies, if Party.add_xp exists.
+- A debug key in the test room that springs the nearest ambush.
+Sounds can be placeholders, listed in docs/asset_log.md. Run the tests.
 ```
 
-**7d.3 prompt (Wall-grab monsters)**
+**7d.3 prompt (The giant hand and the tentacles)**
 
 ```
-Add wall monsters following the ambush design: they occupy a wall tile
-(no movement), draw as a sprite layered on the wall face, and attack the
-side of the party per docs/combat_design.md.
-
-- Giant cursed hand: grabs one character (applies the grabbed state),
-  then squeezes for damage over time until the hand is destroyed.
-- Tentacles: two or three tentacles from one wall, each with its own
-  HP, lashing at random characters on that side.
-
-Art: follow docs/art_style.md (including its prompt suffix), at the
-in-game monster size. A huge rotting hand with cracked grey skin, long
-blackened nails and green curse veins; dark slick tentacles with pale
-suckers and a faint green glow. Animations: reach out of the wall,
-idle (twitching), attack or squeeze, hurt, and death (retreating or
-crumbling into the wall). Use PixelLab if I have credit; otherwise use
-the procedural toolkit as a placeholder with the same file names.
+Add the two ambush monsters from docs/design/expansion_design.md (section
+2 for numbers, section 3 "7d" for rules).
+- The giant hand is a wall monster (MonsterDef.wall_monster): it sits in
+  a wall tile, is registered in DungeonMap.occupied there so the tile in
+  front of the party can be struck, draws on the wall face, never moves
+  and is immune to every status. It grabs one living front-row hero:
+  that hero cannot act and takes 2 damage every 1.5 s through Party.hurt.
+  After 10 damage since the grab it lets go for 4 s. A squeeze cannot
+  take a hero below 1 HP if they had half their HP or more when grabbed.
+- Hold Monster on it costs nothing and says why, in one dry line.
+- Tentacles are ordinary tier 1 monsters with a rooted behaviour: three
+  sprout on free tiles beside the party (front, left, right). The party
+  cannot step away while a living, unheld tentacle is beside it.
+- Art with PixelLab, following docs/art_style.md, one first for my OK: a
+  huge rotting hand with cracked grey skin, blackened nails and green
+  veins; dark slick tentacles with pale suckers. Reach out, idle, attack
+  or squeeze, hurt, death. Reuse the tentacle on wip/boss-ambush if it
+  still fits the style. Log everything in docs/asset_log.md.
+- Hit effects for both (MonsterDef.hit_effect) from the VFX tool.
+- A test-room station with one of each. Smoke checks for the grab's
+  limit, letting go, and the tentacles holding the party. Run the tests.
 ```
 
 **7d.4 prompt (Locking the party in)**
 
 ```
-Make ambushes force the fight. Support two lock-in types per ambush:
-- Grab hold: while any grabbing limb is alive, the party can't move or
-  turn away (show "You are held fast!" if they try).
-- Trap shut: portcullises (from 3.5) slam down at both ends of the
-  corridor, and open again only when every ambush monster is dead.
-The ambush definition picks which type to use. When the fight ends,
-play a short release sound and restore normal music.
+Add the two lock-ins from docs/design/expansion_design.md section 3 "7d".
+- Grab hold: while a grabbing limb lives the party cannot step or turn
+  ("You are held fast!").
+- Trap shut: every exit of the ambush's area closes and holds until its
+  monsters are dead. Portcullises drop. Plain doors slam and take a curse
+  seal. Build the seal as one shared mechanism (Dungeon.seal_area /
+  unseal_area) because the purge room in 7e uses the same one.
+- A door never closes on the party or a monster standing in it (the rule
+  that exists).
+- The lock-in is worked out from the living ambush monsters, never
+  stored on its own, so a loaded save has it right.
+- The inventory, the map and the loot pop-up still open while locked in.
+Run the tests, and add a smoke check that saving and loading inside a
+trap-shut room leaves the doors shut.
 ```
 
-**7d.5 prompt (Clues and accessibility)**
+**7d.5 prompt (Clues and tuning)**
 
 ```
-Add clues and options:
-- Clue decorations placed near ambush walls: deep claw scratches, piled
-  bones, a faint green glow in the mortar, wet drag marks on the floor.
-  Generate them as wall and floor overlays following docs/art_style.md.
-- Options menu: a "Reduce flashing and screen shake" toggle that softens
-  the burst flash, screen shake and torch flicker in ambushes and
-  spells.
-- A debug key that triggers the nearest ambush instantly, so I can tune
-  it without walking there each time.
+Add ambush clues, following docs/design/expansion_design.md section 3
+"7d". The Reduce flashing option already exists; do not add another.
+- Clue decals near an ambush wall: deep claw scratches, piled bones, wet
+  drag marks (these need light to see), and a faint green glow in the
+  mortar (an emissive decal, like the curse veins, so it shows best in
+  the dark).
+- A scraping sound when the party is within 2 tiles of an armed ambush,
+  at most once every 20 s.
+- Every ambush must have at least two clues, one of which needs no light.
+  Make the level check this when it loads and warn in the log if not.
+- Art from PixelLab following docs/art_style.md; log it.
+Run the tests.
 ```
 
 **7d.5b prompt (Double-tap fake-out)**
@@ -578,13 +655,31 @@ tap"):
 - Use the double tap once per floor at most, or it stops working.
 ```
 
-**7d.6:** add the ambushes to the floor 1 map: one giant hand in a quiet corridor (grab hold), and the double tap: a fake-out a few tiles before a room with portcullises, where the real tentacle ambush traps the party (trap shut). Put clues near the real ambushes, and don't put them back to back.
+**7d.6 prompt (Ambushes on floor 1)**
+
+```
+Place the ambushes from docs/design/expansion_design.md section 5.
+- The hand: wall tile (7,10), armed by picking up key one at (10,10),
+  trigger tiles (7,9) and (7,11), bursting into whichever the party is
+  on. Grab hold. Clues on both faces of (7,10). Move the bear trap from
+  (7,11) to (6,12).
+- The double tap: a fake-out at (18,12) (a skull drops from a niche; add
+  the alcove), then tentacles in room 2 with no build-up, three steps in.
+  Trap shut on the doors at (18,10) and (17,9) and the gate at (20,6).
+  Remove the skeleton at (19,8).
+- Banter lines for the fake-out's set-up and relief (read docs/tone.md
+  first; show me the lines before they go in).
+Redo the walk-through check, run the tests, and tell me what a first run
+through each felt like in numbers: HP lost, seconds, mana spent.
+```
 
 Done when: a first-time player jumps at the first ambush, and afterwards says "I should have noticed those scratches."
 
 ## Phase 7e: Cursed puzzles
 
 Old-school dungeon puzzles dressed in the cursed theme. Rewards are always something in the world (a door, a hidden nook, a relic), never a game-y pop-up or jingle.
+
+Updated 18 Nov from docs/design/expansion\_design.md (section 3 "7e" and section 5): the brazier closet in room 7, the purge room in room 6 and the darkness runes in room 4. Offering altars go in the test room only. Do Foundations Step 9 first.
 
 - [ ] 7e.1 Puzzle framework (conditions and effects as data)
 - [ ] 7e.2 Purge the room: the curse loosens its grip
@@ -597,18 +692,21 @@ Old-school dungeon puzzles dressed in the cursed theme. Rewards are always somet
 **7e.1 prompt (Puzzle framework)**
 
 ```
-Add a data-driven puzzle system so new puzzles are mostly level data,
-not new code. A Puzzle resource has:
-- Conditions (all must be true): all monsters in an area dead; N
-  braziers lit (or all unlit); specific item(s) on an altar; a pressure
-  plate held down; a lever in a given position.
-- Effects (run once when solved): open or unseal a door, raise a
-  reliquary chest from the floor, reveal a hidden passage, break a wall,
-  play a sound or message line.
-Puzzles are linked to objects by ID in the level data, like levers and
-doors already are. Solved puzzles are saved. Reuse the existing door,
-lever, plate and destructible wall systems rather than duplicating them.
-Add a debug overlay listing each puzzle's conditions and which are met.
+Do Foundations step 9 first if it is not ticked.
+
+Extend the puzzle framework that exists (scripts/puzzles.gd,
+DungeonMap.PUZZLES) rather than adding a new one. See
+docs/design/expansion_design.md section 3 "7e".
+- New conditions: every monster in an area dead; every brazier in a
+  group lit, or every one dark; an item (by file or by tag) on an altar;
+  a plate held.
+- New effects: seal and unseal an area's exits (the shared seal from
+  7d.4 if it exists, else build it here), raise a reliquary on a cell
+  with given items, clear a curse zone, play a sound.
+- 50 XP when a puzzle is solved, if Party.add_xp exists.
+- A list in the test room's H overlay: each puzzle, its conditions, and
+  which are met.
+Keep every existing puzzle working. Run the tests.
 ```
 
 **7e.2 prompt (Purge the room)**
@@ -627,26 +725,35 @@ Generate the seals and reliquary following docs/art_style.md.
 **7e.3 prompt (Braziers)**
 
 ```
-Add braziers: a floor or wall object that can be lit by clicking it
-with a torch item, or by hitting it with Fireball from range. Each lit
-brazier gives off warm light and pushes back the curse around it (the
-green glow in nearby walls fades). When all braziers in a group are lit,
-their puzzle solves; e.g. four braziers around a warded door open it.
-Braziers can be snuffed again by clicking with an empty hand. Generate
-the brazier art (unlit, lit with flame frames) following
-docs/art_style.md.
+Add braziers, following docs/design/expansion_design.md sections 2 and 3.
+- A prop on a floor tile that does not block it, lit or dark, in a named
+  group. Saved.
+- Lit by: clicking it with a lit torch or candle in a hand; a Fireball
+  that passes or lands within a tile; a thrown torch landing on its
+  tile; burning oil beside it. Snuffed by clicking with empty hands.
+- A lit brazier is a light (energy 1.4, range 7) in the sprite_lights
+  group, so monsters and items beside it are lit. It will not light
+  inside a curse zone.
+- Art and flames from PixelLab (the flames from the VFX tool), following
+  docs/art_style.md; log it. One picture first for my OK.
+- A test-room station: two braziers and a warded door.
+Run the tests.
 ```
 
-**7e.4 prompt (Darkness paths)**
+**7e.4 prompt (Paths that only appear in darkness)**
 
 ```
-Add hidden curse runes that only appear in darkness: wall overlays that
-are invisible when there's enough light nearby (torches, lit braziers,
-spell light), and fade in as a faint green glow when the area is dark.
-Use them for a puzzle where the party must snuff the braziers in a room
-to see which wall the runes are on; clicking that wall opens a secret
-passage. Check light levels from nearby light sources rather than a
-simple on/off flag, and make sure the runes are readable but subtle.
+Add darkness runes, following docs/design/expansion_design.md section 3.
+- A decal on a wall face that shows only when the light reaching the
+  floor tile in front of it is no more than the ambient. Use
+  sprite_lighting.gd's light_at for this; do not write a second light
+  query. The party's own held light counts.
+- It fades in over a second in palette steps, never a smooth fade.
+- While the runes show, clicking the wall (or F) opens it, as a purified
+  wall opens. A puzzle condition "runes_read".
+- Art from the VFX tool, in the curse greens; log it.
+- A test-room station: a room with two lit braziers and a sign.
+Run the tests, and show me the room lit, then dark.
 ```
 
 **7e.5 prompt (Offering altars)**
@@ -671,7 +778,21 @@ on plates also count. Build a test where the party drops a heavy item
 on a plate to keep a door open, then walks through.
 ```
 
-**7e.7:** add two or three puzzles to the floor 1 map: a purge room with a reliquary, a brazier-warded door (Fireball can solve it early), and either a darkness-rune secret or an offering altar. Spread them out, and don't put one straight after an ambush.
+**7e.7 prompt (Puzzles on floor 1)**
+
+```
+Place the puzzles from docs/design/expansion_design.md section 5.
+- Room 7: braziers at (18,3) and (20,3); the closet door (18,2) is
+  warded until both burn. Move key two to (19,4). The closet holds three
+  potions, two flasks of oil and one firewood.
+- Room 6: a purge room. Add a plain door at (15,19). A skeleton at
+  (17,20), a guard at (16,21), an acid slime at (18,19). The reliquary
+  rises at (17,20) with whatever 7g has put in it (a placeholder scroll
+  until then). The plate at (18,21) needs weight 3.
+- Room 4: lit braziers at (12,19) and (14,17), runes on the north wall
+  (13,16), which opens onto (13,15). A sign: "What the light hides."
+Redo the walk-through check and run the tests.
+```
 
 Done when: each puzzle can be solved without a guide, and solving one feels like pushing the curse back, not pressing a button.
 
@@ -843,7 +964,9 @@ Done when: playtesters quote a line back to you afterwards, nobody hears the sam
 
 A handful of unique items, each with a personality. Rules: only two or three per floor; they change how you play, not just the numbers; the cursed land's best gear comes at a price; and every one gets a dry description and a hook into the banter system.
 
-- [ ] 7g.1 Legendary item framework (Opus for the design)
+Updated 18 Nov from docs/design/expansion\_design.md (section 3 "7g"): floor 1 gets three, Grudge (mid-floor), Penitent's Mace (the purge room's reliquary) and the Unquenchable (dropped by the Cursed Warden). 7g.3, 7g.4, 7g.5 and 7g.7 wait for later floors; the Shield and the Crown need slots the game doesn't have yet. Do Foundations Step 11 first.
+
+- [ ] 7g.1 Legendary item framework
 - [ ] 7g.2 Grudge, the talking sword
 - [ ] 7g.3 The Too Old For This Shield
 - [ ] 7g.4 The Gilded Hand
@@ -853,24 +976,25 @@ A handful of unique items, each with a personality. Rules: only two or three per
 - [ ] 7g.7b The Unquenchable, a legendary torch (after 7l.1)
 - [ ] 7g.8 Place legendaries in floor 1
 
-**7g.1 prompt (Legendary framework; Opus for the design, Sonnet to build)**
+**7g.1 prompt (Legendary framework)**
 
 ```
-Add legendary items. First, update docs/combat_design.md with how
-legendaries work and the balance for each one below; wait for my OK.
-Then build the framework:
-- A Legendary flag on the Item resource, plus a list of special effects
-  (hooks such as on_hit, on_kill, on_cast, on_damage_taken, on_equip,
-  periodic) so each legendary is mostly data plus a small effect script.
-- Optional downsides, defined the same way, shown in the description.
-- A unique worn-gold slot frame and a faint gold shimmer in the
-  inventory, distinct from the curse-green of cursed items.
-- Examine text (right-click) with the item's name, a one-line dry
-  description following docs/tone.md, its powers and its price.
-- Banter hooks: legendaries can add lines to the banter system, and the
-  first time one is picked up, its finder gets a reaction line.
-- Art following docs/art_style.md: battered, ancient, clearly special,
-  not shiny.
+Do Foundations step 11 first if it is not ticked.
+
+Add legendary items, following docs/design/expansion_design.md section 3
+"7g". No design pass is needed: the table there is the design.
+- ItemDef.legendary, and a behaviour script using the hooks from step
+  11 (on_equip, on_unequip, on_hit, on_kill, on_tick, on_stowed).
+- A worn-gold slot frame and a slow shimmer in the inventory, hand
+  slots and loot pop-up. Gold, never curse green. Art from PixelLab,
+  the shimmer from the VFX tool; log both.
+- Its description, powers and price show in the item's tooltip and on
+  the character sheet. Not on right-click: that splits a stack in the
+  inventory and opens the loot pop-up on the floor.
+- GameEvents.legendary_found(item, hero), once per item per run (a run
+  flag). 30 XP if Party.add_xp exists. A banter event of the same name.
+- Class limits through ItemDef.cant_use, as the spellbook does.
+Run the tests.
 ```
 
 **7g.2 prompt (Grudge, the talking sword)**
@@ -938,18 +1062,20 @@ class about the smell.
 **7g.7b prompt (The Unquenchable, legendary torch)**
 
 ```
-Add the Unquenchable, a legendary torch, using the torch item from 7l.1
-and the legendary framework:
-- It never burns down, ignores curse zones and rain, and gives a slightly
-  bigger, steadier light than a normal torch.
-- Downside: it's so bright that monsters notice the party from further
-  away, and it's never fully quiet: it crackles, pops and now and then
-  mutters. Show the longer detection range in docs/combat_design.md.
-- Description (following docs/tone.md), e.g. "It has outlived every
-  hand that held it."
-- Banter hooks: the cleric is jealous that a stick is holier than him,
-  the mage finds it unsettling, and the fighter likes it.
-- Like the other legendaries, it still takes a hand.
+Add the Unquenchable, a legendary torch, from
+docs/design/expansion_design.md sections 2 and 3.
+- A light (ItemDef.Type.LIGHT): energy 1.8, range 10, burn_seconds 0
+  meaning it never burns down (make 0 mean that everywhere burn time is
+  read, and hide the burn bar).
+- A curse zone cannot put it out. A critical fail cannot make it slip
+  (never_slips). Stowed, it gives no light, like any torch.
+- While it is lit in a hand, every monster's sight range is 2 tiles
+  longer. Write that in docs/combat_design.md.
+- It mutters: a banter speaker of its own, rarely, never in a fight.
+  Read docs/tone.md first and show me the lines.
+- The Cursed Warden carries it: he is lit by it while he lives, and it
+  drops where he falls, always.
+Run the tests.
 ```
 
 **7g.8:** place two or three legendaries in floor 1, each behind something that feels earned: a puzzle reliquary, a Fireball-only secret, or after the double-tap ambush. Save the rest for later floors and the procedural mode.
@@ -960,47 +1086,45 @@ Done when: players remember the legendaries by name, and at least one of them ca
 
 A place to catch your breath: make camp, heal up, cook, and let the party talk. It's the calm between scares, and the home of the quieter character moments.
 
-- [ ] 7h.1 Resting design pass (Opus)
+Updated 18 Nov from docs/design/expansion\_design.md (section 3 "7h"): one firewood makes one camp, there is no tinderbox, and camp is made by using the firewood like any other item. Camp spots are placed with 7j's remains.
+
+- [ ] 7h.1 Resting rules into the combat page
 - [ ] 7h.2 Making camp
 - [ ] 7h.3 Cooking at the fire
 - [ ] 7h.4 Interrupted rests
 - [ ] 7h.5 Campfire banter
 - [ ] 7h.6 Camp spots and firewood in floor 1
 
-**7h.1 prompt (Resting design pass, Opus)**
+**7h.1 prompt (Resting rules into the combat page)**
 
 ```
-Read docs/combat_design.md. Before any code, add resting rules:
-- What's needed to make camp: a Firewood item (consumed) plus a
-  tinderbox, and no monsters within a few tiles or in sight.
-- What resting restores (HP and mana, at what rate) and how long a rest
-  takes in game time.
-- How it interacts with food (cooked food heals more), the cleric's
-  "shaken" state (a rest clears it), poison and sickness.
-- The chance of a rest being interrupted by wandering monsters, and how
-  that scales (e.g. higher in the open, lower in a cleared room with the
-  door shut).
-- Keep firewood scarce enough that resting is a decision, not a habit.
-Wait for my OK before coding.
+Copy the resting rules and numbers from docs/design/expansion_design.md
+(sections 2 and 3 "7h") into docs/combat_design.md. No code. There is no
+tinderbox.
 ```
 
 **7h.2 prompt (Making camp)**
 
 ```
-Add making camp, following the resting rules in docs/combat_design.md:
-- With Firewood and a tinderbox, a Rest button (and R key) makes camp.
-  If monsters are nearby, refuse with a message ("Not with that thing
-  watching.").
-- Camp view: the dungeon view dims to near-black except a crackling
-  campfire in the centre, lighting the nearby walls with warm, flickering
-  light (the warmest light in the game). The party's portraits glow
-  faintly orange.
-- Time passes with a slow fade, HP and mana tick up on the bars, and
-  the player can stop resting at any time.
-- Resting at a camp also saves the game (a natural save point).
-- Generate the campfire (flame frames), firewood and tinderbox following
-  docs/art_style.md: a small, desperate fire in a cursed place, not a
-  cosy one.
+Add making camp, following docs/design/expansion_design.md sections 2
+and 3 "7h".
+- Firewood is an item (stacks to 3). Using it (from a hand, a quick slot
+  or the inventory) makes camp, if no living monster is within 4 tiles
+  or in sight, the party is not in a fight, and no armed ambush trigger
+  is within 2 tiles. Otherwise refuse with a line and spend nothing.
+- Camp view: the dungeon view sinks to near black round a small fire
+  that lights the walls beside it (a light in the sprite_lights group).
+  HP and mana climb evenly to full over 30 s. A Stop button, and any
+  movement key, ends it and keeps what was gained.
+- A rest clears shaken and sickness, gives the rest of a running meal at
+  once, clears spell recasts, and pauses every burn timer.
+- Camp spots (DungeonMap.CAMP_SPOTS): old ash on the floor, a symbol on
+  the map once seen. The interruption chances in section 2 depend on it.
+- Making camp saves the game. F5 and the pause menu still save.
+- GameEvents.camp_made and camp_ended(interrupted).
+- The fire from the VFX tool, the firewood and ash from PixelLab; log.
+- A test-room station replacing the "not built yet" campfire.
+Run the tests.
 ```
 
 **7h.3 prompt (Cooking)**
@@ -1017,13 +1141,15 @@ eaten raw without a sickness chance. Show a short sizzle and a message
 **7h.4 prompt (Interrupted rests)**
 
 ```
-Add interrupted rests: each stretch of rest rolls against the
-interruption chance from the design doc. On an interruption, the fire
-flares and sputters, the camp view cuts back to the dungeon, the party
-is woken with partial healing so far, and wandering monsters arrive
-from a nearby tile. Give it a short, sharp sting, not a full ambush
-build-up, and a groggy banter line once the fight is over ("Five more
-minutes...").
+Add interrupted rests with the numbers in
+docs/design/expansion_design.md section 2: three rolls a rest, at 10, 20
+and 30 s, never in the first 10 s, never two rests running. On one: the
+fire spits, the view cuts back, one or two tier 1 monsters appear 2
+tiles away on a free tile the party can see, and a fight begins. The
+party keeps what it healed and any level it gained. A short sting, not
+the ambush build-up. One groggy line once the fight is over.
+Run the tests, with a smoke check that seeds the dice for an
+interruption and for none.
 ```
 
 **7h.5 prompt (Campfire banter)**
@@ -1047,40 +1173,40 @@ Done when: making camp feels like a relief, being woken by a monster feels like 
 
 The party grows stronger as they survive. XP is earned for clever play as well as fighting, and levels land at the campfire.
 
-- [ ] 7i.1 Levelling design pass (Opus)
+Updated 18 Nov from docs/design/expansion\_design.md (sections 2 and 3 "7i"): level 3 at the stairs for most parties, 4 for thorough ones; level 5 waits for floor 2. Everyone shares XP, dead or alive. Do Foundations Steps 7 and 8 first.
+
+- [ ] 7i.1 Levelling rules into the combat page
 - [ ] 7i.2 Shared XP
 - [ ] 7i.3 Level up at the campfire
 - [ ] 7i.4 Class perks
 - [ ] 7i.5 Banter, character sheet and saving
 
-**7i.1 prompt (Levelling design pass, Opus)**
+**7i.1 prompt (Levelling rules into the combat page)**
 
 ```
-Read docs/combat_design.md. Before any code, add levelling rules:
-- Shared party XP from kills, solved puzzles, found secrets, survived
-  ambushes and legendary finds, so clever play is rewarded, not just
-  fighting. Give amounts per source.
-- An XP curve with a level cap of 5 for floor 1 (later floors raise it).
-- What each level gives: HP and mana gains per class (using ability
-  scores from the character generator if it exists), and a class perk
-  at levels 3 and 5.
-- Perks, kept small and simple, e.g. fighter: an extra attack chance;
-  mage: a new spell; thief: better trap disarming and loot chances;
-  cleric: a stronger heal or a new prayer.
-- Check the numbers against current monsters, legendaries and ambushes
-  so a level-5 party at the end of floor 1 is strong but not bored.
-Wait for my OK before coding.
+Copy the XP table, the level curve, the per-level gains and the perks
+from docs/design/expansion_design.md section 2 (and the rules in section
+3 "7i") into docs/combat_design.md and the blueprint artifact. No code.
 ```
 
 **7i.2 prompt (Shared XP)**
 
 ```
-Add shared party XP following the levelling rules. Award XP for each
-source in the design doc, with a short message in the log (e.g. "Secret
-found. +50 XP."). Dead characters don't earn XP until revived. Show a
-thin XP bar on the character sheet. XP builds up, but levels are only
-applied at the campfire (next step); show a small glowing marker on a
-portrait when that character has a level waiting.
+Do Foundations steps 7 and 8 first if they are not ticked.
+
+Add shared party XP, following docs/design/expansion_design.md sections
+2 and 3 "7i".
+- Party.add_xp(amount, reason) and Party.level_up_party(): the test
+  room's X and U keys already call these names.
+- Award XP by listening to GameEvents: monster_killed (by the monster's
+  tier), puzzle_solved, wall_broken and wall_purified where they open a
+  hidden room, legendary_found, remains_searched, and the ambush's end.
+- Everyone shares, dead or alive.
+- The log shows the XP as its own short line under the event's line.
+- A waiting level shows as a small warm mark on the portrait and is
+  applied at the next camp, or at the stairs.
+- A thin XP bar on the character sheet.
+Run the tests.
 ```
 
 **7i.3 prompt (Level up at the campfire)**
@@ -1098,10 +1224,13 @@ docs/art_style.md, not flashy or jingly: a quiet moment by the fire.
 **7i.4 prompt (Class perks)**
 
 ```
-Implement the class perks from the design doc at levels 3 and 5, with
-each one shown on the character sheet with a one-line description
-following docs/tone.md. Hook them into the existing systems (combat,
-spells, trap disarming, loot) rather than adding special cases.
+Add the level 3 perks from docs/design/expansion_design.md section 2:
+Follow-through (Fighter), Firm hand (Cleric), Light fingers (Thief),
+Deep breath (Mage). Each is a line of data on the class and one hook in
+the system it touches; no special cases by class name. Each shows on the
+character sheet with a one-line description (read docs/tone.md first and
+show me the four lines). Leave level 5 perks as named placeholders.
+Run the tests.
 ```
 
 **7i.5 prompt (Banter, sheet and saving)**
@@ -1130,29 +1259,34 @@ The remains of those who came before, slumped in alcoves and corridors. Search t
 **7j.1 prompt (Searchable remains)**
 
 ```
-Add searchable fallen adventurers, Eye of the Beholder style:
-- A remains object that can sit against a wall or in an alcove (from
-  the wall structure work), drawn as a sprite. Generate 3-4 variants
-  with PixelLab following docs/art_style.md: a skeleton in rusted armour,
-  a hooded corpse slumped over a pack, a skeleton still clutching a
-  broken sword, one half-buried in rubble.
-- Clicking it (or pressing E facing it) searches it once. The level data
-  sets the result, or a weighted random table picks it: an item, food,
-  a readable note, nothing but a dry message (e.g. "He died as he
-  lived: broke."), a trap (reusing the trap system), or rarely a
-  skeleton that sits up and attacks.
-- Searched remains look disturbed afterwards and are saved, so they
-  can't be searched again.
-- Readable notes open a small parchment panel with a short text, so
-  remains can carry lore later.
-- Banter (following docs/tone.md and docs/banter_ideas.md, if the
-  banter system exists): the thief loots shamelessly, the cleric mutters
-  a reluctant prayer, the fighter takes the boots.
-- Add a station for it in the test room.
-Generate one remains variant first and show it in-game before the rest.
+Add searchable remains, following docs/design/expansion_design.md
+section 3 "7j".
+- A prop against a wall on a floor tile; it does not block the tile.
+  Four looks from PixelLab following docs/art_style.md. One first, shown
+  in the game, for my OK.
+- Search with F facing it, or a click, once. Afterwards it looks
+  disturbed and the map marks it.
+- DungeonMap.REMAINS sets the result: items (dropped on the tile in
+  front, taken with the usual clicks and the loot pop-up), a note (a
+  small parchment panel), nothing and a dry line, a bite (1-3 damage to
+  the searcher through Party.hurt, and a closed bear trap to take), or
+  it sits up (a skeleton beside the party; an ordinary fight).
+- GameEvents.remains_searched(kind, hero); 5 XP if Party.add_xp exists.
+- Banter for each kind (read docs/tone.md first; show me the lines).
+- Saved. A test-room station with one of each kind.
+Run the tests.
 ```
 
-**7j.2:** place 4-6 remains in the floor 1 map: mostly small rewards or jokes, one with a genuinely useful item, one trap, and one that sits up. Put at least one near an ambush, so players learn to be nervous about them.
+**7j.2 prompt (Remains on floor 1)**
+
+```
+Place the six remains from docs/design/expansion_design.md section 5:
+1 at (8,13) in the alcove: firewood. 2 at (8,9): nothing. 3 at (16,5):
+a candle and Bellius's note (ask me for the text). 4 at (20,17):
+firewood, with old ash beside it (a camp spot). 5 at (16,15): it bites;
+a bear trap and a flask of oil (remove the loose trap at (18,14)). 6 at
+(14,19): it sits up. Run the tests.
+```
 
 Done when: players hesitate before searching a body, and search it anyway.
 
@@ -1162,7 +1296,8 @@ Ways to stop a monster in its tracks, built on the new slower monster pacing: a 
 
 - [x] 7k.1 Monster status effects and the Hold Monster spell
 - [x] 7k.1b Monster tiers (one table for every status effect)
-- [ ] 7k.2 Rusty bear trap
+- [x] 7k.2 Rusty bear trap
+- [ ] 7k.3 Bear trap: what is left
 
 **7k.1 prompt (Hold Monster spell)**
 
@@ -1237,13 +1372,24 @@ Rusty bear trap (Item resource, stacks to 2):
   you), add it to the test room, and run the tests.
 ```
 
+**7k.3 prompt (Bear trap: what is left)**
+
+```
+The bear trap is built. Finish it from docs/design/expansion_design.md
+section 3 "7k.2": a monster of tier 3 or more can be caught once per
+fight; give the trap a weight of 3 for plates; a plague rat is caught
+like any tier 1 monster. Update docs/combat_design.md. Run the tests.
+```
+
 Done when: you can drop a trap while backing down a corridor, watch a skeleton walk into it, and get two free swings in, and Hold Monster feels like a clever save, not an "I win" button.
 
 ## Phase 7l: Light and darkness
 
 Light becomes something you manage. Core rule: a torch or candle takes up a hero's hand, so lighting the way costs a shield, a weapon or a backup, and who carries the light is a real choice. Ties into 7e.3 braziers (lit with a torch), 7e.4 darkness paths (put the torch out to see the runes), 7f.3 banter (darkness and torches going out) and 7d ambush clues (easy to miss in the dark).
 
-- [ ] 7l.1 Torches and candles in hand
+Updated 18 Nov from docs/design/expansion\_design.md (sections 2 and 3 "7l"): only the first stretch of floor 1 stays lit (8 lit sconces, 7 unlit with a torch, 10 empty brackets), a sconce torch is a two-minute stub so torches are never created, and a hero with no light on their tile hits 10 less often with weapons. Do Foundations Step 7 first.
+
+- [x] 7l.1 Torches and candles in hand
 - [ ] 7l.2 Wall sconces you can light and take
 - [ ] 7l.3 Curse zones that snuff flames
 - [ ] 7l.4 Throwing torches
@@ -1297,179 +1443,395 @@ Torch and candle items (ItemDef, using the existing hands system):
 **7l.2 prompt (Wall sconces you can light and take)**
 
 ```
-Turn the wall torches in the level data into sconces with a lit or unlit
-state:
-- Unlit sconces are dark. Clicking one with a lit torch or candle in hand
-  lights it, and a Fireball hit lights it too. Once lit it stays lit
-  (save the state).
-- A lit sconce's torch can be taken: click it with an empty hand to pull
-  the torch out. You gain a torch with a full burn time, and that stretch
-  of corridor goes dark. Put a torch back to relight it.
-- Show sconces on the corner map once seen.
-- Banter hooks, e.g. thief taking a torch: "They won't miss it."
-- Add both kinds to the test room's light station and run the tests.
+Do Foundations step 7 first if it is not ticked.
+
+Turn the wall torches into sconces, following
+docs/design/expansion_design.md sections 2 and 3 "7l".
+- DungeonMap.TORCHES entries gain a state: lit, unlit (holding a torch)
+  or empty (a bare bracket). Saved.
+- Light an unlit one by clicking it with a lit torch or candle in a
+  hand, or with a Fireball or a thrown torch. It stays lit.
+- Take the torch from a lit or unlit sconce with an empty hand: you get
+  a torch with 120 s on it, and the bracket is empty.
+- Put a torch into an empty bracket: it lights that stretch for good,
+  keeps the burn time it had, and loses none while it hangs there.
+  Taken out again, it has that same time.
+- So torches are never created: check that lighting a sconce and taking
+  its torch back cannot be repeated for free, with a smoke check.
+- The map shows a sconce once seen, lit or dark.
+- A bracket's art (empty, with an unlit torch) from PixelLab; log it.
+- Both kinds in the test room's light room. Run the tests.
 ```
 
 **7l.3 prompt (Curse zones that snuff flames)**
 
 ```
-Add curse zones: areas in the level data where the cursed air smothers
-fire.
-- Inside a zone, held torches and candles sputter for a moment, then go
-  out ("The air here hates fire."). They can't be relit there, and
-  sconces inside won't light.
-- Spell light still works, since it's magic, not flame. Bless pushes the
-  curse back for a short time: a small pocket around the party where
-  flames can be lit again.
-- Visual: a thin, slow green miasma layer on the floor and a faint green
-  tint, using the existing fog, following docs/art_style.md.
-- A zone can be cleared for good by a puzzle effect (so a 7e purge room
-  could lift one), stored in the run flags.
-- Emit GameEvents.entered_curse_zone and left_curse_zone, add banter hooks,
-  add a zone to the test room, and run the tests.
+Add curse zones, following docs/design/expansion_design.md section 3.
+- DungeonMap.CURSE_ZONES: an id and its tiles.
+- Inside one: held torches and candles sputter for a second and go out,
+  and will not relight; sconces and braziers will not light; a burning
+  torch lying or thrown there goes out; oil will not catch. The
+  Unquenchable and spell light are untouched.
+- Bless makes a pocket for 20 s: the party's tile and the tiles beside
+  it, where flames can be lit and stay lit.
+- A thin green haze on the floor of the zone (the VFX tool), visible
+  from the tile before it. No message until a flame dies: "The air here
+  hates fire."
+- A puzzle effect clears a zone for good (a run flag).
+- GameEvents.entered_curse_zone and left_curse_zone; banter hooks.
+- Nothing above tier 1 may be placed in a zone: warn at load if so.
+- A zone in the test room's light room. Run the tests.
 ```
 
 **7l.4 prompt (Throwing torches)**
 
 ```
-Let torches be thrown, reusing the thrown-weapon system:
-- A lit torch in hand can be thrown down the corridor in front. It flies
-  with its light, lands up to a few tiles away and keeps burning on the
-  floor (its burn timer keeps running), lighting the area around it.
-- Monsters with fears_fire won't step onto a tile with a burning torch.
-  A torch that hits a monster does a little fire damage.
-- A torch thrown into a curse zone fizzles out where it lands.
-- Picking it up again works like other throwables (auto-return to the
-  hand it came from if that's free).
-- Banter hooks, e.g. mage, as the torch lights up a skeleton: "Oh. Oh
-  no." Run the tests.
+Let a lit torch be thrown, with the numbers in
+docs/design/expansion_design.md section 2. Reuse the thrown-weapon code
+and light_field.gd, which already keeps a slipped torch burning on the
+floor. It flies up to 4 tiles with its light, does 1-3 fire to a monster
+it hits (which recoils if it fears fire), and burns where it lands.
+Monsters that fear fire will not step onto its tile. Picking it up sends
+it home to the hand it left, as other throwables do. A candle cannot be
+thrown. Run the tests.
 ```
 
 **7l.5 prompt (Flask of oil)**
 
 ```
-Add a Flask of oil (ItemDef, stacks to 3), reusing the thrown-item and
-fire systems from 7l.1 and 7l.4. Check docs/combat_design.md first and
-add the rules there.
-
-- Throw it at the floor: it smashes and leaves an oil slick on that tile.
-  Nothing happens until fire touches it: a thrown torch, a torch swing
-  on that tile, or a Fireball. Then it bursts into flame and burns for a
-  few seconds (tunable), lighting the area.
-- Wall of fire: monsters with fears_fire won't cross a burning tile;
-  anything else that does takes fire damage each tick.
-- Throw it at a monster: it's doused, and the next fire hit on it (torch
-  swing, thrown torch, Fireball, burning tile) does big bonus damage.
-  Track "doused" as a status effect using the existing status system and
-  tier table.
-- Oil a weapon: use the flask on a hero's weapon hand to coat it for a
-  few hits of extra fire damage, so the fighter can fight with fire
-  without giving up his shield.
-- Curse zones smother it like any flame: a slick there won't light.
-- Burning tiles hurt the party too if they walk in: small damage and a
-  dry message, e.g. "{name} has made a terrible decision."
+Add a Flask of oil (ItemDef, stacks to 3) with the numbers in
+docs/design/expansion_design.md section 2 and the rules in section 3,
+reusing the thrown-item and fire systems. Add the rules to
+docs/combat_design.md.
+- Throw it at the floor: it always lands on the tile in front, never
+  under the party, and leaves an oil slick (lasts until lit or 120 s).
+  It bursts into flame when fire touches it (a thrown torch, a torch
+  swing on that tile, a Fireball) and burns for 6 s, lighting the area.
+- A burning tile does 2 a second to a monster on it and 1 a second to a
+  hero. Monsters that fear fire will not cross it.
+- Throw it at a monster: it is doused for 30 s, and the next fire hit
+  does +6 and sets it burning for 2 a second over 3 s. "Doused" is a
+  StatusDef with its own row in data/tiers.tres; slimes can be doused.
+- Use it on a weapon: the next 3 landed hits do +2 fire.
+- The throw is refused, and nothing spent, while the party stands in a
+  curse zone.
 - It combos with the bear trap: a trapped monster on a slick can be lit.
+- Burning oil is a light in the sprite_lights group.
 - Emit GameEvents.oil_ignited(cell). Save and load slicks, burning tiles
   and doused monsters.
-- Banter hooks (following docs/tone.md), e.g. mage: "Unregulated
-  combustion. Wonderful." Thief: "I could sell that." Fighter, after the
-  party walks into its own fire: "Again."
+- Banter hooks (following docs/tone.md), e.g. a hero walking into the
+  party's own fire: "{name} has made a terrible decision."
 - Art following docs/art_style.md: a grimy flask icon and floor version,
-  an oil slick decal, and the burst and burning flames from PixelLab's
-  VFX tools. Log them in docs/asset_log.md.
-- Add it to the test room's light station and run the tests.
+  an oil slick decal, and the burst and flames from PixelLab's VFX
+  tools. Log them in docs/asset_log.md.
+- Add it to the test room's light room and run the tests.
 ```
 
-**7l.6:** place light and darkness in the floor 1 map: a few torches, candles and flasks of oil (scarce enough that light matters), unlit sconces along key corridors, one or two you can take a torch from, and one curse zone, ideally near the darkness-rune puzzle from 7e.4. Check that ambush clues can be spotted with a torch but are easy to miss without one.
+**7l.6 prompt (Light and darkness on floor 1)**
+
+```
+Place the light from docs/design/expansion_design.md section 5: the
+three lists of sconces (8 lit, 7 unlit with a torch, 10 empty), loose
+torches at (15,15) and in room 2, a candle in room 3, the curse zone
+over the cave (x 6-10, y 15-19) which lifts when its three plague rats
+are dead, and add the -10 to hit for a hero whose tile gets no light
+beyond the ambient (weapons only, never spells, never monsters). Then
+play the floor three ways and give me the numbers: seconds of torch and
+candle left at the Warden's door for a careful run, a careless one, and
+a full clear.
+```
 
 Done when: you hesitate before throwing your last torch, argue with yourself about whether the fighter should give up his shield to carry it, and walk into a curse zone and feel the dark close in.
 
 ## Phase 8b: Character generator
 
-Before entering the dungeon, you roll up your own party of four, EotB style.
+You don't roll four strangers: you're handed Brannoc, Brother Felix, Wren and Fennick, and you may change their names, portraits and rolled scores. Play is lit from the start. Updated 18 Nov from docs/design/expansion\_design.md (section 3 "8b"): no races for now, one hero per role always (Phase C adds the class choice within each role). Do Foundations Step 8 first.
 
-- [ ] 8b.1 Stats design pass (Opus)
-- [ ] 8b.2 Party creation screen
-- [ ] 8b.3 Race, class and stat rolling
+- [ ] 8b.1 Stats rules into the combat page
+- [ ] 8b.2 Party screen
+- [ ] 8b.3 Scores and rolling
 - [ ] 8b.4 Portrait picker and names
-- [ ] 8b.5 Starting gear, Quick Party, and hooking it into New Game
+- [ ] 8b.5 Finishing the generator
 
-**8b.1 prompt (Stats design pass, Opus)**
-
-```
-Read docs/combat_design.md. I want an Eye of the Beholder-style character
-generator. Before any code, extend the design doc with:
-
-- Six ability scores (Strength, Intelligence, Wisdom, Dexterity,
-  Constitution, Charisma), rolled 4d6 drop lowest.
-- Races: human, dwarf, elf, halfling, each with small stat modifiers and
-  minimum/maximum limits, and which of my four classes (fighter, cleric,
-  thief, mage) each race may take.
-- Class requirements (e.g. mage needs Intelligence 9+) and each class's
-  key stat.
-- Exactly how ability scores feed the existing combat stats: HP, attack,
-  defence, mana, hit chance, thief disarm chance, and so on. Keep the
-  formulas simple and list them in one table.
-- Starting gear per class.
-Check the numbers against the current monsters so a rolled party is
-roughly as strong as the old fixed party. Wait for my OK before coding.
-```
-
-**8b.2 prompt (Party creation screen)**
+**8b.1 prompt (Stats rules into the combat page)**
 
 ```
-Create a Party Creation scene at 640x360 in the same stone UI style as
-the HUD. It shows four empty portrait slots in a 2x2 grid matching the
-party formation. Clicking an empty slot starts creating a character;
-clicking a finished one offers Edit, Delete or Cancel. A Play button
-unlocks only when all four slots are filled. Show a screenshot of the
-layout before adding the creation steps.
+Copy the character generator's rules from
+docs/design/expansion_design.md section 3 "8b" into
+docs/combat_design.md: six scores, the modifier, the formula table, the
+key-score minimums. No races. Then give the four heroes scores that
+produce exactly today's numbers and show me the table. No code.
 ```
 
-**8b.3 prompt (Race, class and stats)**
+**8b.2 prompt (Party screen)**
 
 ```
-Add the creation steps from docs/combat_design.md, one panel at a time
-with Back buttons: choose race, then class (only showing allowed
-classes, with greyed-out ones explaining why), then roll stats. The stat
-panel shows all six scores with racial modifiers applied, the derived
-combat stats (HP, attack, defence, mana) underneath, and a Reroll button
-with a quick number-tumble animation. Add a Keep button to accept. If
-the rolled stats don't meet the class requirements, say so and allow a
-reroll.
+Do Foundations step 8 first if it is not ticked.
+
+Add the party screen from docs/design/expansion_design.md section 3
+"8b", at 640x360 in the stone UI style. New Game opens it (after the
+intro on a first launch). It shows Brannoc, Brother Felix, Wren and
+Fennick in their 2x2 formation with Play already lit: one click starts
+the game with the party as it is today. Clicking a hero opens their
+editor (next step). Dragging one portrait onto another swaps places, as
+in the game. Show me a screenshot of the layout before going on.
+```
+
+**8b.3 prompt (Scores and rolling)**
+
+```
+Add the hero editor's scores, from docs/design/expansion_design.md
+section 3 "8b". The class of a slot cannot be changed. Six scores,
+rolled 4d6 dropping the lowest, all six at once, with a quick tumble of
+the numbers and no limit on rerolls. Under them, the HP, attack,
+defence, mana and crit they give, with the change from the ready-made
+hero in the sheet's better/worse colours. A roll below 9 in the class's
+key score is refused with a line. A Reset button puts the ready-made
+scores back. Saved with the hero. Run the tests.
 ```
 
 **8b.4 prompt (Portrait and name)**
 
 ```
-Add the portrait and name step. Use my tools/art/ procedural portrait
-script to show a portrait matched to the chosen race and class, with
-left/right arrows to flick through variations and a Randomise button
-that rerolls the seed. Store the seed on the character so the same face
-can be regenerated anywhere. Then a name field (max 10 characters to fit
-under the portrait) with a Random Name button that picks from a small
-list of fantasy names per race.
+Add the name and portrait to the hero editor. A name of up to 14
+letters with a Random button (a short list per class; read docs/tone.md
+and show me the lists first). Three portraits per class to flick
+through: the one that exists and two new ones from PixelLab at the same
+size and style, generated one at first for my OK, with hurt and dead
+versions derived as the existing ones were. Log them. Run the tests.
 ```
 
-**8b.5 prompt (Starting gear and Quick Party)**
+**8b.5 prompt (Finishing the generator)**
 
 ```
-Finish the generator:
-- Give each new character the starting gear from the design doc,
-  placed in their hands, armour slot and quick slots.
-- Add a Quick Party button that instantly fills all four slots with a
-  sensible default party (dwarf fighter, human cleric, halfling thief,
-  elf mage) with decent stats, for fast testing.
-- Main menu New Game now goes to Party Creation, then into floor 1 with
-  the created party in their chosen formation.
-- Make sure save/load (7.3) stores the new ability scores, race and
-  portrait seed, and that old saves without them fail gracefully.
-- Add a line about the character system to CLAUDE.md.
+Finish the party screen: starting gear stays the class's own
+(CharacterDef.start_hands and start_quick); the formation chosen on the
+screen is the one the game starts in; the save stores scores, name and
+portrait, and an older save loads with the ready-made heroes. There is
+no Quick Party button: the screen already starts full. Add a paragraph
+to CLAUDE.md. Run the tests.
 ```
 
 Done when: you can roll a party from scratch in under two minutes, and their stats noticeably change how fights go (a weak mage feels weak, a strong fighter hits hard).
 
 Parking lot for later: alignment, multi-classing, importing a party into the next floor.
+
+## Phase C: New classes (four roles, three classes each)
+
+The party is always four heroes, one per role; a slot's role never changes, but the class inside it can. Front line: Fighter, Barbarian, Monk. Healer: Cleric, Druid, Paladin. Sneak: Thief, Ranger, Bard. Caster: Mage, Necromancer, Spellsword. The ready-made four stay, so New Game is still one click. The full plan, with every number and banter line, is docs/design/new\_classes\_plan.md.
+
+Do this phase last: every C step comes after the whole build order up to 8b, because the classes lean on resting, levelling, curse zones, oil, the grab and the party screen.
+
+- [ ] C.1 Roles and the class picker
+- [ ] C.2 Class abilities and the ability button
+- [ ] C.3 Banter groundwork and the new voices
+- [ ] C.4 Corpses
+- [ ] C.5 Minions and the third row
+- [ ] C.6 Placeholder portraits
+- [ ] C.7 Barbarian (batch 1)
+- [ ] C.8 Bard (batch 1)
+- [ ] C.9 Ranger (batch 1)
+- [ ] C.10 Necromancer (batch 1)
+- [ ] C.11 Batch 1 check
+- [ ] C.12 Monk (batch 2)
+- [ ] C.13 Spellsword (batch 2)
+- [ ] C.14 Druid (batch 2)
+- [ ] C.15 Paladin (batch 2)
+- [ ] C.16 Batch 2 check
+
+**C.1 prompt (Roles and the class picker)**
+
+```
+Read docs/design/new_classes_plan.md sections 1-3 and the 8b page of
+docs/design/expansion_design.md with its addendum. Add CharacterDef.role
+(front, healer, sneak, caster), set it on the four existing classes, and
+add data/classes.tres listing every class file. Give the party screen's
+four slots a class choice: arrows step through the classes of that
+slot's role only; changing class resets the slot's name, portrait and
+scores to the class defaults; Play stays lit with the ready-made four.
+Fill Party.hero_defs from the screen. Save each slot's class_id; an
+older save loads as the ready-made four. The healer slot always starts
+with the lit torch and two candles. Keep the smoke test on the
+ready-made four and add tests/classes_test.gd. Show me the screen
+before going further.
+```
+
+**C.2 prompt (Class abilities and the ability button)**
+
+```
+Read the plan's section 4 opening. Add CharacterDef.abilities (SpellDef
+files) and a small button beside each hero's name that opens that list
+in the spell list's frame, through the pop-up layer. Abilities use the
+spell rules that exist: mana, the action wait, recast waits, sounds.
+Add the SpellDef fields the classes need (toggled song, shape, weapon
+enchantment, raise, corpse cost, no-mana once per rest) without using
+them yet. The Cleric and Mage keep their holy symbol and spellbook as
+they are. Add CharacterDef.refuses (item kinds) and the no-weapons /
+no-armour flags. Test with a dummy ability in the test room.
+```
+
+**C.3 prompt (Banter groundwork and the new voices)**
+
+```
+Read docs/tone.md and the plan's section 6. Add role speakers
+(role:front etc., spoken only when the slot's class has no line for the
+event), the `with` condition (class ids that must be in the party), and
+the {minion} and {was} placeholders. Give every existing line that
+names a job or answers a particular class a `with`. Extend
+tests/banter_test.gd: every class or its role must cover fight_started,
+hero_died, hero_revived, ambush_warning, ambush_started, ambush_over
+and boss_seen. Add the plan's 16 role lines. Add a voice entry for each
+new class to docs/tone.md section 6, from the plan. No class lines yet.
+```
+
+**C.4 prompt (Corpses)**
+
+```
+Read the plan's Necromancer section. A slain skeleton, skeleton guard
+or plague rat leaves a corpse on its tile for 45 s: a placeholder heap
+sprite, tinted by sprite_lighting, never blocking, never on the map,
+never saved. Slimes, tentacles, the giant hand and minions leave none;
+the Warden's crumbles at once. Call them corpses, never remains (7j).
+GameEvents.corpse_left / corpse_gone. Add MonsterDef.undead and
+.cursed and set them as the plan says. Smoke checks.
+```
+
+**C.5 prompt (Minions and the third row)**
+
+```
+Read the plan's Necromancer section and "the third row". A minion is a
+party member without a class: it sits in a spare panel (positions 4
+and 5), has the stats the plan gives, strikes by itself only from the
+front row, can be dragged like a hero, is never healed, and falls apart
+on the plan's four conditions. Widen the party code to three rows: a
+blow from behind lands on the rearmost occupied row; who can swing is
+unchanged. Names from the plan's list on the panel and in the log.
+Minions are saved. No Necromancer yet: spawn one with a test-room key.
+```
+
+**C.6 prompt (Placeholder portraits)**
+
+```
+Make placeholder portraits for the plan's section 8 list by script from
+the existing portraits (recoloured, with the class's initial), at the
+real portrait size, with hurt and dead versions derived as usual. List
+every one in the placeholder list of docs/asset_log.md. Do not spend
+PixelLab generations.
+```
+
+**C.7 prompt (Barbarian)**
+
+```
+Read the plan's Barbarian section, his row in section 3 and his
+banter. Build him: data file, rage bar in the mana row (5 per HP lost,
+10 per kill, ignites at 100 for 10 s: damage x1.5 and no grab; drains 5
+a second out of a fight; empties at camp), refuses potions and scrolls,
+the grab rule, level gains and Blood up. Add his banter and the
+Barbarian scroll pairs. Smoke and class-test checks, a test-room key,
+docs and the blueprint. Run all tests and the game.
+```
+
+**C.8 prompt (Bard)**
+
+```
+Read the plan's Bard section and his banter. Build him: data file, the
+three songs as toggled abilities (1 mana to start, 1 every 3 s; one at
+a time; never on himself; stop on no mana, death, camp or grab), the
+note on his panel, four short lute sounds (log them in
+docs/asset_log.md), level gains and Encore. Add his 25 lines and the
+Bard pairs with the Cleric and the Paladin. Checks, a test-room key,
+docs and the blueprint. Run all tests and the game.
+```
+
+**C.9 prompt (Ranger)**
+
+```
+Read the plan's Ranger section and his banter. Build him: data file,
+tracking (2 tiles ahead along open tiles, a paw mark at the top of the
+view and one log line per monster, works in the dark, never sees an
+ambush or an unsearched body), +2 attack and half of misses recoverable
+with a launcher, no sickness from raw or mouldy food, level gains and
+Keen nose. His banter. Checks, a test-room key, docs and the blueprint.
+Run all tests and the game.
+```
+
+**C.10 prompt (Necromancer)**
+
+```
+Read the plan's Necromancer section and his banter. Build him on C.4
+and C.5: Raise Dead, Life Drain (nothing back from the undead), Bone
+Armour (does not add to Shield), refused healing from the Cleric and
+the Paladin, the minion's watch at camp, level gains and Dear departed.
+His banter (including the offer over a fallen hero) and nothing for the
+Paladin pairs yet. Checks, a test-room key, docs and the blueprint. Run
+all tests and the game.
+```
+
+**C.11 prompt (Batch 1 check)**
+
+```
+Play floor 1 start to stairs with each batch 1 class in its slot (four
+runs, the rest ready-made), then once with all four. Fix what breaks,
+note what feels off, measure the new front and sneak numbers against
+the plan's section 3, and report. Build a demo only if I ask.
+```
+
+**C.12 prompt (Monk)**
+
+```
+Read the plan's Monk section and his banter. Build him: data file, no
+weapons or armour (a light is allowed), fists and defence by level,
+dodge 15% and the counter, a 4-slot backpack that Take all skips,
+"LIGHT PACK" in the loot pop-up, Still water, Grudge's refusal. His
+banter and the Monk and Thief pairs. Checks, a test-room key, docs and
+the blueprint. Run all tests and the game.
+```
+
+**C.13 prompt (Spellsword)**
+
+```
+Read the plan's Spellsword section and his banter. Build him: data
+file, Enchant (fire, frost, shock; 4 hits or 20 s; one at a time), the
+slowed status with its tier row, fire counting as a torch's fire with
+oil, the blade's light, fire going out in a curse zone, level gains and
+Spellstrike (Magic Missile). His banter. Checks, a test-room key, docs
+and the blueprint. Run all tests and the game.
+```
+
+**C.14 prompt (Druid)**
+
+```
+Read the plan's Druid section and her banter. Build her: data file,
+Poultice on its own track, Reclaim (purifies corruption and makes the
+curse-zone pocket as Bless does), bear and wolf (a stat and portrait
+swap; no casting, items or quick slots; a held light is stowed; the
+wolf tracks and ignores the dark), Change back, level gains and Deep
+roots. Her banter and the Ranger and Druid pair. Checks, a test-room
+key, docs and the blueprint. Run all tests and the game.
+```
+
+**C.15 prompt (Paladin)**
+
+```
+Read the plan's Paladin section and his banter. Build him: data file,
+Lay on Hands once per rest (refused on the Necromancer), the +1 defence
+aura, Smite (undead and cursed, the flash on minions, purifying and the
+pocket with no monster in front), the Vow (only monsters that struck or
+were struck count), level gains and Steadfast. His banter and the
+Paladin pairs with the Necromancer and the Bard. Checks, a test-room
+key, docs and the blueprint. Run all tests and the game.
+```
+
+**C.16 prompt (Batch 2 check)**
+
+```
+As C.11, for batch 2, then three runs with mixed parties chosen to be
+hard (Barbarian with Paladin; Monk with Necromancer; Bard, Ranger and
+Spellsword together). Report what is too strong and too weak against
+the plan's section 3, with numbers, before changing any.
+```
+
+Done when: every class is selectable in its role's slot with working abilities, no party is ever silent, and the three hard mixed parties can all reach the stairs.
 
 ## Phase 9: Procedural mode (after floor one ships)
 
@@ -1551,7 +1913,7 @@ Done when: ten runs in a row are all beatable, and at least a few of them surpri
 New ideas land here first, instead of going into finished phases. Once the current queue is clear, we sort them into proper steps together.
 
 - (Now covered by the Spell VFX pass) Reactive spell lighting: lights that travel down corridors with a fading light trail, moving shadows, pixel-art normal maps on walls, fog that catches spell light (prompt given in chat on 7 Nov). Also the Fireball VFX recipe: PixelLab flipbooks, synced lights, pixel particles, scorch marks, palette shader.
-- Bard class: songs as party buffs and monster debuffs (one song at a time, draining mana while it plays), a chiptune lute for each song, and a bard who narrates the party's failures in verse (e.g. "The Ballad of the Fumbled Sword"). Needs a design pass and a slot in the character generator (8b).
+- (Now covered by Phase C) Bard class: songs as party buffs and monster debuffs (one song at a time, draining mana while it plays), a chiptune lute for each song, and a bard who narrates the party's failures in verse (e.g. "The Ballad of the Fumbled Sword"). Needs a design pass and a slot in the character generator (8b).
 - Game 2: the party meets Bellius the bard, who has already escaped this dungeon. Possible foreshadowing in game 1: traces he left behind (a carved "Bellius was here", a torn song sheet, a snapped lute string, a skeleton audience arranged in rows).
 - Story arc, "The Tales of Bellius": torn pages scattered through the dungeon as collectibles, each a short tale in Bellius's own voice. Near the end, the thief reads the last page and discovers they're Bellius's relation, unlocking a single bard song that helps in the final boss fight (the cleric is furious the thief got the gift). Sets up game 2: go find the old man.
 - (Built, except fog of war, which is parked: see Leftovers) Minimap makeover: replace the debug minimap with a hand-drawn parchment map in a rusted iron frame, fog of war (only explored tiles drawn), PixelLab icons for the party arrow, doors, stairs, levers, campfires and found secrets (no traps or ambushes), a faint torchlight flicker from the VFX suite, and a full-screen automap on M. Coordinates move behind the debug overlay (prompt given in chat on 9 Nov).
