@@ -67,7 +67,9 @@ func merge_from(other: RefCounted) -> int:
 ## Split one item off into a new stack of 1. The caller empties its slot if count hits 0.
 func take_one() -> RefCounted:
 	count -= 1
-	return of(def, 1)
+	var one := of(def, 1)
+	one.burn_left = burn_left  # A used torch keeps the time it has left when it is thrown.
+	return one
 
 
 func label() -> String:

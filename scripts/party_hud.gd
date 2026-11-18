@@ -437,7 +437,7 @@ func _on_hand(slot: int, hand: int) -> void:
 		return
 	if party.action_for(slot, hand) != party.Act.SPELLS:
 		cancel_casting()
-		party.act(slot, hand)
+		party.act(slot, hand, Input.is_key_pressed(KEY_SHIFT))  # Shift+click throws what the hand holds.
 		return
 	cancel_casting()
 	if party.member(slot).cooldown_left > 0.0:

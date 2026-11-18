@@ -581,11 +581,15 @@ func action_for(slot: int, hand: int) -> int:
 ## A hero acts with the item in one hand: swing or throw (each starts the shared
 ## action cooldown), or say they can't reach (no cooldown). SPELLS does nothing
 ## here: the party HUD opens the spell list and calls cast().
-func act(slot: int, hand: int) -> void:
+func act(slot: int, hand: int, throw := false) -> void:
 	var m := member(slot)
 	if m == null or not m.is_alive() or m.cooldown_left > 0.0:
 		return
-	match action_for(slot, hand):
+	var action := action_for(slot, hand)
+	var held = m.hands[hand]
+	if throw and held != null and held.def.can_throw() and action in [Act.MELEE, Act.CANT_REACH]:
+		action = Act.THROW  # Shift+click: throw what is in the hand instead of swinging it (a lit torch, a dagger; a candle cannot be thrown).
+	match action:
 		Act.MELEE:
 			_melee(m, hand)
 		Act.THROW:
@@ -877,6 +881,8 @@ func _do_throw(m: Member, source: Dictionary) -> bool:
 	_start_cooldown(m)
 	var piece: RefCounted = stack.take_one()
 	piece.origin = {"hero": m.hero_index, "where": source.where, "index": source.index}
+	if def.is_light():  # A lit torch keeps burning where it lands (and never merges into a pile while it burns); one a curse zone put out is cold.
+		piece.burning = not flames_out or def.curse_proof
 	if stack.count <= 0:
 		if source.where == "hand":
 			m.hands[source.index] = null
@@ -888,6 +894,8 @@ func _do_throw(m: Member, source: Dictionary) -> bool:
 	_cue("throw")
 	if dungeon:
 		dungeon.place_item(land, piece)
+		if piece.burning and dungeon.get("lights") != null:
+			dungeon.lights.drop(land, piece)  # (A curse zone, or its reach, puts it out at once.)
 		dungeon.show_throw(player.cell, land, def)
 	if target == null:
 		_say("%s throws the %s." % [m.name(), def.display_name])
@@ -902,7 +910,13 @@ func _do_throw(m: Member, source: Dictionary) -> bool:
 	var result := CombatRules.resolve_attack(s, target.def, CombatRules.crit_chance(m.def, def, 0, helpless))
 	result.fail = not result.hit and CombatRules.roll_fumble()
 	result.by = m.hero_index  # Who struck: GameEvents.monster_killed names the killer.
+	var flame: bool = def.is_light() and result.hit  # A thrown torch burns what it hits: fire (a doused monster catches), and a monster that fears fire flinches.
+	if flame:
+		result.fire = true
 	target.take_hit(result)
+	if flame and target.hp > 0 and target.def.fears_fire:
+		target.recoil(player.cell)
+		_say("The %s recoils from the flame." % target.def.display_name.to_lower())
 	if helpless and result.hit:
 		_banter("hit_held", m, def)
 	if result.fail:

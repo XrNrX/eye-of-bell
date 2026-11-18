@@ -206,7 +206,7 @@ behind, so a lit sprite in front of a torch-bearing party came out a silhouette 
   there**; taken out it has that same time. **Torches are never made:** a sconce holds one real torch or none, taking it empties the bracket, and lighting
   one needs a flame it does not use up, so light, take, hang, take is a closed loop (smoke checks add up every torch-second in the game). The map shows a
   sconce once the party has seen it (a clear line within `sconce_see_range` 6), gold if lit, grey if unlit, dark if bare. A thrown torch lighting one
-  waits for 7l.4 (torches cannot be thrown yet): `Dungeon.ignite_near(cell, radius)` is the hook.
+  A lit torch thrown so that it lands beside one lights it the same way (7l.4: `LightField` keeps the landed torch burning, `Dungeon.ignite_near`).
 - **Curse zones** (roadmap 7l.3; `DungeonMap.CURSE_ZONES` = `{"id", "tiles"}`, the node `scripts/curse_zones.gd`, numbers in `data/light.tres` "Curse
   zones"): a place where flames die. In one (outside a Bless's pocket): a **held torch or candle sputters for a second** (the light flickers hard) **and goes
   out**, burning no time, and relights the moment the party leaves; put away and taken up again inside, it sputters again. A **sconce will not light** (right
@@ -219,6 +219,15 @@ behind, so a lit sprite in front of a torch-bearing party came out a silhouette 
   for good (the run flag `curse_zone.<id>.cleared`, saved). `GameEvents.entered_curse_zone` / `left_curse_zone` (banter lines for both). **Nothing above tier 1
   may be placed in a zone:** the builder warns when the level loads (`DungeonMap.zone_tier_violations`). Floor 1 has none yet (the cave's, over x 6-10, y 15-19
   and lifting when its three rats die, is roadmap 7l.6); the test room's light room has one over its east end and the backslash key lifts it or puts it back.
+- **Throwing a torch** (roadmap 7l.4; `ItemDef` torch `throw_damage_min/max` 1-3): **shift+click the hand** that holds a lit torch (`Party.act(slot, hand, true)`:
+  a plain click still swings it, and shift+click also throws a dagger from the front row; a quick slot still swaps a light into a hand). It flies up to 4 tiles
+  (`MISSILE_RANGE`, the thrown-weapon code `_do_throw`) with its light (a light rides the flying sprite, `Dungeon.show_throw`), the usual hit roll,
+  and on a hit does 1-3 **fire** (a crit may double it; `result.fire`: a doused monster takes the +6 and burns), and a monster that `fears_fire`
+  recoils from it. It then **burns where it lands** (`LightField.drop`, the same node that keeps a slipped torch burning: it keeps the burn time it had,
+  never merges into a pile, lights a slick it lands on, and is put out at once by a curse zone, or its 2-tile reach, and can then be picked up cold).
+  Monsters that fear fire will not step onto its tile (`Dungeon.fire_at`). **Picking it up sends it home** to the hand it left like any thrown piece
+  (`ItemStack.origin`, `Party.return_to_origin`: a lit torch in a hand is lit). **A candle cannot be thrown** (no throw damage). A torch snuffed in a
+  curse zone is thrown cold.
 - **Holding:** a light works only in a hand, and it takes that hand. Several held: the brightest counts, plus 10% of it for each extra
   light, at most +20% (`extra_light_bonus`, `extra_light_cap`). A dead hero's light goes out (it neither shines nor burns).
 - **Quick slots** take torches and candles. Clicking one puts it lit into a hand: the one already holding a light, else a free one, else
@@ -263,7 +272,7 @@ Roadmap 7l.5; the numbers are in `docs/design/expansion_design.md` section 2 and
   **the party stands in a curse zone** ("The air here hates fire. The flask stays corked."). The splash is a PixelLab VFX (`art/spells/oil/burst_sheet.png`).
 - **Lighting a slick** (`OilField.ignite`, the news `GameEvents.oil_ignited(cell)`, "The oil catches!" if the party sees it): **a Fireball** (its blast lights
   every slick within a tile of where it lands, `spell_effects.explosion`), **a lit torch's swing at that tile** (`Party._melee`: hit or miss), and **a burning
-  torch lying on it** (a slipped one, or one thrown there: `LightField.drop`; 7l.4 will throw torches the same way). A slick in a curse zone will not catch,
+  torch lying on it** (a slipped one, or one thrown there: `LightField.drop`; a thrown torch does exactly that). A slick in a curse zone will not catch,
   and neither will a doused monster there.
 - **A burning tile** shows PixelLab flames (`art/spells/oil/flames_sheet.png`) and lights its surroundings for 6 s. Each second it does 2 to a monster
   standing on it (a doused one catches and takes +6) and 1 to each hero if the party is on it; someone remarks on the party's own fire (banter

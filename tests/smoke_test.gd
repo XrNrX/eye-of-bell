@@ -11,6 +11,7 @@ const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
 const CombatRules := preload("res://scripts/combat_rules.gd")
 const Settings := preload("res://scripts/settings.gd")
+const LightConfig := preload("res://scripts/light_config.gd")
 const SaveGame := preload("res://scripts/save_game.gd")
 const ItemStack := preload("res://scripts/item_stack.gd")
 
@@ -82,6 +83,7 @@ func _init() -> void:
 	await _check_sconces()
 	await _check_curse_zones()
 	await _check_oil()
+	await _check_torch_throw()
 	await _check_food()
 	_check_resurrection()
 	await _check_world_events()
@@ -836,6 +838,130 @@ func _all_torch_stacks() -> Array:
 	for cell in dungeon.items:
 		stacks += dungeon.items[cell].pile
 	return stacks.filter(func(s): return s != null and s.def.fits_sconce)
+
+
+## A lit torch can be thrown (7l.4): shift+click on its hand; it flies up to 4 tiles with its light, does 1-3 fire to a monster it hits (a monster that
+## fears fire recoils, a doused one catches), burns where it lands, lights a slick there, keeps the time it had, and goes home to its hand when picked
+## up. A candle cannot be thrown.
+func _check_torch_throw() -> void:
+	var torch: Resource = load("res://data/items/torch.tres")
+	var candle: Resource = load("res://data/items/candle.tres")
+	var fighter = null
+	for m in party.members:
+		if m.class_id() == "fighter":
+			fighter = m
+	var held_before := []
+	for m in party.members:
+		held_before.append(m.hands.duplicate())
+	dungeon.clear_monsters()
+	dungeon.oil.load_state({"slicks": [], "burning": []})
+	check("torch throw: a torch can be thrown (1-3), a candle cannot", torch.can_throw() and torch.throw_damage_min == 1 and torch.throw_damage_max == 3 and not candle.can_throw())
+	player.restore(SPOT, EAST)
+	var torch_stack: RefCounted = ItemStack.of(torch, 1)
+	torch_stack.burn_left = 90.0
+	fighter.hands = [torch_stack, null]
+	check("torch throw: a plain click on the hand still swings it (the front row), only shift+click throws", party.action_for(fighter.slot, 0) == party.Act.MELEE)
+
+	# A candle: shift+click swings, nothing is thrown.
+	var candle_stack: RefCounted = ItemStack.of(candle, 1)
+	fighter.hands = [candle_stack, null]
+	fighter.cooldown_left = 0.0
+	party.act(fighter.slot, 0, true)
+	check("torch throw: shift+click on a candle throws nothing", fighter.hands[0] == candle_stack and dungeon.item_at(Vector2i(10, 13)) == null and dungeon.lights.burning.is_empty())
+
+	# Thrown with no monster: it flies the whole 4 tiles, with its light, and burns where it lands, keeping its time.
+	fighter.hands = [torch_stack, null]
+	fighter.cooldown_left = 0.0
+	var lights_before := _count_omni(dungeon)
+	party.act(fighter.slot, 0, true)
+	var land := Vector2i(10, 13)  # Four tiles from the party's tile.
+	check("torch throw: with the hand shift-clicked it flies 4 tiles (its light flies with it), the hand is empty and it lies burning there",
+			fighter.hands[0] == null and _count_omni(dungeon) > lights_before and dungeon.fire_at(land) and dungeon.lights.burning.any(func(e): return e.cell == land))
+	var lying: RefCounted = dungeon.item_at(land)
+	check("torch throw: it keeps the time it had (90 s, less a moment), and remembers the hand it left", lying != null and lying.def == torch and lying.burning and lying.burn_left > 80.0 and lying.burn_left <= 90.0
+			and lying.origin.has("hero") and lying.origin.hero == fighter.hero_index)
+
+	# Picking it up sends it home to the hand.
+	var taken: RefCounted = dungeon.take_item(land)
+	var home: String = party.return_to_origin(taken)
+	check("torch throw: picked up it goes home to the hand it left", home != "" and fighter.hands[0] == taken and fighter.hands[0].def == torch)
+	await create_timer(0.2).timeout
+	check("torch throw: and the floor flame is out", dungeon.lights.burning.is_empty())
+
+	# At a monster: a landed hit does 1-3 fire (a crit may double it), a monster that fears fire recoils; the torch lies burning on its tile.
+	var hit := false
+	var tries := 0
+	var slime: Node = null
+	while not hit and tries < 12:
+		tries += 1
+		dungeon.clear_monsters()
+		slime = _monster("slime", AHEAD_2, 40)
+		slime.move_wait = 999.0
+		slime.attack_cooldown = 0.0
+		fighter.hands = [ItemStack.of(torch, 1), null]
+		fighter.cooldown_left = 0.0
+		party.act(fighter.slot, 0, true)
+		hit = slime.hp < 40
+	check("torch throw: a landed hit does 1-3 fire (a crit up to 6), the slime recoils from it, and the torch lies burning on its tile (%d throws)" % tries,
+			hit and 40 - slime.hp >= 1 and 40 - slime.hp <= 6 and slime.attack_cooldown >= LightConfig.get_config().recoil_delay and dungeon.fire_at(AHEAD_2))
+	dungeon.take_item(AHEAD_2)
+	dungeon.clear_monsters()
+
+	# A doused monster hit by a thrown torch takes +6 and burns.
+	hit = false
+	tries = 0
+	var doused: Node = null
+	while not hit and tries < 12:
+		tries += 1
+		dungeon.clear_monsters()
+		doused = _monster("skeleton", AHEAD_2, 99)
+		doused.add_status(load("res://data/statuses/held.tres"), 30.0, 1)
+		doused.add_status(load("res://data/statuses/doused.tres"), 30.0, 1)
+		fighter.hands = [ItemStack.of(torch, 1), null]
+		fighter.cooldown_left = 0.0
+		party.act(fighter.slot, 0, true)
+		hit = doused.hp < 99
+	check("torch throw: a doused monster hit by a thrown torch takes the +6 and burns (%d throws)" % tries, hit and doused.has_status("burning") and not doused.has_status("doused") and 99 - doused.hp >= 7)
+	dungeon.take_item(AHEAD_2)
+	dungeon.clear_monsters()
+	dungeon.lights.restore()
+
+	# It lights a slick where it lands.
+	dungeon.oil.add_slick(land)
+	fighter.hands = [ItemStack.of(torch, 1), null]
+	fighter.cooldown_left = 0.0
+	party.act(fighter.slot, 0, true)
+	await create_timer(0.3).timeout
+	check("torch throw: landing on a slick lights it", dungeon.oil.is_burning(land))
+	dungeon.take_item(land)
+
+	# In a curse zone it fizzles where it lands.
+	dungeon.oil.load_state({"slicks": [], "burning": []})
+	var real_zones: Array = DungeonMap.CURSE_ZONES
+	DungeonMap.CURSE_ZONES = [{"id": "smoke_throw", "tiles": [Vector2i(9, 13), Vector2i(10, 13)]}]
+	dungeon.curse.pocket_left = 0.0
+	fighter.hands = [ItemStack.of(torch, 1), null]
+	fighter.cooldown_left = 0.0
+	party.act(fighter.slot, 0, true)
+	var cold: RefCounted = dungeon.item_at(land)
+	check("torch throw: thrown into a curse zone it fizzles where it lands and can be picked up cold", cold != null and not cold.burning and not dungeon.lights.burning.any(func(e): return e.stack == cold))
+	dungeon.take_item(land)
+	DungeonMap.CURSE_ZONES = real_zones
+
+	for i in party.members.size():
+		party.members[i].hands = held_before[i]
+	_rest_everyone()
+	dungeon.clear_monsters()
+	player.restore(SPOT, EAST)
+
+
+func _count_omni(node: Node) -> int:
+	var n := 0
+	for child in node.get_children():
+		if child is OmniLight3D:
+			n += 1
+		n += _count_omni(child)
+	return n
 
 
 ## The Flask of oil (7l.5): thrown at the floor it lands on the tile in front and leaves a slick; thrown at a monster it is doused; fire (a

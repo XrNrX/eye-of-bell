@@ -700,6 +700,12 @@ func show_throw(from_cell: Vector2i, to_cell: Vector2i, def: Resource) -> void:
 	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
 	sprite.position = DungeonMap.cell_to_world(from_cell) + Vector3(0, THROW_HEIGHT, 0)
 	add_child(sprite)
+	if def.is_light():  # A thrown torch flies with its light.
+		var light := OmniLight3D.new()
+		light.light_color = def.light_color
+		light.light_energy = def.light_energy * 0.6
+		light.omni_range = def.light_range * 0.6
+		sprite.add_child(light)
 	var tiles := maxf(1.0, (to_cell - from_cell).length())
 	var t := sprite.create_tween()
 	t.tween_property(sprite, "position", DungeonMap.cell_to_world(to_cell) + Vector3(0, ITEM_HEIGHT, 0), THROW_TIME_PER_TILE * tiles)
