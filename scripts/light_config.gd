@@ -34,6 +34,10 @@ const PATH := "res://data/light.tres"
 @export var recoil_delay := 1.0        # A monster that fears fire, struck by a torch: its next blow comes this much later...
 @export var recoil_steps_back := true  # ...and it backs off a tile, if the tile behind it is free.
 
+@export_group("Sconces")
+@export var sconce_torch_seconds := 120.0  # A torch the level starts in a sconce burns this long once taken out (a stub; a held one has 240).
+@export var sconce_see_range := 6          # A sconce counts as seen from a tile this near with a clear line (it shows on the map).
+
 @export_group("On the floor")
 @export var floor_light_height := 0.35 # A burning light lying on a tile shines from just above it.
 @export var floor_light_scale := 0.7   # ...at this share of its energy (it lies on its side).

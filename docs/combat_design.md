@@ -195,6 +195,18 @@ behind, so a lit sprite in front of a torch-bearing party came out a silhouette 
 | Stack | 3 | 5 | Fresh ones only: a used light never stacks with fresh ones |
 | Hand action | a weak swing: 1-2, -1 attack, +1-2 fire on a hit | a weak swing: 1, -2 attack | From the front row; the back row "can't reach" |
 
+- **Wall sconces** (roadmap 7l.2; `DungeonMap.TORCHES` entries are `Vector4i(x, z, side, state)`, run state `sconce_state` / `sconce_seconds` /
+  `sconce_seen`, saved under the dungeon's `sconces`): every wall torch is **lit**, **unlit with a torch** or an **empty bracket**. Floor 1 has 8,
+  7 and 10 (the lists in `docs/design/expansion_design.md` section 2), the test room's light room two of each dark kind and a lit one.
+  *Light an unlit one:* right-click it (the wall in front) with a lit torch or candle in a hero's hand ("Brother Felix lights the sconce."), or
+  cast a Fireball at it (aimed down a corridor that ends in an unlit sconce, or any blast within a tile of one). It stays lit and nothing is used up.
+  *Take the torch* (lit or unlit): left-click with an empty cursor. You get a torch with the time it has left (120 s, `LightConfig.sconce_torch_seconds`,
+  for one the level started with) and the bracket is empty, its stretch dark. *Hang a torch:* left-click an empty bracket with a torch on the cursor
+  (`ItemDef.fits_sconce`, the torch only): it lights that stretch for good, keeps the time it had (a fresh torch 240 s) and **loses none while it hangs
+  there**; taken out it has that same time. **Torches are never made:** a sconce holds one real torch or none, taking it empties the bracket, and lighting
+  one needs a flame it does not use up, so light, take, hang, take is a closed loop (smoke checks add up every torch-second in the game). The map shows a
+  sconce once the party has seen it (a clear line within `sconce_see_range` 6), gold if lit, grey if unlit, dark if bare. A thrown torch lighting one
+  waits for 7l.4 (torches cannot be thrown yet): `Dungeon.ignite_near(cell, radius)` is the hook.
 - **Holding:** a light works only in a hand, and it takes that hand. Several held: the brightest counts, plus 10% of it for each extra
   light, at most +20% (`extra_light_bonus`, `extra_light_cap`). A dead hero's light goes out (it neither shines nor burns).
 - **Quick slots** take torches and candles. Clicking one puts it lit into a hand: the one already holding a light, else a free one, else

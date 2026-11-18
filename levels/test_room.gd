@@ -7,8 +7,8 @@ extends RefCounted
 ## A long hall (row 12 to 16) with a station off it at every doorway. North: combat arena, wall types, item table, legendary
 ## items. South: ambush corridor, puzzle room, campfire, XP and levels, traps; through the XP room, monster pacing (a long
 ## corridor to back away down, opening into a room for flanking), and south of that the held-monster room (Hold Monster:
-## a skeleton, a skeleton guard and a slime, which can't be held), and off the pacing corridor the light room (dark, no wall
-## torches: torches and candles to try, and a slime that fears fire). A sign in the hall and one inside labels each.
+## a skeleton, a skeleton guard and a slime, which can't be held), and off the pacing corridor the light room (dark but for one lit sconce; unlit and empty
+## sconces, torches and candles to try, and a slime that fears fire). A sign in the hall and one inside labels each.
 ## "NOT BUILT YET" stations are empty rooms waiting for their system.
 ##
 ## Debug keys (scripts/debug/test_room_tools.gd, H shows them in the game): G god mode, R refill HP and mana, X +500 XP,
@@ -64,47 +64,54 @@ const MAP := [
 const START_TILE := Vector2i(20, 14)
 const START_FACING := 0
 
-const TORCHES: Array[Vector3i] = [
-	Vector3i(3, 12, 0),
-	Vector3i(9, 12, 0),
-	Vector3i(14, 12, 0),
-	Vector3i(20, 12, 0),
-	Vector3i(25, 12, 0),
-	Vector3i(31, 12, 0),
-	Vector3i(5, 16, 2),
-	Vector3i(9, 16, 2),
-	Vector3i(15, 16, 2),
-	Vector3i(20, 16, 2),
-	Vector3i(26, 16, 2),
-	Vector3i(31, 16, 2),
-	Vector3i(36, 16, 2),
-	Vector3i(1, 13, 1),
-	Vector3i(38, 15, 3),
-	Vector3i(9, 2, 0),
-	Vector3i(13, 3, 1),
-	Vector3i(21, 3, 3),
-	Vector3i(24, 2, 0),
-	Vector3i(32, 2, 0),
-	Vector3i(3, 20, 3),
-	Vector3i(3, 25, 3),
-	Vector3i(7, 18, 0),
-	Vector3i(15, 18, 0),
-	Vector3i(6, 25, 1),
-	Vector3i(16, 25, 3),
-	Vector3i(23, 18, 0),
-	Vector3i(18, 22, 1),
-	Vector3i(24, 22, 3),
-	Vector3i(30, 20, 3),
-	Vector3i(26, 20, 1),
-	Vector3i(32, 20, 1),
-	Vector3i(36, 20, 3),
-	Vector3i(8, 10, 2),
-	Vector3i(8, 31, 0),
-	Vector3i(16, 31, 2),
-	Vector3i(25, 29, 0),
-	Vector3i(31, 34, 2),
-	Vector3i(25, 36, 0),
-	Vector3i(31, 39, 2),
+# Wall sconces as Vector4i(x, z, side, state): 0 lit, 1 unlit with a torch, 2 an empty bracket (see DungeonMap.TORCHES). The light room's
+# are at the end: two of each dark kind and a lit one, for lighting, taking and hanging torches.
+const TORCHES := [
+	Vector4i(3, 12, 0, 0),
+	Vector4i(9, 12, 0, 0),
+	Vector4i(14, 12, 0, 0),
+	Vector4i(20, 12, 0, 0),
+	Vector4i(25, 12, 0, 0),
+	Vector4i(31, 12, 0, 0),
+	Vector4i(5, 16, 2, 0),
+	Vector4i(9, 16, 2, 0),
+	Vector4i(15, 16, 2, 0),
+	Vector4i(20, 16, 2, 0),
+	Vector4i(26, 16, 2, 0),
+	Vector4i(31, 16, 2, 0),
+	Vector4i(36, 16, 2, 0),
+	Vector4i(1, 13, 1, 0),
+	Vector4i(38, 15, 3, 0),
+	Vector4i(9, 2, 0, 0),
+	Vector4i(13, 3, 1, 0),
+	Vector4i(21, 3, 3, 0),
+	Vector4i(24, 2, 0, 0),
+	Vector4i(32, 2, 0, 0),
+	Vector4i(3, 20, 3, 0),
+	Vector4i(3, 25, 3, 0),
+	Vector4i(7, 18, 0, 0),
+	Vector4i(15, 18, 0, 0),
+	Vector4i(6, 25, 1, 0),
+	Vector4i(16, 25, 3, 0),
+	Vector4i(23, 18, 0, 0),
+	Vector4i(18, 22, 1, 0),
+	Vector4i(24, 22, 3, 0),
+	Vector4i(30, 20, 3, 0),
+	Vector4i(26, 20, 1, 0),
+	Vector4i(32, 20, 1, 0),
+	Vector4i(36, 20, 3, 0),
+	Vector4i(8, 10, 2, 0),
+	Vector4i(8, 31, 0, 0),
+	Vector4i(16, 31, 2, 0),
+	Vector4i(25, 29, 0, 0),
+	Vector4i(31, 34, 2, 0),
+	Vector4i(25, 36, 0, 0),
+	Vector4i(31, 39, 2, 0),
+	Vector4i(9, 33, 0, 1),    # The light room: unlit, holding a torch.
+	Vector4i(6, 36, 1, 1),    # Unlit, holding a torch.
+	Vector4i(15, 33, 0, 2),   # An empty bracket.
+	Vector4i(19, 36, 3, 2),   # An empty bracket.
+	Vector4i(12, 38, 2, 0),   # Lit.
 ]
 
 # The corrupted wall of the wall-types station: one Bless burns it away.
@@ -255,7 +262,9 @@ SOUTH"},
 	{"cell": Vector2i(13, 31), "side": 2, "text": "LIGHT AND DARK
 SOUTH"},
 	{"cell": Vector2i(8, 33), "side": 0, "text": "LIGHT AND DARK
-NO WALL TORCHES
+SCONCES: RIGHT-CLICK
+LIGHTS, CLICK TAKES
+OR HANGS A TORCH
 = BURNS LIGHTS DOWN"},
 ]
 

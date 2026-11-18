@@ -12,6 +12,8 @@ const RUST_500 := Color("7c4426")
 const BLOOD_500 := Color("7a2224")
 const RUST_700 := Color("4e2a1a")
 const CURSE_700 := Color("3a6b4c")
+const TORCH_300 := Color("f5cf80")
+const BONE_500 := Color("9c9278")
 
 const NAMES := ["door_closed", "door_open", "door_locked", "stairs", "lever", "secret"]
 
@@ -45,6 +47,21 @@ static func wall_mark(c: Vector2i) -> Color:
 	if DungeonMap.is_destructible(c):
 		return RUST_700
 	return Color(0, 0, 0, 0)
+
+
+## A wall sconce the party has seen, as a small square set against the wall it hangs on, inside the cell: gold if it burns, grey
+## if it holds a torch that is not lit, dark if it is a bare bracket. Drawn in code, like the doors (a mark this small has no art).
+static func draw_sconce(canvas: CanvasItem, at: Vector2, cell: int, side: int, state: int) -> void:
+	var size := 2 if cell < 12 else 3
+	var dirs := [Vector2(0, -1), Vector2(-1, 0), Vector2(0, 1), Vector2(1, 0)]  # north, west, south, east
+	var centre := at + Vector2(cell, cell) / 2.0
+	var p: Vector2 = centre + dirs[side] * (cell / 2.0 - size * 0.5 - 1.0) - Vector2(size, size) / 2.0
+	var colour := TORCH_300
+	if state == DungeonMap.SCONCE_UNLIT:
+		colour = BONE_500
+	elif state == DungeonMap.SCONCE_EMPTY:
+		colour = INK
+	canvas.draw_rect(Rect2(p.floor(), Vector2(size, size)), colour)
 
 
 ## One cell of floor wash: a checker of dark paper pixels, an ink wash that stays in the palette.

@@ -213,13 +213,18 @@ func _check_pacing(tools: Node, press: Callable, player: Node) -> void:
 	root.push_input(key2)
 	check("1 gives it to the first hero listed", first_now.backpack.any(func(s): return s != null and s.def == armour) and the_dungeon.item_at(front) == null)
 	mage.backpack = saved_pack
-	# The light room: dark (no wall torch inside), a torch and candles to try, and = burns the lit lights down.
+	# The light room: dark (sconces: one lit, two unlit, two empty), a torch and candles to try, and = burns the lit lights down.
 	var light_room: Dictionary = DungeonMap.STATIONS.filter(func(s): return s.name == "Light and dark")[0]
 	tools._teleport(light_room)
 	var room_torches: Array = DungeonMap.TORCHES.filter(func(t): return t.y >= 33 and t.y <= 38 and t.x >= 6 and t.x <= 19)
 	var dungeon_node: Node = get_first_node_in_group("dungeon")
 	var on_table = dungeon_node.item_at(Vector2i(10, 34))
-	check("the light room is dark and has torches to pick up", room_torches.is_empty() and on_table != null and on_table.def.is_light())
+	check("the light room is dark and has torches to pick up", room_torches.all(func(t): return t.w != DungeonMap.SCONCE_LIT or t.x == 12) and on_table != null and on_table.def.is_light())
+	var kinds := {}
+	for t in room_torches:
+		kinds[t.w] = int(kinds.get(t.w, 0)) + 1
+	check("the light room has sconces of all three kinds (lit, unlit with a torch, empty)", kinds.size() == 3 and dungeon_node.sconce_at(Vector3i(9, 33, 0)) == DungeonMap.SCONCE_UNLIT
+			and dungeon_node.sconce_at(Vector3i(15, 33, 0)) == DungeonMap.SCONCE_EMPTY and dungeon_node.sconce_at(Vector3i(12, 38, 2)) == DungeonMap.SCONCE_LIT)
 	var lit: Array = get_first_node_in_group("party").held_lights()
 	press.call(KEY_EQUAL)
 	check("= burns every lit light down to its last seconds", not lit.is_empty() and lit.all(func(s): return s.seconds_left() <= 10.0))

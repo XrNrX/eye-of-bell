@@ -395,6 +395,7 @@ func explosion(cell: Vector2i) -> void:
 	_ensure_pixels()
 	live += 1
 	var at := _cell_pos(cell, c.bolt_height)
+	get_tree().call_group("dungeon", "ignite_near", cell, 1)  # Unlit sconces on the walls beside the blast catch.
 	get_tree().call_group("audio", "play", "explosion")
 	get_tree().call_group("combat_feel", "shake_by", c.blast_shake_strength * (_light_strength() if Settings.reduce_flashing else 1.0), c.blast_shake_seconds)
 	get_tree().call_group("combat_feel", "jolt", Vector3(0, 0, c.blast_kick_distance), c.blast_kick_seconds)  # Knocked back, away from the blast.
@@ -540,6 +541,7 @@ func _explosion_basic(cell: Vector2i) -> void:
 	var c := Config.get_config()
 	live += 1
 	var at := _cell_pos(cell, c.bolt_height)
+	get_tree().call_group("dungeon", "ignite_near", cell, 1)
 	get_tree().call_group("audio", "play", "explosion")
 	get_tree().call_group("combat_feel", "shake_by", c.blast_shake_strength, c.blast_shake_seconds)
 	get_tree().call_group("shockwave", "burst", at)

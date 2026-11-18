@@ -55,34 +55,40 @@ static var START_TILE := Vector2i(5, 9)  # (x, z) grid cell the player spawns in
 static var START_FACING := 3             # 0 = north (-Z), 1 = west, 2 = south, 3 = east.
 
 
-# Wall torches as Vector3i(x, z, side): the floor cell they light, and which of
-# its walls they hang on (0 = north, 1 = west, 2 = south, 3 = east).
+# Wall sconces as Vector4i(x, z, side, state): the floor cell they light, which of its walls they hang on (0 = north, 1 = west,
+# 2 = south, 3 = east) and what is in them: SCONCE_LIT (a burning torch), SCONCE_UNLIT (a torch that is not burning: light it with a
+# flame) or SCONCE_EMPTY (a bare bracket). The state at the start; what it is now is `sconce_state` (run state, saved). A plain
+# Vector3i entry (an older level) is a lit one. Floor 1: 8 lit, 7 unlit and 10 empty (docs/design/expansion_design.md section 2).
+const SCONCE_LIT := 0
+const SCONCE_UNLIT := 1
+const SCONCE_EMPTY := 2
+
 static var TORCHES := [
-	Vector3i(3, 7, 0),
-	Vector3i(5, 9, 2),
-	Vector3i(6, 11, 1),
-	Vector3i(6, 12, 3),
-	Vector3i(9, 13, 2),
-	Vector3i(12, 14, 1),
-	Vector3i(14, 15, 0),
-	Vector3i(17, 15, 2),
-	Vector3i(18, 13, 3),
-	Vector3i(18, 16, 1),
-	Vector3i(20, 19, 3),
-	Vector3i(20, 22, 3),
-	Vector3i(9, 9, 0),
-	Vector3i(14, 7, 0),
-	Vector3i(12, 9, 1),
-	Vector3i(14, 11, 2),
-	Vector3i(16, 5, 1),
-	Vector3i(19, 3, 0),
-	Vector3i(19, 9, 2),
-	Vector3i(13, 17, 0),
-	Vector3i(17, 21, 2),
-	Vector3i(8, 15, 0),
-	Vector3i(9, 18, 3),
-	Vector3i(18, 1, 0),
-	Vector3i(20, 1, 0),
+	Vector4i(3, 7, 0, 0),  # lit
+	Vector4i(5, 9, 2, 0),  # lit
+	Vector4i(6, 11, 1, 0),  # lit
+	Vector4i(6, 12, 3, 0),  # lit
+	Vector4i(9, 13, 2, 0),  # lit
+	Vector4i(12, 14, 1, 1),  # unlit, holds a torch
+	Vector4i(14, 15, 0, 1),  # unlit, holds a torch
+	Vector4i(17, 15, 2, 1),  # unlit, holds a torch
+	Vector4i(18, 13, 3, 1),  # unlit, holds a torch
+	Vector4i(18, 16, 1, 1),  # unlit, holds a torch
+	Vector4i(20, 19, 3, 0),  # lit
+	Vector4i(20, 22, 3, 0),  # lit
+	Vector4i(9, 9, 0, 0),  # lit
+	Vector4i(14, 7, 0, 1),  # unlit, holds a torch
+	Vector4i(12, 9, 1, 2),  # empty bracket
+	Vector4i(14, 11, 2, 2),  # empty bracket
+	Vector4i(16, 5, 1, 2),  # empty bracket
+	Vector4i(19, 3, 0, 2),  # empty bracket
+	Vector4i(19, 9, 2, 1),  # unlit, holds a torch
+	Vector4i(13, 17, 0, 2),  # empty bracket
+	Vector4i(17, 21, 2, 2),  # empty bracket
+	Vector4i(8, 15, 0, 2),  # empty bracket
+	Vector4i(9, 18, 3, 2),  # empty bracket
+	Vector4i(18, 1, 0, 2),  # empty bracket
+	Vector4i(20, 1, 0, 2),  # empty bracket
 ]
 
 # Corrupted walls (tile 7): how many Blesses each takes to burn away (1 = thin, 2 = thick). Every tile 7 in MAP needs an entry.
@@ -355,6 +361,12 @@ static var purified := {}        # Corrupted walls that have been burned away (c
 static var purify_pending := {}  # Walls whose purifying show is still running: they stay solid until it ends (cell -> true).
 static var puzzles_done := {}    # Puzzles that have fired (id -> true); saved.
 static var puzzle_doors := {}    # DOOR_IDS doors a puzzle holds open (id -> true); saved.
+## Sconces (TORCHES): what each holds now, keyed by Vector3i(x, z, side): SCONCE_LIT, SCONCE_UNLIT or SCONCE_EMPTY. Filled from TORCHES by the
+## builder (`init_sconces`), cleared by reset_run, saved. `sconce_seconds` is the burn time of the torch in each one that holds a
+## torch (a torch costs nothing while it hangs there); `sconce_seen` the ones the party has seen (the map shows those).
+static var sconce_state := {}
+static var sconce_seconds := {}
+static var sconce_seen := {}
 ## Run flags: things that have happened in this run that no other state records (a banter line that may only be said once, an
 ## ambush that has sprung, a secret found). Name -> a bool, a whole number, a float or a String; nothing else is saved. Cleared by
 ## reset_run, saved under "flags" (an older save has none, so it loads with none). Name them "system.what", e.g. "banter.first_death".
@@ -419,7 +431,31 @@ static func reset_run() -> void:
 	purify_pending.clear()
 	puzzles_done.clear()
 	puzzle_doors.clear()
+	sconce_state.clear()
+	sconce_seconds.clear()
+	sconce_seen.clear()
 	flags.clear()
+
+
+## The key of a TORCHES entry in the sconce dictionaries.
+static func sconce_key(entry) -> Vector3i:
+	return Vector3i(entry.x, entry.y, entry.z)
+
+
+## The state a TORCHES entry starts in (a plain Vector3i is a lit torch).
+static func sconce_start_state(entry) -> int:
+	return entry.w if entry is Vector4i else SCONCE_LIT
+
+
+## Fill the sconce run state from TORCHES: every torch the level starts with burns for `torch_seconds` once it is taken out.
+static func init_sconces(torch_seconds: float) -> void:
+	sconce_state.clear()
+	sconce_seconds.clear()
+	sconce_seen.clear()
+	for entry in TORCHES:
+		var start := sconce_start_state(entry)
+		sconce_state[sconce_key(entry)] = start
+		sconce_seconds[sconce_key(entry)] = torch_seconds if start != SCONCE_EMPTY else 0.0
 
 
 ## True if the cell is a door of any kind (open, closed, locked or a portcullis).

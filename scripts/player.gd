@@ -11,6 +11,7 @@ const Events := preload("res://scripts/game_events.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
 const ItemStack := preload("res://scripts/item_stack.gd")
+const TORCH := "res://data/items/torch.tres"  # What a wall sconce gives back (with the time left on it).
 
 const MOVE_TIME := 0.2  # Seconds per step or turn.
 
@@ -65,6 +66,8 @@ func _find_singletons() -> void:
 ## it). Shift+click sends a floor item to the party instead of the cursor.
 func world_click(shift := false) -> void:
 	var front := cell + DIRS[facing]
+	if _click_sconce():
+		return
 	if DungeonMap.is_portcullis(front) and not DungeonMap.open_doors.has(front):
 		_say("The portcullis won't budge.")  # Clicking the grate: it only answers to its switch.
 		return
@@ -77,6 +80,66 @@ func world_click(shift := false) -> void:
 	if _click_trap(front):
 		return
 	_click_item(shift)
+
+
+## The wall sconce on the wall in front (docs/design/expansion_design.md 7l.2), clicked on the 3D view. An empty hand takes the torch
+## out of a lit or unlit one (a torch with the time it has left, 120 s for one the level started with) and leaves a bare bracket; a
+## torch on the cursor goes into an empty bracket and lights it for good, keeping its time. Returns whether there was a sconce
+## to answer. (Lighting one is the right click: `_light_sconce`.)
+func _click_sconce() -> bool:
+	if dungeon == null or cursor == null:
+		return false
+	var key := Vector3i(cell.x, cell.y, facing)
+	var state: int = dungeon.sconce_at(key)
+	if state < 0:
+		return false
+	if cursor.is_holding():
+		var held: RefCounted = cursor.held
+		if state != DungeonMap.SCONCE_EMPTY:
+			_say("The bracket is taken.")
+		elif not held.def.fits_sconce:
+			_say("That won't hang there.")
+		elif dungeon.hang_sconce_torch(key, held):
+			if held.count <= 0:
+				cursor.release()
+			else:
+				cursor.refresh()
+			_cue("drop")
+			_say("You hang the torch in the bracket.")
+		return true
+	if state == DungeonMap.SCONCE_EMPTY:
+		_say("The bracket is empty.")
+		return true
+	cursor.hold(dungeon.take_sconce_torch(key, load(TORCH)))
+	_cue("pickup")
+	_say("You lift the torch from its bracket.")
+	return true
+
+
+## Right click on the sconce in front: light an unlit one from a lit torch or candle a hero holds. It stays lit. Returns whether
+## there was a sconce to answer.
+func _light_sconce() -> bool:
+	if dungeon == null or party == null:
+		return false
+	var key := Vector3i(cell.x, cell.y, facing)
+	var state: int = dungeon.sconce_at(key)
+	if state < 0:
+		return false
+	if state == DungeonMap.SCONCE_LIT:
+		_say("It is already burning.")
+	elif state == DungeonMap.SCONCE_EMPTY:
+		_say("The bracket is empty.")
+	else:
+		var holder = null
+		for m in party.members:
+			if m.is_alive() and m.hands.any(func(h): return h != null and h.def.is_light()):
+				holder = m
+				break
+		if holder == null:
+			_say("You have nothing lit to light it with.")
+		elif dungeon.light_sconce(key):
+			_say("%s lights the sconce." % holder.name())
+	return true
 
 
 ## An armed trap in front, clicked with an empty hand: pick it up, disarmed. Returns whether it did.
@@ -140,6 +203,8 @@ func _click_item(shift := false) -> void:
 ## choose who carries it (loot_menu.gd). Returns the pop-up, or null if there was nothing to take.
 func world_right_click(at := Vector2(320, 140)) -> Node:
 	if dungeon == null or party == null:
+		return null
+	if _light_sconce():
 		return null
 	var front := cell + DIRS[facing]
 	if DungeonMap.is_blocked(front) or DungeonMap.is_occupied(front) or dungeon.item_at(front) == null:

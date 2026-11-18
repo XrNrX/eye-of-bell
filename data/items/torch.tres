@@ -22,5 +22,6 @@ light_range = 9.0
 light_attenuation = 1.5
 light_color = Color(0.78, 0.74, 0.7, 1)
 burn_seconds = 240.0
+fits_sconce = true
 fire_damage_min = 1
 fire_damage_max = 2

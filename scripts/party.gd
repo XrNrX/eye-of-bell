@@ -920,11 +920,14 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 			var monster = _first_monster_ahead()
 			var wall := NO_CELL
 			var swallowed := NO_CELL
+			var sconce := NO_CELL
 			if monster == null and spell.breaks_walls:
 				wall = _cracked_wall_ahead()  # A blast can also be aimed at a cracked wall.
 				if wall == NO_CELL:
 					swallowed = _corrupted_wall_ahead()  # ...and a corrupted one swallows it.
-			if monster == null and wall == NO_CELL and swallowed == NO_CELL:
+				if wall == NO_CELL and swallowed == NO_CELL:
+					sconce = _unlit_sconce_ahead()  # ...or at an unlit sconce on the wall at the end of the corridor.
+			if monster == null and wall == NO_CELL and swallowed == NO_CELL and sconce == NO_CELL:
 				_say("There is nothing to target.")
 				return false
 			if swallowed != NO_CELL:
@@ -932,6 +935,10 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 				_fx(spell.effect, swallowed - along if swallowed - along != player.cell else swallowed)
 				text = "%s casts %s: the corruption swallows the blast." % [who, spell.display_name]
 				_corruption_bounced(m)
+			elif monster == null and sconce != NO_CELL:
+				var along: Vector2i = player.DIRS[player.facing]
+				_fx(spell.effect, sconce + along if sconce == player.cell else sconce)  # The blast lights it when it lands (spell_effects.explosion).
+				text = "%s casts %s: the sconce catches." % [who, spell.display_name]
 			elif monster == null:
 				var dir: Vector2i = player.DIRS[player.facing]
 				var burst_at: Vector2i = wall - dir if wall - dir != player.cell else wall
@@ -1767,6 +1774,23 @@ func _cracked_wall_ahead() -> Vector2i:
 		var c: Vector2i = player.cell + dir * i
 		if DungeonMap.is_blocked(c):
 			return c if DungeonMap.is_destructible(c) else NO_CELL
+	return NO_CELL
+
+
+## The last open tile of the corridor ahead (within missile range), if the wall at its end has an unlit sconce on it, else NO_CELL.
+func _unlit_sconce_ahead() -> Vector2i:
+	var dir: Vector2i = player.DIRS[player.facing]
+	var dungeon := get_tree().get_first_node_in_group("dungeon")
+	if dungeon == null:
+		return NO_CELL
+	var last: Vector2i = player.cell
+	for i in range(1, MISSILE_RANGE + 1):
+		var c: Vector2i = player.cell + dir * i
+		if DungeonMap.is_blocked(c):
+			break
+		last = c
+	if DungeonMap.is_blocked(last + dir) and dungeon.sconce_at(Vector3i(last.x, last.y, player.facing)) == DungeonMap.SCONCE_UNLIT:
+		return last
 	return NO_CELL
 
 

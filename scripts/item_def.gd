@@ -98,6 +98,7 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export var light_attenuation := 1.5
 @export var light_color := Color(0.78, 0.74, 0.70)
 @export var burn_seconds := 0.0
+@export var fits_sconce := false  # A torch: it can be hung in an empty wall bracket, where it lights that stretch for good.
 @export var fire_damage_min := 0
 @export var fire_damage_max := 0
 

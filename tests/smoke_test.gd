@@ -79,6 +79,7 @@ func _init() -> void:
 	await _check_warden()
 	await _check_rat()
 	await _check_shockwave()
+	await _check_sconces()
 	await _check_food()
 	_check_resurrection()
 	await _check_world_events()
@@ -801,6 +802,162 @@ func _check_warden() -> void:
 
 
 ## The plague rat (tier 1, fast, fears fire): its numbers, its nest, a bite that may make a hero sick, and the raw meat it leaves.
+## Every torch-second in the game: in hands, backpacks, quick slots, the cursor, on the floor, and in the sconces that hold a torch.
+## Torches are never created, so this stays the same through any lighting, taking and hanging (it only falls as a torch burns in a hand).
+func _torch_seconds() -> float:
+	var total := 0.0
+	for stack in _all_torch_stacks():
+		total += stack.seconds_left() * stack.count
+	for key in dungeon.sconces:
+		if dungeon.sconce_at(key) != DungeonMap.SCONCE_EMPTY:
+			total += dungeon.sconce_time(key)
+	return total
+
+
+## How many torches there are: stacks of them anywhere, and the ones hanging in sconces.
+func _torches_in_the_game() -> int:
+	var n := 0
+	for stack in _all_torch_stacks():
+		n += stack.count
+	for key in dungeon.sconces:
+		if dungeon.sconce_at(key) != DungeonMap.SCONCE_EMPTY:
+			n += 1
+	return n
+
+
+func _all_torch_stacks() -> Array:
+	var cursor: Node = get_first_node_in_group("cursor")
+	var stacks: Array = [cursor.held]
+	for m in party.members:
+		stacks += m.hands + m.backpack + m.quick
+	for cell in dungeon.items:
+		stacks += dungeon.items[cell].pile
+	return stacks.filter(func(s): return s != null and s.def.fits_sconce)
+
+
+## Wall sconces (7l.2): three kinds on floor 1, lit by a flame in a hero's hand (right click) or a Fireball, the torch taken with an
+## empty hand and hung back in a bracket with its time kept, and that torches are never made: lighting a sconce and taking its torch
+## back cannot be repeated for free.
+func _check_sconces() -> void:
+	var torch: Resource = load("res://data/items/torch.tres")
+	var candle: Resource = load("res://data/items/candle.tres")
+	var cursor: Node = get_first_node_in_group("cursor")
+	cursor.release()
+	dungeon.clear_monsters()
+	var kinds := {0: 0, 1: 0, 2: 0}
+	for key in dungeon.sconces:
+		kinds[dungeon.sconce_at(key)] += 1
+	check("sconces: floor 1 has 8 lit, 7 unlit with a torch and 10 empty brackets (%s)" % str(kinds), kinds == {0: 8, 1: 7, 2: 10})
+	var unlit := Vector3i(12, 14, 1)
+	var empty := Vector3i(12, 9, 1)
+	var lit := Vector3i(3, 7, 0)
+	check("sconces: a torch the level starts in a sconce has 120 s on it, a bare bracket none", is_equal_approx(dungeon.sconce_time(unlit), 120.0)
+			and is_equal_approx(dungeon.sconce_time(lit), 120.0) and dungeon.sconce_time(empty) == 0.0)
+	check("sconces: a lit one has a light and the animated flame, an unlit one and an empty one have a still picture and no light",
+			dungeon.sconces[lit].light != null and dungeon.sconces[lit].sprite is AnimatedSprite3D
+			and dungeon.sconces[unlit].light == null and dungeon.sconces[unlit].sprite is Sprite3D
+			and dungeon.sconces[empty].light == null and dungeon.sconces[empty].sprite is Sprite3D)
+
+	# No hero holds anything for now. (Put back at the end.)
+	var held_before := []
+	for m in party.members:
+		held_before.append(m.hands.duplicate())
+		m.hands = [null, null]
+	var fighter = party.members[party.formation.find(1)]
+	var n0 := _torches_in_the_game()
+	var t0 := _torch_seconds()
+
+	# Lighting needs a flame, and makes no torch.
+	DungeonMap.sconce_seen.clear()
+	player.restore(Vector2i(12, 14), 1)  # Facing the unlit sconce's wall.
+	check("sconces: the party has seen it from where it stands (the map shows it), and not the far ones",
+			DungeonMap.sconce_seen.has(unlit) and not DungeonMap.sconce_seen.has(Vector3i(20, 22, 3)))
+	player.world_right_click()
+	check("sconces: with nothing lit in a hand it stays dark", dungeon.sconce_at(unlit) == DungeonMap.SCONCE_UNLIT)
+	var flame: RefCounted = ItemStack.of(torch, 1)
+	fighter.hands[1] = flame
+	player.world_right_click()
+	check("sconces: a lit torch in a hand lights it, and the torch stays in the hand",
+			dungeon.sconce_at(unlit) == DungeonMap.SCONCE_LIT and fighter.hands[1] == flame and flame.count == 1 and dungeon.sconces[unlit].light != null)
+	check("sconces: lighting one made no torch and used no time (%d torches, %.0f s in the game)" % [_torches_in_the_game(), _torch_seconds()],
+			_torches_in_the_game() == n0 + 1 and is_equal_approx(_torch_seconds(), t0 + flame.seconds_left()))
+	player.world_right_click()
+	check("sconces: a burning one is already burning", dungeon.sconce_at(unlit) == DungeonMap.SCONCE_LIT)
+	fighter.hands[1] = null
+
+	# Taking the torch: an empty hand gets it with 120 s, the bracket is bare and the stretch goes dark.
+	player.world_click()
+	var taken: RefCounted = cursor.held
+	check("sconces: an empty hand takes the torch out of a lit one: 120 s on it, the bracket bare, its light gone",
+			taken != null and taken.def == torch and is_equal_approx(taken.seconds_left(), 120.0) and dungeon.sconce_at(unlit) == DungeonMap.SCONCE_EMPTY
+			and dungeon.sconces[unlit].light == null)
+	check("sconces: light it and take its torch back and the game holds exactly what it did (%d torches, %.0f s)" % [_torches_in_the_game(), _torch_seconds()],
+			_torches_in_the_game() == n0 and is_equal_approx(_torch_seconds(), t0))
+	cursor.release()
+	player.world_click()
+	fighter.hands[1] = ItemStack.of(torch, 1)
+	player.world_right_click()
+	fighter.hands[1] = null
+	check("sconces: a bare bracket gives nothing when clicked and a flame does not relight it: the trick cannot be repeated for free (%d torches, the taken one in hand)" % _torches_in_the_game(),
+			cursor.held == null and dungeon.sconce_at(unlit) == DungeonMap.SCONCE_EMPTY and _torches_in_the_game() == n0 - 1
+			and is_equal_approx(_torch_seconds(), t0 - taken.seconds_left()))
+	cursor.hold(taken)
+
+	# Hanging a torch back: it lights the stretch for good, keeping its time, and loses none while it hangs.
+	player.world_click()
+	check("sconces: a torch from the cursor goes into the empty bracket and lights it, keeping its 120 s",
+			cursor.held == null and dungeon.sconce_at(unlit) == DungeonMap.SCONCE_LIT and is_equal_approx(dungeon.sconce_time(unlit), 120.0)
+			and dungeon.sconces[unlit].light != null and _torches_in_the_game() == n0 and is_equal_approx(_torch_seconds(), t0))
+	await create_timer(0.6).timeout
+	check("sconces: it loses no time while it hangs there", is_equal_approx(dungeon.sconce_time(unlit), 120.0) and is_equal_approx(_torch_seconds(), t0))
+	player.world_click()
+	check("sconces: taken out again it has that same time", cursor.held != null and is_equal_approx(cursor.held.seconds_left(), 120.0))
+	for round_ in 5:  # Round and round: nothing is gained or lost.
+		player.world_click()  # Hang it.
+		player.world_click()  # Take it.
+	check("sconces: five more rounds of hanging and taking change nothing (%d torches, %.0f s)" % [_torches_in_the_game(), _torch_seconds()],
+			_torches_in_the_game() == n0 and is_equal_approx(_torch_seconds(), t0) and cursor.held != null and is_equal_approx(cursor.held.seconds_left(), 120.0))
+	player.world_click()  # Hang it again: it lights the stretch.
+	check("sconces: and it ends lit", dungeon.sconce_at(unlit) == DungeonMap.SCONCE_LIT and cursor.held == null)
+
+	# A torch with a different time keeps it; a candle does not fit; a taken bracket is taken.
+	var used: RefCounted = ItemStack.of(torch, 1)
+	used.burn_left = 77.0
+	cursor.hold(used)
+	player.restore(Vector2i(12, 9), 1)
+	player.world_click()
+	check("sconces: a torch with 77 s left hung in a bare bracket keeps its 77 s", dungeon.sconce_at(empty) == DungeonMap.SCONCE_LIT and is_equal_approx(dungeon.sconce_time(empty), 77.0) and cursor.held == null)
+	player.world_click()
+	check("sconces: and comes out with 77 s", cursor.held != null and is_equal_approx(cursor.held.seconds_left(), 77.0))
+	cursor.release()
+	cursor.hold(ItemStack.of(candle, 1))
+	player.restore(Vector2i(14, 11), 2)
+	player.world_click()
+	check("sconces: a candle does not fit a bracket, and is not lost", dungeon.sconce_at(Vector3i(14, 11, 2)) == DungeonMap.SCONCE_EMPTY and cursor.held != null and cursor.held.def == candle)
+	cursor.release()
+	cursor.hold(ItemStack.of(torch, 1))
+	player.restore(Vector2i(3, 7), 0)
+	player.world_click()
+	check("sconces: a bracket that already holds a torch takes no second one", dungeon.sconce_at(lit) == DungeonMap.SCONCE_LIT and cursor.held != null and cursor.held.count == 1)
+	cursor.release()
+
+	for i in party.members.size():
+		party.members[i].hands = held_before[i]
+
+	# A Fireball cast at an unlit sconce at the end of the corridor lights it.
+	var fire_at := Vector3i(14, 15, 0)  # Unlit, on the north wall of (14,15).
+	player.restore(Vector2i(14, 15), 0)
+	var count_before := _torches_in_the_game()
+	check("sconces: setup: that one is unlit", dungeon.sconce_at(fire_at) == DungeonMap.SCONCE_UNLIT)
+	var r := _cast("fireball")
+	await create_timer(1.2).timeout
+	check("sconces: a Fireball cast at an unlit sconce lights it, costs its mana and makes no torch",
+			r.cast and _spent_right(r) and dungeon.sconce_at(fire_at) == DungeonMap.SCONCE_LIT and dungeon.sconces[fire_at].light != null and _torches_in_the_game() == count_before)
+	player.restore(Vector2i(3, 7), 0)
+	r = _cast("fireball")
+	check("sconces: a Fireball at a wall with a lit sconce has nothing to target and costs nothing", not r.cast)
+
+
 ## The shockwave: a Fireball explosion starts a ring (a Magic Missile impact a smaller one) that is gone after shock_seconds; Reduce flashing (with
 ## shock_reduced_scale 0) starts none.
 func _check_shockwave() -> void:
@@ -1297,6 +1454,15 @@ func _check_save_load() -> void:
 	dungeon.place_item(Vector2i(12, 13), floor_torch)
 	dungeon.lights.drop(Vector2i(12, 13), floor_torch)
 
+	# Sconces: one emptied, a torch with 77 s hung in another bracket, one seen and one not.
+	var torch_def: Resource = load("res://data/items/torch.tres")
+	dungeon.take_sconce_torch(Vector3i(6, 11, 1), torch_def)
+	var used_torch: RefCounted = ItemStack.of(torch_def, 1)
+	used_torch.burn_left = 77.0
+	dungeon.hang_sconce_torch(Vector3i(19, 3, 0), used_torch)
+	DungeonMap.sconce_seen.clear()
+	DungeonMap.sconce_seen[Vector3i(19, 3, 0)] = true
+
 	var saved := _snapshot()
 	var sent_before := _event_counts()
 	var error: String = SaveGame.save(self)
@@ -1387,6 +1553,11 @@ func _check_save_load() -> void:
 			lying = stack
 	check("load: a torch lying lit on the floor still burns there, with its time left (%.1f s)" % (lying.burn_left if lying else -1.0),
 			lying != null and lying.burning and lying.burn_left > 60.0 and lying.burn_left <= 77.0 and dungeon.lights.burning.size() == 1)
+	check("load: a taken sconce is still bare, a hung torch still lights its stretch with its 77 s, the lights are rebuilt, and what was seen stays seen",
+			dungeon.sconce_at(Vector3i(6, 11, 1)) == DungeonMap.SCONCE_EMPTY and dungeon.sconces[Vector3i(6, 11, 1)].light == null
+			and dungeon.sconce_at(Vector3i(19, 3, 0)) == DungeonMap.SCONCE_LIT and is_equal_approx(dungeon.sconce_time(Vector3i(19, 3, 0)), 77.0)
+			and dungeon.sconces[Vector3i(19, 3, 0)].light != null and dungeon.sconce_at(Vector3i(12, 9, 1)) == DungeonMap.SCONCE_EMPTY
+			and DungeonMap.sconce_seen.has(Vector3i(19, 3, 0)) and not DungeonMap.sconce_seen.has(Vector3i(20, 22, 3)))
 	var level_text := FileAccess.get_file_as_string(SaveGame.path)
 	var written = JSON.parse_string(level_text)
 	check("the save stores its version and level path", written is Dictionary and int(written.version) == SaveGame.VERSION and written.level == DungeonMap.level_path
@@ -1449,3 +1620,9 @@ func _check_save_load() -> void:
 	DungeonMap.set_flag("smoke.stale", true)
 	error = SaveGame.apply(self, old_save)
 	check("an older save without flags loads, with no flags set", error == "" and DungeonMap.flags.is_empty())
+	old_save.dungeon.erase("sconces")  # A save from before sconces: every wall torch was burning then.
+	error = SaveGame.apply(self, old_save)
+	var all_lit := true
+	for key in dungeon.sconces:
+		all_lit = all_lit and dungeon.sconce_at(key) == DungeonMap.SCONCE_LIT and dungeon.sconces[key].light != null
+	check("an older save without sconces loads with every wall torch lit", error == "" and all_lit)

@@ -119,6 +119,8 @@ func _draw_map() -> void:
 				MapSymbols.draw_poi(canvas, icons[poi], origin + Vector2(x, y) * cell_px, cell_px, false)
 	for lever in DungeonMap.LEVERS:
 		MapSymbols.draw_poi(canvas, icons["lever"], origin + Vector2(lever.cell) * cell_px, cell_px, false)
+	for key in DungeonMap.sconce_seen:  # Wall sconces the party has seen, lit or dark.
+		MapSymbols.draw_sconce(canvas, origin + Vector2(key.x, key.y) * cell_px, cell_px, key.z, DungeonMap.sconce_state.get(key, DungeonMap.SCONCE_LIT))
 	if player != null:  # The party: a small arrow in its cell, turned to face the way it faces.
 		MapSymbols.draw_arrow(canvas, origin + Vector2(player.cell) * cell_px, cell_px, player.facing)
 	canvas.draw_style_box(frame_box, PANEL)

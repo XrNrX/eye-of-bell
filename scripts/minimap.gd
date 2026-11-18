@@ -81,6 +81,11 @@ func _draw() -> void:
 		if at.x >= 0 and at.y >= 0 and at.x < COLS and at.y < ROWS:
 			MapSymbols.draw_poi(self, icons["lever"], Vector2(at) * CELL_PX, CELL_PX, true)
 
+	for key in DungeonMap.sconce_seen:  # Wall sconces the party has seen, lit or dark.
+		var at := Vector2i(key.x, key.y) - origin
+		if at.x >= 0 and at.y >= 0 and at.x < COLS and at.y < ROWS:
+			MapSymbols.draw_sconce(self, Vector2(at) * CELL_PX, CELL_PX, key.z, DungeonMap.sconce_state.get(key, DungeonMap.SCONCE_LIT))
+
 	# The party: a small arrow in the middle cell, turned to the way they face.
 	MapSymbols.draw_arrow(self, Vector2(COLS / 2, ROWS / 2) * CELL_PX, CELL_PX, player.facing)
 	draw_set_transform(Vector2.ZERO)  # Back to the panel's own corner for the frame.
