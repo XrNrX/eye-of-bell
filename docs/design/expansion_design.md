@@ -523,6 +523,23 @@ Fennick, and you may change them.
 - Needs Foundations step 8. A hero's scores are saved with the hero.
 - Charisma needs a job or it is a dump stat with a funny name. Being hit more is a job.
 
+**Addendum, 18 Nov 2026: four roles, three classes each** (the full design is `docs/design/new_classes_plan.md`)
+
+- **Decision 9 now reads "one of each role".** The party is four heroes, one per role, and a slot's role never
+  changes. Front line: Fighter, Barbarian, Monk. Healer: Cleric, Druid, Paladin. Sneak: Thief, Ranger, Bard. Caster:
+  Mage, Necromancer, Spellsword. Every party still has a healer, a front-liner, a sneak and a caster for the banter.
+- **The party screen** above gains a class choice per slot: arrows step through that slot's role only. Changing class
+  resets the slot's name, portrait and scores to the class defaults; the rename, portrait picker and reroll then work on
+  whichever class is there. Play is still lit from the start with Brannoc, Brother Felix, Wren and Fennick.
+- **In the data:** `CharacterDef.role` (`front`, `healer`, `sneak`, `caster`), a list of every class file, and the
+  save stores each slot's `class_id` (an older save loads as the ready-made four).
+- **The formula table** gains a key score, an attack score and a mana score for each new class (the plan's section 3).
+  "A class needs 9 or more in its key score" applies to all twelve.
+- **The healer slot always starts with the lit torch and two candles,** whichever healer it is.
+- **Portraits:** "three per class" becomes three for each of twelve classes; the eight new classes start with one each.
+- The new classes are built after this phase (the plan's steps C.1 to C.16), so 8b itself only needs the role field
+  and room on the screen for the arrows.
+
 ---
 
 ## 4. Where systems meet
