@@ -217,4 +217,5 @@ static func apply(tree: SceneTree, data: Dictionary) -> String:
 	var cursor := tree.get_first_node_in_group("cursor")
 	if cursor:
 		cursor.load_state(data.cursor)
+	tree.call_group("curse_zones", "sync_silently")  # Standing in a curse zone after loading is not news.
 	return ""

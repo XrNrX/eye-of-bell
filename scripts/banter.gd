@@ -6,7 +6,7 @@ extends Node
 ##     get_tree().call_group("banter", "set_quiet", "ambush", true)     # no banter until set_quiet("ambush", false)
 ##
 ## It also listens to GameEvents (monster_killed, monster_held, monster_released, trap_triggered, hero_died, hero_revived, item_picked_up, door_unlocked, lever_pulled, wall_broken,
-## wall_purified, puzzle_solved, level_completed, fight_started, fight_ended, hero_hurt, mana_low): each becomes an event of the same
+## wall_purified, puzzle_solved, level_completed, fight_started, fight_ended, hero_hurt, mana_low, entered_curse_zone, left_curse_zone): each becomes an event of the same
 ## name, with a context made from the signal's arguments (see CONTEXTS below), so a line for "hero_died" in the JSON just works.
 ##
 ## THE DATA (data/banter.json), one entry per event:
@@ -342,6 +342,8 @@ func _listen() -> void:
 	bus.level_completed.connect(_on_level_completed)
 	bus.fight_started.connect(_on_fight_started)
 	bus.fight_ended.connect(_on_fight_ended)
+	bus.entered_curse_zone.connect(func(id: String): event("entered_curse_zone", {"zone": id}))
+	bus.left_curse_zone.connect(func(id: String): event("left_curse_zone", {"zone": id}))
 
 
 func _on_monster_killed(def: Resource, cell: Vector2i, killer: int) -> void:

@@ -24,7 +24,7 @@ const PLAIN_DOOR := Vector2i(16, 6)
 const LEVER := Vector3i(19, 7, 0)  # The north lever of gate_n: cell (19,7), side 0.
 
 const EVENTS := ["monster_killed", "monster_held", "monster_released", "trap_triggered", "light_out", "light_changed", "hero_hurt", "mana_low", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
-		"wall_purified", "puzzle_solved", "level_completed"]
+		"wall_purified", "puzzle_solved", "level_completed", "entered_curse_zone", "left_curse_zone"]
 const CRACKED_WALL := Vector2i(2, 6)
 const THICK_CORRUPTION := Vector2i(16, 4)  # Purifying it fires the puzzle "nook_blessing".
 const SWORD_TILE := Vector2i(6, 10)        # The short sword in front of the start.
@@ -80,6 +80,7 @@ func _init() -> void:
 	await _check_rat()
 	await _check_shockwave()
 	await _check_sconces()
+	await _check_curse_zones()
 	await _check_food()
 	_check_resurrection()
 	await _check_world_events()
@@ -834,6 +835,163 @@ func _all_torch_stacks() -> Array:
 	for cell in dungeon.items:
 		stacks += dungeon.items[cell].pile
 	return stacks.filter(func(s): return s != null and s.def.fits_sconce)
+
+
+## Curse zones (7l.3): flames die inside one. A made-up zone along the long corridor (x 8-12, row 13) and the sconce at (12,14): held flames
+## sputter and go out after a second and light again outside; a Bless's pocket lets them live for 20 s; sconces will not light and a lit one
+## goes out; a torch dropped there fizzles; the Unquenchable's kind is untouched; a puzzle effect lifts the zone; entered / left news; nothing
+## above tier 1 may be placed in one.
+func _check_curse_zones() -> void:
+	var torch: Resource = load("res://data/items/torch.tres")
+	dungeon.clear_monsters()
+	var held_before := []
+	for m in party.members:
+		held_before.append(m.hands.duplicate())
+	var cleric = null
+	var fighter = null
+	for m in party.members:
+		if m.class_id() == "cleric":
+			cleric = m
+		elif m.class_id() == "fighter":
+			fighter = m
+	cleric.hands = [null, ItemStack.of(load("res://data/items/holy_symbol.tres"), 1)]
+	var flame: RefCounted = ItemStack.of(torch, 1)
+	fighter.hands = [null, flame]
+	for m in party.members:
+		if m != cleric and m != fighter:
+			m.hands = [null, null]
+	var real_zones: Array = DungeonMap.CURSE_ZONES
+	var zone_tiles := [Vector2i(8, 13), Vector2i(9, 13), Vector2i(10, 13), Vector2i(11, 13), Vector2i(12, 13), Vector2i(12, 14)]
+	DungeonMap.CURSE_ZONES = [{"id": "smoke_zone", "tiles": zone_tiles}]
+	var curse: Node = dungeon.curse
+	curse.pocket_left = 0.0  # (An earlier Bless in these tests opened a pocket where the party stood.)
+	var was_lit := []  # Sconces the zone puts out (here and within 2 tiles of it): lit again at the end, so floor 1 is as it was.
+	for key in dungeon.sconces:
+		if dungeon.sconce_at(key) == DungeonMap.SCONCE_LIT:
+			was_lit.append(key)
+	curse.zones_changed()
+	player.restore(Vector2i(6, 13), 3)
+	var entered_before: int = events.get("entered_curse_zone", []).size()
+	var left_before: int = events.get("left_curse_zone", []).size()
+	await create_timer(0.3).timeout
+	check("zones: outside it the party's flame burns", not party.flames_out and party.held_lights().size() == 1 and party.light_level() > 0.0)
+	check("zones: a zone has haze on every tile (two patches each) and a sconce in it was put out", curse._haze.size() == zone_tiles.size() * 2
+			and dungeon.sconce_at(Vector3i(9, 13, 2)) == DungeonMap.SCONCE_UNLIT and dungeon.sconce_at(Vector3i(12, 14, 1)) == DungeonMap.SCONCE_UNLIT
+			and is_equal_approx(dungeon.sconce_time(Vector3i(9, 13, 2)), 120.0))
+
+	# The wall torches within 2 tiles of the haze go out too: (6,12) and (6,11) are 2 tiles from the zone's west end, (3,7) is far away.
+	check("zones: wall torches within 2 tiles of the zone went out too, a far one did not, and none of them will light again there",
+			dungeon.sconce_at(Vector3i(6, 12, 3)) == DungeonMap.SCONCE_UNLIT and dungeon.sconce_at(Vector3i(6, 11, 1)) == DungeonMap.SCONCE_UNLIT
+			and dungeon.sconce_at(Vector3i(3, 7, 0)) == DungeonMap.SCONCE_LIT and dungeon.sconces[Vector3i(6, 12, 3)].light == null
+			and not dungeon.light_sconce(Vector3i(6, 12, 3)) and dungeon.sconce_blocked(Vector2i(6, 12)) and not dungeon.sconce_blocked(Vector2i(3, 7)))
+
+	# Every light fixed in the world within 2 tiles goes out: the niche's candle at (8,13) (in the zone), and a torch dropped 2 tiles away fizzles.
+	var niche = dungeon.alcoves.filter(func(a): return a.cell == Vector2i(8, 13))
+	var far_niches: Array = dungeon.alcoves.filter(func(a): return DungeonMap.curse_zone_near(a.cell, 2) == "")
+	check("zones: the candle in a wall niche in the zone is out (its flame picture and light gone), the niches far away still burn",
+			niche.size() == 1 and not niche[0].lit and not niche[0].light.visible and niche[0].node.mesh == niche[0].out_mesh and niche[0].out_mesh != null
+			and far_niches.all(func(a): return a.lit and a.light.visible))
+	var near_torch: RefCounted = ItemStack.of(torch, 1)
+	dungeon.place_item(Vector2i(6, 13), near_torch)
+	dungeon.lights.drop(Vector2i(6, 13), near_torch)
+	check("zones: a burning torch dropped 2 tiles from the zone fizzles too", not near_torch.burning and dungeon.light_blocked(Vector2i(6, 13)) and not dungeon.flame_blocked(Vector2i(6, 13)))
+	dungeon.take_item(Vector2i(6, 13))
+
+	# Walking in: the flame sputters for a second, then it is out, and not a word until then.
+	var lines_before: int = get_first_node_in_group("hud").lines.size()
+	player.restore(Vector2i(10, 13), 3)
+	await create_timer(0.4).timeout
+	var left_s: float = flame.seconds_left()
+	check("zones: entering sends the news once, and the flame is still lit but sputtering", events.get("entered_curse_zone", []).size() == entered_before + 1
+			and events["entered_curse_zone"][-1][0] == "smoke_zone" and not party.flames_out and party.sputter_left > 0.0 and party.held_lights().size() == 1)
+	check("zones: nothing is said until a flame dies", get_first_node_in_group("hud").lines.size() == lines_before)
+	await create_timer(1.1).timeout
+	check("zones: after a second the held flame is out (no light) and the air says so", party.flames_out and party.held_lights().is_empty() and is_equal_approx(party.light_level(), 0.0)
+			and get_first_node_in_group("hud").lines.any(func(l): return str(l.text) == "The air here hates fire."))
+	var out_left: float = flame.seconds_left()
+	await create_timer(0.3).timeout
+	check("zones: a flame that is out burns no time", is_equal_approx(flame.seconds_left(), out_left) and out_left < left_s)
+
+	# The Unquenchable's kind stays lit.
+	var proof_def: Resource = torch.duplicate()
+	proof_def.curse_proof = true
+	fighter.hands = [null, ItemStack.of(proof_def, 1)]
+	await create_timer(0.2).timeout
+	check("zones: a curse-proof light is never put out", not party.carries_flame() and party.held_lights().size() == 1 and not party.snuffed(fighter.hands[1]))
+	fighter.hands = [null, flame]
+
+	# Sconces and the floor: they will not light, and a torch dropped there fizzles.
+	check("zones: a sconce in a zone will not light (right click: the air hates fire)", not dungeon.light_sconce(Vector3i(12, 14, 1)) and dungeon.flame_blocked(Vector2i(12, 14))
+			and dungeon.sconce_at(Vector3i(12, 14, 1)) == DungeonMap.SCONCE_UNLIT)
+	var cold: RefCounted = ItemStack.of(torch, 1)
+	cold.burn_left = 90.0
+	dungeon.place_item(Vector2i(11, 13), cold)
+	dungeon.lights.drop(Vector2i(11, 13), cold)
+	check("zones: a burning torch dropped in a zone fizzles where it lands, cold, and keeps its time", not cold.burning and dungeon.lights.burning.is_empty() and is_equal_approx(cold.burn_left, 90.0))
+	dungeon.take_item(Vector2i(11, 13))
+	var stub: RefCounted = dungeon.take_sconce_torch(Vector3i(12, 14, 1), torch)
+	var hung_ok: bool = dungeon.hang_sconce_torch(Vector3i(12, 14, 1), stub)
+	check("zones: a torch hung in a bare bracket in a zone stays unlit, keeping its time", hung_ok and dungeon.sconce_at(Vector3i(12, 14, 1)) == DungeonMap.SCONCE_UNLIT
+			and is_equal_approx(dungeon.sconce_time(Vector3i(12, 14, 1)), 120.0) and dungeon.sconces[Vector3i(12, 14, 1)].light == null)
+
+	# Leaving: the flame lights again at once.
+	player.restore(Vector2i(6, 13), 3)
+	await create_timer(0.3).timeout
+	check("zones: leaving it the flame burns again, and the left news is sent", not party.flames_out and party.held_lights().size() == 1
+			and events.get("left_curse_zone", []).size() == left_before + 1 and events["left_curse_zone"][-1][0] == "smoke_zone")
+
+	# A Bless makes a pocket.
+	player.restore(Vector2i(10, 13), 3)
+	cleric.shaken_left = 0.0
+	cleric.spell_wait.clear()
+	var r := _cast("bless")
+	await create_timer(0.3).timeout
+	check("zones: a Bless opens a pocket of about 20 s here and the air steadies", r.cast and curse.pocket_left > 19.0 and curse.pocketed(Vector2i(10, 13)) and curse.pocketed(Vector2i(11, 14))
+			and not curse.pocketed(Vector2i(13, 13)) and not dungeon.flame_blocked(Vector2i(10, 13)))
+	await create_timer(1.5).timeout
+	check("zones: in the pocket the flame lives (no sputter, no going out)", not party.flames_out and party.held_lights().size() == 1)
+	check("zones: a torch dropped in the pocket burns there", (func():
+		var t: RefCounted = ItemStack.of(torch, 1)
+		dungeon.place_item(Vector2i(11, 13), t)
+		dungeon.lights.drop(Vector2i(11, 13), t)
+		var burns: bool = t.burning and dungeon.lights.burning.size() == 1
+		return burns).call())
+	curse.pocket_left = 0.2
+	await create_timer(0.6).timeout
+	check("zones: when the pocket ends the burning torch on the floor goes out", dungeon.lights.burning.is_empty())
+	await create_timer(1.3).timeout
+	check("zones: and the held flame sputters and goes out again", party.flames_out and party.held_lights().is_empty())
+	dungeon.take_item(Vector2i(11, 13))
+
+	# A puzzle effect lifts the zone for good.
+	var Puzzles := preload("res://scripts/puzzles.gd")
+	Puzzles.run(dungeon, {"kind": "clear_curse_zone", "id": "smoke_zone"})
+	await create_timer(0.3).timeout
+	check("zones: a puzzle effect lifts it: the flame burns again, the haze is gone, the run flag is set and a sconce lights",
+			DungeonMap.zone_cleared("smoke_zone") and DungeonMap.flag("curse_zone.smoke_zone.cleared", false) == true and curse._haze.is_empty()
+			and not party.flames_out and party.held_lights().size() == 1 and dungeon.light_sconce(Vector3i(12, 14, 1)) and DungeonMap.curse_zone_at(Vector2i(10, 13)) == "")
+
+	# Nothing above tier 1 may be placed in a zone.
+	DungeonMap.flags.erase("curse_zone.smoke_zone.cleared")
+	var real_monsters: Array = DungeonMap.MONSTERS
+	DungeonMap.MONSTERS = [{"def": "res://data/monsters/skeleton.tres", "cell": Vector2i(9, 13)}, {"def": "res://data/monsters/warden.tres", "cell": Vector2i(10, 13)},
+			{"def": "res://data/monsters/skeleton_guard.tres", "cell": Vector2i(20, 1)}]
+	var bad: Array = DungeonMap.zone_tier_violations()
+	check("zones: a tier 1 monster may stand in a zone, the Warden (tier 3) is reported, a guard outside it is not", bad.size() == 1 and bad[0].def.ends_with("warden.tres") and bad[0].tier == 3)
+	DungeonMap.MONSTERS = real_monsters
+
+	# Back to floor 1.
+	DungeonMap.CURSE_ZONES = real_zones
+	curse.zones_changed()
+	await create_timer(0.1).timeout  # (The niches light again by themselves once the zone is gone.)
+	for key in was_lit:
+		dungeon.light_sconce(key)
+	for i in party.members.size():
+		party.members[i].hands = held_before[i]
+	party.set_flames_out(false)
+	player.restore(Vector2i(6, 13), 3)
+	await create_timer(0.2).timeout
+	check("zones: floor 1 has none (the cave's comes with the light on floor 1, 7l.6) and nothing is left over", DungeonMap.CURSE_ZONES.is_empty() and curse._haze.is_empty() and not party.flames_out and dungeon.alcoves.all(func(a): return a.lit))
 
 
 ## Wall sconces (7l.2): three kinds on floor 1, lit by a flame in a hero's hand (right click) or a Fireball, the torch taken with an

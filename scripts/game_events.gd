@@ -46,6 +46,9 @@ signal wall_purified(cell: Vector2i)
 signal puzzle_solved(id: String)
 ## The party took the stairs.
 signal level_completed
+## The party stepped into a curse zone (DungeonMap.CURSE_ZONES id) / out of it. Not sent while a save loads.
+signal entered_curse_zone(id: String)
+signal left_curse_zone(id: String)
 
 # Sent by Party.hurt, Party.cast (mana_low) and the fight tracker.
 signal hero_hurt(hero: int, amount: int, source: String)  # Sent by Party.hurt: a hero lost HP (source: "monster", "sickness"...).

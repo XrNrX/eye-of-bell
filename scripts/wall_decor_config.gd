@@ -64,6 +64,7 @@ static func get_config() -> Resource:
 @export var lintel_height := 0.4
 @export var alcove_chance := 0.025       # Share of wall faces that are an alcove with a skull and a candle stub.
 @export var alcove_texture := "res://art/decals/niche.png"
+@export var alcove_texture_out := "res://art/decals/niche_out.png"  # The same niche with its candle put out (a curse zone is near): tools/art/gen_niche_out.py.
 @export var alcove_light_energy := 0.5
 @export var alcove_light_range := 3.0
 

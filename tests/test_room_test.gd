@@ -219,15 +219,21 @@ func _check_pacing(tools: Node, press: Callable, player: Node) -> void:
 	var room_torches: Array = DungeonMap.TORCHES.filter(func(t): return t.y >= 33 and t.y <= 38 and t.x >= 6 and t.x <= 19)
 	var dungeon_node: Node = get_first_node_in_group("dungeon")
 	var on_table = dungeon_node.item_at(Vector2i(10, 34))
-	check("the light room is dark and has torches to pick up", room_torches.all(func(t): return t.w != DungeonMap.SCONCE_LIT or t.x == 12) and on_table != null and on_table.def.is_light())
+	check("the light room is dark and has torches to pick up", room_torches.all(func(t): return t.w != DungeonMap.SCONCE_LIT or t.x == 9) and on_table != null and on_table.def.is_light())
 	var kinds := {}
 	for t in room_torches:
 		kinds[t.w] = int(kinds.get(t.w, 0)) + 1
 	check("the light room has sconces of all three kinds (lit, unlit with a torch, empty)", kinds.size() == 3 and dungeon_node.sconce_at(Vector3i(9, 33, 0)) == DungeonMap.SCONCE_UNLIT
-			and dungeon_node.sconce_at(Vector3i(15, 33, 0)) == DungeonMap.SCONCE_EMPTY and dungeon_node.sconce_at(Vector3i(12, 38, 2)) == DungeonMap.SCONCE_LIT)
+			and dungeon_node.sconce_at(Vector3i(15, 33, 0)) == DungeonMap.SCONCE_EMPTY and dungeon_node.sconce_at(Vector3i(9, 38, 2)) == DungeonMap.SCONCE_LIT)
 	var lit: Array = get_first_node_in_group("party").held_lights()
 	press.call(KEY_EQUAL)
 	check("= burns every lit light down to its last seconds", not lit.is_empty() and lit.all(func(s): return s.seconds_left() <= 10.0))
+	check("the light room has a curse zone over its east end, with haze", DungeonMap.curse_zone_at(Vector2i(16, 36)) == "light_room" and DungeonMap.curse_zone_at(Vector2i(12, 36)) == ""
+			and dungeon_node.curse._haze.size() == 48 and DungeonMap.zone_tier_violations().is_empty())
+	press.call(KEY_BACKSLASH)
+	check("the backslash key lifts the zone (no haze, flames live) and puts it back", DungeonMap.zone_cleared("light_room") and dungeon_node.curse._haze.is_empty() and not dungeon_node.flame_blocked(Vector2i(16, 36)))
+	press.call(KEY_BACKSLASH)
+	check("and again: it is back", not DungeonMap.zone_cleared("light_room") and dungeon_node.curse._haze.size() == 48 and dungeon_node.flame_blocked(Vector2i(16, 36)))
 	var fight: Node = get_first_node_in_group("party").fight
 	var waited := 0.0
 	while fight.in_fight and waited < 8.0:  # Let the fight these monsters started end, so later checks start calm.

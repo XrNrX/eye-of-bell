@@ -286,5 +286,31 @@
 		"lines": [
 			{"speaker": "cleric", "once": true, "id": "warden_dead", "if": {"monster": "Cursed Warden"}, "text": "I softened him up.", "reply": [{"speaker": "fighter", "text": "With what?"}]}
 		]
+	},
+	"flames_snuffed": {
+		"chance": 0.8,
+		"cooldown": 60,
+		"lines": [
+			{"speaker": "mage", "in_fight": false, "text": "That wasn't a draught. There is no draught."},
+			{"speaker": "fighter", "text": "Aye. Dark again."},
+			{"speaker": "thief", "in_fight": false, "text": "Good. Nobody sees me."},
+			{"speaker": "cleric", "in_fight": false, "text": "I did say the air felt wrong."}
+		]
+	},
+	"entered_curse_zone": {
+		"chance": 0.6,
+		"cooldown": 60,
+		"lines": [
+			{"speaker": "mage", "in_fight": false, "text": "That green is not natural."},
+			{"speaker": "thief", "in_fight": false, "text": "Haze. I don't trust haze."}
+		]
+	},
+	"left_curse_zone": {
+		"chance": 0.5,
+		"cooldown": 60,
+		"lines": [
+			{"speaker": "fighter", "in_fight": false, "text": "Torch back. Good."},
+			{"speaker": "cleric", "in_fight": false, "text": "The Light returns. As I foretold."}
+		]
 	}
 }

@@ -120,5 +120,8 @@ static func run(dungeon: Node, effect: Dictionary) -> void:
 			dungeon.purify_wall(effect.cell)
 		"set_flag":
 			DungeonMap.set_flag(effect.name, effect.get("value", true))
+		"clear_curse_zone":
+			DungeonMap.clear_zone(effect.id)
+			dungeon.get_tree().call_group("curse_zones", "zones_changed")
 		_:
 			push_warning("puzzles: unknown effect kind '%s'" % effect.kind)

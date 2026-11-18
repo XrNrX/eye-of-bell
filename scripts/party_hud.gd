@@ -342,7 +342,7 @@ var icon_tops := {}  # hud texture -> where its drawing starts (the flame's root
 
 ## Show or hide the flame and the burn bar on a hand button. A light in a dead hero's hand is out: neither shows.
 func _show_light(m, stack, hand: TextureButton) -> void:
-	var lit: bool = stack != null and stack.def.is_light() and m.is_alive()
+	var lit: bool = stack != null and stack.def.is_light() and m.is_alive() and not party.snuffed(stack)
 	var bar: ColorRect = hand.get_meta("burn_bar") if hand.has_meta("burn_bar") else null
 	if not lit:
 		if bar != null:

@@ -111,6 +111,7 @@ static var CORRUPTION := {
 #               {"kind": "break_wall", "cell": Vector2i}      a cracked wall breaks
 #               {"kind": "purify_wall", "cell": Vector2i}     a corrupted wall is purified (a lever or plate can do it)
 #               {"kind": "set_flag", "name": String, "value": true}   set a run flag (another puzzle can wait on it)
+#               {"kind": "clear_curse_zone", "id": String}    a curse zone is lifted for good (CURSE_ZONES; the flag "curse_zone.<id>.cleared")
 static var PUZZLES := [
 	{"id": "nook_blessing", "when": [{"kind": "wall_purified", "cell": Vector2i(16, 4)}], "then": [
 		{"kind": "message", "text": "The curse bleeds out of the stone. Somewhere in the dark, a latch gives way."},
@@ -247,12 +248,21 @@ static var ARMED_TRAPS := []
 static var AMBUSHES := []
 static var STATIONS := []
 
+# --- Curse zones (docs/design/expansion_design.md section 3, roadmap 7l.3) ---
+# Places where flames die: {"id": String, "tiles": Array of Vector2i}. Inside one (outside a Bless's pocket) a held torch or candle
+# sputters for a second and goes out and will not relight, a sconce or brazier will not light, a burning torch lying or thrown there goes
+# out and oil will not catch; a light with ItemDef.curse_proof (the Unquenchable) and spell light are untouched. A thin green haze lies on
+# the floor of the zone. A puzzle effect {"kind": "clear_curse_zone", "id": ...} lifts one for good (the run flag
+# "curse_zone.<id>.cleared", saved). Nothing above tier 1 may stand in one (zone_tier_violations: a warning when the level loads).
+# Rules and numbers: scripts/curse_zones.gd, data/light.tres "Curse zones".
+static var CURSE_ZONES := []
+
 ## The level file now in use, or "" for floor 1.
 static var level_path := ""
 const TEST_ROOM_PATH := "res://levels/test_room.gd"
 const TOOLS_PATH := "res://scripts/debug/test_room_tools.gd"  # F12, the debug keys and the help overlay (debug builds only).
 const LEVEL_FIELDS := ["MAP", "START_TILE", "START_FACING", "TORCHES", "CORRUPTION", "PUZZLES", "DOOR_IDS", "PLATES",
-		"STRUCTURES", "LEVERS", "ITEMS", "MONSTERS", "SIGNS", "ARMED_TRAPS", "AMBUSHES", "STATIONS"]
+		"STRUCTURES", "LEVERS", "ITEMS", "MONSTERS", "SIGNS", "ARMED_TRAPS", "AMBUSHES", "STATIONS", "CURSE_ZONES"]
 static var _floor1 := {}
 
 
@@ -310,6 +320,8 @@ static func _field(f: String):
 			return AMBUSHES
 		"STATIONS":
 			return STATIONS
+		"CURSE_ZONES":
+			return CURSE_ZONES
 	return null
 
 
@@ -347,6 +359,8 @@ static func _set_field(f: String, v) -> void:
 			AMBUSHES = v
 		"STATIONS":
 			STATIONS = v
+		"CURSE_ZONES":
+			CURSE_ZONES = v
 
 
 static func _empty_like(v):
@@ -441,6 +455,51 @@ static func reset_run() -> void:
 	sconce_seconds.clear()
 	sconce_seen.clear()
 	flags.clear()
+
+
+## Has a puzzle lifted this curse zone for good?
+static func zone_cleared(id: String) -> bool:
+	return flag("curse_zone.%s.cleared" % id, false) == true
+
+
+## Lift a curse zone for good (a puzzle effect). Saved with the run flags.
+static func clear_zone(id: String) -> void:
+	set_flag("curse_zone.%s.cleared" % id, true)
+
+
+## The id of the curse zone still in force on this tile, or "" for none (cleared zones are gone).
+static func curse_zone_at(cell: Vector2i) -> String:
+	for zone in CURSE_ZONES:
+		if cell in zone.tiles and not zone_cleared(zone.id):
+			return zone.id
+	return ""
+
+
+## The id of a curse zone in force with a tile within `reach` tiles of this one (a square, as the haze reaches a little past its tiles), or "".
+## Wall sconces use it: a torch on a wall within 2 tiles of the haze goes out too.
+static func curse_zone_near(cell: Vector2i, reach: int) -> String:
+	for zone in CURSE_ZONES:
+		if zone_cleared(zone.id):
+			continue
+		for tile in zone.tiles:
+			var d: Vector2i = (tile - cell).abs()
+			if maxi(d.x, d.y) <= reach:
+				return zone.id
+	return ""
+
+
+## Monsters the level places in a curse zone that are above tier 1: [{"zone", "def", "tier", "cell"}]. The design says nothing in a zone may
+## be above tier 1 (the party is fighting blind there); the builder warns about each when the level loads.
+static func zone_tier_violations() -> Array:
+	var out := []
+	for entry in MONSTERS:
+		var zone := curse_zone_at(entry.cell)
+		if zone == "":
+			continue
+		var def: Resource = load(entry.def)
+		if def != null and def.tier > 1:
+			out.append({"zone": zone, "def": entry.def, "tier": def.tier, "cell": entry.cell})
+	return out
 
 
 ## The key of a TORCHES entry in the sconce dictionaries.

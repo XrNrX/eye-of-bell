@@ -105,7 +105,7 @@ func _click_sconce() -> bool:
 			else:
 				cursor.refresh()
 			_cue("drop")
-			_say("You hang the torch in the bracket.")
+			_say("You hang the torch in the bracket." if dungeon.sconce_at(key) == DungeonMap.SCONCE_LIT else "You hang the torch. It will not catch here.")
 		return true
 	if state == DungeonMap.SCONCE_EMPTY:
 		_say("The bracket is empty.")
@@ -137,6 +137,8 @@ func _light_sconce() -> bool:
 				break
 		if holder == null:
 			_say("You have nothing lit to light it with.")
+		elif dungeon.sconce_blocked(Vector2i(key.x, key.y)):
+			_say("The air here hates fire.")
 		elif dungeon.light_sconce(key):
 			_say("%s lights the sconce." % holder.name())
 	return true

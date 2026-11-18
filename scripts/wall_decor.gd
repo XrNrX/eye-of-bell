@@ -72,8 +72,10 @@ func add_face(builder: Node3D, cell: Vector2i, side: int) -> void:
 
 
 ## A picture laid just over a wall face (grime, decal, vein, niche). It casts no shadow: only the wall itself does.
-func _overlay(builder: Node3D, mesh: Mesh, pos: Vector3, rot: Vector3) -> void:
-	builder._add_mesh(mesh, pos, rot).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+func _overlay(builder: Node3D, mesh: Mesh, pos: Vector3, rot: Vector3) -> MeshInstance3D:
+	var node: MeshInstance3D = builder._add_mesh(mesh, pos, rot)
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return node
 
 
 ## The decal textures this face gets (0, 1 or 2, in the config's chances), drawn from the face's own random stream.
@@ -119,7 +121,7 @@ func add_alcove(builder: Node3D, cell: Vector2i, side: int) -> void:
 	var tex: Texture2D = load(cfg.alcove_texture)
 	var size := Vector2(tex.get_width(), tex.get_height()) * PIXEL * 1.5
 	var wall_point := DungeonMap.cell_to_world(cell) + Vector3(dir.x, 0, dir.y) * (s / 2.0) + Vector3(0, 0.95, 0)
-	_overlay(builder, _quad(size, cfg.alcove_texture, true), wall_point + out * (cfg.decal_offset + 0.008), rot)
+	var picture := _overlay(builder, _quad(size, cfg.alcove_texture, true), wall_point + out * (cfg.decal_offset + 0.008), rot)
 	var light := OmniLight3D.new()
 	light.set_script(TorchLight)
 	light.base_energy = cfg.alcove_light_energy
@@ -127,6 +129,10 @@ func add_alcove(builder: Node3D, cell: Vector2i, side: int) -> void:
 	light.omni_range = cfg.alcove_light_range
 	light.position = wall_point + out * 0.25 + Vector3(0, -0.1, 0)
 	builder.add_child(light)
+	# Kept so a curse zone nearby can put the candle out (builder.set_alcove_lit): the picture swaps to the one without a flame.
+	if builder.get("alcoves") != null:
+		var out_mesh: Mesh = _quad(size, cfg.alcove_texture_out, true) if ResourceLoader.exists(cfg.alcove_texture_out) else null
+		builder.alcoves.append({"cell": cell, "node": picture, "lit_mesh": picture.mesh, "out_mesh": out_mesh, "light": light, "lit": true})
 
 
 ## Pillars, arches and alcoves: those the level lists (DungeonMap.STRUCTURES, hand-placed) and, in long straight

@@ -8,7 +8,7 @@ extends RefCounted
 ## items. South: ambush corridor, puzzle room, campfire, XP and levels, traps; through the XP room, monster pacing (a long
 ## corridor to back away down, opening into a room for flanking), and south of that the held-monster room (Hold Monster:
 ## a skeleton, a skeleton guard and a slime, which can't be held), and off the pacing corridor the light room (dark but for one lit sconce; unlit and empty
-## sconces, torches and candles to try, and a slime that fears fire). A sign in the hall and one inside labels each.
+## sconces, a curse zone at the east end, torches and candles to try, and a slime that fears fire). A sign in the hall and one inside labels each.
 ## "NOT BUILT YET" stations are empty rooms waiting for their system.
 ##
 ## Debug keys (scripts/debug/test_room_tools.gd, H shows them in the game): G god mode, R refill HP and mana, X +500 XP,
@@ -111,7 +111,19 @@ const TORCHES := [
 	Vector4i(6, 36, 1, 1),    # Unlit, holding a torch.
 	Vector4i(15, 33, 0, 2),   # An empty bracket.
 	Vector4i(19, 36, 3, 2),   # An empty bracket.
-	Vector4i(12, 38, 2, 0),   # Lit.
+	Vector4i(9, 38, 2, 0),    # Lit (far from the zone: a wall torch within 2 tiles of its haze goes out too).
+]
+
+# The light room's curse zone: its east end (x 14-19, z 35-38), where the slime waits. Flames die in it: held torches and candles sputter and go
+# out, sconces will not light, a torch dropped there fizzles; a Bless makes a 20 s pocket; the backslash key lifts it or puts it back (a puzzle effect
+# does the same on a real level).
+const CURSE_ZONES := [
+	{"id": "light_room", "tiles": [
+		Vector2i(14, 35), Vector2i(15, 35), Vector2i(16, 35), Vector2i(17, 35), Vector2i(18, 35), Vector2i(19, 35),
+		Vector2i(14, 36), Vector2i(15, 36), Vector2i(16, 36), Vector2i(17, 36), Vector2i(18, 36), Vector2i(19, 36),
+		Vector2i(14, 37), Vector2i(15, 37), Vector2i(16, 37), Vector2i(17, 37), Vector2i(18, 37), Vector2i(19, 37),
+		Vector2i(14, 38), Vector2i(15, 38), Vector2i(16, 38), Vector2i(17, 38), Vector2i(18, 38), Vector2i(19, 38),
+	]},
 ]
 
 # The corrupted wall of the wall-types station: one Bless burns it away.
@@ -261,6 +273,10 @@ FLANKING"},
 SOUTH"},
 	{"cell": Vector2i(13, 31), "side": 2, "text": "LIGHT AND DARK
 SOUTH"},
+	{"cell": Vector2i(14, 38), "side": 2, "text": "CURSE ZONE
+FLAMES DIE HERE
+BLESS: 20 S POCKET
+\\ LIFTS IT"},
 	{"cell": Vector2i(8, 33), "side": 0, "text": "LIGHT AND DARK
 SCONCES: RIGHT-CLICK
 LIGHTS, CLICK TAKES

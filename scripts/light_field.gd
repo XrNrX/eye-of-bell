@@ -24,6 +24,11 @@ func _ready() -> void:
 
 ## A lit light was just put on this tile (dungeon.place_item has already put it in the pile): keep it burning there.
 func drop(cell: Vector2i, stack: RefCounted) -> void:
+	var dungeon := get_parent()
+	if dungeon.light_blocked(cell):  # A curse zone (or within 2 tiles of one): it fizzles where it lands, and can be picked up cold.
+		stack.burning = false
+		get_tree().call_group("curse_zones", "flame_died", cell)
+		return
 	stack.burning = true
 	_add(cell, stack)
 
@@ -37,7 +42,10 @@ func restore() -> void:
 	for cell in dungeon.items:
 		for stack in dungeon.items[cell].pile:
 			if stack.burning:
-				_add(cell, stack)
+				if dungeon.light_blocked(cell):  # (A save from before the zone was there: it is out.)
+					stack.burning = false
+				else:
+					_add(cell, stack)
 
 
 func _add(cell: Vector2i, stack: RefCounted) -> void:
@@ -56,6 +64,13 @@ func _add(cell: Vector2i, stack: RefCounted) -> void:
 		flame.position = light.position
 		add_child(flame)
 	burning.append({"cell": cell, "stack": stack, "light": light, "flame": flame})
+
+
+## Put out a burning light lying on the floor (a curse zone): it stays in its pile, cold, with the time it had left.
+func snuff(e: Dictionary) -> void:
+	e.stack.burning = false
+	_free(e)
+	burning.erase(e)
 
 
 func _free(e: Dictionary) -> void:

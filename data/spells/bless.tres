@@ -12,3 +12,4 @@ target = 2
 buff_attack = 2
 purifies_corruption = true
 duration = 20.0
+pocket_seconds = 20.0

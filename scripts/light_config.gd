@@ -38,6 +38,15 @@ const PATH := "res://data/light.tres"
 @export var sconce_torch_seconds := 120.0  # A torch the level starts in a sconce burns this long once taken out (a stub; a held one has 240).
 @export var sconce_see_range := 6          # A sconce counts as seen from a tile this near with a clear line (it shows on the map).
 
+@export_group("Curse zones")
+@export var zone_sputter_seconds := 1.0  # A held flame sputters this long in a zone, then goes out.
+@export var sconce_reach := 2           # A wall sconce this many tiles from a zone (a square round its tiles) is put out and will not light either.
+@export var zone_pocket_radius := 1      # A Bless's pocket: the party's tile and the tiles within this many of it (Chebyshev).
+@export var haze_alpha := 0.18           # How strongly the green haze is laid (additive) on the floor of a zone...
+@export var haze_width := 3.4            # ...each patch this wide (world units; a tile is 2) and as deep as the art's shape says...
+@export var haze_height := 0.05          # ...this far above the floor.
+@export var haze_see_range := 7          # A message about a flame dying on the floor or in a sconce is only given within this many tiles, in sight.
+
 @export_group("On the floor")
 @export var floor_light_height := 0.35 # A burning light lying on a tile shines from just above it.
 @export var floor_light_scale := 0.7   # ...at this share of its energy (it lies on its side).

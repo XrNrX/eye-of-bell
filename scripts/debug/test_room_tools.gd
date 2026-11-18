@@ -8,7 +8,7 @@ extends CanvasLayer
 ## list), B banter, N fog, J screen shake, P spell and torch shadows. Monster pacing: O picks a value (step interval, reaction
 ## delay, arrival recovery, flank delay), [ and ] lower or raise it by 0.1 s on every monster kind at once (the loaded
 ## MonsterDefs, so live monsters feel it on their next move; never saved: copy what feels right into data/monsters/*.tres),
-## Y puts the values from the files back, I spawns a pack of three skeletons ahead. Hit effects: - plays the next monster kind's
+## Y puts the values from the files back, I spawns a pack of three skeletons ahead. \\ lifts the light room's curse zone or puts it back. Hit effects: - plays the next monster kind's
 ## hit effect (MonsterDef.hit_effect) across the view, from the front, the left, the right and behind in turn, with no damage. Held monster: 9 holds the monster in front
 ## (Hold Monster's status and time, with no resistance roll and no mana), 0 frees every held monster. X and U wait for an XP system: they call Party.add_xp / Party.level_up_party when
 ## those exist and say so in the log until then. A new system gets a station in levels/test_room.gd and, if it needs one, a key here.
@@ -184,6 +184,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_next_hit_effect()
 		KEY_EQUAL:
 			_burn_lights_down()
+		KEY_BACKSLASH:
+			_toggle_zone()
 		KEY_9:
 			_hold_ahead()
 		KEY_0:
@@ -303,6 +305,18 @@ func _spawn_pack() -> void:
 			dungeon.spawn_monster(load(PACK_MONSTER), cell)
 			made += 1
 	_say("A pack of %d appears." % made if made > 0 else "No room ahead for a pack.")
+
+
+## \: lift the first curse zone for good (as a puzzle effect does) or put it back. Not saved.
+func _toggle_zone() -> void:
+	if DungeonMap.CURSE_ZONES.is_empty():
+		_say("No curse zone in this room.")
+		return
+	var id: String = DungeonMap.CURSE_ZONES[0].id
+	var lifted := not DungeonMap.zone_cleared(id)
+	DungeonMap.set_flag("curse_zone.%s.cleared" % id, lifted)
+	get_tree().call_group("curse_zones", "zones_changed")
+	_say("The curse zone is %s." % ("lifted" if lifted else "back"))
 
 
 ## =: every lit light (in a hand or on the floor) burns down to its last few seconds.
@@ -507,6 +521,7 @@ func _refresh_help() -> void:
 		"I   PACK AHEAD    9 HOLD  0 FREE",
 		"-   SHOW NEXT MONSTER HIT EFFECT",
 		"=   BURN LIGHTS DOWN",
+		"\\   LIFT / RESTORE CURSE ZONE",
 		"O   TUNE          %s" % PACING_FIELDS[tune_index][1],
 		"[ ] -/+ 0.1S      Y FROM FILES",
 		_pacing_table(),

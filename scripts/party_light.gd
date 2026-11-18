@@ -37,7 +37,8 @@ func _process(delta: float) -> void:
 	light_color = def.light_color
 	omni_range = def.light_range
 	omni_attenuation = def.light_attenuation
-	light_energy = party.light_level() * flicker_factor(time, stack.seconds_left(), cfg)
+	var left: float = 0.0 if party.sputter_left > 0.0 else stack.seconds_left()  # Sputtering in a curse zone: the hard flicker of a dying flame.
+	light_energy = party.light_level() * flicker_factor(time, left, cfg)
 
 
 ## How much a burning light's energy is scaled right now: a gentle flicker from two out-of-phase waves (no randomness), and in its

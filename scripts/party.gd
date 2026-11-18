@@ -56,6 +56,8 @@ signal monster_struck(monster: Node, side: String, damage: int, crit: bool)  # T
 signal critical_fail(slot: int, slipped: bool)  # A hero's attack went badly wrong (slipped: they dropped their weapon).
 signal wiped
 
+var flames_out := false   # A curse zone has put the party's held flames out (curse_zones.gd; see snuffed).
+var sputter_left := 0.0   # Seconds a held flame still has before it goes out in a curse zone (0: not sputtering): the light flickers hard.
 var god_mode := false  # Debug (the test room's G key): monsters' blows land on nobody.
 
 ## Hero definitions (CharacterDef .tres), in slot order.
@@ -985,6 +987,10 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 				if other.is_alive():
 					_add_buff(other, spell)
 			text = "%s casts %s." % [who, spell.display_name]
+	if spell.pocket_seconds > 0.0:  # Bless: a pocket where flames live, if the party stands in (or beside) a curse zone.
+		get_tree().call_group("curse_zones", "open_pocket", player.cell, spell.pocket_seconds)
+		if DungeonMap.curse_zone_at(player.cell) != "":
+			text += " The air steadies."
 	if spell.purifies_corruption and m.def.magic == ItemDef.Magic.DIVINE:
 		text += _bless_corruption(m)
 	m.mana -= spell.mana_cost
@@ -1574,15 +1580,37 @@ func _light_hand(m: Member) -> int:
 # Light: torches and candles held in a hand (rules in docs/combat_design.md "Light and darkness")
 # --------------------------------------------------------------------------
 
-## The lit lights: every light in a living hero's hand (a dead hero's light goes out with them).
+## The lit lights: every light in a living hero's hand (a dead hero's light goes out with them), but not one a curse zone has put out.
 func held_lights() -> Array:
 	var out := []
 	for m in members:
 		if m.is_alive():
 			for stack in m.hands:
-				if stack != null and stack.def.is_light():
+				if stack != null and stack.def.is_light() and not snuffed(stack):
 					out.append(stack)
 	return out
+
+
+## Is this held light out because the party stands in a curse zone (curse_zones.gd sets flames_out once the sputter is over)? A light with
+## ItemDef.curse_proof (the Unquenchable) is never put out.
+func snuffed(stack: RefCounted) -> bool:
+	return flames_out and not stack.def.curse_proof
+
+
+## Does a living hero hold a flame a curse zone could put out (a light in a hand that is not curse_proof)?
+func carries_flame() -> bool:
+	for m in members:
+		if m.is_alive() and m.hands.any(func(s): return s != null and s.def.is_light() and not s.def.curse_proof):
+			return true
+	return false
+
+
+## The curse zone has put the party's held flames out (true) or they burn again (false). Light level changes are news.
+func set_flames_out(out: bool) -> void:
+	if flames_out == out:
+		return
+	flames_out = out
+	_check_light_level()
 
 
 ## The brightest light held (an ItemStack), or null in the dark: what the party's light shines with (party_light.gd).
@@ -1634,6 +1662,9 @@ func _tick_lights(m: Member, delta: float) -> void:
 	for h in HAND_SLOTS:
 		var stack = m.hands[h]
 		if stack == null or not stack.def.is_light():
+			continue
+		if snuffed(stack):  # Out in a curse zone: no light, no burning, and it still counts as held (no fresh "taken up" remark after).
+			light = stack.def
 			continue
 		stack.burn_left = stack.seconds_left() - delta
 		if stack.burn_left > 0.0:

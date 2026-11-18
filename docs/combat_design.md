@@ -207,6 +207,18 @@ behind, so a lit sprite in front of a torch-bearing party came out a silhouette 
   one needs a flame it does not use up, so light, take, hang, take is a closed loop (smoke checks add up every torch-second in the game). The map shows a
   sconce once the party has seen it (a clear line within `sconce_see_range` 6), gold if lit, grey if unlit, dark if bare. A thrown torch lighting one
   waits for 7l.4 (torches cannot be thrown yet): `Dungeon.ignite_near(cell, radius)` is the hook.
+- **Curse zones** (roadmap 7l.3; `DungeonMap.CURSE_ZONES` = `{"id", "tiles"}`, the node `scripts/curse_zones.gd`, numbers in `data/light.tres` "Curse
+  zones"): a place where flames die. In one (outside a Bless's pocket): a **held torch or candle sputters for a second** (the light flickers hard) **and goes
+  out**, burning no time, and relights the moment the party leaves; put away and taken up again inside, it sputters again. A **sconce will not light** (right
+  click: "The air here hates fire."; a torch hung in a bare bracket there stays unlit; a lit one goes out; **this reaches 2 tiles past the zone's tiles** (`sconce_reach`, as far as the haze looks), so the wall torches along its edge go dark too, and so does every other light fixed in the world there: the candle in a wall niche (its picture swaps to `art/decals/niche_out.png`, a flame-less one made by `tools/art/gen_niche_out.py`, and its light is hidden) and a burning torch lying on the floor: `DungeonMap.curse_zone_near`, `Dungeon.sconce_blocked` / `light_blocked`; **held flames** still only die on the zone's own tiles, so the party can walk up to the haze with its torch), a **burning torch lying or thrown there goes out**
+  (`LightField.drop` fizzles it, cold, with its time) and **oil** and braziers (not built) ask `Dungeon.flame_blocked(cell)`. `ItemDef.curse_proof` (the
+  Unquenchable, not built) and spell light are untouched. **Bless makes a pocket:** `SpellDef.pocket_seconds` 20, the tile the party stood on and the tiles
+  beside it (`zone_pocket_radius` 1): flames light and live there; when it ends whatever still burns inside goes out. **Nothing is said until a flame dies**,
+  then "The air here hates fire." (and a banter remark, event `flames_snuffed`). A thin green **haze** (PixelLab VFX, `art/spells/curse/haze_sheet.png`) lies
+  on the floor of the zone, unshaded and a little wider than the tile so it shows from the tile before. A puzzle effect `clear_curse_zone` lifts a zone
+  for good (the run flag `curse_zone.<id>.cleared`, saved). `GameEvents.entered_curse_zone` / `left_curse_zone` (banter lines for both). **Nothing above tier 1
+  may be placed in a zone:** the builder warns when the level loads (`DungeonMap.zone_tier_violations`). Floor 1 has none yet (the cave's, over x 6-10, y 15-19
+  and lifting when its three rats die, is roadmap 7l.6); the test room's light room has one over its east end and the backslash key lifts it or puts it back.
 - **Holding:** a light works only in a hand, and it takes that hand. Several held: the brightest counts, plus 10% of it for each extra
   light, at most +20% (`extra_light_bonus`, `extra_light_cap`). A dead hero's light goes out (it neither shines nor burns).
 - **Quick slots** take torches and candles. Clicking one puts it lit into a hand: the one already holding a light, else a free one, else
