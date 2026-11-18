@@ -6,6 +6,11 @@ Starts in borderless fullscreen; Alt+Enter switches to a window.
 Goal: find your way through the dungeon to the stairs down (one of the keys opens the locked
 door in front of them). Levers, a pressure plate and a cracked wall (War Hammer or Fireball) help.
 
+NEW IN v0.11
+  Nothing new to find in the dungeon yet. Behind the scenes, two things are built and will turn up on the
+  floor in the next version: curse zones (a green haze where flames die) and the flask of oil (thrown
+  to leave a slick that a torch or a Fireball sets ablaze, or at a monster to soak it).
+
 NEW IN v0.10
   Plague rats nest in the cave: small, quick and fond of biting. A bite can leave a hero sick for
   a few seconds. They are afraid of fire. They may leave raw rat meat behind.
