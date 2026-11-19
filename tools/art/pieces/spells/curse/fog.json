@@ -1,0 +1,443 @@
+{
+ "frames": [
+  {
+   "filename": "eye-of-bell-curse-fog 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 1.png",
+   "frame": {
+    "x": 128,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 2.png",
+   "frame": {
+    "x": 256,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 3.png",
+   "frame": {
+    "x": 384,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 4.png",
+   "frame": {
+    "x": 0,
+    "y": 42,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 5.png",
+   "frame": {
+    "x": 128,
+    "y": 42,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 6.png",
+   "frame": {
+    "x": 256,
+    "y": 42,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 7.png",
+   "frame": {
+    "x": 384,
+    "y": 42,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 8.png",
+   "frame": {
+    "x": 0,
+    "y": 84,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 9.png",
+   "frame": {
+    "x": 128,
+    "y": 84,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 10.png",
+   "frame": {
+    "x": 256,
+    "y": 84,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 11.png",
+   "frame": {
+    "x": 384,
+    "y": 84,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 12.png",
+   "frame": {
+    "x": 0,
+    "y": 126,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 13.png",
+   "frame": {
+    "x": 128,
+    "y": 126,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 14.png",
+   "frame": {
+    "x": 256,
+    "y": 126,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-fog 15.png",
+   "frame": {
+    "x": 384,
+    "y": 126,
+    "w": 128,
+    "h": 42
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 128,
+    "h": 42
+   },
+   "sourceSize": {
+    "w": 128,
+    "h": 42
+   },
+   "pivot": {
+    "x": 0.4921875,
+    "y": 0.5
+   },
+   "duration": 100
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "eye-of-bell-curse-fog.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 512,
+   "h": 168
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 63,
+   "y": 21
+  },
+  "frameTags": [
+   {
+    "name": "eye-of-bell-curse-fog",
+    "from": 0,
+    "to": 15,
+    "direction": "forward"
+   }
+  ]
+ }
+}

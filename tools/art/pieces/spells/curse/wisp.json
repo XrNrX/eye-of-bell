@@ -1,0 +1,443 @@
+{
+ "frames": [
+  {
+   "filename": "eye-of-bell-curse-wisp 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 1.png",
+   "frame": {
+    "x": 18,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 2.png",
+   "frame": {
+    "x": 36,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 3.png",
+   "frame": {
+    "x": 54,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 4.png",
+   "frame": {
+    "x": 0,
+    "y": 44,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 5.png",
+   "frame": {
+    "x": 18,
+    "y": 44,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 6.png",
+   "frame": {
+    "x": 36,
+    "y": 44,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 7.png",
+   "frame": {
+    "x": 54,
+    "y": 44,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 8.png",
+   "frame": {
+    "x": 0,
+    "y": 88,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 9.png",
+   "frame": {
+    "x": 18,
+    "y": 88,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 10.png",
+   "frame": {
+    "x": 36,
+    "y": 88,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 11.png",
+   "frame": {
+    "x": 54,
+    "y": 88,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 12.png",
+   "frame": {
+    "x": 0,
+    "y": 132,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 13.png",
+   "frame": {
+    "x": 18,
+    "y": 132,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 14.png",
+   "frame": {
+    "x": 36,
+    "y": 132,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  },
+  {
+   "filename": "eye-of-bell-curse-wisp 15.png",
+   "frame": {
+    "x": 54,
+    "y": 132,
+    "w": 18,
+    "h": 44
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 18,
+    "h": 44
+   },
+   "sourceSize": {
+    "w": 18,
+    "h": 44
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9318181818181818
+   },
+   "duration": 100
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "eye-of-bell-curse-wisp.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 72,
+   "h": 176
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 9,
+   "y": 41
+  },
+  "frameTags": [
+   {
+    "name": "eye-of-bell-curse-wisp",
+    "from": 0,
+    "to": 15,
+    "direction": "forward"
+   }
+  ]
+ }
+}

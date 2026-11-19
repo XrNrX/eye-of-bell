@@ -214,8 +214,17 @@ behind, so a lit sprite in front of a torch-bearing party came out a silhouette 
   (`LightField.drop` fizzles it, cold, with its time) and **oil** and braziers (not built) ask `Dungeon.flame_blocked(cell)`. `ItemDef.curse_proof` (the
   Unquenchable, not built) and spell light are untouched. **Bless makes a pocket:** `SpellDef.pocket_seconds` 20, the tile the party stood on and the tiles
   beside it (`zone_pocket_radius` 1): flames light and live there; when it ends whatever still burns inside goes out. **Nothing is said until a flame dies**,
-  then "The air here hates fire." (and a banter remark, event `flames_snuffed`). A thin green **haze** (PixelLab VFX, `art/spells/curse/haze_sheet.png`) lies
-  on the floor of the zone, unshaded and a little wider than the tile so it shows from the tile before. A puzzle effect `clear_curse_zone` lifts a zone
+  then "The air here hates fire." (and a banter remark, event `flames_snuffed`). **The look is "it eats light", not poison gas** (`docs/art_style.md`: curse green, but darker and murkier): a murky **fog**
+  (PixelLab VFX, `art/spells/curse/fog_sheet.png`, normal blending so it darkens the floor, unshaded, two patches a tile, a little wider than the tile) that
+  **creeps in from the zone's edges** (`fog_creep_seconds` 6: the tiles beside open floor fill first, the middle last), swells round the party while a held
+  flame sputters, and a flame that dies in the world leaves a **wisp** curling up (`art/spells/curse/wisp_sheet.png`, `wisp_seconds`). A flame in a hand
+  **bends and gutters** (drops out now and then) with a wisp curling round it during its second (`party_hud._gutter_flame`). **The edge glow**
+  (`curse_vignette.gd`, `shaders/curse_vignette.gdshader`, over the view, under the frame): a slow yellow-green vignette in stepped, dithered bands (never
+  a smooth ramp, never red or sharp, so never the damage flash) that creeps in over `vignette_in_seconds` 3.5 while the party stands in a zone, starts at
+  `vignette_min` and **thickens the longer it stays dark** (full after `vignette_full_seconds` 40), and breathes gently (`vignette_pulse`, `_hz`).
+  **A Bless's pocket**: the fog shrinks and slides off the pocket's tiles in `fog_recoil_seconds` 0.7, the glow pulls back in `vignette_pull_seconds`, and
+  for the last `pocket_warn_seconds` 4 both creep back as a warning (the glow to `vignette_warn` 0.5), the fog fully a couple of seconds after. **Reduce flashing**:
+  one still fog frame, no flicker, and a steady vignette with no breathing. Every strength, colour and time is in the "Curse zones" group of `data/light.tres`. A puzzle effect `clear_curse_zone` lifts a zone
   for good (the run flag `curse_zone.<id>.cleared`, saved). `GameEvents.entered_curse_zone` / `left_curse_zone` (banter lines for both). **Nothing above tier 1
   may be placed in a zone:** the builder warns when the level loads (`DungeonMap.zone_tier_violations`). Floor 1 has none yet (the cave's, over x 6-10, y 15-19
   and lifting when its three rats die, is roadmap 7l.6); the test room's light room has one over its east end and the backslash key lifts it or puts it back.

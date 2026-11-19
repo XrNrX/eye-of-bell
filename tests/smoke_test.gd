@@ -82,6 +82,7 @@ func _init() -> void:
 	await _check_shockwave()
 	await _check_sconces()
 	await _check_curse_zones()
+	await _check_curse_look()
 	await _check_oil()
 	await _check_torch_throw()
 	await _check_food()
@@ -1261,6 +1262,97 @@ func _check_curse_zones() -> void:
 	player.restore(Vector2i(6, 13), 3)
 	await create_timer(0.2).timeout
 	check("zones: floor 1 has none (the cave's comes with the light on floor 1, 7l.6) and nothing is left over", DungeonMap.CURSE_ZONES.is_empty() and curse._haze.is_empty() and not party.flames_out and dungeon.alcoves.all(func(a): return a.lit))
+
+
+## How a curse zone looks (the fog and the edge glow): the fog creeps in from the zone's edges, a Bless pushes it back and the edge glow
+## with it, both creep back over the pocket's last seconds, the glow thickens the longer the party stays dark, Reduce flashing holds it
+## steady, and a flame that dies leaves a wisp. Driven by calling the curse node's own ticks, so it does not depend on real time.
+func _check_curse_look() -> void:
+	dungeon.clear_monsters()
+	var real_zones: Array = DungeonMap.CURSE_ZONES
+	var tiles := [Vector2i(8, 13), Vector2i(9, 13), Vector2i(10, 13), Vector2i(11, 13), Vector2i(12, 13)]
+	DungeonMap.CURSE_ZONES = [{"id": "look_zone", "tiles": tiles}]
+	var curse: Node = dungeon.curse
+	var c: Resource = LightConfig.get_config()
+	curse.pocket_left = 0.0
+	curse.zones_changed()
+	check("look: a fresh zone's fog has not crept in yet, and the edge tiles are the first to fill",
+			curse.creep == 0.0 and curse._haze.all(func(h): return not h.mesh.visible))
+	curse._animate_haze(c.fog_creep_seconds * 0.3)
+	var edge_size: float = 0.0
+	var middle_size: float = 0.0
+	for h in curse._haze:
+		if h.cell == Vector2i(8, 13):
+			edge_size = h.mesh.scale.x if h.mesh.visible else 0.0
+		elif h.cell == Vector2i(10, 13):
+			middle_size = h.mesh.scale.x if h.mesh.visible else 0.0
+	check("look: a third of the way in, the zone's edge is fogged and its middle is not (%.2f, %.2f)" % [edge_size, middle_size], edge_size > 0.5 and middle_size < edge_size)
+	curse._animate_haze(c.fog_creep_seconds)
+	check("look: given its time every tile is fogged", curse.creep == 1.0 and curse._haze.all(func(h): return h.mesh.visible and h.mesh.scale.x > 0.99))
+
+	# The edge glow: slow and thickening in the dark.
+	curse.vignette = 0.0
+	curse.dark_time = 0.0
+	curse._tick_glow(1.0, true, false)
+	var first: float = curse.vignette
+	for i in 5:
+		curse._tick_glow(1.0, true, false)
+	var later: float = curse.vignette
+	check("look: the glow creeps in slowly (%.2f after 1 s, %.2f after 6)" % [first, later], first > 0.0 and first < 0.4 and later > first)
+	curse._tick_glow(40.0, true, false)
+	curse._tick_glow(10.0, true, false)
+	check("look: and the longer the party stays dark the thicker it gets (%.2f)" % curse.vignette, curse.vignette > later and curse.vignette > 0.95)
+	var steady: float = curse.vignette
+	var was_reduced: bool = Settings.reduce_flashing
+	Settings.reduce_flashing = false
+	curse._clock = 1.0 / (4.0 * c.vignette_pulse_hz)  # The deepest dip of the slow breath.
+	var pulsed: float = curse.glow_level()
+	Settings.reduce_flashing = true
+	var calm: float = curse.glow_level()
+	Settings.reduce_flashing = was_reduced
+	check("look: it breathes gently, and with Reduce flashing it is a steady vignette (%.2f vs %.2f)" % [pulsed, calm], is_equal_approx(calm, steady) and pulsed < calm and calm - pulsed <= c.vignette_pulse + 0.001)
+
+	# A Bless: the fog recoils from the pocket, the glow pulls back, and both creep back over the last seconds.
+	var spot := Vector2i(10, 13)
+	curse.open_pocket(spot, 20.0)
+	curse._tick_glow(1.0, true, true)
+	curse._animate_haze(c.fog_recoil_seconds + 0.1)
+	var pocket_fog_gone := true
+	var outside_fog := false
+	for h in curse._haze:
+		if absi(h.cell.x - spot.x) <= c.zone_pocket_radius:
+			pocket_fog_gone = pocket_fog_gone and not h.mesh.visible
+		else:
+			outside_fog = outside_fog or h.mesh.visible
+	check("look: a Bless pushes the fog off the pocket's tiles and pulls the glow back", pocket_fog_gone and outside_fog and curse.vignette == 0.0 and curse.fog_pocket == 0.0)
+	curse.pocket_left = c.pocket_warn_seconds * 0.5
+	curse._animate_haze(3.0)
+	curse._tick_glow(6.0, true, true)
+	check("look: over the pocket's last seconds the fog and the glow creep back as a warning (%.2f, %.2f)" % [curse.fog_pocket, curse.vignette],
+			curse.fog_pocket > 0.3 and curse.fog_pocket < 1.0 and curse.vignette > 0.1 and curse.vignette <= c.vignette_warn + 0.001)
+	curse.pocket_left = 0.0
+	curse._animate_haze(c.fog_return_seconds + 0.1)
+	check("look: when the pocket ends the fog is all back", curse.fog_pocket == 1.0 and curse._haze.all(func(h): return h.mesh.visible))
+	curse._tick_glow(20.0, false, false)
+	check("look: leaving the zone clears the glow", curse.vignette == 0.0)
+
+	# A flame that dies leaves a wisp that goes after a while.
+	var wisps_before: int = curse._wisps.size()
+	curse.flame_died(Vector2i(9, 13))
+	check("look: a flame dying in the zone leaves a wisp of fog, and it is gone after its time", curse._wisps.size() == wisps_before + 1)
+	curse._tick_wisps(c.wisp_seconds + 0.1)
+	check("look: ...gone", curse._wisps.size() == wisps_before)
+	var vignette_node: Node = get_first_node_in_group("curse_vignette")
+	check("look: the screen-edge glow node is in the game", vignette_node != null and vignette_node.layer == 2)
+
+	DungeonMap.CURSE_ZONES = real_zones
+	curse.zones_changed()
+	curse.creep = 1.0
+	curse.dark_time = 0.0
+	curse.vignette = 0.0
+	curse.fog_pocket = 1.0
+	curse.pocket_left = 0.0
+	player.restore(SPOT, EAST)
 
 
 ## Wall sconces (7l.2): three kinds on floor 1, lit by a flame in a hero's hand (right click) or a Fireball, the torch taken with an

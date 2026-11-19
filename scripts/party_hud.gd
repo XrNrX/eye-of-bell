@@ -337,6 +337,7 @@ const BURN_BACK := Color(0.043, 0.039, 0.063)  # Palette ink.
 const BURN_BAR := Rect2(6, 35, 28, 2)          # Inside the 40x40 hand button, along its foot.
 var flame_frames: Array[Texture2D] = []
 var flame_fps := 12.0
+var wisp_frames: Array[Texture2D] = []  # The murky fog that curls round a flame dying in a curse zone (art/spells/curse/wisp_sheet).
 var icon_tops := {}  # hud texture -> where its drawing starts (the flame's root goes on top of it)
 
 
@@ -348,6 +349,8 @@ func _show_light(m, stack, hand: TextureButton) -> void:
 		if bar != null:
 			bar.visible = false
 			hand.get_meta("flame").visible = false
+			if hand.has_meta("wisp"):
+				hand.get_meta("wisp").visible = false
 		return
 	if bar == null:
 		bar = _make_burn_bar(hand)
@@ -364,6 +367,25 @@ func _show_light(m, stack, hand: TextureButton) -> void:
 		flame.texture = flame_frames[int(Time.get_ticks_msec() / 1000.0 * flame_fps) % flame_frames.size()]
 		var top: Vector2 = _icon_top(stack.def.hud_texture())
 		flame.position = (HAND_SIZE - Vector2(32, 32)) / 2.0 + top - FLAME_FOOT * FLAME_SCALE
+		_gutter_flame(flame, hand.get_meta("wisp"))
+
+
+## A flame sputtering in a curse zone bends this way and that, gutters (drops out now and then) and a wisp of murky fog curls up round it,
+## until it dies. With Reduce flashing it only leans (no flicker).
+func _gutter_flame(flame: TextureRect, wisp: TextureRect) -> void:
+	var sputtering: bool = party.sputter_left > 0.0
+	wisp.visible = sputtering and wisp_frames.size() > 0
+	if not sputtering:
+		return
+	var span: float = maxf(LightConfig.get_config().zone_sputter_seconds, 0.1)
+	var progress: float = clampf(1.0 - party.sputter_left / span, 0.0, 1.0)
+	var t := Time.get_ticks_msec() / 1000.0
+	flame.position.x += roundf(sin(t * 13.0) * (0.5 + 1.5 * progress))  # Bends one way, then the other, more as it fails.
+	if not Settings.reduce_flashing and progress > 0.45 and int(t * 12.0) % 3 == 0:
+		flame.visible = false  # Gutters.
+	if wisp.visible:
+		wisp.texture = wisp_frames[int(t * 10.0) % wisp_frames.size()]
+		wisp.position = flame.position + Vector2(-0.5, -wisp.size.y * (0.35 + 0.5 * progress))
 
 
 func _make_burn_bar(hand: TextureButton) -> ColorRect:
@@ -398,6 +420,22 @@ func _make_burn_bar(hand: TextureButton) -> ColorRect:
 	flame.material = mat
 	hand.add_child(flame)
 	hand.set_meta("flame", flame)
+	if wisp_frames.is_empty() and ResourceLoader.exists("res://art/spells/curse/wisp_sheet.png"):
+		var winfo = JSON.parse_string(FileAccess.get_file_as_string("res://art/spells/curse/wisp_sheet.json"))
+		var wsheet: Texture2D = load("res://art/spells/curse/wisp_sheet.png")
+		for i in int(winfo.frames):
+			var watlas := AtlasTexture.new()
+			watlas.atlas = wsheet
+			watlas.region = Rect2(i * int(winfo.frame_w), 0, int(winfo.frame_w), int(winfo.frame_h))
+			wisp_frames.append(watlas)
+	var wisp := TextureRect.new()
+	wisp.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	wisp.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	wisp.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	wisp.size = Vector2(18, 44) * FLAME_SCALE
+	wisp.visible = false
+	hand.add_child(wisp)
+	hand.set_meta("wisp", wisp)
 	return bar
 
 
