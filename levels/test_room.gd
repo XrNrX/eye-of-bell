@@ -204,6 +204,7 @@ const MONSTERS := [
 	{"cell": Vector2i(5, 7), "def": "res://data/monsters/skeleton_guard.tres"},
 	{"cell": Vector2i(9, 7), "def": "res://data/monsters/slime_acid.tres"},
 	{"cell": Vector2i(11, 5), "def": "res://data/monsters/plague_rat.tres"},
+	{"cell": Vector2i(7, 5), "def": "res://data/monsters/zombie.tres"},
 	# The held-monster room: different hold resistances (skeleton 35%, guard 45%, slime immune).
 	{"cell": Vector2i(25, 39), "def": "res://data/monsters/skeleton.tres"},
 	{"cell": Vector2i(28, 39), "def": "res://data/monsters/skeleton_guard.tres"},

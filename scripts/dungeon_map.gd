@@ -228,6 +228,7 @@ static var MONSTERS := [
 	{"cell": Vector2i(17, 20), "def": "res://data/monsters/skeleton.tres"},
 	{"cell": Vector2i(13, 17), "def": "res://data/monsters/slime_acid.tres"},
 	{"cell": Vector2i(8, 16), "def": "res://data/monsters/skeleton_guard.tres"},
+	{"cell": Vector2i(15, 11), "def": "res://data/monsters/zombie.tres"},  # Room 3, far corner: the zombie (slow, tough, tier 2).
 	# The rats' nest in the cave: three plague rats (they replace the skeleton that stood at (9,18)).
 	{"cell": Vector2i(8, 17), "def": "res://data/monsters/plague_rat.tres"},
 	{"cell": Vector2i(7, 18), "def": "res://data/monsters/plague_rat.tres"},
