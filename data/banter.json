@@ -332,5 +332,12 @@
 			{"speaker": "mage", "about": "other", "text": "That is fire. It is called fire."},
 			{"speaker": "cleric", "about": "other", "text": "I did say it was fire."}
 		]
+	},
+	"gas_released": {
+		"chance": 0.6,
+		"cooldown": 60,
+		"lines": [
+			{"speaker": "thief", "text": "Was that the zombie or the fighter?", "reply": [{"speaker": "fighter", "text": "Don't look at me."}]}
+		]
 	}
 }

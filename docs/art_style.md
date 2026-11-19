@@ -15,7 +15,7 @@ torchlight, and it is weak. Nothing is clean, bright, cute or heroic.
 
 ## Palette
 
-The palette is `tools/art/palette.json` (32 colours, "Cursed Dungeon 32"). Every game image uses
+The palette is `tools/art/palette.json` (33 colours, "Cursed Dungeon 33"). Every game image uses
 only these colours; the importer snaps anything else to the nearest one (nearest colour, no
 dithering unless asked), so prompt for the *mood* and let the snap do the exact values.
 
@@ -30,6 +30,9 @@ dithering unless asked), so prompt for the *mood* and let the snap do the exact 
 | **Curse green** (the main accent) | `curse_700`, `curse_500`, `curse_300` | `#3a6b4c` `#7fb88a` `#cdeec0` |
 | **Bruised purple** (accent) | `bruise_900`, `bruise_700`, `bruise_500` | `#1e1428` `#3b2850` `#6a4a86` |
 | **Dried blood** (accent) | `blood_700`, `blood_500` | `#4a1418` `#7a2224` |
+| **Rot and plague** (one colour, added 19 Nov 2026) | `mustard_500` | `#b89a2e` |
+
+`mustard_500` is for rot and disease only (the zombie's death gas, plague, sickness): never for light, and never for the curse, which stays green. Use it sparingly, like the other accents.
 
 How much of each: in any picture, greys and browns should be roughly 80% or more of the pixels.
 The three curse accents together are **a few percent**, placed where they mean something (eyes,

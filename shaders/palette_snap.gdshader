@@ -1,5 +1,5 @@
 shader_type canvas_item;
-// Palette filter: snaps every pixel of the 3D view to the nearest of the game's 32 palette colours, after a light
+// Palette filter: snaps every pixel of the 3D view to the nearest of the game's 33 palette colours, after a light
 // ordered (Bayer 4x4) dither, so lights, bloom, fog and particles all land on palette colours and match the pixel
 // art. Optional (Options: PALETTE FILTER). Drawn by a full-screen ColorRect inside the dungeon's SubViewport
 // (scripts/palette_filter.gd), reading the 3D render back as the screen texture.
@@ -9,7 +9,7 @@ shader_type canvas_item;
 
 uniform sampler2D screen_tex : hint_screen_texture, filter_nearest, repeat_disable;
 uniform sampler2D palette_tex : filter_nearest, repeat_disable;  // One row, `palette_size` pixels, in sRGB.
-uniform int palette_size = 32;
+uniform int palette_size = 33;
 uniform float dither = 0.05;
 
 float bayer4(ivec2 p) {

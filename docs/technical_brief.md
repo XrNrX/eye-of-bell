@@ -11,7 +11,7 @@ tile-sized unit through hand-built levels.
 
 - **Engine:** Godot 4.7 (Forward Plus), GDScript only. Windows development.
 - **Art:** Python 3 + Pillow generators (`tools/art/`) plus PixelLab AI pixel art (via MCP), all snapped to a fixed
-  32-colour palette (`tools/art/palette.json`). Every animated effect comes from PixelLab's VFX tool.
+  33-colour palette (`tools/art/palette.json`). Every animated effect comes from PixelLab's VFX tool.
 - **Sound:** procedurally synthesised WAVs (`tools/audio/gen_sounds.py`).
 - **Repo layout:** scripts are in one flat folder `scripts/`; data as Godot resources in `data/`; art in `art/`; levels as
   scripts in `levels/` (floor 1 is `scripts/dungeon_map.gd`); tests in `tests/`.

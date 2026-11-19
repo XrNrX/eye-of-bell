@@ -316,7 +316,7 @@ func glow(kind: String) -> Dictionary:
 @export var linger_ember_speed := Vector2(0.03, 0.25)
 
 @export_group("Palette filter (Options: PALETTE FILTER)")
-## An optional post-process on the 3D view that snaps every colour to the 32-colour palette with a light ordered
+## An optional post-process on the 3D view that snaps every colour to the 33-colour palette with a light ordered
 ## dither, so lights, bloom and particles all land on palette colours. 0 turns the dither off (hard bands).
 @export var palette_dither := 0.05
 

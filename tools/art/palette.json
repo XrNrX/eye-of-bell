@@ -1,5 +1,5 @@
 {
-  "name": "Cursed Dungeon 32",
+  "name": "Cursed Dungeon 33",
   "colors": [
     {"name": "ink",        "hex": "#0b0a10", "group": "grey"},
     {"name": "stone_900",  "hex": "#14131b", "group": "grey"},
@@ -32,7 +32,8 @@
     {"name": "bruise_700", "hex": "#3b2850", "group": "purple"},
     {"name": "bruise_500", "hex": "#6a4a86", "group": "purple"},
     {"name": "blood_700",  "hex": "#4a1418", "group": "blood"},
-    {"name": "blood_500",  "hex": "#7a2224", "group": "blood"}
+    {"name": "blood_500",  "hex": "#7a2224", "group": "blood"},
+    {"name": "mustard_500", "hex": "#b89a2e", "group": "rot"}
   ],
   "ramps": {
     "stone": ["stone_900", "stone_800", "stone_700", "stone_500", "stone_300", "stone_100"],
@@ -43,6 +44,7 @@
     "torch": ["torch_700", "torch_500", "torch_300"],
     "curse": ["curse_700", "curse_500", "curse_300"],
     "bruise": ["bruise_900", "bruise_700", "bruise_500"],
+    "rot": ["mustard_500"],
     "blood": ["blood_700", "blood_500"]
   }
 }

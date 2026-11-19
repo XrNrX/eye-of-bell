@@ -5,7 +5,7 @@
    "frame": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -13,25 +13,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 1.png",
    "frame": {
-    "x": 148,
+    "x": 112,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -39,25 +39,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 2.png",
    "frame": {
-    "x": 296,
+    "x": 224,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -65,25 +65,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 3.png",
    "frame": {
-    "x": 444,
+    "x": 336,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -91,25 +91,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 4.png",
    "frame": {
-    "x": 592,
+    "x": 448,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -117,25 +117,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 5.png",
    "frame": {
-    "x": 740,
+    "x": 560,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -143,25 +143,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 6.png",
    "frame": {
-    "x": 0,
-    "y": 80,
-    "w": 148,
+    "x": 672,
+    "y": 0,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -169,25 +169,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 7.png",
    "frame": {
-    "x": 148,
+    "x": 0,
     "y": 80,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -195,25 +195,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 8.png",
    "frame": {
-    "x": 296,
+    "x": 112,
     "y": 80,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -221,25 +221,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 9.png",
    "frame": {
-    "x": 444,
+    "x": 224,
     "y": 80,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -247,25 +247,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 10.png",
    "frame": {
-    "x": 592,
+    "x": 336,
     "y": 80,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -273,25 +273,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 11.png",
    "frame": {
-    "x": 740,
+    "x": 448,
     "y": 80,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -299,25 +299,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 12.png",
    "frame": {
-    "x": 0,
-    "y": 160,
-    "w": 148,
+    "x": 560,
+    "y": 80,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -325,25 +325,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 13.png",
    "frame": {
-    "x": 148,
-    "y": 160,
-    "w": 148,
+    "x": 672,
+    "y": 80,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -351,25 +351,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 14.png",
    "frame": {
-    "x": 296,
+    "x": 0,
     "y": 160,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -377,25 +377,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 15.png",
    "frame": {
-    "x": 444,
+    "x": 112,
     "y": 160,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -403,25 +403,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 16.png",
    "frame": {
-    "x": 592,
+    "x": 224,
     "y": 160,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -429,25 +429,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 17.png",
    "frame": {
-    "x": 740,
+    "x": 336,
     "y": 160,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -455,25 +455,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 18.png",
    "frame": {
-    "x": 0,
-    "y": 240,
-    "w": 148,
+    "x": 448,
+    "y": 160,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -481,25 +481,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 19.png",
    "frame": {
-    "x": 148,
-    "y": 240,
-    "w": 148,
+    "x": 560,
+    "y": 160,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -507,25 +507,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 20.png",
    "frame": {
-    "x": 296,
-    "y": 240,
-    "w": 148,
+    "x": 672,
+    "y": 160,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -533,25 +533,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 21.png",
    "frame": {
-    "x": 444,
+    "x": 0,
     "y": 240,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -559,25 +559,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 22.png",
    "frame": {
-    "x": 592,
+    "x": 112,
     "y": 240,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -585,25 +585,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 23.png",
    "frame": {
-    "x": 740,
+    "x": 224,
     "y": 240,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -611,25 +611,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 24.png",
    "frame": {
-    "x": 0,
-    "y": 320,
-    "w": 148,
+    "x": 336,
+    "y": 240,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -637,25 +637,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 25.png",
    "frame": {
-    "x": 148,
-    "y": 320,
-    "w": 148,
+    "x": 448,
+    "y": 240,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -663,25 +663,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 26.png",
    "frame": {
-    "x": 296,
-    "y": 320,
-    "w": 148,
+    "x": 560,
+    "y": 240,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -689,25 +689,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 27.png",
    "frame": {
-    "x": 444,
-    "y": 320,
-    "w": 148,
+    "x": 672,
+    "y": 240,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -715,25 +715,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 28.png",
    "frame": {
-    "x": 592,
+    "x": 0,
     "y": 320,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -741,25 +741,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 29.png",
    "frame": {
-    "x": 740,
+    "x": 112,
     "y": 320,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -767,25 +767,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 30.png",
    "frame": {
-    "x": 0,
-    "y": 400,
-    "w": 148,
+    "x": 224,
+    "y": 320,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -793,25 +793,25 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
   },
   {
    "filename": "eye-of-bell-zombie-gas 31.png",
    "frame": {
-    "x": 148,
-    "y": 400,
-    "w": 148,
+    "x": 336,
+    "y": 320,
+    "w": 112,
     "h": 80
    },
    "rotated": false,
@@ -819,18 +819,226 @@
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "sourceSize": {
-    "w": 148,
+    "w": 112,
     "h": 80
    },
    "pivot": {
     "x": 0.5,
-    "y": 0.925
+    "y": 0.5
    },
-   "duration": 167
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-zombie-gas 32.png",
+   "frame": {
+    "x": 448,
+    "y": 320,
+    "w": 112,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-zombie-gas 33.png",
+   "frame": {
+    "x": 560,
+    "y": 320,
+    "w": 112,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-zombie-gas 34.png",
+   "frame": {
+    "x": 672,
+    "y": 320,
+    "w": 112,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-zombie-gas 35.png",
+   "frame": {
+    "x": 0,
+    "y": 400,
+    "w": 112,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-zombie-gas 36.png",
+   "frame": {
+    "x": 112,
+    "y": 400,
+    "w": 112,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-zombie-gas 37.png",
+   "frame": {
+    "x": 224,
+    "y": 400,
+    "w": 112,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-zombie-gas 38.png",
+   "frame": {
+    "x": 336,
+    "y": 400,
+    "w": 112,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 83
+  },
+  {
+   "filename": "eye-of-bell-zombie-gas 39.png",
+   "frame": {
+    "x": 448,
+    "y": 400,
+    "w": 112,
+    "h": 80
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 112,
+    "h": 80
+   },
+   "sourceSize": {
+    "w": 112,
+    "h": 80
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 83
   }
  ],
  "meta": {
@@ -838,20 +1046,20 @@
   "image": "eye-of-bell-zombie-gas.png",
   "format": "RGBA8888",
   "size": {
-   "w": 888,
+   "w": 784,
    "h": 480
   },
   "scale": "1",
   "anchor": {
    "kind": "origin",
-   "x": 74,
-   "y": 74
+   "x": 56,
+   "y": 40
   },
   "frameTags": [
    {
     "name": "eye-of-bell-zombie-gas",
     "from": 0,
-    "to": 31,
+    "to": 39,
     "direction": "forward"
    }
   ]

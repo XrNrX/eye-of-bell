@@ -1275,6 +1275,16 @@ func _check_death_gas() -> void:
 	var zdef: Resource = load("res://data/monsters/zombie.tres")
 	check("gas: the zombie lets gas off one time in five, a tile round", is_equal_approx(zdef.death_gas_chance, 0.2) and zdef.death_gas_radius == 1)
 	check("gas: the cloud sheet exists", load("res://art/spells/gas/cloud_sheet.png") != null)
+	var cloud: Image = load("res://art/spells/gas/cloud_sheet.png").get_image()
+	var green := 0
+	for y in cloud.get_height():
+		for x in cloud.get_width():
+			var px: Color = cloud.get_pixel(x, y)
+			if px.a > 0.0 and px.g > px.r + 0.03 and px.g >= px.b:
+				green += 1
+	check("gas: no green anywhere in the cloud (green is the curse's): %d green pixels" % green, green == 0)
+	var gt: Color = LightConfig.get_config().gas_tint
+	check("gas: its tint is in the config and never leans green", gt.g <= gt.r + 0.001 and gt.g <= 1.0)
 	var gas: Node = dungeon.gas
 	var spot: Vector2i = AHEAD_1
 	var covered: int = gas.release(spot, 1)

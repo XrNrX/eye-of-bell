@@ -3,7 +3,7 @@ extends Node3D
 ##
 ## A monster whose MonsterDef has `death_gas_chance` may let a cloud off when it dies (Monster._release_gas rolls it with the combat dice):
 ## `release(cell, radius)` lays a cloud on every open tile within `radius` tiles of the body (a square, walls skipped), each a one-shot
-## flipbook (art/spells/gas/cloud_sheet, a PixelLab VFX) that lasts `gas_seconds`. Every second a hero's party standing in it loses
+## flipbook (art/spells/gas/cloud_sheet, a PixelLab VFX in mustard and brown with dark specks: rot and disease, never the curse's green) that lasts `gas_seconds`. Every second a hero's party standing in it loses
 ## `gas_hero_dps` HP each (Party.gas_party, source "gas"). Monsters are not hurt by it. Gas is not saved and does not stop a fire: a first
 ## version for testing. Numbers are in the "Gas" group of data/light.tres (light_config.gd).
 
@@ -49,6 +49,7 @@ func release(cell: Vector2i, radius := 1) -> int:
 				continue
 			clouds[c] = {"left": seconds, "tick": 0.0, "flip": _make_flip(c, seconds)}
 	released += 1
+	get_tree().call_group("banter", "event", "gas_released", {})
 	get_tree().call_group("audio", "play", "monster_die")  #
 	return count
 
@@ -58,8 +59,8 @@ func _make_flip(cell: Vector2i, seconds: float) -> MeshInstance3D:
 		return null
 	var flip: MeshInstance3D = Flipbook.new()
 	var px: float = cfg.gas_pixel
-	flip.setup(_sheet.texture, _sheet.frames, float(_sheet.frames) / seconds, false, px, Color(1, 1, 1), false, 1.0)
-	flip.position = DungeonMap.cell_to_world(cell) + Vector3(0, 40.0 * px + 0.1, 0)
+	flip.setup(_sheet.texture, _sheet.frames, float(_sheet.frames) / seconds, false, px, cfg.gas_tint, false, 1.0)
+	flip.position = DungeonMap.cell_to_world(cell) + Vector3(0, float(_sheet.texture.get_height()) * px * 0.5 + 0.04, 0)  # The art's foot on the floor.
 	flip.t = 0.05 * float((cell.x * 7 + cell.y * 3) % 4)  # Out of step with the next tile.
 	add_child(flip)
 	return flip

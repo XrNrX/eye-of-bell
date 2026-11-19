@@ -41,7 +41,8 @@ const PATH := "res://data/light.tres"
 @export_group("Gas")
 @export var gas_seconds := 5.5          # A cloud of toxic gas (a monster's death, gas_field.gd) lingers this long.
 @export var gas_hero_dps := 1.0         # Each second the party stands in it, every living hero loses this much (never saved, no fire).
-@export var gas_pixel := 0.016          # World size of one cloud art pixel: a cloud about 2 units wide, one tile.
+@export var gas_pixel := 0.026          # World size of one cloud art pixel: the puff is about 1.3 units wide, most of a tile (the frame is bigger, the flies drift outside the puff).
+@export var gas_tint := Color(1, 1, 1)  # Multiplies the cloud's own colours (mustard to brown, never green: that is the curse); under 1 dims it (it is drawn unshaded), but a dimmer tint no longer matches the palette exactly.
 
 @export_group("Oil")
 @export var slick_seconds := 120.0      # An oil slick lasts this long or until fire touches it.
