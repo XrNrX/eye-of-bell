@@ -1908,6 +1908,37 @@ Done when: ten runs in a row are all beatable, and at least a few of them surpri
 - Voxel v2 experiment: a separate prototype project with fully voxel, destructible dungeons, only after floor one ships
 - Cooking mini-game at the campfire: cook monster meat with pots, pans and ingredients found in the dungeon
 
+## Extra steps (built outside the plan)
+
+Things built from chat prompts that no step above covers. All done; added so the roadmap matches the build. Each line has the commit that made it.
+
+- [x] Test room: a debug-only level with stations, wall signs, debug keys and the H overlay (`0572759`)
+- [x] Test Room export preset, and a build that offers only the test room (`178e4a4`, `8d9f701`)
+- [x] Hires-720: 2D UI at the window's real resolution, 256px monsters, walls, floor and decals, 128px portraits, frame at 1280x720 (`ef163f1`, `6bc2a34`, `12030cc`, `968fe56`, `cc8a5e0`, `0e91d76`)
+- [x] Carved wooden frame round the 3D view (`07c22de`, `9f02144`)
+- [x] Six-hero screen layout: the 3D view in the middle, three panels down each side (`108f3a3`)
+- [x] Corrupted walls: only a Bless purifies them, PixelLab veins, purge and rot, a small puzzle system (`825d1c1` and the commits after it)
+- [x] Full-screen map on M, the corner map restyled, map icons and torchlight flicker (`7349d8c`, `423569a`, `8c1d444`, `af6a385`, `d1c5d84`)
+- [x] Pop-up layer and the new spell list (`e9026d4`, `7802bd0`)
+- [x] Loot pop-up: right-click a floor item to choose whose backpack takes it (`2362911`)
+- [x] Critical hits and fails (`c295c16`)
+- [x] Food: five slow-healing items, mouldy bread, monster drops (`5c0b4aa`)
+- [x] Hits from behind and the sides: directional jolt, glow and sound (`c68c362`)
+- [x] Monster hit effects: a PixelLab effect across the view with each landed blow (`f8210f2`)
+- [x] Monster pacing and attack timing (`7a0c0d2`, `939a461`)
+- [x] Intro cutscene (`1779f51`)
+- [x] Title screen and UI art pass (`8607bf0`, `1d29cf2`)
+- [x] Scroll of Resurrection (`5211b38`)
+- [x] Character sheet discoverability, equip from the cursor and the floor (`a008fd8`, `453b77f`, `5839ee9`)
+- [x] New weapons: long sword, flail, slingshot and stones, bow and arrows (`b96fed3`, `d0825fe`, `553b527`, `70fb329`)
+- [x] Only a caster holds a spellbook or holy symbol (`0462061`)
+- [x] Key pick-up banner (`ea68b11`)
+- [x] Fireball and Magic Missile shockwave ripple (`46080ea`, `d110025`)
+- [x] Curse zone look pass: murky fog creeping from the edges, sputtering flame with a wisp, slow edge-glow vignette, Bless pocket recoil, Reduce flashing (`5a81a22`)
+- [x] Zombie: a PixelLab-styled, animated tier 2 monster in the test room and on floor 1, room 3 at (15,11) (`64d971b`)
+- [x] Zombie death gas: a 1 in 5 chance of a toxic cloud within a tile of the body that stings the party, with a test VFX cloud (`6ec327b`)
+- [x] Design docs and demo READMEs: `docs/design/expansion_design.md` (`9cadb9c`), the classes plan (`69d9eca`), `docs/code_review.md`, `docs/tone.md`, `docs/technical_brief.md`, demo READMEs v0.2 to v0.11
+
 ## Ideas inbox
 
 New ideas land here first, instead of going into finished phases. Once the current queue is clear, we sort them into proper steps together.
