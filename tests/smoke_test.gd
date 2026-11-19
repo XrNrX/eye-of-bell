@@ -84,6 +84,7 @@ func _init() -> void:
 	await _check_curse_zones()
 	await _check_curse_look()
 	_check_death_gas()
+	_check_inventory_quick()
 	await _check_oil()
 	await _check_torch_throw()
 	await _check_food()
@@ -1268,6 +1269,62 @@ func _check_curse_zones() -> void:
 ## How a curse zone looks (the fog and the edge glow): the fog creeps in from the zone's edges, a Bless pushes it back and the edge glow
 ## with it, both creep back over the pocket's last seconds, the glow thickens the longer the party stays dark, Reduce flashing holds it
 ## steady, and a flame that dies leaves a wisp. Driven by calling the curse node's own ticks, so it does not depend on real time.
+## The inventory screen shows a hero's two quick slots beside the hands and armour, and they work like every other slot there.
+func _check_inventory_quick() -> void:
+	_rest_everyone()
+	var inv: Node = get_first_node_in_group("inventory")
+	var cursor: Node = get_first_node_in_group("cursor")
+	var hero = party.member(0)
+	hero.quick[0] = null
+	hero.quick[1] = null
+	inv.show_screen(0)
+	check("inventory: the quick slots are on the screen, two of them", inv.quick_slots.size() == 2 and inv.quick_slots[0].kind == inv.InventorySlotScript.Kind.QUICK)
+	var potion: Resource = load("res://data/items/healing_potion.tres")
+	var sword: Resource = load("res://data/items/short_sword.tres")
+	cursor.hold(ItemStack.wrap(potion))
+	inv.quick_slots[1]._click_slot()
+	check("inventory: a potion on the cursor goes into the second quick slot (and the cursor is empty)", hero.quick[1] != null and hero.quick[1].def == potion and not cursor.is_holding())
+	var changed := [0]
+	var on_changed := func(_slot): changed[0] += 1
+	party.quick_changed.connect(on_changed)
+	inv.quick_slots[1]._click_slot()
+	check("inventory: clicking it empty-handed lifts it back onto the cursor, and the party panel is told", hero.quick[1] == null and cursor.is_holding() and cursor.held.def == potion and changed[0] > 0)
+	cursor.release()
+	cursor.hold(ItemStack.wrap(sword))
+	inv.quick_slots[0]._click_slot()
+	check("inventory: a sword does not go in a quick slot", hero.quick[0] == null and cursor.is_holding())
+	cursor.release()
+	var two: RefCounted = ItemStack.wrap(potion)
+	two.count = 2
+	cursor.hold(two)
+	inv.quick_slots[0]._click_slot()
+	var held_two: RefCounted = ItemStack.wrap(potion)
+	cursor.hold(held_two)
+	inv.quick_slots[0]._click_slot()
+	check("inventory: a stack tops up a matching quick stack", hero.quick[0] != null and hero.quick[0].count == 3 and not cursor.is_holding())
+	hero.quick[0].count = 1  # Back to a single one, so the right-click below uses it.
+	hero.hp = 1
+	inv.quick_slots[0]._use_item()
+	check("inventory: right-click uses the potion from a quick slot (heals, empties it)", hero.hp > 1 and hero.quick[0] == null)
+	party.quick_changed.disconnect(on_changed)
+	hero.hp = 0
+	cursor.hold(ItemStack.wrap(potion))
+	var why: String = inv.quick_slots[0].refusal(cursor.held)
+	check("inventory: a dead hero's quick slot refuses a new item (%s)" % why, why != "")
+	cursor.release()
+	hero.hp = hero.def.max_hp
+	inv.hide_screen()
+	var press_i := InputEventKey.new()
+	press_i.physical_keycode = KEY_I
+	press_i.keycode = KEY_I
+	press_i.pressed = true
+	inv._unhandled_input(press_i)
+	check("inventory: pressing I opens it", inv.visible)
+	inv._unhandled_input(press_i)
+	check("inventory: pressing I again closes it", not inv.visible)
+	_rest_everyone()
+
+
 ## The zombie's death gas (gas_field.gd): a 1 in 5 chance of a cloud within a tile of the body, which stings a party standing in it.
 func _check_death_gas() -> void:
 	dungeon.clear_monsters()

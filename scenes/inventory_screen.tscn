@@ -77,7 +77,7 @@ theme_override_constants/separation = 4
 [node name="HandsLabel" type="Label" parent="Center/Window/Box"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 8
-text = "Hands / Armour"
+text = "Hands / Armour / Quick slots"
 
 [node name="Hands" type="HBoxContainer" parent="Center/Window/Box"]
 unique_name_in_owner = true

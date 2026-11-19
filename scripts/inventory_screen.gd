@@ -1,7 +1,7 @@
 extends CanvasLayer
 ## The inventory screen: opened by clicking a character portrait (on the main party
 ## HUD, or the character strip inside here) via the "inventory" group's show_screen.
-## Shows one "focused" member's two hand slots, their armour slot and a backpack
+## Shows one "focused" member's two hand slots, their armour slot, their two quick slots and a backpack
 ## grid, plus a strip of every member's portrait.
 ##
 ## Eye-of-the-Beholder click-to-click, one system: the cursor (cursor_item.gd) is the
@@ -38,6 +38,7 @@ var focused_slot := 0
 var strip_slots := []     # CHARACTER-kind InventorySlot, one per party member.
 var hand_slots := []      # HAND-kind InventorySlot, re-pointed to whoever's focused.
 var armour_slot: Panel
+var quick_slots := []     # QUICK-kind InventorySlot: the member's two quick slots (the ones under their portrait on the party panel).
 var backpack_slots := []  # BACKPACK-kind InventorySlot, likewise re-pointed.
 var sheet: PanelContainer  # The character sheet beside the window (character_sheet.gd).
 @onready var window: Control = $Center/Window
@@ -77,7 +78,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		hide_screen()
 		get_viewport().set_input_as_handled()  # So the pause menu doesn't also open.
 		return
-	# C opens the character sheet (for the hero whose panel the mouse is over, else the one you last
+	# I opens the inventory (for the hero whose panel the mouse is over, else the one you last looked at, with the sheet beside
+	# it like a portrait click; closes it when it is showing). C opens the character sheet (for the hero whose panel the mouse is over, else the one you last
 	# looked at; closes it when it is showing). Shift+1 to Shift+4 open each hero's sheet directly, by
 	# position on the party panel. Not while another screen (pause menu, Level complete, Game over)
 	# owns the paused game.
@@ -86,7 +88,18 @@ func _unhandled_input(event: InputEvent) -> void:
 	if get_tree().paused and not visible:
 		return
 	var slot := -1
-	if event.physical_keycode == KEY_C and not event.shift_pressed and not event.ctrl_pressed and not event.alt_pressed:
+	if event.physical_keycode == KEY_I and not event.shift_pressed and not event.ctrl_pressed and not event.alt_pressed:
+		if visible:
+			hide_screen()
+			get_viewport().set_input_as_handled()
+			return
+		slot = focused_slot
+		var ihud := get_tree().get_first_node_in_group("party_hud")
+		if ihud != null:
+			var over_i: int = ihud.slot_under_mouse()
+			if over_i >= 0:
+				slot = over_i
+	elif event.physical_keycode == KEY_C and not event.shift_pressed and not event.ctrl_pressed and not event.alt_pressed:
 		if visible and sheet.visible:
 			sheet.visible = false
 			refresh()
@@ -162,6 +175,12 @@ func _build_slots() -> void:
 	for i in PartyScript.HAND_SLOTS:
 		hand_slots.append(_add_slot(hands_box, focused_slot, Kind.HAND, i))
 	armour_slot = _add_slot(hands_box, focused_slot, Kind.ARMOUR)  # Beside the hands.
+	var gap := Control.new()  # Set the quick slots apart from the equipment.
+	gap.custom_minimum_size = Vector2(16, 0)
+	gap.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hands_box.add_child(gap)
+	for i in PartyScript.QUICK_SLOTS:
+		quick_slots.append(_add_slot(hands_box, focused_slot, Kind.QUICK, i))
 	for i in PartyScript.BACKPACK_SIZE:
 		backpack_slots.append(_add_slot(backpack_grid, focused_slot, Kind.BACKPACK, i))
 	refresh()
@@ -191,6 +210,9 @@ func refresh() -> void:
 		hand_slots[i].refresh()
 	armour_slot.setup(self, focused_slot, InventorySlotScript.Kind.ARMOUR)
 	armour_slot.refresh()
+	for i in quick_slots.size():
+		quick_slots[i].setup(self, focused_slot, InventorySlotScript.Kind.QUICK, i)
+		quick_slots[i].refresh()
 	for i in backpack_slots.size():
 		backpack_slots[i].setup(self, focused_slot, InventorySlotScript.Kind.BACKPACK, i)
 		backpack_slots[i].refresh()

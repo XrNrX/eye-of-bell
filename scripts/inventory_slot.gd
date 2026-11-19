@@ -16,6 +16,10 @@ extends Panel
 ## Hands and armour hold a single item, so a stack can't go there -- except a hand
 ## takes a stack of a throwable (darts).
 ##
+## QUICK slots are the member's two quick slots (Party.Member.quick, the ones under their portrait on the party panel): they
+## hold stacks of what Party.quick_accepts takes (potions, food, scrolls, traps, lights, throwables), changed through
+## Party.set_quick so the party panel redraws, and a dead hero's can be emptied but not filled.
+##
 ## Acts on the mouse PRESS. Godot routes the release to whichever control got the
 ## press, wherever the pointer has moved since, so the press is the only event that
 ## reliably belongs to the slot under the pointer.
@@ -23,7 +27,7 @@ extends Panel
 const ItemDef := preload("res://scripts/item_def.gd")
 const StackCount := preload("res://scripts/stack_count.gd")
 
-enum Kind { HAND, ARMOUR, BACKPACK, CHARACTER }
+enum Kind { HAND, ARMOUR, BACKPACK, CHARACTER, QUICK }
 
 const ITEM_SLOT := Vector2(48, 48)      # Holds a 48x48 item icon (24x24 logical, drawn at 2x) at its native size.
 const PORTRAIT_SLOT := Vector2(32, 32)  # A 64x64 portrait scaled to exactly half.
@@ -39,7 +43,7 @@ const PLACEHOLDER_TINT := Color(1, 1, 1, 0.3)
 var screen: Node    # InventoryScreen: party/cursor access, refresh() and say().
 var member_slot: int
 var kind: Kind
-var index: int = 0  # Hand index (0/1) or backpack index; unused for ARMOUR/CHARACTER.
+var index: int = 0  # Hand index (0/1), quick slot index (0/1) or backpack index; unused for ARMOUR/CHARACTER.
 
 var icon: TextureRect
 var count_label: Control
@@ -84,6 +88,7 @@ func get_item() -> RefCounted:
 		Kind.HAND: return m.hands[index]
 		Kind.ARMOUR: return m.armour
 		Kind.BACKPACK: return m.backpack[index]
+		Kind.QUICK: return m.quick[index]
 	return null
 
 
@@ -93,6 +98,7 @@ func set_item(stack: RefCounted) -> void:
 		Kind.HAND: m.hands[index] = stack
 		Kind.ARMOUR: m.armour = stack
 		Kind.BACKPACK: m.backpack[index] = stack
+		Kind.QUICK: screen.party.set_quick(member_slot, index, stack)  # Emits quick_changed: the party panel redraws.
 
 
 ## Why this slot won't take that stack, or "" if it will. Backpack cells take anything;
@@ -102,6 +108,12 @@ func refusal(stack: RefCounted) -> String:
 	match kind:
 		Kind.HAND: allowed = ItemDef.allowed_in_hand(stack.def.type)
 		Kind.ARMOUR: allowed = ItemDef.allowed_in_armour(stack.def.type)
+	if kind == Kind.QUICK and screen != null and screen.party != null:
+		var qm = screen.party.member(member_slot)
+		if qm != null and not qm.is_alive():
+			return "%s is dead." % qm.name()
+		if not screen.party.quick_accepts(stack):
+			return "The %s can't go in a quick slot." % stack.def.display_name
 	if not allowed:
 		return "The %s doesn't go there." % stack.def.display_name
 	if (kind == Kind.HAND or kind == Kind.ARMOUR) and screen != null and screen.party != null:
@@ -116,7 +128,7 @@ func refusal(stack: RefCounted) -> String:
 ## Backpack cells hold stacks; a hand holds a stack only of a throwable (darts), so
 ## the hero can throw them one after another.
 func holds_stacks(def: Resource) -> bool:
-	return kind == Kind.BACKPACK or (kind == Kind.HAND and def.can_throw())
+	return kind == Kind.BACKPACK or kind == Kind.QUICK or (kind == Kind.HAND and def.can_throw())
 
 
 func refresh() -> void:
@@ -142,6 +154,8 @@ func refresh() -> void:
 			tooltip_text = "%s hand: a weapon or a spell focus" % ("Left" if index == 0 else "Right")
 		elif stack == null and kind == Kind.ARMOUR:
 			tooltip_text = "Armour"
+		elif stack == null and kind == Kind.QUICK:
+			tooltip_text = "Quick slot (key %d): a potion, food, a scroll, a trap, a light or something to throw" % (member_slot * 2 + index + 1)
 		if stack:
 			tooltip_text = stack.label()
 			if stack.count > 1:
@@ -185,6 +199,7 @@ func _right_click(use_one := false) -> void:
 			return
 		screen.cursor.add(here.take_one())
 		screen.say("")
+		_changed()
 		screen.refresh()
 		return
 	_use_item()
@@ -203,10 +218,17 @@ func _use_item() -> void:
 	stack.count -= 1  # Spent: one from the stack.
 	if stack.count <= 0:
 		set_item(null)
+	_changed()
 	screen.refresh()
 	if result.close:
 		get_tree().call_group("hud", "show_message", result.message)
 		screen.hide_screen()
+
+
+## A stack in a quick slot changed in place (merged, split, used): tell the party panel.
+func _changed() -> void:
+	if kind == Kind.QUICK and screen != null and screen.party != null:
+		screen.party.quick_changed.emit(member_slot)
 
 
 ## Pick up (the whole stack), put down, merge into a matching stack, or swap.
@@ -238,6 +260,7 @@ func _click_slot() -> void:
 				cursor.hold(here)  # Swap: what was in the slot is now on the cursor.
 		get_tree().call_group("audio", "play", "drop")
 		screen.say("")
+	_changed()
 	screen.refresh()
 
 

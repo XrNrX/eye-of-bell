@@ -105,8 +105,8 @@ func _check_pacing(tools: Node, press: Callable, player: Node) -> void:
 	check("Y puts the pacing back from the files", is_equal_approx(skel.step_interval, step0) and is_equal_approx(skel.reaction_delay, react0))
 	var station: Dictionary = DungeonMap.STATIONS.filter(func(s): return s.name == "Monster pacing")[0]
 	tools._teleport(station)
-	press.call(KEY_I)
-	check("I spawns a pack of three ahead", get_nodes_in_group("monsters").size() == 3)
+	press.call(KEY_SEMICOLON)
+	check("; spawns a pack of three ahead", get_nodes_in_group("monsters").size() == 3)
 	for n in get_nodes_in_group("monsters"):
 		n.free()
 	# Flanking, in the open arena: the party faces north with a skeleton in front and two more coming from the sides.

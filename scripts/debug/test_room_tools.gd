@@ -8,7 +8,7 @@ extends CanvasLayer
 ## list), B banter, N fog, J screen shake, P spell and torch shadows. Monster pacing: O picks a value (step interval, reaction
 ## delay, arrival recovery, flank delay), [ and ] lower or raise it by 0.1 s on every monster kind at once (the loaded
 ## MonsterDefs, so live monsters feel it on their next move; never saved: copy what feels right into data/monsters/*.tres),
-## Y puts the values from the files back, I spawns a pack of three skeletons ahead. \\ lifts the light room's curse zone or puts it back. Hit effects: - plays the next monster kind's
+## Y puts the values from the files back, ; spawns a pack of three skeletons ahead. \\ lifts the light room's curse zone or puts it back. Hit effects: - plays the next monster kind's
 ## hit effect (MonsterDef.hit_effect) across the view, from the front, the left, the right and behind in turn, with no damage. Held monster: 9 holds the monster in front
 ## (Hold Monster's status and time, with no resistance roll and no mana), 0 frees every held monster. X and U wait for an XP system: they call Party.add_xp / Party.level_up_party when
 ## those exist and say so in the log until then. A new system gets a station in levels/test_room.gd and, if it needs one, a key here.
@@ -178,7 +178,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_tune(1.0)
 		KEY_Y:
 			_reset_pacing()
-		KEY_I:
+		KEY_SEMICOLON:  # (I opens the inventory in play, so the pack moved here.)
 			_spawn_pack()
 		KEY_MINUS:
 			_next_hit_effect()
@@ -291,7 +291,7 @@ func _reset_pacing() -> void:
 	_say("Monster pacing back to the files.")
 
 
-## I: three skeletons in a line, 3 to 5 tiles ahead (where there is floor), to back away from or be flanked by.
+## ; (semicolon): three skeletons in a line, 3 to 5 tiles ahead (where there is floor), to back away from or be flanked by.
 func _spawn_pack() -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	var dungeon := get_tree().get_first_node_in_group("dungeon")
@@ -518,7 +518,7 @@ func _refresh_help() -> void:
 		"P   SHADOWS       %s" % _on(Settings.spell_shadows),
 		"",
 		"MONSTER PACING (NOT SAVED)",
-		"I   PACK AHEAD    9 HOLD  0 FREE",
+		";   PACK AHEAD    9 HOLD  0 FREE",
 		"-   SHOW NEXT MONSTER HIT EFFECT",
 		"=   BURN LIGHTS DOWN",
 		"\\   LIFT / RESTORE CURSE ZONE",

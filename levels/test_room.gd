@@ -13,7 +13,7 @@ extends RefCounted
 ##
 ## Debug keys (scripts/debug/test_room_tools.gd, H shows them in the game): G god mode, R refill HP and mana, X +500 XP,
 ## U level up, Z kill all monsters, V spawn a monster in front, T teleport to a station, B banter, N fog, J screen shake,
-## and for monster pacing O (which value), [ and ] (lower, raise), Y (reset from the files), I (a pack of three ahead);
+## and for monster pacing O (which value), [ and ] (lower, raise), Y (reset from the files), ; (a pack of three ahead);
 ## 9 holds the monster in front (no roll, no mana), 0 frees every held monster; = burns every lit light down to its last seconds.
 
 
@@ -266,7 +266,7 @@ THE LEVER."},
 IT FROM A HAND.
 LURE ONE ON."},
 	{"cell": Vector2i(4, 31), "side": 1, "text": "MONSTER PACING
-I = PACK AHEAD
+; = PACK AHEAD
 O [ ] Y = TUNE"},
 	{"cell": Vector2i(26, 29), "side": 0, "text": "OPEN ROOM
 FLANKING"},
