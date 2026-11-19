@@ -530,6 +530,8 @@ var force_inventory := false
 ## Shift held (or `force_equip`, for tests): a portrait click with armour or a weapon on the cursor puts it on that hero. A plain
 ## click puts it in their backpack, so a swap can never trap the item in a loop.
 var force_equip := false
+var force_feed := false  # Shift held (or this, for tests): a portrait click with food on the cursor feeds that hero. A plain click puts it in their backpack.
+var told_about_feed := false   # The "Shift+click to feed" tip is said once a run, with the first stowing.
 var told_about_equip := false  # The "Shift+click to equip" tip is said once a run, with the first stowing.
 
 
@@ -548,7 +550,15 @@ func _on_portrait(slot: int) -> void:
 		_revive_from_cursor(slot, cursor)  # A Scroll of Resurrection on the cursor: read it on this portrait.
 		return
 	if cursor != null and cursor.is_holding() and cursor.held.def.is_food():
-		_feed_from_cursor(slot, cursor)  # Food on the cursor: feed this hero.
+		if force_feed or Input.is_key_pressed(KEY_SHIFT):
+			_feed_from_cursor(slot, cursor)  # Shift+click: feed this hero.
+			return
+		var stowed: Dictionary = party.stow_from_cursor(slot, cursor)  # A plain click puts it in their backpack.
+		var note: String = stowed.message
+		if stowed.done and not told_about_feed:
+			told_about_feed = true
+			note += " (Shift+click a portrait to feed them instead.)"
+		get_tree().call_group("hud", "show_message", note)
 		return
 	if cursor != null and cursor.is_holding() and party.is_equippable(cursor.held.def) and pending.is_empty():
 		var equip: bool = force_equip or Input.is_key_pressed(KEY_SHIFT)
@@ -668,7 +678,7 @@ const FOOD_TICK := Color(0.961, 0.812, 0.502)   # Palette torch_300: a warm tick
 const SICK_TICK := Color(0.498, 0.722, 0.541)   # Palette curse_500: sickness is the curse.
 
 
-## Food on the cursor, clicked onto a hero's portrait: they eat it (one from the stack).
+## Food on the cursor, Shift+clicked onto a hero's portrait: they eat it (one from the stack). A plain click stows it in their backpack.
 func _feed_from_cursor(target: int, cursor: Node) -> void:
 	var result: Dictionary = party.eat(target, cursor.held.def)
 	if result.message != "":

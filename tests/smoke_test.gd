@@ -85,6 +85,7 @@ func _init() -> void:
 	await _check_curse_look()
 	_check_death_gas()
 	_check_inventory_quick()
+	_check_food_to_portrait()
 	await _check_oil()
 	await _check_torch_throw()
 	await _check_food()
@@ -1322,6 +1323,32 @@ func _check_inventory_quick() -> void:
 	check("inventory: pressing I opens it", inv.visible)
 	inv._unhandled_input(press_i)
 	check("inventory: pressing I again closes it", not inv.visible)
+	_rest_everyone()
+
+
+## Food on the cursor, clicked onto a portrait, goes into that hero's backpack; Shift+click feeds them.
+func _check_food_to_portrait() -> void:
+	_rest_everyone()
+	var hud: Node = get_first_node_in_group("party_hud")
+	var cursor: Node = get_first_node_in_group("cursor")
+	var hero = party.member(1)
+	hero.backpack = hero.backpack.map(func(_x): return null)
+	hero.hp = maxi(1, hero.def.max_hp - 5)
+	var hp0: int = hero.hp
+	var bread: Resource = load("res://data/items/stale_bread.tres")
+	cursor.hold(ItemStack.wrap(bread))
+	hud._on_portrait(1)
+	var in_pack := false
+	for st in hero.backpack:
+		if st != null and st.def == bread:
+			in_pack = true
+	check("food: a plain click on a portrait puts it in that hero's backpack (not eaten)", in_pack and not cursor.is_holding() and hero.food_left == 0.0 and hero.hp == hp0)
+	cursor.hold(ItemStack.wrap(bread))
+	hud.force_feed = true
+	hud._on_portrait(1)
+	hud.force_feed = false
+	check("food: Shift+click feeds them instead", hero.food_left > 0.0 and not cursor.is_holding())
+	hero.backpack = hero.backpack.map(func(_x): return null)
 	_rest_everyone()
 
 
