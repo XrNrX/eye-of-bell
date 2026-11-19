@@ -17,6 +17,7 @@ const TORCH_FRAMES := 12
 const TORCH_FPS := 10.0
 const TORCH_STRENGTH := 0.16   # Additive, so this stays a faint warmth on the paper.
 const TORCH_STEADY := 0.08     # With Reduce flashing: one still frame, dimmer.
+const OPACITY := 0.82               # The whole map is slightly see-through, so what is under it in the corner still shows.
 const BORDER := 4                  # Thickness of the iron frame, in pixels.
 
 const CELL_PX := 8                 # One map cell, in 640x360 pixels.
@@ -34,6 +35,7 @@ var wash: Texture2D # One cell of floor wash.
 
 
 func _ready() -> void:
+	modulate = Color(1, 1, 1, OPACITY)
 	add_to_group("popup_avoid")  # Pop-ups keep clear of the map and dim it (popup_layer.gd).
 	torch_frame.atlas = TORCH_SHEET
 	torch = TextureRect.new()
@@ -108,4 +110,4 @@ func _set_torch_frame(i: int) -> void:
 
 ## A pop-up is open (popup_layer.gd calls this on every node in group "popup_avoid"): dim the map so the pop-up is the focus.
 func set_dimmed(on: bool) -> void:
-	modulate = Color(0.55, 0.55, 0.55) if on else Color.WHITE
+	modulate = Color(0.55, 0.55, 0.55, OPACITY) if on else Color(1, 1, 1, OPACITY)

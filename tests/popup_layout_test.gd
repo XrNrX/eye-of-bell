@@ -49,7 +49,7 @@ func _init() -> void:
 		hud.cancel_casting()
 		await process_frame
 		await process_frame
-		check("slot %d: minimap back to normal after" % slot, minimap.modulate == Color.WHITE and popups.open_count == 0)
+		check("slot %d: minimap back to normal after" % slot, minimap.modulate == Color(1, 1, 1, minimap.OPACITY) and popups.open_count == 0)
 
 	# The old spot (left of the party grid, level with a top-row hero's hands) does overlap the map: it must be moved.
 	var size := Vector2(150, 60)
