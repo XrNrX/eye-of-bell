@@ -130,6 +130,12 @@ func _ready() -> void:
 		menu_box.move_child(room_button, quit_button.get_index())
 		room_button.pressed.connect(_click)
 		room_button.pressed.connect(_enter_test_room)
+		if DungeonMap.test_room_only():  # The sandbox build: no New Game, no Load, just the room.
+			new_game_button.visible = false
+			load_button.visible = false
+			menu_box.move_child(room_button, 0)
+			room_button.focus_mode = Control.FOCUS_ALL
+			room_button.call_deferred("grab_focus")
 
 	load_button.disabled = not SaveGame.has_save()  # Nothing to load yet: greyed out.
 	_refresh_volume()
@@ -137,7 +143,8 @@ func _ready() -> void:
 	_apply_look()
 	for b in [new_game_button, load_button, options_button, quit_button, back_button]:
 		b.pressed.connect(_click)  # (Load is also greyed out when there is no save: no click then.)
-	new_game_button.grab_focus()  # So Enter / Space and the arrow keys work straight away.
+	if not DungeonMap.test_room_only():
+		new_game_button.grab_focus()  # So Enter / Space and the arrow keys work straight away.
 
 
 func _process(delta: float) -> void:
@@ -171,6 +178,9 @@ func _enter_test_room() -> void:
 
 
 func _on_new_game_pressed() -> void:
+	if DungeonMap.test_room_only():
+		_enter_test_room()
+		return
 	DungeonMap.use_level("")
 	get_tree().change_scene_to_file(MAIN_SCENE)
 

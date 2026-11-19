@@ -109,7 +109,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if event.keycode == KEY_F12:
 		get_viewport().set_input_as_handled()
-		DungeonMap.use_level("" if in_room else DungeonMap.TEST_ROOM_PATH)
+		DungeonMap.use_level("" if in_room and not DungeonMap.test_room_only() else DungeonMap.TEST_ROOM_PATH)
 		get_tree().paused = false
 		get_tree().reload_current_scene()
 		return

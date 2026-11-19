@@ -267,6 +267,11 @@ static var _floor1 := {}
 
 
 ## True in a debug build that has the test room's level file (a release export leaves it out).
+## True in the "Test Room" export (custom feature "testroom"): the menu offers only the test room, and F12 does not leave it.
+static func test_room_only() -> bool:
+	return test_room_available() and OS.has_feature("testroom")
+
+
 static func test_room_available() -> bool:
 	return OS.is_debug_build() and ResourceLoader.exists(TEST_ROOM_PATH)
 
