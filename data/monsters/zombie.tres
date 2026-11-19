@@ -33,3 +33,5 @@ pixel_size = 0.01250
 tier = 2
 hit_effect = "skeleton_claws"
 crit_chance = 3
+death_gas_chance = 0.2
+death_gas_radius = 1

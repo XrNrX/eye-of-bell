@@ -470,6 +470,7 @@ func _die(big := false, killer := -1) -> void:
 		remove_status(id, false)  # It dies held: no "released" news and no shatter.
 	Events.send(get_tree(), "monster_killed", [def, cell, killer])
 	_drop_loot()
+	_release_gas()
 	_release_tiles()
 	get_tree().call_group("dungeon", "refresh")
 	var tween := create_tween()
@@ -493,6 +494,17 @@ func _drop_loot() -> void:
 		return
 	dungeon.place_item(cell, ItemStack.wrap(def.drop_item))
 	get_tree().call_group("hud", "show_message", "The %s leaves %s." % [def.display_name.to_lower(), def.drop_item.display_name.to_lower()])
+
+
+## Maybe let off toxic gas where it fell (MonsterDef.death_gas_chance and death_gas_radius), rolled with the combat dice.
+func _release_gas() -> void:
+	if def.death_gas_chance <= 0.0 or CombatRules.rng().randf() >= def.death_gas_chance:
+		return
+	var dungeon := get_tree().get_first_node_in_group("dungeon")
+	if dungeon == null or dungeon.get("gas") == null:
+		return
+	dungeon.gas.release(cell, def.death_gas_radius)
+	get_tree().call_group("hud", "show_message", "The %s splits. Gas rolls out." % def.display_name.to_lower())
 
 
 ## Remove every tile this monster holds (it can hold two while mid-step).

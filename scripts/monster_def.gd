@@ -57,6 +57,12 @@ extends Resource
 @export var sick_damage := 6
 @export var sick_seconds := 6.0
 
+@export_group("Death gas")
+## When it dies it may let off a cloud of toxic gas (gas_field.gd): the chance is 0..1 (the zombie's is 0.2), the cloud covers every
+## open tile within `death_gas_radius` tiles of the body.
+@export var death_gas_chance := 0.0
+@export var death_gas_radius := 1
+
 @export_group("Drops")
 ## What it leaves on its tile when it dies, and how often (0..1): a skeleton guard may leave its rations.
 @export var drop_item: Resource

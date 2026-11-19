@@ -38,6 +38,11 @@ const PATH := "res://data/light.tres"
 @export var sconce_torch_seconds := 120.0  # A torch the level starts in a sconce burns this long once taken out (a stub; a held one has 240).
 @export var sconce_see_range := 6          # A sconce counts as seen from a tile this near with a clear line (it shows on the map).
 
+@export_group("Gas")
+@export var gas_seconds := 5.5          # A cloud of toxic gas (a monster's death, gas_field.gd) lingers this long.
+@export var gas_hero_dps := 1.0         # Each second the party stands in it, every living hero loses this much (never saved, no fire).
+@export var gas_pixel := 0.016          # World size of one cloud art pixel: a cloud about 2 units wide, one tile.
+
 @export_group("Oil")
 @export var slick_seconds := 120.0      # An oil slick lasts this long or until fire touches it.
 @export var burn_seconds := 6.0         # Burning oil: how long a tile burns...

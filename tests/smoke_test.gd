@@ -83,6 +83,7 @@ func _init() -> void:
 	await _check_sconces()
 	await _check_curse_zones()
 	await _check_curse_look()
+	_check_death_gas()
 	await _check_oil()
 	await _check_torch_throw()
 	await _check_food()
@@ -1267,6 +1268,51 @@ func _check_curse_zones() -> void:
 ## How a curse zone looks (the fog and the edge glow): the fog creeps in from the zone's edges, a Bless pushes it back and the edge glow
 ## with it, both creep back over the pocket's last seconds, the glow thickens the longer the party stays dark, Reduce flashing holds it
 ## steady, and a flame that dies leaves a wisp. Driven by calling the curse node's own ticks, so it does not depend on real time.
+## The zombie's death gas (gas_field.gd): a 1 in 5 chance of a cloud within a tile of the body, which stings a party standing in it.
+func _check_death_gas() -> void:
+	dungeon.clear_monsters()
+	_rest_everyone()
+	var zdef: Resource = load("res://data/monsters/zombie.tres")
+	check("gas: the zombie lets gas off one time in five, a tile round", is_equal_approx(zdef.death_gas_chance, 0.2) and zdef.death_gas_radius == 1)
+	check("gas: the cloud sheet exists", load("res://art/spells/gas/cloud_sheet.png") != null)
+	var gas: Node = dungeon.gas
+	var spot: Vector2i = AHEAD_1
+	var covered: int = gas.release(spot, 1)
+	check("gas: a release covers the open tiles within a tile of the body (%d)" % covered, covered >= 3 and covered <= 9 and gas.has_gas(spot))
+	var walls_clear := true
+	for c in gas.clouds.keys():
+		if DungeonMap.is_wall(c) or maxi(absi(c.x - spot.x), absi(c.y - spot.y)) > 1:
+			walls_clear = false
+	check("gas: never in a wall or further out", walls_clear)
+	var before: int = party.members[0].hp
+	var was: Vector2i = DungeonMap.player_cell
+	DungeonMap.player_cell = spot
+	gas._process(1.05)
+	check("gas: a party standing in it loses a hit point each (%d to %d)" % [before, party.members[0].hp], party.members[0].hp == before - 1 and gas.stung == 1)
+	DungeonMap.player_cell = Vector2i(-5, -5)
+	var hp_now: int = party.members[0].hp
+	gas._process(1.05)
+	check("gas: a party standing out of it loses nothing", party.members[0].hp == hp_now)
+	gas._process(LightConfig.get_config().gas_seconds + 1.0)
+	check("gas: it thins away, flipbooks and all", gas.clouds.is_empty())
+	DungeonMap.player_cell = was
+	# The roll: always at a chance of 1, never at 0.
+	var def_chance: float = zdef.death_gas_chance
+	var released_before: int = gas.released
+	zdef.death_gas_chance = 1.0
+	var z: Node = _monster("zombie", spot)
+	z._die()
+	check("gas: a zombie dying with a sure roll lets gas off", gas.released == released_before + 1 and gas.has_gas(spot))
+	gas.clouds.clear()
+	zdef.death_gas_chance = 0.0
+	var z2: Node = _monster("zombie", spot)
+	z2._die()
+	check("gas: and with no chance, none", gas.released == released_before + 1)
+	zdef.death_gas_chance = def_chance
+	dungeon.clear_monsters()
+	_rest_everyone()
+
+
 func _check_curse_look() -> void:
 	dungeon.clear_monsters()
 	var real_zones: Array = DungeonMap.CURSE_ZONES

@@ -838,6 +838,15 @@ func burn_party(amount: int) -> void:
 		get_tree().call_group("banter", "event", "walked_into_fire", {"actor": front.class_id()})
 
 
+## Toxic gas under the party (gas_field.gd): each living hero loses `amount` HP (source "gas").
+func gas_party(amount: int, say := true) -> void:
+	for m in members:
+		if m.is_alive():
+			hurt(m, amount, "gas")
+	if say:
+		get_tree().call_group("hud", "show_message", "The gas burns your lungs.")
+
+
 ## A flask of oil used on this hero's weapon (the inventory's shift+right-click, `use_item`): the next LightConfig.oiled_hits landed melee hits
 ## do +oiled_bonus fire. Returns {used, message, close}.
 func _oil_weapon(m: Member) -> Dictionary:
