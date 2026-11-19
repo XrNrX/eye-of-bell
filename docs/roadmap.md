@@ -48,9 +48,9 @@ Loose ends from phases that are otherwise done, plus things the 13 Nov tech brie
 
 - [x] 5.7 Enemy health bars (Phase 5)
 - [ ] 7b.8 Dead weight: the party slows while carrying a dead character (Phase 7b)
-- [ ] Mini-boss: the Cursed Warden at the stairs (prompt below)
-- [ ] Plague rat: tier 1, fears fire, nests in the cave (prompt below)
-- [ ] Slower mana: 1 point per 6 s instead of 2.5 s (prompt below)
+- [x] Mini-boss: the Cursed Warden at the stairs (prompt below)
+- [x] Plague rat: tier 1, fears fire, nests in the cave (prompt below)
+- [x] Slower mana: 1 point per 6 s instead of 2.5 s (prompt below)
 - [x] Parked work: turn the git stashes (boss-room ambush, fog of war) into named branches, e.g. wip/boss-ambush and wip/fog-of-war, and list them in CLAUDE.md under "Parked work". Do this before Step 7, so the refactors don't make them harder to apply.
 
 **5.7 prompt (Enemy health bars)**
@@ -157,7 +157,7 @@ Model guide: Sonnet for everything unless marked. Switch to Opus where it says s
 - [x] VFX.6 Holy spells (Heal, Bless, Shield, Resurrection): flipbook burst and rising light column with a synced light (Sonnet)
 - [x] VFX.7 Light trails down corridors: additive streak behind bolts and a lit pool on the floor (Sonnet)
 - [x] VFX.8 Normal maps on walls, derived from the stone by script (Sonnet; Opus if the normals come out noisy)
-- [ ] VFX.9 Shockwave or heat-haze shader on impact, snapped to whole pixels (Opus)
+- [x] VFX.9 Shockwave or heat-haze shader on impact, snapped to whole pixels (Opus)
 - [ ] VFX.10 Decide on the palette filter as default: an art call, compare once everything else looks right (you)
 - [ ] VFX.11 Premium PixelLab pass to make spells look amazing (you have about 2000 generations, so be bold): generate one premium Fireball impact first and compare it in-game with the free version; if it's better, upgrade Fireball, Magic Missile, the holy light column and Resurrection, asking for 2-3 variations of each key effect and picking the best (Sonnet)
 
@@ -334,9 +334,9 @@ Rules for this phase:
 * [x] Step 4 Fight tracker (M4, before 7f)
 * [x] Step 5 Run flags in the save (M5, before 7f)
 * [x] Step 6 Banter engine upgrade (M3, before 7f.2; read docs/tone.md first)
-* [ ] Step 7 Tolerant, per-system saves (S1, before 7d and 7i)
+* [x] Step 7 Tolerant, per-system saves (S1, before 7d and 7i)
 * [ ] Step 8 Hero stats layer (S3, before 7i and 8b)
-* [ ] Step 9 Puzzles on the event bus (S7, before 7e)
+* [x] Step 9 Puzzles on the event bus (S7, before 7e)
 * [ ] Step 10 Monster behaviours (S4, before 7d)
 * [ ] Step 11 Item behaviour hooks (S5, before 7g)
 * [ ] Step 12 Levels as data, party survives the stairs (S6, before a second floor or Phase 9)
@@ -1390,10 +1390,10 @@ Light becomes something you manage. Core rule: a torch or candle takes up a hero
 Updated 18 Nov from docs/design/expansion\_design.md (sections 2 and 3 "7l"): only the first stretch of floor 1 stays lit (8 lit sconces, 7 unlit with a torch, 10 empty brackets), a sconce torch is a two-minute stub so torches are never created, and a hero with no light on their tile hits 10 less often with weapons. Do Foundations Step 7 first.
 
 - [x] 7l.1 Torches and candles in hand
-- [ ] 7l.2 Wall sconces you can light and take
-- [ ] 7l.3 Curse zones that snuff flames
-- [ ] 7l.4 Throwing torches
-- [ ] 7l.5 Flask of oil
+- [x] 7l.2 Wall sconces you can light and take
+- [x] 7l.3 Curse zones that snuff flames
+- [x] 7l.4 Throwing torches
+- [x] 7l.5 Flask of oil
 - [ ] 7l.6 Place light and darkness in floor 1
 
 **7l.1 prompt (Torches and candles in hand)**
