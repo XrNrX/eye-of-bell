@@ -37,6 +37,14 @@ extends CanvasLayer
 ## A level built here can never be saved to the real save slot (SaveGame.save refuses any level but floor 1). The editor lives at
 ## the tree root (DungeonMap.add_editor, group "dungeon_editor") so a Build changing the scene does not take it away.
 ##
+## E.5 adds SAVE and OPEN. SAVE asks for a name (lower case letters, digits and underscores) and writes levels/<name>.gd, a plain script
+## of consts in the exact shape of levels/floor_1.gd (editor_save.gd); it asks before overwriting a file that is there. OPEN lists the
+## .gd files in levels/ and puts one on the paper: opening levels/floor_1.gd shows floor 1 with everything the editor knows about
+## (squares, doors, gates, stairs, the start, levers and their links, sconces, items, monsters). What the editor cannot edit yet (puzzles,
+## curse zones, ambushes, plates, signs, armed traps, structures, corrupted walls, the menu camera) is KEPT untouched, shown in grey
+## ("not editable yet") and written out again exactly as it came, so opening a level and saving it under a new name gives the same
+## level back. Build plays an opened level with its puzzles and all.
+##
 ## The paper is data (editor_grid.gd); this script draws it and turns the mouse and keys into strokes. Pixel rules: every line is one
 ## logical pixel, squares are a whole number of pixels (a multiple of 4, so the hatching of neighbours joins), no smooth gradients,
 ## palette colours only. The numbers (sheet size, zoom steps, undo depth) are in scripts/debug/editor_config.tres.
@@ -44,6 +52,7 @@ extends CanvasLayer
 const EditorConfig := preload("res://scripts/debug/editor_config.gd")
 const EditorGrid := preload("res://scripts/debug/editor_grid.gd")
 const EditorCheck := preload("res://scripts/debug/editor_check.gd")
+const EditorSave := preload("res://scripts/debug/editor_save.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const RunState := preload("res://scripts/run_state.gd")
 const SaveGame := preload("res://scripts/save_game.gd")
@@ -114,6 +123,15 @@ var problems: Array = []          # The last check: [{"level": "error" | "warn",
 var marks: Array = []             # The squares the problems point at, marked in red ink until the next click on the paper.
 var play_marker := {}             # Where the party stood when you came back to the paper from a build: {"cell": Vector2i, "facing": int}, or {}.
 var pending_place := {}           # A square to put the party on once the built game has loaded.
+var levels_dir := "res://levels"   # Where SAVE writes and OPEN looks (a test points it elsewhere).
+var level_name := ""              # The file the paper came from or was last saved as (without .gd), or "".
+var confirm_overwrite := ""       # The file the save dialog is waiting to be told it may replace, or "".
+var save_dialog: PanelContainer
+var save_edit: LineEdit
+var save_note: Label
+var save_buttons: HBoxContainer
+var open_dialog: PanelContainer
+var open_list: VBoxContainer
 var problem_dialog: PanelContainer
 var problem_lines: VBoxContainer
 var problem_buttons: HBoxContainer
@@ -160,11 +178,15 @@ func _ready() -> void:
 	_build_toolbar()
 	_load_lists()
 	_build_panel()
-	_add_button("BUILD", Vector2(416, 3), request_build)
-	_add_button("NEW", Vector2(488, 3), _show_new_dialog)
-	_add_button("CLOSE", Vector2(560, 3), close)
+	_add_button("OPEN", Vector2(292, 3), _show_open_dialog, 56)
+	_add_button("SAVE", Vector2(352, 3), _show_save_dialog, 56)
+	_add_button("BUILD", Vector2(412, 3), request_build, 56)
+	_add_button("NEW", Vector2(472, 3), _show_new_dialog, 56)
+	_add_button("CLOSE", Vector2(532, 3), close, 56)
 	_build_new_dialog()
 	_build_problem_dialog()
+	_build_save_dialog()
+	_build_open_dialog()
 	_new_sheet(cfg.new_width, cfg.new_height)
 
 
@@ -193,6 +215,8 @@ func open() -> void:
 	visible = true
 	new_dialog.visible = false
 	problem_dialog.visible = false
+	save_dialog.visible = false
+	open_dialog.visible = false
 	mode = 0
 	_redraw()
 
@@ -204,6 +228,8 @@ func close() -> void:
 	mode = 0
 	new_dialog.visible = false
 	problem_dialog.visible = false
+	save_dialog.visible = false
+	open_dialog.visible = false
 	if opened_pause:
 		get_tree().paused = false
 	opened_pause = false
@@ -229,7 +255,11 @@ func _input(event: InputEvent) -> void:
 	if not visible:
 		return
 	if event.keycode == KEY_ESCAPE:
-		if problem_dialog.visible:
+		if save_dialog.visible:
+			save_dialog.visible = false
+		elif open_dialog.visible:
+			open_dialog.visible = false
+		elif problem_dialog.visible:
 			problem_dialog.visible = false
 		elif new_dialog.visible:
 			new_dialog.visible = false
@@ -239,19 +269,19 @@ func _input(event: InputEvent) -> void:
 		else:
 			close()
 		get_viewport().set_input_as_handled()
-	elif (event.keycode == KEY_DELETE or event.keycode == KEY_BACKSPACE) and not new_dialog.visible:
+	elif (event.keycode == KEY_DELETE or event.keycode == KEY_BACKSPACE) and not _dialog_open():
 		delete_selected()
 		get_viewport().set_input_as_handled()
-	elif event.keycode == KEY_R and not event.ctrl_pressed and not new_dialog.visible:
+	elif event.keycode == KEY_R and not event.ctrl_pressed and not _dialog_open():
 		rotate_selected()
 		get_viewport().set_input_as_handled()
-	elif event.ctrl_pressed and event.keycode == KEY_Z:
+	elif event.ctrl_pressed and event.keycode == KEY_Z and not _dialog_open():
 		if event.shift_pressed:
 			redo()
 		else:
 			undo()
 		get_viewport().set_input_as_handled()
-	elif event.ctrl_pressed and event.keycode == KEY_Y:
+	elif event.ctrl_pressed and event.keycode == KEY_Y and not _dialog_open():
 		redo()
 		get_viewport().set_input_as_handled()
 
@@ -272,6 +302,7 @@ func _new_sheet(w: int, h: int) -> void:
 	selected = {}
 	marks = []
 	play_marker = {}
+	level_name = ""
 	_centre()
 	_redraw()
 
@@ -333,7 +364,7 @@ func _zoom(steps: int, about: Vector2) -> void:
 # --------------------------------------------------------------------------
 
 func _paper_input(event: InputEvent) -> void:
-	if new_dialog.visible or problem_dialog.visible:
+	if _dialog_open():
 		return
 	if event is InputEventMouseButton:
 		var p: Vector2 = event.position
@@ -402,7 +433,7 @@ func _process(delta: float) -> void:
 		if message_left <= 0.0:
 			message = ""
 			root.queue_redraw()
-	if not visible or new_dialog.visible or problem_dialog.visible:
+	if not visible or _dialog_open():
 		return
 	var dir := Vector2.ZERO
 	for key in PAN_KEYS:
@@ -491,7 +522,8 @@ func _draw_root() -> void:
 	var font := root.get_theme_default_font()
 	root.draw_string(font, Vector2(14, 15), "DUNGEON EDITOR", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_300)
 	root.draw_string(font, Vector2(148, 15), "%dx%d  %d FLOOR" % [grid.width, grid.height, grid.floor_count()], HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_500)
-	root.draw_string(font, Vector2(300, 15), "TOOL: " + TOOL_NAMES[tool], HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_300)
+	root.draw_string(font, Vector2(440, 33), "FILE: " + (level_name if level_name != "" else "(NEW)"), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_500)
+	root.draw_string(font, Vector2(440, 43), "TOOL: " + TOOL_NAMES[tool], HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_300)
 	if message != "":
 		root.draw_string(font, Vector2(14, 352), message, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, Color("a8673a"))
 	else:
@@ -526,16 +558,16 @@ func _skin(b: Button) -> void:
 	b.focus_mode = Control.FOCUS_NONE  # (Keys like WASD must never move a button's focus.)
 
 
-func _add_button(text: String, at: Vector2, on_press: Callable) -> Button:
+func _add_button(text: String, at: Vector2, on_press: Callable, width := 64.0) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.clip_text = true
-	b.custom_minimum_size = Vector2(64, 16)
+	b.custom_minimum_size = Vector2(width, 16)
 	_skin(b)
 	b.pressed.connect(on_press)
 	root.add_child(b)
 	b.position = at
-	b.size = Vector2(64, 16)
+	b.size = Vector2(width, 16)
 	return b
 
 
@@ -625,7 +657,7 @@ func _build_toolbar() -> void:
 
 
 func _tool_button_input(event: InputEvent, t: int) -> void:
-	if new_dialog.visible or problem_dialog.visible:
+	if _dialog_open():
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		set_tool(t)
@@ -958,7 +990,7 @@ func _draw_things() -> void:
 			if t < EditorGrid.DOOR:
 				continue
 			var r := Rect2(origin + Vector2(x, y) * c, Vector2(c, c)).grow(-1.0)
-			var kind: String = {EditorGrid.DOOR: "door", EditorGrid.LOCKED: "locked", EditorGrid.GATE: "gate", EditorGrid.STAIRS: "stairs", EditorGrid.CRACKED: "cracked"}[t]
+			var kind: String = {EditorGrid.DOOR: "door", EditorGrid.LOCKED: "locked", EditorGrid.GATE: "gate", EditorGrid.STAIRS: "stairs", EditorGrid.CRACKED: "cracked", EditorGrid.CORRUPTED: "kept_wall"}[t]
 			var axis := 0 if grid.is_wall_type(grid.type_at(x - 1, y)) and grid.is_wall_type(grid.type_at(x + 1, y)) else 1
 			_icon(paper, kind, r, axis, 3)
 	if not grid.start.is_empty():
@@ -971,6 +1003,7 @@ func _draw_things() -> void:
 		var sp := _face_pos(sc.cell, sc.side)
 		var skind: String = ["sconce_lit", "sconce_unlit", "sconce_empty"][int(sc.state)]
 		_icon(paper, skind, Rect2(sp - Vector2(c, c) * 0.3, Vector2(c, c) * 0.6), 0, 3)
+	_draw_kept()
 	_draw_links()
 	_draw_selection()
 	_draw_marks()
@@ -1085,6 +1118,18 @@ func _icon(ci: CanvasItem, kind: String, r: Rect2, axis: int, facing: int) -> vo
 					ci.draw_colored_polygon(PackedVector2Array([o + Vector2(8, 2) * s, o + Vector2(7, 5) * s, o + Vector2(9, 5) * s]), TORCH_300)
 				else:
 					ci.draw_rect(Rect2(o + Vector2(7, 4) * s, Vector2(2, 2) * s), INK)
+		"kept_wall":
+			var kw := Rect2(o + Vector2(1, 1) * s, Vector2(14, 14) * s)
+			ci.draw_rect(kw, STONE_500)
+			ci.draw_rect(kw, INK, false, w)
+			ci.draw_line(o + Vector2(2, 14) * s, o + Vector2(14, 2) * s, STONE_300, w)
+			ci.draw_line(o + Vector2(2, 9) * s, o + Vector2(9, 2) * s, STONE_300, w)
+			ci.draw_line(o + Vector2(7, 14) * s, o + Vector2(14, 7) * s, STONE_300, w)
+		"kept":
+			var kd := PackedVector2Array([o + Vector2(8, 2) * s, o + Vector2(14, 8) * s, o + Vector2(8, 14) * s, o + Vector2(2, 8) * s])
+			ci.draw_colored_polygon(kd, STONE_500)
+			ci.draw_polyline(PackedVector2Array([kd[0], kd[1], kd[2], kd[3], kd[0]]), INK, w)
+			ci.draw_rect(Rect2(o + Vector2(7, 7) * s, Vector2(2, 2) * s), STONE_100)
 		"item":
 			var flask := Rect2(o + Vector2(4, 7) * s, Vector2(8, 8) * s)
 			ci.draw_rect(flask, STONE_300)
@@ -1192,7 +1237,7 @@ func _visible_rows() -> int:
 
 
 func _panel_input(event: InputEvent) -> void:
-	if new_dialog.visible or problem_dialog.visible:
+	if _dialog_open():
 		return
 	var list := _current_list()
 	if event is InputEventMouseButton and event.pressed:
@@ -1261,9 +1306,16 @@ func _draw_panel() -> void:
 			var top := LIST_TOP + (track - thumb) * list_scroll / float(maxi(1, list.size() - rows))
 			panel.draw_rect(Rect2(size.x - 3, top, 3, thumb), BONE_700)
 	else:
-		panel.draw_string(font, Vector2(4, 10), "THE LISTS", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_300)
-		for i in 3:
-			panel.draw_string(font, Vector2(4, 28 + i * 10), ["PICK THE ITEM OR", "MONSTER TOOL TO", "PLACE THEM"][i], HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_700)
+		var kept_lines := _kept_summary()
+		if kept_lines.is_empty():
+			panel.draw_string(font, Vector2(4, 10), "THE LISTS", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_300)
+			for i in 3:
+				panel.draw_string(font, Vector2(4, 28 + i * 10), ["PICK THE ITEM OR", "MONSTER TOOL TO", "PLACE THEM"][i], HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_700)
+		else:
+			panel.draw_string(font, Vector2(4, 10), "KEPT (GREY):", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, STONE_100)
+			panel.draw_string(font, Vector2(4, 20), "NOT EDITABLE YET", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, STONE_300)
+			for i in mini(kept_lines.size(), 12):
+				panel.draw_string(font, Vector2(4, 36 + i * 10), kept_lines[i].substr(0, 15), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, STONE_300)
 	# The foot: what is under the mouse (or, with nothing there, what is selected).
 	var box := Rect2(0, size.y - INFO_H, size.x, INFO_H)
 	panel.draw_rect(box, STONE_700)
@@ -1286,10 +1338,12 @@ func _info_lines() -> Array:
 			cell = selected.cell
 		else:
 			return ["(-,-)", "MOUSE OVER A", "SQUARE"]
-	var names := {EditorGrid.FLOOR: "FLOOR", EditorGrid.WALL: "WALL", EditorGrid.DOOR: "DOOR", EditorGrid.LOCKED: "LOCKED DOOR", EditorGrid.STAIRS: "STAIRS DOWN", EditorGrid.GATE: "GATE", EditorGrid.CRACKED: "CRACKED WALL"}
+	var names := {EditorGrid.FLOOR: "FLOOR", EditorGrid.WALL: "WALL", EditorGrid.DOOR: "DOOR", EditorGrid.LOCKED: "LOCKED DOOR", EditorGrid.STAIRS: "STAIRS DOWN", EditorGrid.GATE: "GATE", EditorGrid.CRACKED: "CRACKED WALL", EditorGrid.CORRUPTED: "CORRUPTED WALL"}
 	var lines := ["(%d,%d)" % [cell.x, cell.y], names[grid.type_at(cell.x, cell.y)]]
 	if not grid.start.is_empty() and grid.start.cell == cell:
 		lines.append("PARTY START")
+	for kept in _kept_at(cell):
+		lines.append("KEPT: " + kept)
 	var m := grid.monster_index_at(cell)
 	if m >= 0:
 		var entry := _entry(grid.monsters[m].def, true)
@@ -1370,7 +1424,7 @@ func _in_play() -> bool:
 
 ## The BUILD button: check the paper, then build it, or list what is wrong first.
 func request_build() -> void:
-	if new_dialog.visible or problem_dialog.visible:
+	if _dialog_open():
 		return
 	problems = EditorCheck.run(grid)
 	marks = EditorCheck.marked_cells(problems)
@@ -1397,6 +1451,8 @@ func build_level() -> void:
 	SaveGame.pending = {}
 	problem_dialog.visible = false
 	new_dialog.visible = false
+	save_dialog.visible = false
+	open_dialog.visible = false
 	visible = false
 	opened_pause = false
 	get_tree().paused = false
@@ -1500,3 +1556,277 @@ func _draw_marks() -> void:
 		paper.draw_line(Vector2(r.end.x, r.position.y), Vector2(r.position.x, r.end.y), BLOOD_500, 1.0)
 	if not play_marker.is_empty():
 		_icon(paper, "now", Rect2(origin + Vector2(play_marker.cell) * c, Vector2(c, c)).grow(-2.0), 0, int(play_marker.facing))
+
+
+# --------------------------------------------------------------------------
+# Save and open (E.5)
+# --------------------------------------------------------------------------
+
+func _dialog_open() -> bool:
+	return new_dialog.visible or problem_dialog.visible or save_dialog.visible or open_dialog.visible
+
+
+func _build_save_dialog() -> void:
+	save_dialog = PanelContainer.new()
+	save_dialog.add_theme_stylebox_override("panel", _style(STONE_900, RUST_500))
+	save_dialog.visible = false
+	save_dialog.mouse_filter = Control.MOUSE_FILTER_STOP
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 6)
+	save_dialog.add_child(box)
+	var title := Label.new()
+	title.text = "SAVE LEVEL"
+	title.add_theme_font_size_override("font_size", 8)
+	title.add_theme_color_override("font_color", BONE_300)
+	box.add_child(title)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 6)
+	box.add_child(row)
+	var label := Label.new()
+	label.text = "NAME"
+	label.custom_minimum_size = Vector2(40, 0)
+	label.add_theme_font_size_override("font_size", 8)
+	label.add_theme_color_override("font_color", BONE_500)
+	row.add_child(label)
+	save_edit = LineEdit.new()
+	save_edit.custom_minimum_size = Vector2(176, 0)
+	save_edit.max_length = 40
+	save_edit.add_theme_font_size_override("font_size", 8)
+	save_edit.text_changed.connect(func(_t): _save_name_changed())
+	save_edit.text_submitted.connect(func(_t): try_save())
+	row.add_child(save_edit)
+	save_note = Label.new()
+	save_note.add_theme_font_size_override("font_size", 8)
+	save_note.add_theme_color_override("font_color", BONE_700)
+	box.add_child(save_note)
+	save_buttons = HBoxContainer.new()
+	save_buttons.add_theme_constant_override("separation", 6)
+	box.add_child(save_buttons)
+	root.add_child(save_dialog)
+	save_dialog.position = Vector2(150, 100)
+
+
+func _show_save_dialog() -> void:
+	if _dialog_open():
+		return
+	confirm_overwrite = ""
+	save_edit.text = level_name if level_name != "" else "my_level"
+	save_note.text = "WRITES levels/NAME.gd"
+	_save_buttons(false)
+	save_dialog.visible = true
+	save_edit.grab_focus()
+	save_edit.select_all()
+
+
+func _save_name_changed() -> void:
+	confirm_overwrite = ""
+	save_note.text = "WRITES levels/NAME.gd"
+	_save_buttons(false)
+
+
+func _save_buttons(confirm: bool) -> void:
+	for c in save_buttons.get_children():
+		save_buttons.remove_child(c)
+		c.queue_free()
+	var go := Button.new()
+	go.text = "REPLACE" if confirm else "SAVE"
+	go.custom_minimum_size = Vector2(72 if confirm else 64, 16)
+	_skin(go)
+	go.pressed.connect(func(): _write_level(confirm_overwrite) if confirm else try_save())
+	save_buttons.add_child(go)
+	var cancel := Button.new()
+	cancel.text = "CANCEL"
+	cancel.custom_minimum_size = Vector2(64, 16)
+	_skin(cancel)
+	cancel.pressed.connect(func(): save_dialog.visible = false)
+	save_buttons.add_child(cancel)
+
+
+## Save the paper as levels/<name>.gd. A bad name is refused, and a file that is already there is only replaced once the player says so (the
+## dialog turns into REPLACE / CANCEL). Returns "" if it was written, "ASKED" if it is waiting to be told to replace, else the reason.
+func try_save(name := "") -> String:
+	var n := (name if name != "" else save_edit.text).strip_edges().to_lower()
+	if not EditorSave.valid_name(n):
+		save_note.text = "LOWER CASE, DIGITS AND _ ONLY"
+		return "BAD NAME"
+	var path := levels_dir.path_join(n + ".gd")
+	if FileAccess.file_exists(path) and confirm_overwrite != path:
+		confirm_overwrite = path
+		save_note.text = n.to_upper() + " IS THERE. REPLACE IT?"
+		_save_buttons(true)
+		save_dialog.visible = true
+		return "ASKED"
+	return _write_level(path)
+
+
+func _write_level(path: String) -> String:
+	var n := path.get_file().get_basename()
+	var why := EditorSave.save(path, grid.level_data(), n + ".gd")
+	if why != "":
+		save_note.text = why
+		return why
+	level_name = n
+	confirm_overwrite = ""
+	save_dialog.visible = false
+	_say("SAVED " + n.to_upper())
+	_redraw()
+	return ""
+
+
+func _build_open_dialog() -> void:
+	open_dialog = PanelContainer.new()
+	open_dialog.add_theme_stylebox_override("panel", _style(STONE_900, RUST_500))
+	open_dialog.visible = false
+	open_dialog.mouse_filter = Control.MOUSE_FILTER_STOP
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 6)
+	open_dialog.add_child(box)
+	var title := Label.new()
+	title.text = "OPEN LEVEL"
+	title.add_theme_font_size_override("font_size", 8)
+	title.add_theme_color_override("font_color", BONE_300)
+	box.add_child(title)
+	var scroll := ScrollContainer.new()
+	scroll.custom_minimum_size = Vector2(240, 140)
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	box.add_child(scroll)
+	open_list = VBoxContainer.new()
+	open_list.add_theme_constant_override("separation", 3)
+	scroll.add_child(open_list)
+	var cancel := Button.new()
+	cancel.text = "CANCEL"
+	cancel.custom_minimum_size = Vector2(64, 16)
+	_skin(cancel)
+	cancel.pressed.connect(func(): open_dialog.visible = false)
+	box.add_child(cancel)
+	root.add_child(open_dialog)
+	open_dialog.position = Vector2(170, 70)
+
+
+func _show_open_dialog() -> void:
+	if _dialog_open():
+		return
+	for c in open_list.get_children():
+		open_list.remove_child(c)
+		c.queue_free()
+	var files := EditorSave.list(levels_dir)
+	if files.is_empty():
+		var none := Label.new()
+		none.text = "NO LEVEL FILES IN " + levels_dir.get_file()
+		none.add_theme_font_size_override("font_size", 8)
+		none.add_theme_color_override("font_color", BONE_700)
+		open_list.add_child(none)
+	for f in files:
+		var b := Button.new()
+		b.text = f.get_basename().to_upper()
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		b.custom_minimum_size = Vector2(228, 16)
+		_skin(b)
+		var path: String = levels_dir.path_join(f)
+		b.pressed.connect(func(): open_file(path))
+		open_list.add_child(b)
+	open_dialog.visible = true
+
+
+## Put a level file on the paper. "" if it did, else why not. Everything the editor knows is shown; the rest is kept (see EditorGrid.load_level).
+func open_file(path: String) -> String:
+	var data := EditorSave.read(path)
+	if data.is_empty():
+		_say("NOT A LEVEL FILE")
+		return "NOT A LEVEL FILE"
+	grid.load_level(data, cfg.undo_steps)
+	level_name = path.get_file().get_basename()
+	open_dialog.visible = false
+	selected = {}
+	marks = []
+	play_marker = {}
+	hover = Vector2i(-1, -1)
+	mode = 0
+	_fit_zoom()
+	_centre()
+	_say("OPENED " + level_name.to_upper())
+	_redraw()
+	return ""
+
+
+## The biggest square size, up to the opening zoom, at which the sheet's WIDTH fits the paper (the smallest if none does): a tall sheet is
+## then panned up and down rather than shown too small to read.
+func _fit_zoom() -> void:
+	zoom_index = 0
+	for i in range(clampi(int(cfg.start_zoom), 0, cfg.cell_sizes.size() - 1), -1, -1):
+		if cfg.cell_sizes[i] * grid.width <= PAPER_RECT.size.x:
+			zoom_index = i
+			break
+	cell_px = cfg.cell_sizes[zoom_index]
+
+
+## The kept things on a square (names), for the info box.
+func _kept_at(cell: Vector2i) -> Array:
+	var out := []
+	for p in grid.extras.get("PLATES", []):
+		if p.get("cell") == cell:
+			out.append("PLATE")
+	for a in grid.extras.get("AMBUSHES", []):
+		if a.get("trigger") == cell:
+			out.append("AMBUSH")
+	for t in grid.extras.get("ARMED_TRAPS", []):
+		if t.get("cell") == cell:
+			out.append("ARMED TRAP")
+	for sg in grid.extras.get("SIGNS", []):
+		if sg.get("cell") == cell:
+			out.append("SIGN")
+	for st in grid.extras.get("STRUCTURES", []):
+		if st.get("cell") == cell:
+			out.append(str(st.get("kind", "STRUCTURE")).to_upper())
+	for z in grid.extras.get("CURSE_ZONES", []):
+		if z.get("tiles", []).has(cell):
+			out.append("CURSE ZONE")
+	return out
+
+
+## What the editor is holding untouched, as short lines (for the panel).
+func _kept_summary() -> Array:
+	var out := []
+	var counts := [["PUZZLES", "PUZZLES"], ["PLATES", "PLATES"], ["CURSE_ZONES", "CURSE ZONES"], ["AMBUSHES", "AMBUSHES"], ["SIGNS", "SIGNS"],
+			["ARMED_TRAPS", "ARMED TRAPS"], ["STRUCTURES", "STRUCTURES"]]
+	for c in counts:
+		var n: int = grid.extras.get(c[0], []).size()
+		if n > 0:
+			out.append("%d %s" % [n, c[1]])
+	var corrupted := 0
+	for code in grid.cells:
+		if code == EditorGrid.CORRUPTED:
+			corrupted += 1
+	if corrupted > 0:
+		out.append("%d CORRUPTED" % corrupted)
+	for st in grid.extras.get("STATIONS", []):
+		out.append("STATIONS")
+		break
+	return out
+
+
+## Grey marks for what is kept and not editable yet: plates, ambush triggers, armed traps, signs, structures (a small grey diamond in the
+## square's corner) and curse zones (a grey outline on each square). Corrupted walls are drawn as grey hatched squares with the doors.
+func _draw_kept() -> void:
+	if grid.extras.is_empty():
+		return
+	var c := float(cell_px)
+	var spots := []
+	for p in grid.extras.get("PLATES", []):
+		spots.append(p.get("cell"))
+	for a in grid.extras.get("AMBUSHES", []):
+		spots.append(a.get("trigger"))
+	for t in grid.extras.get("ARMED_TRAPS", []):
+		spots.append(t.get("cell"))
+	for sg in grid.extras.get("SIGNS", []):
+		spots.append(sg.get("cell"))
+	for st in grid.extras.get("STRUCTURES", []):
+		spots.append(st.get("cell"))
+	for z in grid.extras.get("CURSE_ZONES", []):
+		for tile in z.get("tiles", []):
+			var zr := Rect2(origin + Vector2(tile) * c, Vector2(c, c)).grow(-3.0)
+			paper.draw_rect(zr, STONE_300, false, 1.0)
+	for cell in spots:
+		if cell is Vector2i:
+			paper.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			_icon(paper, "kept", Rect2(origin + Vector2(cell) * c + Vector2(c * 0.52, c * 0.02), Vector2(c * 0.46, c * 0.46)), 0, 3)

@@ -8,6 +8,7 @@ const EditorGrid := preload("res://scripts/debug/editor_grid.gd")
 const EditorConfig := preload("res://scripts/debug/editor_config.gd")
 const DungeonEditor := preload("res://scripts/debug/dungeon_editor.gd")
 const EditorCheck := preload("res://scripts/debug/editor_check.gd")
+const EditorSave := preload("res://scripts/debug/editor_save.gd")
 const SaveGame := preload("res://scripts/save_game.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 var fails := 0
@@ -28,6 +29,7 @@ func _init() -> void:
 	await _check_tools()
 	await _check_panel()
 	await _check_build()
+	await _check_save_open()
 	print("DONE fails=", fails)
 	quit(fails)
 
@@ -769,3 +771,164 @@ func _check_build() -> void:
 	check("with the built game gone Tab does nothing and F10 opens the paper as usual", not ed._in_play())
 	ed.queue_free()
 	await process_frame
+
+
+const TEST_LEVELS := "user://editor_test_levels"
+
+
+func _clear_test_levels() -> void:
+	for f in DirAccess.get_files_at(TEST_LEVELS):
+		DirAccess.remove_absolute(TEST_LEVELS + "/" + f)
+
+
+## Every level field of `a` that `b` lacks or holds differently (empty when the two are the same level).
+func _differing(a: Dictionary, b: Dictionary) -> Array:
+	var out := []
+	for f in DungeonMap.LEVEL_FIELDS:
+		if a.has(f) and (not b.has(f) or b[f] != a[f]):
+			out.append(f)
+	return out
+
+
+func _check_save_open() -> void:
+	DirAccess.make_dir_recursive_absolute(TEST_LEVELS)
+	_clear_test_levels()
+	var floor_one: Dictionary = EditorSave.read("res://levels/floor_1.gd")
+	var ed: Node = DungeonEditor.new()
+	root.add_child(ed)
+	await process_frame
+	ed.open()
+	ed.levels_dir = TEST_LEVELS
+	check("EditorSave.read gives floor 1's fields", floor_one.has("MAP") and floor_one.MAP.size() == 25 and floor_one.has("PUZZLES") and floor_one.has("CURSE_ZONES"))
+	# Open floor 1: everything the editor knows is there, the rest is kept.
+	check("opening floor 1 works", ed.open_file("res://levels/floor_1.gd") == "" and ed.level_name == "floor_1")
+	check("floor 1 is on the paper: 22 by 25 squares, its start, 25 sconces, levers, items and monsters",
+			ed.grid.width == 22 and ed.grid.height == 25 and ed.grid.start.cell == Vector2i(5, 9) and ed.grid.sconces.size() == 25 and ed.grid.levers.size() == 3
+			and ed.grid.items.size() == floor_one.ITEMS.size() and ed.grid.monsters.size() == floor_one.MONSTERS.size() and ed.grid.door_ids.size() == 2)
+	check("it opens at a readable zoom with the sheet's width on the paper (%d px squares)" % ed.cell_px, ed.cell_px == 16 and ed.cell_px * ed.grid.width <= DungeonEditor.PAPER_RECT.size.x)
+	check("what it cannot edit yet is kept, and listed in grey (%s)" % str(ed._kept_summary()), ed.grid.extras.has("PUZZLES") and ed.grid.extras.has("PLATES") and ed._kept_summary().has("1 PUZZLES") and ed._kept_summary().has("1 PLATES") and ed._kept_summary().has("2 CORRUPTED"))
+	check("a kept plate shows in the info box's square (18,21)", ed._kept_at(Vector2i(18, 21)).has("PLATE") and ed.grid.type_at(7, 9) == EditorGrid.CORRUPTED)
+	check("tidying floor 1 changes nothing (it already follows every rule the editor enforces)", _differing(floor_one, _tidied(floor_one)).is_empty())
+	# Save it unchanged under a new name: identical.
+	check("Save writes levels/<name>.gd", ed.try_save("zz_round_trip") == "" and FileAccess.file_exists(TEST_LEVELS + "/zz_round_trip.gd") and ed.level_name == "zz_round_trip")
+	var saved: Dictionary = EditorSave.read(TEST_LEVELS + "/zz_round_trip.gd")
+	var diff := _differing(floor_one, saved)
+	check("floor 1 opened and saved without a change is IDENTICAL to floor 1 (differing fields: %s)" % str(diff), diff.is_empty() and saved.MAP == floor_one.MAP)
+	var consts: Dictionary = (load(TEST_LEVELS + "/zz_round_trip.gd") as GDScript).get_script_constant_map()
+	check("the file is a plain script of consts the game itself reads (use_level reads it)", consts.has("MAP") and consts.MAP == floor_one.MAP)
+	var text := FileAccess.get_file_as_string(TEST_LEVELS + "/zz_round_trip.gd")
+	check("and it has floor 1's shape: every field a const, the map a row to a line", text.begins_with("extends RefCounted") and text.contains("const MAP := [") and text.contains("const PUZZLES := ") and text.contains("const MENU_VIEW_CELL := ") and text.contains("const CURSE_ZONES := "))
+	# Asking before overwriting.
+	var before := FileAccess.get_file_as_string(TEST_LEVELS + "/zz_round_trip.gd")
+	ed.grid.place_item(6, 9, "res://data/items/dagger.tres")
+	check("saving over a file that is there asks first, and writes nothing yet", ed.try_save("zz_round_trip") == "ASKED" and ed.save_dialog.visible and FileAccess.get_file_as_string(TEST_LEVELS + "/zz_round_trip.gd") == before)
+	check("the dialog offers REPLACE and CANCEL", ed.save_buttons.get_child_count() == 2 and ed.save_buttons.get_child(0).text == "REPLACE")
+	ed._write_level(ed.confirm_overwrite)
+	check("REPLACE writes it (the new item is in the file)", FileAccess.get_file_as_string(TEST_LEVELS + "/zz_round_trip.gd") != before and EditorSave.read(TEST_LEVELS + "/zz_round_trip.gd").ITEMS.size() == floor_one.ITEMS.size() + 1 and not ed.save_dialog.visible)
+	var edited: Dictionary = EditorSave.read(TEST_LEVELS + "/zz_round_trip.gd")
+	var edited_diff := _differing(floor_one, edited)
+	check("only the items differ from floor 1 after that edit; the kept fields are untouched (%s)" % str(edited_diff), edited_diff == ["ITEMS"])
+	for bad in ["", "Bad Name", "9lives", "a/b", "has space", "x" .repeat(41)]:
+		check("the name '%s' is refused" % bad, ed.try_save(bad) == "BAD NAME")
+	# A kept door id survives losing its last lever, because a plate still wants it.
+	ed.open_file("res://levels/floor_1.gd")
+	ed.grid.delete_lever(ed.grid.lever_index(Vector2i(20, 20), 3))
+	check("gate_s keeps its id when its lever is deleted: a kept plate still works it", ed.grid.door_ids.get(Vector2i(19, 21)) == "gate_s")
+	# A small level drawn by script: save, open, the same.
+	ed._new_sheet(14, 10)
+	check("a new sheet has no file name", ed.level_name == "")
+	var g = ed.grid
+	for x in range(2, 13):
+		g.set_cell(x, 5, true)
+	for y in range(3, 8):
+		for x in range(10, 13):
+			g.set_cell(x, y, true)
+	g.place_start(2, 5, 1)
+	g.place_stairs(12, 5)
+	g.place_door(4, 5, EditorGrid.DOOR)
+	g.place_door(6, 5, EditorGrid.LOCKED)
+	g.place_door(8, 5, EditorGrid.GATE)
+	g.place_cracked(5, 4)
+	g.place_lever(3, 5, 0)
+	g.link_lever(0, Vector2i(8, 5))
+	g.place_sconce(11, 3, 0, EditorGrid.SCONCE_LIT)
+	g.place_sconce(12, 3, 0, EditorGrid.SCONCE_UNLIT)
+	g.place_sconce(10, 3, 0, EditorGrid.SCONCE_EMPTY)
+	for i in 3:
+		g.place_item(3, 5, "res://data/items/healing_potion.tres", 9)
+	g.place_item(5, 5, "res://data/items/key.tres")
+	g.link_key(g.items_at(Vector2i(5, 5))[0], Vector2i(6, 5))
+	g.place_monster(11, 7, "res://data/monsters/skeleton.tres", 1)
+	g.place_monster(12, 7, "res://data/monsters/slime.tres")
+	var drawn: Dictionary = g.level_data()
+	check("the small level saves", ed.try_save("zz_small") == "")
+	var drawn_cells: PackedByteArray = g.cells.duplicate()
+	ed._new_sheet(8, 8)
+	check("a fresh sheet is not the small level", ed.grid.width == 8)
+	check("and opening the file puts it back", ed.open_file(TEST_LEVELS + "/zz_small.gd") == "" and ed.level_name == "zz_small")
+	var reopened: Dictionary = ed.grid.level_data()
+	check("the reopened level is the drawn one: same data in every field (differing: %s)" % str(_differing(drawn, reopened)), _differing(drawn, reopened).is_empty() and ed.grid.cells == drawn_cells)
+	check("...squares, start and its facing, links, sconces, the pile, the key's link and the monsters' facing all back",
+			ed.grid.start.facing == 1 and ed.grid.levers[0].target == "door_8_5" and ed.grid.sconces.size() == 3 and ed.grid.items[0].count == 3
+			and ed.grid.items[ed.grid.items_at(Vector2i(5, 5))[0]].get("opens") == Vector2i(6, 5) and ed.grid.monsters[0].facing == 1 and ed.grid.monsters[1].facing == 2)
+	check("a reopened level is as playable as it was (same check result)", EditorCheck.run(ed.grid).size() == EditorCheck.run(g).size())
+	DungeonMap.use_level(TEST_LEVELS + "/zz_small.gd")
+	check("the game's own use_level reads the saved file as a level", DungeonMap.MAP.size() == 10 and DungeonMap.MONSTERS.size() == 2 and DungeonMap.START_TILE == Vector2i(2, 5))
+	DungeonMap.use_level("")
+	# The test room too: a bigger file, with stations, signs and ambushes kept.
+	ed.open_file("res://levels/test_room.gd")
+	var room: Dictionary = EditorSave.read("res://levels/test_room.gd")
+	ed.try_save("zz_test_room")
+	var room_diff := _differing(room, EditorSave.read(TEST_LEVELS + "/zz_test_room.gd"))
+	check("the test room opened and saved is identical too (differing: %s)" % str(room_diff), room_diff.is_empty())
+	# The dialogs.
+	ed._new_sheet(10, 10)
+	ed._show_save_dialog()
+	check("the SAVE button's dialog opens with a suggested name", ed.save_dialog.visible and ed.save_edit.text == "my_level")
+	ed.save_edit.text = "made_in_the_dialog"
+	ed.try_save()
+	check("typing a name and saving writes it", FileAccess.file_exists(TEST_LEVELS + "/made_in_the_dialog.gd") and not ed.save_dialog.visible)
+	ed._show_open_dialog()
+	var files: Array = EditorSave.list(TEST_LEVELS)
+	check("the OPEN dialog lists every level file in the folder (%d)" % files.size(), ed.open_dialog.visible and ed.open_list.get_child_count() == files.size() and files.size() >= 4)
+	ed.open_list.get_child(files.find("zz_small.gd")).emit_signal("pressed")
+	check("clicking a file opens it", not ed.open_dialog.visible and ed.level_name == "zz_small" and ed.grid.width == 14)
+	# Typing in a dialog is not a command.
+	ed.selected = {"kind": "start"}
+	var facing_before: int = ed.grid.start.facing
+	ed._show_save_dialog()
+	_key(KEY_R)
+	_key(KEY_DELETE)
+	check("R and Delete typed into the save dialog neither turn nor remove anything", ed.grid.start.facing == facing_before and not ed.grid.start.is_empty())
+	_key(KEY_ESCAPE)
+	check("Escape closes the save dialog first", not ed.save_dialog.visible and ed.is_open())
+	# Build floor 1 itself from the paper, with everything it holds.
+	ed.open_file("res://levels/floor_1.gd")
+	var dummy := Node.new()
+	root.add_child(dummy)
+	current_scene = dummy
+	ed.build_level()
+	await create_timer(1.5).timeout
+	var player: Node = get_first_node_in_group("player")
+	check("floor 1 built from the paper has its puzzle, its corrupted walls, 25 sconces, 17 monsters and the start",
+			DungeonMap.level_id == DungeonMap.EDITOR_PLAY_ID and DungeonMap.PUZZLES.size() == 1 and DungeonMap.is_corrupted(Vector2i(7, 9)) and DungeonMap.TORCHES.size() == 25
+			and get_nodes_in_group("monsters").size() == 17 and player != null and player.cell == Vector2i(5, 9) and player.facing == 3)
+	player.command("forward")
+	await create_timer(0.5).timeout
+	player.command("forward")
+	await create_timer(0.5).timeout
+	check("the party walks it: two steps east of the start", player.cell == Vector2i(7, 9) or player.cell == Vector2i(6, 9))
+	DungeonMap.use_level("")
+	current_scene.queue_free()
+	await process_frame
+	_clear_test_levels()
+	ed.queue_free()
+	await process_frame
+
+
+## The same level run through the editor's own tidying (EditorGrid._cleanup): a level that follows the rules comes back unchanged.
+func _tidied(level: Dictionary) -> Dictionary:
+	var g := EditorGrid.new()
+	g.load_level(level)
+	g._cleanup()
+	return g.level_data()

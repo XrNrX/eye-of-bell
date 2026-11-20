@@ -6,6 +6,10 @@ extends RefCounted
 ## doors. E.3 adds the things that lie or stand on a floor square: items (in piles, like the game's) and monsters. They use floor 1's
 ## own data shapes (LEVERS, DOOR_IDS, TORCHES, START_TILE, START_FACING, ITEMS, MONSTERS), see level_data().
 ##
+## E.5 lets a whole level file be opened (load_level) and written again (level_data): what the editor does not edit yet (puzzles, curse
+## zones, ambushes, plates, signs, armed traps, structures, corrupted walls, the menu camera) is held untouched in `extras` and goes out
+## again exactly as it came in, so opening floor 1 and saving it gives floor 1 back.
+##
 ## The outer edge always stays wall: nothing is placed on it. Painting (set_cell) only turns plain floor into wall and back; the other
 ## things are placed by their own calls, which refuse, with a short reason, anything the game would not allow (a door needs a wall on
 ## each side of it, a sconce or lever needs a wall face, and so on). After any change, things that no longer make sense (a lever
@@ -22,10 +26,13 @@ const LOCKED := 3
 const STAIRS := 4
 const GATE := 5
 const CRACKED := 6
+const CORRUPTED := 7  # Overgrown with the curse: the editor shows it, keeps it and cannot change it yet.
 const DIRS := [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0)]  # Sides: 0 north, 1 west, 2 south, 3 east (as the game's).
 const SCONCE_LIT := 0
 const SCONCE_UNLIT := 1
 const SCONCE_EMPTY := 2
+## The fields of a level the editor does not edit yet: kept untouched (see load_level).
+const KEPT := ["CORRUPTION", "PUZZLES", "PLATES", "STRUCTURES", "SIGNS", "ARMED_TRAPS", "AMBUSHES", "STATIONS", "CURSE_ZONES", "MENU_VIEW_CELL"]
 
 var width := 0
 var height := 0
@@ -36,6 +43,7 @@ var sconces: Array = []         # {"cell": Vector2i, "side": int, "state": int (
 var door_ids := {}              # door or gate cell -> its id, for the doors a lever is linked to (floor 1's DOOR_IDS).
 var items: Array = []           # {"cell": Vector2i, "def": String (an ItemDef path), "count": int, optionally "opens": Vector2i (a key linked to a locked door)}. Several on one square are a pile, the last on top.
 var monsters: Array = []        # {"cell": Vector2i, "def": String (a MonsterDef path), "facing": int}: one to a square.
+var extras := {}                # The kept fields of an opened level (KEPT), untouched.
 var undo_limit := 100
 var _undo: Array = []           # Strokes: {"cells": PackedInt32Array of (index, old, new) triples, "before": things, "after": things}.
 var _redo: Array = []
@@ -58,6 +66,7 @@ func setup(w: int, h: int, limit := 100) -> void:
 	door_ids = {}
 	items = []
 	monsters = []
+	extras = {}
 	_undo.clear()
 	_redo.clear()
 	_stroke = PackedInt32Array()
@@ -85,7 +94,7 @@ func is_floor(x: int, y: int) -> bool:
 
 
 func is_wall_type(t: int) -> bool:
-	return t == WALL or t == CRACKED
+	return t == WALL or t == CRACKED or t == CORRUPTED
 
 
 func is_door_type(t: int) -> bool:
@@ -521,6 +530,45 @@ func link_key(index: int, cell: Vector2i) -> String:
 	return ""
 
 
+## Put a whole level on the paper (E.5): `data` is {FIELD: value} as a level file's consts (floor 1's shapes). The squares, start, sconces,
+## levers, door ids, items and monsters become the editor's own; the KEPT fields are held untouched in `extras`. Nothing is tidied up on
+## the way in (no _cleanup), so what is saved again is what was opened.
+func load_level(data: Dictionary, limit := 100) -> void:
+	var map: Array = data.get("MAP", [])
+	var w := 0
+	for row in map:
+		w = maxi(w, row.size())
+	setup(w, map.size(), limit)
+	for y in map.size():
+		for x in map[y].size():
+			cells[y * width + x] = int(map[y][x])
+	if data.has("START_TILE"):
+		start = {"cell": data.START_TILE, "facing": int(data.get("START_FACING", 3))}
+	for t in data.get("TORCHES", []):
+		if t is Vector4i:
+			sconces.append({"cell": Vector2i(t.x, t.y), "side": t.z, "state": t.w})
+		elif t is Vector3i:
+			sconces.append({"cell": Vector2i(t.x, t.y), "side": t.z, "state": SCONCE_LIT})
+	for l in data.get("LEVERS", []):
+		var lever: Dictionary = l.duplicate(true)
+		lever["target"] = String(lever.get("target", ""))
+		levers.append(lever)
+	door_ids = data.get("DOOR_IDS", {}).duplicate(true)
+	for it in data.get("ITEMS", []):
+		var item: Dictionary = it.duplicate(true)
+		item["count"] = int(item.get("count", 1))
+		items.append(item)
+	for m in data.get("MONSTERS", []):
+		var monster: Dictionary = m.duplicate(true)
+		if not monster.has("facing"):
+			monster["facing"] = 2
+		monsters.append(monster)
+	for f in KEPT:
+		if data.has(f):
+			var v = data[f]
+			extras[f] = v.duplicate(true) if v is Array or v is Dictionary else v
+
+
 ## The level as floor 1's own data: only the fields the editor makes (MAP, START_TILE and START_FACING when a start is placed,
 ## DOOR_IDS, LEVERS, TORCHES). DungeonMap.use_level_data takes it as it is.
 func level_data() -> Dictionary:
@@ -535,22 +583,26 @@ func level_data() -> Dictionary:
 		torches.append(Vector4i(s.cell.x, s.cell.y, s.side, s.state))
 	var lever_list: Array = []
 	for l in levers:
-		lever_list.append({"cell": l.cell, "side": l.side, "target": l.target})
+		lever_list.append(l.duplicate(true))
 	var item_list: Array = []
 	for it in items:
-		var entry := {"cell": it.cell, "def": it.def}
-		if int(it.count) > 1:
-			entry["count"] = int(it.count)
-		if it.has("opens"):
-			entry["opens"] = it.opens
+		var entry: Dictionary = it.duplicate(true)
+		if int(entry.get("count", 1)) <= 1:
+			entry.erase("count")  # (Floor 1 writes "count" only for a stack of more than one.)
 		item_list.append(entry)
 	var monster_list: Array = []
 	for m in monsters:
-		monster_list.append({"cell": m.cell, "def": m.def, "facing": m.facing})
+		var mon: Dictionary = m.duplicate(true)
+		if int(mon.get("facing", 2)) == 2:
+			mon.erase("facing")  # (South is the default and what floor 1's monsters have: not written.)
+		monster_list.append(mon)
 	var data := {"MAP": map, "DOOR_IDS": door_ids.duplicate(), "LEVERS": lever_list, "TORCHES": torches, "ITEMS": item_list, "MONSTERS": monster_list}
 	if not start.is_empty():
 		data["START_TILE"] = start.cell
 		data["START_FACING"] = start.facing
+	for f in extras:  # What the editor does not edit yet goes back out as it came in.
+		var kept = extras[f]
+		data[f] = kept.duplicate(true) if kept is Array or kept is Dictionary else kept
 	return data
 
 
@@ -595,12 +647,24 @@ func _cleanup() -> void:
 	for l in levers:
 		if l.target != "" and not door_ids.values().has(l.target):
 			l.target = ""
-	for cell in door_ids.keys():  # An id nobody is linked to is dropped.
-		var used := false
+	for cell in door_ids.keys():  # An id nobody is linked to is dropped (a lever, a plate or a puzzle all count).
+		var used := _id_kept(door_ids[cell])
 		for l in levers:
 			used = used or l.target == door_ids[cell]
 		if not used:
 			door_ids.erase(cell)
+
+
+## Is this door id named by a kept plate or a kept puzzle's open_door effect (so it must not be dropped)?
+func _id_kept(id: String) -> bool:
+	for p in extras.get("PLATES", []):
+		if p.get("target", "") == id:
+			return true
+	for puzzle in extras.get("PUZZLES", []):
+		for e in puzzle.get("then", []):
+			if e.get("kind", "") == "open_door" and e.get("id", "") == id:
+				return true
+	return false
 
 
 func face_ok(cell: Vector2i, side: int) -> bool:
