@@ -68,7 +68,7 @@ behaviour change. Run the tests.
 
 Check: F12 into the test room and back, New Game, and Continue all still start in the right place. Do this carefully: the editor relies on it.
 
-- [ ] 5. E.1 (Squared paper and drawing)
+- [x] 5. E.1 (Squared paper and drawing)
 
 ```
 Do Foundations step 12 first if it is not ticked.
@@ -2040,7 +2040,7 @@ Rules for this phase:
 - The editor only writes level data. It never adds a second way of building the dungeon: Build uses the same code that builds floor 1.
 - Every step keeps floor 1 playing exactly as before. Run the tests, plus tests/editor\_test.gd once E.5 adds it.
 
-- [ ] E.1 Squared paper and drawing
+- [x] E.1 Squared paper and drawing
 - [ ] E.2 Doors, gates, levers, stairs and sconces
 - [ ] E.3 Items and monsters
 - [ ] E.4 Build and play
