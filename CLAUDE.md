@@ -41,7 +41,12 @@ Where things really are (scripts are in one flat folder, `scripts/`, not subfold
 
 ## Roadmap
 
-`docs/roadmap.md` is the plan: every phase, step and prompt, with ticks for what is done. **The user's Claude doc is the master copy, so never edit `docs/roadmap.md` yourself** (it is replaced by a fresh export when the plan changes; tell the user if a tick looks wrong instead). When the user gives you a step ("do 7k.2"), find its prompt there and, before starting, read the notes around it (a step's "before" notes, such as "Steps 7 to 12 each come before the phase named next to them") and the **Leftovers from finished phases** section at the top, which holds loose ends and corrections that may change the step.
+- **`docs/roadmap.md` is the plan and the master copy** (it lives in this repo; your own edits to it are the plan changing). Read its **"Next 10 steps (start here)"** section to know what comes next. When the user gives you a step ("do 7k.2"), find its prompt there and, before starting, read the notes around it (a step's "before" notes, such as "Steps 7 to 12 each come before the phase named next to them") and the **Leftovers from finished phases** section, which holds loose ends and corrections that may change the step.
+- **Ticking.** When a roadmap step is finished and committed, tick it in `docs/roadmap.md` (change `- [ ]` to `- [x]`). If the step appears in both the Next 10 list and its own phase, tick both.
+- **Commit messages.** Name the step in every commit message that finishes one, e.g. `E.1 (Squared paper and drawing): ...`.
+- **Extra steps.** Anything built that isn't a roadmap step goes in the **"Extra steps (built outside the plan)"** section of `docs/roadmap.md`, with its commit.
+- **Finished phases.** When a whole phase is done, move it to `docs/roadmap_done.md` (that file holds the finished phases with their prompts; create it with the first one moved if it does not exist yet).
+- **The story.** The game's story is in `docs/design/story_arc.md`. Check it before adding runes, wall smears, tentacles or anything near the cell, so floor 1 doesn't give the twist away.
 
 ## Design references
 

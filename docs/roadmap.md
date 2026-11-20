@@ -22,6 +22,172 @@ First floor is done when: a stranger can start from the menu, reach the stairs, 
 
 Finished phases (1 to 8 and the test room), with every prompt, now live in the Done tab: Done
 
+## Next 10 steps (start here)
+
+Do these first, in this order, ticking each one off. Each prompt sits right under its step. When all ten are ticked, carry on from the Build order below.
+
+- [ ] 1. Zombie gas prompt (Brown death): a quick fix before Saturday
+
+```
+Recolour the zombie's death gas so it reads as rot and disease, not
+the curse. Read docs/art_style.md first: green is reserved for the
+curse, so no green anywhere in the cloud.
+- Colour: a sickly mustard-yellow core fading to murky brown at the
+  edges, using palette colours only.
+- Add a few dark specks drifting slowly inside it (flies or spores),
+  so it says "plague cloud", not "fart".
+- Replace the test VFX cloud with a proper one from PixelLab's VFX
+  tool, palette-stepped like the other effects, no smooth alpha fade.
+  Log it in docs/asset_log.md.
+- If the cloud has a light or tint on nearby walls, make that
+  yellow-brown too.
+- Keep the colours and timings in the config.
+- Banter (read docs/tone.md first; show me the lines before they go
+  in): a couple of lines when the cloud appears, e.g. thief: "Was
+  that the zombie or the fighter?" fighter: "Don't look at me."
+Show me a screenshot of the cloud in the test room next to a curse
+zone, so I can check the two never get mixed up. Run the tests and
+commit.
+```
+
+- [ ] 2. Saturday playtest: normal mode first, then god mode. Post-its in three colours: bugs, confusion, fun. First run before the booze
+
+- [ ] 3. Sort the Saturday Post-its with Claude: bugs into fixes, confusion onto the roadmap, nat 20s into the Ideas inbox. Big bugs may jump ahead of steps 4 to 10
+
+- [ ] 4. Foundations Step 12 (Levels as data)
+
+```
+Make levels loadable as data and let the party survive a change of level
+(S6 in docs/code_review.md): add DungeonMap.use_level_data(dict) with
+use_level(path) as a thin wrapper; move floor 1 out of dungeon_map.gd
+into levels/floor_1.gd; add a RunState that carries the party between
+floors using the save_state / load_state from Step 7; store a level id
+(or seed) in the save; remove the main menu's hard-coded camera cell. No
+behaviour change. Run the tests.
+```
+
+Check: F12 into the test room and back, New Game, and Continue all still start in the right place. Do this carefully: the editor relies on it.
+
+- [ ] 5. E.1 (Squared paper and drawing)
+
+```
+Do Foundations step 12 first if it is not ticked.
+
+Add a dungeon editor, opened with a debug key from the main menu and the
+test room (like F12). Follow docs/art_style.md: squared paper on
+parchment, in the style of the full-screen map on M, inked lines, no
+smooth gradients.
+- A grid of squares the size of a level (new level: 32x32, set in the
+  config). Each square is wall (filled, cross-hatched) or floor (blank).
+- Left-click or drag paints floor; right-click or drag rubs back to
+  wall. The outer edge always stays wall.
+- Pan with the middle mouse or WASD, zoom with the wheel, coordinates of
+  the square under the mouse in a corner (matching the (x,y) the
+  roadmap uses).
+- Undo and redo (Ctrl+Z, Ctrl+Y), at least 50 steps.
+- A New button (asks for width and height) and a Close button.
+No saving yet. Show me a screenshot of a small dungeon drawn in it, and
+run the tests.
+```
+
+- [ ] 6. E.2 (Doors, gates, levers, stairs and sconces)
+
+```
+Add a toolbar to the editor. Each tool places a thing the game already
+has, using the same data floor 1 uses (read levels/floor_1.gd for the
+shapes; add no new kinds of thing):
+- Plain door, locked door, gate (portcullis), cracked wall, lever
+  (linked to a door or gate: click the lever, then the door; draw a thin
+  ink line between them while either is selected).
+- Stairs down, and the party start (one only, with the direction the
+  party faces, shown as an arrow).
+- Sconce on a wall face (lit, unlit or empty), placed by clicking the
+  edge of a square.
+- Each thing is a small inked icon on the paper (PixelLab or by script,
+  following docs/art_style.md; log them).
+- Click a placed thing to select it; Delete removes it; R turns it.
+- Things only go where the game allows them (a door between two walls, a
+  sconce on a wall face): refuse anything else with a short message.
+Run the tests and show me a screenshot.
+```
+
+- [ ] 7. E.3 (Items and monsters)
+
+```
+Add items and monsters to the editor.
+- A side panel listing every ItemDef in data/items and every MonsterDef
+  in data/monsters, read from the folders, so new ones appear without
+  touching the editor. Each shows its own icon or sprite, small.
+- Click one, then a floor square, to place it. Items stack in a floor
+  pile like the game's; monsters take the square and face a direction.
+- Hover a square to see what's on it; click to select, Delete to remove.
+- Keys: a placed key can be linked to a locked door, like levers.
+- Keep the curse-zone rule: warn if anything above tier 1 is placed in a
+  curse zone (once E.6 exists).
+Run the tests and show me a screenshot with a few monsters and items.
+```
+
+- [ ] 8. E.4 (Build and play): switch to Opus if Sonnet loops
+
+```
+Add Build to the editor: it turns the paper into a level and drops the
+party into it in the 3D view, using DungeonMap.use_level_data and the
+same building code as floor 1.
+- Before building, check: there is a party start and stairs down; every
+  floor square, item and monster can be reached from the start
+  (flood-fill through doors, counting keys and levers like a player
+  would); every lever and key is linked. Show problems as a list, with
+  the squares marked in red ink. Missing start or stairs refuse the
+  build; the rest are warnings.
+- The party starts as the ready-made four with full HP and mana and
+  their starting gear.
+- A key (Tab) goes back to the paper with the party's square marked, and
+  Build again puts the party back where it was.
+- Nothing from a build-and-play is saved to the real save slot.
+Run the tests, then build a small dungeon with a door, a lever, a gate,
+two monsters and stairs, and show me a clip of walking it.
+```
+
+- [ ] 9. E.5 (Save, load and the round-trip test)
+
+```
+Add Save and Open to the editor.
+- Save writes levels/<name>.gd in the exact shape of levels/floor_1.gd
+  (ask before overwriting). Open lists the files in levels/.
+- Opening levels/floor_1.gd shows floor 1 on the paper with everything
+  the editor knows about. Things it doesn't edit yet (puzzles, curse
+  zones, ambushes, remains) are kept untouched when saving, and shown as
+  grey "not editable yet" marks.
+- Add tests/editor_test.gd: open floor 1, save it under a new name
+  without changing anything, and check the saved data is identical to
+  floor 1. Then draw a small level by script, save, open, and check it
+  matches.
+- Add the editor to CLAUDE.md (how to open it, what it can edit).
+Run all the tests, then open floor 1, build it and walk a few squares.
+```
+
+- [ ] 10. 7e.1 (Puzzle framework)
+
+```
+Do Foundations step 9 first if it is not ticked.
+
+Extend the puzzle framework that exists (scripts/puzzles.gd,
+DungeonMap.PUZZLES) rather than adding a new one. See
+docs/design/expansion_design.md section 3 "7e".
+- New conditions: every monster in an area dead; every brazier in a
+  group lit, or every one dark; an item (by file or by tag) on an altar;
+  a plate held.
+- New effects: seal and unseal an area's exits (the shared seal from
+  7d.4 if it exists, else build it here), raise a reliquary on a cell
+  with given items, clear a curse zone, play a sound.
+- 50 XP when a puzzle is solved, if Party.add_xp exists.
+- A list in the test room's H overlay: each puzzle, its conditions, and
+  which are met.
+Keep every existing puzzle working. Run the tests.
+```
+
+Five-minute jobs for any time: decide VFX.10 (Palette filter), and check whether the zombie at (15,11) needs a banter line when first seen.
+
 ## Build order: what's next
 
 Work down this list. It comes from Fable's expansion design (docs/design/expansion\_design.md, section 6) and the classes plan (docs/design/new\_classes\_plan.md). Each phase ends by placing its own things on floor 1 and playing it, so the floor is never half-furnished.
@@ -29,18 +195,19 @@ Work down this list. It comes from Fable's expansion design (docs/design/expansi
 1. Foundations Step 7 (Tolerant saves)
 2. Mana prompt (Slower mana) and Mini-boss prompt (The Cursed Warden), both in Leftovers. Playtest before going on.
 3. 7l.2 (Wall sconces) and 7l.4 (Throwing torches)
-4. Foundations Step 9, then Phase 7e (Puzzles)
-5. 7l.3 (Curse zones), 7l.5 (Flask of oil), Plague rat prompt (in Leftovers), then 7l.6 (Light on floor 1)
-6. Foundations Step 10, then Phase 7d (Ambushes)
-7. Phase 7j (Fallen adventurers)
-8. Phase 7h (Resting)
-9. Foundations Step 8, then Phase 7i (Levelling)
-10. Foundations Step 11, then Phase 7g (Legendaries)
-11. A balance pass and demo v0.8: the whole floor three times (rushing, thorough, careless with light)
-12. Phase 8b (Party screen)
-13. Phase C (New classes)
+4. Foundations Step 12 (Levels as data), then Phase E (Dungeon editor) E.1 to E.5. Moved up on 19 Nov: Bell's pick for what to build next.
+5. Foundations Step 9, then 7e.1 (Puzzle framework). 7l.6 needs its "every monster in an area dead" condition for the cave's curse zone.
+6. 7l.3 (Curse zones), 7l.5 (Flask of oil), Plague rat prompt (in Leftovers), 7l.6 (Light on floor 1), then the rest of Phase 7e (7e.2 to 7e.7)
+7. Foundations Step 10, then Phase 7d (Ambushes)
+8. Phase 7j (Fallen adventurers)
+9. Phase 7h (Resting)
+10. Foundations Step 8, then Phase 7i (Levelling)
+11. Foundations Step 11, then Phase 7g (Legendaries)
+12. A balance pass and demo v0.8: the whole floor three times (rushing, thorough, careless with light)
+13. Phase 8b (Party screen)
+14. Phase C (New classes)
 
-Any time: 7b.8 (Dead weight), 7f.3 to 7f.5 (more banter), 7k.3 (Bear trap: what is left), VFX.9 to VFX.11. Later: Foundations Step 12 and Phase 9.
+Any time: 7b.8 (Dead weight), 7f.3 to 7f.5 (more banter), 7k.3 (Bear trap: what is left), VFX.10 and VFX.11, E.6 (Editor: curse zones, puzzles and ambushes, once 7e and 7d exist), E.7 (donjon import). Later: Phase 9.
 
 ## Leftovers from finished phases
 
@@ -51,6 +218,7 @@ Loose ends from phases that are otherwise done, plus things the 13 Nov tech brie
 - [x] Mini-boss: the Cursed Warden at the stairs (prompt below)
 - [x] Plague rat: tier 1, fears fire, nests in the cave (prompt below)
 - [x] Slower mana: 1 point per 6 s instead of 2.5 s (prompt below)
+- [ ] Zombie gas: recolour the death gas to rot and disease, not the curse (prompt below)
 - [x] Parked work: turn the git stashes (boss-room ambush, fog of war) into named branches, e.g. wip/boss-ambush and wip/fog-of-war, and list them in CLAUDE.md under "Parked work". Do this before Step 7, so the refactors don't make them harder to apply.
 
 **5.7 prompt (Enemy health bars)**
@@ -128,6 +296,30 @@ do not bring its ambush code.
   when he falls.
 - Add him to the test room's combat arena spawn list, run the tests, and
   redo the walk-through check of floor 1.
+```
+
+**Zombie gas prompt (Brown death)**
+
+```
+Recolour the zombie's death gas so it reads as rot and disease, not
+the curse. Read docs/art_style.md first: green is reserved for the
+curse, so no green anywhere in the cloud.
+- Colour: a sickly mustard-yellow core fading to murky brown at the
+  edges, using palette colours only.
+- Add a few dark specks drifting slowly inside it (flies or spores),
+  so it says "plague cloud", not "fart".
+- Replace the test VFX cloud with a proper one from PixelLab's VFX
+  tool, palette-stepped like the other effects, no smooth alpha fade.
+  Log it in docs/asset_log.md.
+- If the cloud has a light or tint on nearby walls, make that
+  yellow-brown too.
+- Keep the colours and timings in the config.
+- Banter (read docs/tone.md first; show me the lines before they go
+  in): a couple of lines when the cloud appears, e.g. thief: "Was
+  that the zombie or the fighter?" fighter: "Don't look at me."
+Show me a screenshot of the cloud in the test room next to a curse
+zone, so I can check the two never get mixed up. Run the tests and
+commit.
 ```
 
 **Plague rat prompt (Plague rat)**
@@ -1376,9 +1568,11 @@ Rusty bear trap (Item resource, stacks to 2):
 
 ```
 The bear trap is built. Finish it from docs/design/expansion_design.md
-section 3 "7k.2": a monster of tier 3 or more can be caught once per
-fight; give the trap a weight of 3 for plates; a plague rat is caught
-like any tier 1 monster. Update docs/combat_design.md. Run the tests.
+section 3 "7k.2". The tier 3 "once per fight" rule came in with the
+Cursed Warden: check it works and has its smoke check, don't rebuild
+it. Check a plague rat is caught like any tier 1 monster. Give the trap
+a weight of 3 for plates (only if 7e.6 weighted plates exist; otherwise
+leave it for 7e.6). Update docs/combat_design.md. Run the tests.
 ```
 
 Done when: you can drop a trap while backing down a corridor, watch a skeleton walk into it, and get two free swings in, and Hold Monster feels like a clever save, not an "I win" button.
@@ -1530,6 +1724,9 @@ docs/combat_design.md.
 **7l.6 prompt (Light and darkness on floor 1)**
 
 ```
+Do 7e.1 (Puzzle framework) first if it is not ticked: the cave's
+curse zone lifting needs its "every monster in an area dead" condition.
+
 Place the light from docs/design/expansion_design.md section 5: the
 three lists of sconces (8 lit, 7 unlit with a torch, 10 empty), loose
 torches at (15,15) and in room 2, a candle in room 3, the curse zone
@@ -1832,6 +2029,149 @@ the plan's section 3, with numbers, before changing any.
 ```
 
 Done when: every class is selectable in its role's slot with working abilities, no party is ever silent, and the three hard mixed parties can all reach the stairs.
+
+## Phase E: Dungeon editor (squared paper)
+
+Draw a dungeon on squared paper, click Build, and walk it in 3D: the way Eye of the Beholder players mapped dungeons with a pencil, except the paper builds the dungeon. It's a debug tool first (like the test room), and could become a "build your own dungeon" mode later. It makes floor 2, puzzle rooms and Phase 9's room templates (9.4) much quicker to make. Do Foundations Step 12 first: the editor saves and loads levels as data.
+
+Rules for this phase:
+
+- Sonnet for every step; switch to Opus if E.4 gets tangled.
+- The editor only writes level data. It never adds a second way of building the dungeon: Build uses the same code that builds floor 1.
+- Every step keeps floor 1 playing exactly as before. Run the tests, plus tests/editor\_test.gd once E.5 adds it.
+
+- [ ] E.1 Squared paper and drawing
+- [ ] E.2 Doors, gates, levers, stairs and sconces
+- [ ] E.3 Items and monsters
+- [ ] E.4 Build and play
+- [ ] E.5 Save, load and the round-trip test
+- [ ] E.6 Curse zones, puzzles and ambushes (later, once 7e and 7d exist)
+- [ ] E.7 donjon import (optional)
+
+**E.1 prompt (Squared paper and drawing)**
+
+```
+Do Foundations step 12 first if it is not ticked.
+
+Add a dungeon editor, opened with a debug key from the main menu and the
+test room (like F12). Follow docs/art_style.md: squared paper on
+parchment, in the style of the full-screen map on M, inked lines, no
+smooth gradients.
+- A grid of squares the size of a level (new level: 32x32, set in the
+  config). Each square is wall (filled, cross-hatched) or floor (blank).
+- Left-click or drag paints floor; right-click or drag rubs back to
+  wall. The outer edge always stays wall.
+- Pan with the middle mouse or WASD, zoom with the wheel, coordinates of
+  the square under the mouse in a corner (matching the (x,y) the
+  roadmap uses).
+- Undo and redo (Ctrl+Z, Ctrl+Y), at least 50 steps.
+- A New button (asks for width and height) and a Close button.
+No saving yet. Show me a screenshot of a small dungeon drawn in it, and
+run the tests.
+```
+
+**E.2 prompt (Doors, gates, levers, stairs and sconces)**
+
+```
+Add a toolbar to the editor. Each tool places a thing the game already
+has, using the same data floor 1 uses (read levels/floor_1.gd for the
+shapes; add no new kinds of thing):
+- Plain door, locked door, gate (portcullis), cracked wall, lever
+  (linked to a door or gate: click the lever, then the door; draw a thin
+  ink line between them while either is selected).
+- Stairs down, and the party start (one only, with the direction the
+  party faces, shown as an arrow).
+- Sconce on a wall face (lit, unlit or empty), placed by clicking the
+  edge of a square.
+- Each thing is a small inked icon on the paper (PixelLab or by script,
+  following docs/art_style.md; log them).
+- Click a placed thing to select it; Delete removes it; R turns it.
+- Things only go where the game allows them (a door between two walls, a
+  sconce on a wall face): refuse anything else with a short message.
+Run the tests and show me a screenshot.
+```
+
+**E.3 prompt (Items and monsters)**
+
+```
+Add items and monsters to the editor.
+- A side panel listing every ItemDef in data/items and every MonsterDef
+  in data/monsters, read from the folders, so new ones appear without
+  touching the editor. Each shows its own icon or sprite, small.
+- Click one, then a floor square, to place it. Items stack in a floor
+  pile like the game's; monsters take the square and face a direction.
+- Hover a square to see what's on it; click to select, Delete to remove.
+- Keys: a placed key can be linked to a locked door, like levers.
+- Keep the curse-zone rule: warn if anything above tier 1 is placed in a
+  curse zone (once E.6 exists).
+Run the tests and show me a screenshot with a few monsters and items.
+```
+
+**E.4 prompt (Build and play)** (Sonnet; Opus if it gets tangled)
+
+```
+Add Build to the editor: it turns the paper into a level and drops the
+party into it in the 3D view, using DungeonMap.use_level_data and the
+same building code as floor 1.
+- Before building, check: there is a party start and stairs down; every
+  floor square, item and monster can be reached from the start
+  (flood-fill through doors, counting keys and levers like a player
+  would); every lever and key is linked. Show problems as a list, with
+  the squares marked in red ink. Missing start or stairs refuse the
+  build; the rest are warnings.
+- The party starts as the ready-made four with full HP and mana and
+  their starting gear.
+- A key (Tab) goes back to the paper with the party's square marked, and
+  Build again puts the party back where it was.
+- Nothing from a build-and-play is saved to the real save slot.
+Run the tests, then build a small dungeon with a door, a lever, a gate,
+two monsters and stairs, and show me a clip of walking it.
+```
+
+**E.5 prompt (Save, load and the round-trip test)**
+
+```
+Add Save and Open to the editor.
+- Save writes levels/<name>.gd in the exact shape of levels/floor_1.gd
+  (ask before overwriting). Open lists the files in levels/.
+- Opening levels/floor_1.gd shows floor 1 on the paper with everything
+  the editor knows about. Things it doesn't edit yet (puzzles, curse
+  zones, ambushes, remains) are kept untouched when saving, and shown as
+  grey "not editable yet" marks.
+- Add tests/editor_test.gd: open floor 1, save it under a new name
+  without changing anything, and check the saved data is identical to
+  floor 1. Then draw a small level by script, save, open, and check it
+  matches.
+- Add the editor to CLAUDE.md (how to open it, what it can edit).
+Run all the tests, then open floor 1, build it and walk a few squares.
+```
+
+**E.6 prompt (Curse zones, puzzles and ambushes)** (later, once 7e and 7d exist)
+
+```
+Add the remaining level things to the editor, each from the data the
+game already uses: curse zones (paint squares in a translucent curse
+green), ambush trigger tiles and their wall, braziers and their groups,
+darkness runes, altars, pressure plates and their weight, remains and
+their result, camp spots. Puzzles: pick a puzzle, then click its
+conditions and effects on the paper; show the links as ink lines. Keep
+the round-trip test passing with floor 1. Run the tests.
+```
+
+**E.7 prompt (donjon import)** (optional)
+
+```
+Add an Import button to the editor that reads a JSON export from
+donjon.bin.sh/d20/dungeon/. First read the sample in
+tools/donjon/samples/ and tell me how it stores cells, rooms, doors,
+stairs and secret doors, before writing code. Import walls, floor,
+doors (secure ones become locked doors with no key), portcullises,
+secret doors as cracked walls, and the stairs. Ignore donjon's monsters,
+traps and treasure. Room numbers become labels on the paper that I can
+hide. Then I finish it by hand in the editor. Run the tests.
+```
+
+Done when: you can draw a small dungeon on the paper in ten minutes, click Build, walk it, go back and move a door, and save it, without opening a single script.
 
 ## Phase 9: Procedural mode (after floor one ships)
 
