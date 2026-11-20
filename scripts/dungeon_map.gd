@@ -60,6 +60,7 @@ static var level_path := ""
 ## generated one). The save stores it (SaveGame "level_id").
 static var level_id := FLOOR_1_ID
 const TEST_ROOM_PATH := "res://levels/test_room.gd"
+const EDITOR_PATH := "res://scripts/debug/dungeon_editor.gd"  # F10: the dungeon editor (debug builds only, like the tools).
 const TOOLS_PATH := "res://scripts/debug/test_room_tools.gd"  # F12, the debug keys and the help overlay (debug builds only).
 const LEVEL_FIELDS := ["MAP", "START_TILE", "START_FACING", "MENU_VIEW_CELL", "TORCHES", "CORRUPTION", "PUZZLES", "DOOR_IDS", "PLATES",
 		"STRUCTURES", "LEVERS", "ITEMS", "MONSTERS", "SIGNS", "ARMED_TRAPS", "AMBUSHES", "STATIONS", "CURSE_ZONES"]

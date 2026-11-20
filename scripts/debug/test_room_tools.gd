@@ -527,6 +527,7 @@ func _refresh_help() -> void:
 		_pacing_table(),
 		"",
 		"FIGHT  %s" % _fight_status(),
+		"F10 DUNGEON EDITOR",
 		"F12 LEAVE (FLOOR 1)",
 	])
 	help.reset_size()

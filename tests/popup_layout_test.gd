@@ -25,7 +25,8 @@ func _init() -> void:
 	# Layering: above every HUD layer, below the full-screen map and the pause menu.
 	var highest_hud := 0
 	for n in root.find_children("*", "CanvasLayer", true, false):
-		if n.get_viewport() == root and n != popups and n != automap and n.name not in ["PauseMenu", "LevelComplete", "GameOver"]:
+		var is_editor: bool = n.get_script() != null and str(n.get_script().resource_path).ends_with("dungeon_editor.gd")  # (A full-screen debug screen, like the map.)
+		if n.get_viewport() == root and n != popups and n != automap and not is_editor and n.name not in ["PauseMenu", "LevelComplete", "GameOver"]:
 			highest_hud = maxi(highest_hud, n.layer)
 	check("popup layer is above every HUD layer (%d > %d)" % [popups.layer, highest_hud], popups.layer > highest_hud)
 	check("popup layer is below the full-screen map", popups.layer < automap.layer)

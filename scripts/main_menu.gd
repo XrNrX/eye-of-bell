@@ -121,6 +121,8 @@ func _ready() -> void:
 	intro_button.pressed.connect(_click)
 
 	if DungeonMap.test_room_available():  # Debug builds only (a release export leaves the test room out).
+		if ResourceLoader.exists(DungeonMap.EDITOR_PATH):
+			add_child(load(DungeonMap.EDITOR_PATH).new())  # F10: the dungeon editor.
 		var room_button: Button = options_button.duplicate()
 		room_button.unique_name_in_owner = false
 		room_button.name = "TestRoomButton"

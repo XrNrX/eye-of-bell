@@ -50,6 +50,8 @@ func _ready() -> void:
 	if DungeonMap.test_room_available():
 		var tools: Script = load(DungeonMap.TOOLS_PATH)
 		(owner if owner != null else get_tree().root).add_child.call_deferred(tools.new())
+		if ResourceLoader.exists(DungeonMap.EDITOR_PATH):
+			(owner if owner != null else get_tree().root).add_child.call_deferred(load(DungeonMap.EDITOR_PATH).new())  # F10: the dungeon editor.
 
 
 func _view_scale_changed(k: int) -> void:
