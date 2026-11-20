@@ -2278,6 +2278,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Zombie: a PixelLab-styled, animated tier 2 monster in the test room and on floor 1, room 3 at (15,11) (`64d971b`)
 - [x] Zombie death gas: a 1 in 5 chance of a toxic cloud within a tile of the body that stings the party, with a test VFX cloud (`6ec327b`)
 - [x] Design docs and demo READMEs: `docs/design/expansion_design.md` (`9cadb9c`), the classes plan (`69d9eca`), `docs/code_review.md`, `docs/tone.md`, `docs/technical_brief.md`, demo READMEs v0.2 to v0.11
+- [x] Editor: double-click the party start (or Enter with it selected) to build and play the map from there (`d0ddbc9`)
 
 ## Ideas inbox
 
