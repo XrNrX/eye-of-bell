@@ -30,6 +30,7 @@ func _init() -> void:
 	await _check_panel()
 	await _check_build()
 	await _check_save_open()
+	await _check_play_from_start()
 	print("DONE fails=", fails)
 	quit(fails)
 
@@ -932,3 +933,73 @@ func _tidied(level: Dictionary) -> Dictionary:
 	g.load_level(level)
 	g._cleanup()
 	return g.level_data()
+
+
+## A double-click (the second press of a pair): the GUI marks it so, and the editor reads `double_click`.
+func _double_click(pos: Vector2) -> void:
+	for i in 2:
+		var e := InputEventMouseButton.new()
+		e.position = pos
+		e.global_position = pos
+		e.button_index = MOUSE_BUTTON_LEFT
+		e.pressed = true
+		e.double_click = i == 1
+		root.push_input(e, true)
+		var up := InputEventMouseButton.new()
+		up.position = pos
+		up.global_position = pos
+		up.button_index = MOUSE_BUTTON_LEFT
+		up.pressed = false
+		root.push_input(up, true)
+
+
+func _check_play_from_start() -> void:
+	var dummy := Node.new()
+	root.add_child(dummy)
+	current_scene = dummy
+	var ed: Node = DungeonEditor.new()
+	root.add_child(ed)
+	await process_frame
+	ed.open()
+	ed._new_sheet(14, 10)
+	for x in range(2, 13):
+		ed.grid.set_cell(x, 5, true)
+	ed.grid.place_start(2, 5, 3)
+	ed.grid.place_stairs(12, 5)
+	ed.set_tool(DungeonEditor.Tool.SELECT)
+	ed.play_marker = {"cell": Vector2i(8, 5), "facing": 3}  # (Pretend the party was left further on.)
+	_move(_centre_of(ed, 2, 5))
+	var info: Array = ed._info_lines()
+	check("pointing at the party start says to double-click to play (%s)" % str(info), info.has("PARTY START") and info.has("2X CLICK: PLAY"))
+	_click(_centre_of(ed, 2, 5))
+	check("a single click only selects the start, and says how to play", ed.selected.get("kind") == "start" and ed.message.contains("DOUBLE-CLICK") and DungeonMap.level_id == DungeonMap.FLOOR_1_ID)
+	_double_click(_centre_of(ed, 6, 5))
+	check("a double-click anywhere else does not play", DungeonMap.level_id == DungeonMap.FLOOR_1_ID and not ed.problem_dialog.visible)
+	# Warnings come first: a lever linked to nothing.
+	ed.grid.place_lever(4, 5, 0)
+	_double_click(_centre_of(ed, 2, 5))
+	check("a double-click on the start runs the usual check: a warning shows its list (and nothing is built yet)", ed.problem_dialog.visible and DungeonMap.level_id == DungeonMap.FLOOR_1_ID)
+	ed.problem_dialog.visible = false
+	ed.grid.delete_lever(0)
+	_double_click(_centre_of(ed, 2, 5))
+	check("a clean map is built at once and the party is not put back at the old marker (from the start)", DungeonMap.level_id == DungeonMap.EDITOR_PLAY_ID and ed.play_marker.is_empty() and not ed.is_open())
+	await create_timer(1.3).timeout
+	var player: Node = get_first_node_in_group("player")
+	check("the party stands on the start of the drawn map, ready to play it: a playable map from one double-click", player != null and player.cell == Vector2i(2, 5) and player.facing == 3 and current_scene.scene_file_path == "res://scenes/main.tscn")
+	player.command("forward")
+	await create_timer(0.5).timeout
+	check("and it can be walked", player.cell == Vector2i(3, 5))
+	# Back to the paper, then Enter on the selected start plays from the start again.
+	_key(KEY_TAB)
+	check("Tab goes back to the paper with the party's square marked", ed.is_open() and ed.play_marker.get("cell") == Vector2i(3, 5))
+	ed.selected = {"kind": "start"}
+	_key(KEY_ENTER)
+	check("Enter with the start selected plays from the start again (the marker is forgotten)", DungeonMap.level_id == DungeonMap.EDITOR_PLAY_ID and ed.play_marker.is_empty() and not ed.is_open())
+	await create_timer(1.3).timeout
+	player = get_first_node_in_group("player")
+	check("...and the party is back on the start, not where it was left", player != null and player.cell == Vector2i(2, 5))
+	DungeonMap.use_level("")
+	current_scene.queue_free()
+	await process_frame
+	ed.queue_free()
+	await process_frame

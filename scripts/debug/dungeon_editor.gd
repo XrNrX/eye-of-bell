@@ -37,6 +37,9 @@ extends CanvasLayer
 ## A level built here can never be saved to the real save slot (SaveGame.save refuses any level but floor 1). The editor lives at
 ## the tree root (DungeonMap.add_editor, group "dungeon_editor") so a Build changing the scene does not take it away.
 ##
+## PLAY FROM THE START: double-click the party start (with the SELECT tool), or select it and press Enter, and the paper is built and
+## played from there at once (the same check and build as the BUILD button, from the start rather than from where you left the party).
+##
 ## E.5 adds SAVE and OPEN. SAVE asks for a name (lower case letters, digits and underscores) and writes levels/<name>.gd, a plain script
 ## of consts in the exact shape of levels/floor_1.gd (editor_save.gd); it asks before overwriting a file that is there. OPEN lists the
 ## .gd files in levels/ and puts one on the paper: opening levels/floor_1.gd shows floor 1 with everything the editor knows about
@@ -272,6 +275,9 @@ func _input(event: InputEvent) -> void:
 	elif (event.keycode == KEY_DELETE or event.keycode == KEY_BACKSPACE) and not _dialog_open():
 		delete_selected()
 		get_viewport().set_input_as_handled()
+	elif (event.keycode == KEY_ENTER or event.keycode == KEY_KP_ENTER) and selected.get("kind") == "start" and not _dialog_open():
+		play_from_start()
+		get_viewport().set_input_as_handled()
 	elif event.keycode == KEY_R and not event.ctrl_pressed and not _dialog_open():
 		rotate_selected()
 		get_viewport().set_input_as_handled()
@@ -377,7 +383,7 @@ func _paper_input(event: InputEvent) -> void:
 			_zoom(-1, p)
 		elif event.button_index == MOUSE_BUTTON_LEFT and tool != Tool.DRAW:
 			if event.pressed:
-				_use_tool(p)
+				_use_tool(p, event.double_click)
 		elif event.button_index == MOUSE_BUTTON_RIGHT and tool != Tool.DRAW:
 			pass  # (Only the DRAW tool rubs with the right button; Delete removes a selected thing.)
 		elif event.button_index == MOUSE_BUTTON_LEFT or event.button_index == MOUSE_BUTTON_RIGHT:
@@ -713,8 +719,11 @@ func _say(text: String) -> void:
 
 
 ## A click on the paper with a thing tool: place, select or link.
-func _use_tool(p: Vector2) -> void:
+func _use_tool(p: Vector2, double := false) -> void:
 	var cell := cell_at(p)
+	if double and tool == Tool.SELECT and cell.x >= 0 and not grid.start.is_empty() and grid.start.cell == cell:
+		play_from_start()  # Double-click the party start: play the map from there.
+		return
 	if tool == Tool.SELECT or tool == Tool.LEVER:
 		if _link_click(p, cell):
 			return
@@ -883,6 +892,8 @@ func _select_at(p: Vector2) -> void:
 					if here[i] == selected:
 						best = here[(i + 1) % here.size()]
 	selected = best
+	if best.get("kind") == "start":
+		_say("DOUBLE-CLICK THE START TO PLAY")
 
 
 ## What can be selected on a square, in the order a click goes through them.
@@ -1342,6 +1353,7 @@ func _info_lines() -> Array:
 	var lines := ["(%d,%d)" % [cell.x, cell.y], names[grid.type_at(cell.x, cell.y)]]
 	if not grid.start.is_empty() and grid.start.cell == cell:
 		lines.append("PARTY START")
+		lines.append("2X CLICK: PLAY")
 	for kept in _kept_at(cell):
 		lines.append("KEPT: " + kept)
 	var m := grid.monster_index_at(cell)
@@ -1830,3 +1842,12 @@ func _draw_kept() -> void:
 		if cell is Vector2i:
 			paper.draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 			_icon(paper, "kept", Rect2(origin + Vector2(cell) * c + Vector2(c * 0.52, c * 0.02), Vector2(c * 0.46, c * 0.46)), 0, 3)
+
+
+## Play the map from the party start: forget where the party was left (this is "from the beginning") and build, with the usual check.
+func play_from_start() -> void:
+	if grid.start.is_empty():
+		_say("PLACE A PARTY START FIRST")
+		return
+	play_marker = {}
+	request_build()
