@@ -111,7 +111,7 @@ shapes; add no new kinds of thing):
 Run the tests and show me a screenshot.
 ```
 
-- [ ] 7. E.3 (Items and monsters)
+- [x] 7. E.3 (Items and monsters)
 
 ```
 Add items and monsters to the editor.
@@ -2042,7 +2042,7 @@ Rules for this phase:
 
 - [x] E.1 Squared paper and drawing
 - [x] E.2 Doors, gates, levers, stairs and sconces
-- [ ] E.3 Items and monsters
+- [x] E.3 Items and monsters
 - [ ] E.4 Build and play
 - [ ] E.5 Save, load and the round-trip test
 - [ ] E.6 Curse zones, puzzles and ambushes (later, once 7e and 7d exist)
