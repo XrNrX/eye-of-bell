@@ -148,7 +148,7 @@ Run the tests, then build a small dungeon with a door, a lever, a gate,
 two monsters and stairs, and show me a clip of walking it.
 ```
 
-- [ ] 9. E.5 (Save, load and the round-trip test)
+- [x] 9. E.5 (Save, load and the round-trip test)
 
 ```
 Add Save and Open to the editor.
@@ -2044,7 +2044,7 @@ Rules for this phase:
 - [x] E.2 Doors, gates, levers, stairs and sconces
 - [x] E.3 Items and monsters
 - [x] E.4 Build and play
-- [ ] E.5 Save, load and the round-trip test
+- [x] E.5 Save, load and the round-trip test
 - [ ] E.6 Curse zones, puzzles and ambushes (later, once 7e and 7d exist)
 - [ ] E.7 donjon import (optional)
 
