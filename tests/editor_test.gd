@@ -20,8 +20,10 @@ func check(name: String, ok: bool) -> void:
 func _init() -> void:
 	_check_grid()
 	_check_things()
+	_check_pieces()
 	await _check_editor()
 	await _check_tools()
+	await _check_panel()
 	print("DONE fails=", fails)
 	quit(fails)
 
@@ -331,7 +333,7 @@ func _check_tools() -> void:
 		for x in range(9, 12):
 			ed.grid.set_cell(x, y, true)
 	ed._redraw()
-	check("the toolbar has a button for every tool (DRAW, SELECT and ten things)", ed.tool_buttons.size() == 12 and ed.tool == DungeonEditor.Tool.DRAW)
+	check("the toolbar has a button for every tool (DRAW, SELECT and twelve things)", ed.tool_buttons.size() == 14 and ed.tool == DungeonEditor.Tool.DRAW)
 	# A click on a toolbar button picks the tool.
 	var door_button: Control = ed.tool_buttons[DungeonEditor.TOOL_ORDER.find(DungeonEditor.Tool.DOOR)]
 	_press(door_button.global_position + Vector2(6, 6), MOUSE_BUTTON_LEFT, true)
@@ -410,5 +412,192 @@ func _check_tools() -> void:
 	ed._redraw()
 	await process_frame
 	check("the paper draws with everything on it", ed.is_open())
+	ed.close()
+	ed.queue_free()
+
+
+func _check_pieces() -> void:
+	var potion := "res://data/items/healing_potion.tres"
+	var sword := "res://data/items/short_sword.tres"
+	var key := "res://data/items/key.tres"
+	var slime := "res://data/monsters/slime.tres"
+	var g := _corridor()
+	check("an item goes on a floor square", g.place_item(3, 5, sword) == "" and g.items.size() == 1 and g.items[0].count == 1)
+	check("an item on a wall or on the edge is refused", g.place_item(3, 4, sword) != "" and g.place_item(0, 0, sword) != "" and g.items.size() == 1)
+	check("a stackable item joins the top stack up to its limit (9)", g.place_item(4, 5, potion, 9) == "" and g.place_item(4, 5, potion, 9) == "" and g.items_at(Vector2i(4, 5)).size() == 1 and g.items[g.items_at(Vector2i(4, 5))[0]].count == 2)
+	for i in 8:
+		g.place_item(4, 5, potion, 9)
+	check("past the limit it starts a new stack on top (a pile)", g.items_at(Vector2i(4, 5)).size() == 2 and g.items[g.items_at(Vector2i(4, 5))[0]].count == 9 and g.items[g.items_at(Vector2i(4, 5))[1]].count == 1)
+	check("a different item makes its own stack on top, and an unstackable one never joins", g.place_item(3, 5, sword) == "" and g.items_at(Vector2i(3, 5)).size() == 2)
+	# Monsters: one to a square, on floor, never on the start.
+	check("a monster stands on a floor square, facing a way", g.place_monster(6, 5, slime, 1) == "" and g.monsters.size() == 1 and g.monsters[0].facing == 1)
+	check("a second monster on the same square is refused", g.place_monster(6, 5, slime) != "" and g.monsters.size() == 1)
+	check("a monster in a wall is refused", g.place_monster(6, 4, slime) != "")
+	g.place_start(7, 5)
+	check("a monster never goes on the party start, and the start never on a monster", g.place_monster(7, 5, slime) != "" and g.place_start(6, 5) != "" and g.start.cell == Vector2i(7, 5))
+	g.rotate_monster(0)
+	check("R turns a monster a quarter turn clockwise (west to north)", g.monsters[0].facing == 0)
+	# A key links to a locked door like a lever to a door.
+	g.place_door(5, 5, EditorGrid.LOCKED)
+	g.place_item(2, 5, key)
+	var key_index: int = g.items_at(Vector2i(2, 5))[0]
+	check("a key links to a locked door", g.link_key(key_index, Vector2i(5, 5)) == "" and g.items[key_index].get("opens") == Vector2i(5, 5))
+	check("a key links only to a locked door", g.link_key(key_index, Vector2i(3, 5)) != "")
+	check("linking again unlinks", g.link_key(key_index, Vector2i(5, 5)) == "" and not g.items[key_index].has("opens"))
+	g.link_key(key_index, Vector2i(5, 5))
+	g.delete_cell_thing(5, 5)
+	check("a locked door that goes takes the key's link with it", not g.items[key_index].has("opens"))
+	# Taking the floor away takes what stood on it.
+	var g2 := _corridor()
+	g2.place_item(3, 5, potion, 9)
+	g2.place_monster(4, 5, slime)
+	g2.set_cell(3, 5, false)
+	g2.set_cell(4, 5, false)
+	check("rubbing floor back to wall takes the items and monsters on it", g2.items.is_empty() and g2.monsters.is_empty())
+	g2.undo()
+	g2.undo()
+	check("and undo brings them back", g2.items.size() == 1 and g2.monsters.size() == 1)
+	# Undo, delete.
+	var g3 := _corridor()
+	g3.place_item(3, 5, potion, 9)
+	g3.place_item(3, 5, potion, 9)
+	g3.place_monster(4, 5, slime)
+	g3.delete_monster(0)
+	g3.delete_item(0)
+	check("Delete takes a monster or an item away", g3.monsters.is_empty() and g3.items.is_empty())
+	g3.undo()
+	g3.undo()
+	check("each is undone on its own", g3.monsters.size() == 1 and g3.items.size() == 1 and g3.items[0].count == 2)
+	# The data is floor 1's own shapes.
+	var g4 := _corridor()
+	g4.place_item(3, 5, potion, 9)
+	g4.place_item(3, 5, potion, 9)
+	g4.place_item(4, 5, key)
+	g4.place_monster(6, 5, slime, 3)
+	g4.place_start(8, 5)
+	var data: Dictionary = g4.level_data()
+	check("level_data has ITEMS (cell, def, count when more than one) and MONSTERS (cell, def)",
+			data.ITEMS.size() == 2 and data.ITEMS[0].cell == Vector2i(3, 5) and data.ITEMS[0].def == potion and data.ITEMS[0].count == 2 and not data.ITEMS[1].has("count")
+			and data.MONSTERS.size() == 1 and data.MONSTERS[0].cell == Vector2i(6, 5) and data.MONSTERS[0].def == slime)
+	DungeonMap.use_level_data(data, "seed:editor_test")
+	check("the game takes them as they are (ITEMS and MONSTERS of the drawn level)", DungeonMap.ITEMS.size() == 2 and DungeonMap.MONSTERS.size() == 1 and DungeonMap.MONSTERS[0].def == slime
+			and load(DungeonMap.ITEMS[0].def) != null and load(DungeonMap.MONSTERS[0].def) != null)
+	DungeonMap.use_level("")
+
+
+## The side panel, the lists and the item and monster tools through real input.
+## A whole click (press and release): the GUI keeps routing events to the control that got a press until the button comes up.
+func _click(pos: Vector2) -> void:
+	_press(pos, MOUSE_BUTTON_LEFT, true)
+	_press(pos, MOUSE_BUTTON_LEFT, false)
+
+
+## A wheel step: the GUI treats the wheel as a button press and release.
+func _wheel(pos: Vector2, button: int) -> void:
+	_press(pos, button, true)
+	_press(pos, button, false)
+
+
+func _check_panel() -> void:
+	var ed: Node = DungeonEditor.new()
+	root.add_child(ed)
+	await process_frame
+	ed.open()
+	# The lists come from the folders: every item and monster file is on them.
+	var item_files := []
+	for f in DirAccess.get_files_at("res://data/items"):
+		if f.ends_with(".tres"):
+			item_files.append("res://data/items/" + f)
+	var monster_files := []
+	for f in DirAccess.get_files_at("res://data/monsters"):
+		if f.ends_with(".tres"):
+			monster_files.append("res://data/monsters/" + f)
+	var listed_items: Array = ed.item_list.map(func(e): return e.path)
+	var listed_monsters: Array = ed.monster_list.map(func(e): return e.path)
+	var all_there := true
+	for f in item_files:
+		all_there = all_there and f in listed_items
+	for f in monster_files:
+		all_there = all_there and f in listed_monsters
+	check("the panel lists every item in data/items and every monster in data/monsters (%d and %d)" % [item_files.size(), monster_files.size()],
+			all_there and listed_items.size() == item_files.size() and listed_monsters.size() == monster_files.size())
+	var iconless: int = ed.item_list.filter(func(e): return e.icon == null).size() + ed.monster_list.filter(func(e): return e.icon == null).size()
+	check("each shows its own icon or sprite (%d without)" % iconless, iconless == 0)
+	ed._new_sheet(14, 10)
+	for x in range(2, 12):
+		ed.grid.set_cell(x, 5, true)
+	for y in range(3, 8):
+		for x in range(9, 12):
+			ed.grid.set_cell(x, y, true)
+	ed._redraw()
+	check("there is a button for every tool (DRAW, SELECT and twelve things)", ed.tool_buttons.size() == 14)
+	# The ITEM tool with nothing chosen says so.
+	ed.set_tool(DungeonEditor.Tool.ITEM)
+	_click(_centre_of(ed, 4, 5))
+	check("the ITEM tool with nothing picked places nothing and says to pick", ed.grid.items.is_empty() and ed.message != "")
+	# Click a row, then a square.
+	var row_y: float = DungeonEditor.PANEL_RECT.position.y + DungeonEditor.LIST_TOP + 4
+	_click(Vector2(DungeonEditor.PANEL_RECT.position.x + 40, row_y))
+	check("clicking a row in the list picks that item", ed.brush_item == ed.item_list[0].path)
+	_click(_centre_of(ed, 4, 5))
+	_click(_centre_of(ed, 4, 5))
+	check("clicking a floor square places it, and again adds to the pile", ed.grid.items.size() >= 1 and ed.grid.items[0].def == ed.item_list[0].path and ed.selected.get("kind") == "item")
+	var count_before: int = ed.grid.items.size()
+	_click(_centre_of(ed, 4, 4))
+	check("a click on a wall places nothing and says why", ed.grid.items.size() == count_before and ed.message != "")
+	# The list scrolls.
+	var rows: int = ed._visible_rows()
+	_wheel(Vector2(DungeonEditor.PANEL_RECT.position.x + 40, row_y), MOUSE_BUTTON_WHEEL_DOWN)
+	check("the wheel scrolls the list (it holds more than %d)" % rows, ed.item_list.size() <= rows or ed.list_scroll == 1)
+	_wheel(Vector2(DungeonEditor.PANEL_RECT.position.x + 40, row_y), MOUSE_BUTTON_WHEEL_UP)
+	check("and back", ed.list_scroll == 0)
+	# Monsters: pick, place, face.
+	ed.set_tool(DungeonEditor.Tool.MONSTER)
+	_click(Vector2(DungeonEditor.PANEL_RECT.position.x + 40, row_y + DungeonEditor.ROW_H))
+	check("the MONSTER tool's list picks a monster", ed.brush_monster == ed.monster_list[1].path)
+	_click(_centre_of(ed, 6, 5))
+	check("a click places it on the floor square, facing south at first, and selects it", ed.grid.monsters.size() == 1 and ed.grid.monsters[0].facing == 2 and ed.selected.get("kind") == "monster")
+	_key(KEY_R)
+	check("R turns the selected monster", ed.grid.monsters[0].facing == 1 and ed.brush_facing == 1)
+	_click(_centre_of(ed, 6, 5))
+	check("a second monster on the same square is refused with a message", ed.grid.monsters.size() == 1 and ed.message != "")
+	# Hover info.
+	_move(_centre_of(ed, 6, 5))
+	var lines: Array = ed._info_lines()
+	check("the box at the foot of the panel says what is under the mouse (%s)" % str(lines), lines[0] == "(6,5)" and lines.has("FLOOR") and lines.size() >= 4)
+	_move(_centre_of(ed, 4, 5))
+	var pile_lines: Array = ed._info_lines()
+	check("...and an item's name and count", pile_lines[0] == "(4,5)" and pile_lines.size() >= 3)
+	# Select cycles through monster, pile stacks and door on one square.
+	ed.set_tool(DungeonEditor.Tool.SELECT)
+	ed.grid.place_item(6, 5, "res://data/items/dagger.tres")  # (A pile under the monster; the path need not exist for this.)
+	ed.selected = {}
+	_click(_centre_of(ed, 6, 5))
+	check("SELECT picks the monster first", ed.selected.get("kind") == "monster")
+	_click(_centre_of(ed, 6, 5))
+	check("clicking the same square again goes down the pile", ed.selected.get("kind") == "item")
+	_key(KEY_DELETE)
+	check("Delete removes the selected stack", ed.grid.items_at(Vector2i(6, 5)).is_empty())
+	# Keys and locked doors.
+	ed.set_tool(DungeonEditor.Tool.LOCKED)
+	_click(_centre_of(ed, 7, 5))
+	var key_entry: Dictionary = {}
+	for e in ed.item_list:
+		if e.path == "res://data/items/key.tres":
+			key_entry = e
+	ed.set_tool(DungeonEditor.Tool.ITEM)
+	ed.select_brush(key_entry.path)
+	_click(_centre_of(ed, 3, 5))
+	check("a key lies on the floor (and is selected)", ed.selected.get("kind") == "item" and ed.grid.items[int(ed.selected.index)].def == key_entry.path)
+	ed.set_tool(DungeonEditor.Tool.SELECT)
+	_click(_centre_of(ed, 7, 5))
+	check("with the key selected, a click on the locked door links them", ed.grid.items[ed.grid.items_at(Vector2i(3, 5))[0]].get("opens") == Vector2i(7, 5))
+	_click(_centre_of(ed, 3, 5))
+	_click(_centre_of(ed, 7, 5))
+	check("...and clicking again unlinks (select the key square, then the door)", not ed.grid.items[ed.grid.items_at(Vector2i(3, 5))[0]].has("opens"))
+	# Drawing all of it runs without a fault.
+	ed._redraw()
+	await process_frame
+	check("the paper and the panel draw with everything on them", ed.is_open())
 	ed.close()
 	ed.queue_free()

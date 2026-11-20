@@ -19,6 +19,15 @@ extends CanvasLayer
 ## placed thing; Delete removes it; R turns it (the start a quarter turn, a lever or sconce to another wall face). The game's rules are
 ## kept (EditorGrid refuses what it would not allow, and a short message says why). Nothing is saved yet (E.4 builds a level).
 ##
+## E.3 adds ITEM and MONSTER tools and a SIDE PANEL on the right. With the ITEM or MONSTER tool the panel lists every ItemDef in
+## data/items or every MonsterDef in data/monsters (read from the folders when the editor starts, so a new one appears with no change
+## here), each with its own small icon or sprite; click one, then a floor square, to place it. Items pile up like the game's floor piles
+## (same item onto the top stack until it is full, else a new stack on top); a monster takes the square and faces a way (R turns the
+## selected one). The wheel scrolls the list. Whatever the tool, the box at the foot of the panel says what is on the square under the
+## mouse. SELECT picks a monster, then each stack of a pile (click the square again to go down the pile), then a door or stairs;
+## Delete removes it. A key can be linked to a locked door like a lever (select the key, click the door, or the door then the key;
+## clicking again unlinks): floor 1's keys open any locked door, so the link is for the editor (E.4 checks the level can be finished).
+##
 ## The paper is data (editor_grid.gd); this script draws it and turns the mouse and keys into strokes. Pixel rules: every line is one
 ## logical pixel, squares are a whole number of pixels (a multiple of 4, so the hatching of neighbours joins), no smooth gradients,
 ## palette colours only. The numbers (sheet size, zoom steps, undo depth) are in scripts/debug/editor_config.tres.
@@ -47,14 +56,20 @@ const TORCH_500 := Color("d99a36")
 const TORCH_300 := Color("f5cf80")
 
 const TOOLBAR_Y := 24                        # The toolbar strip between the title row and the paper.
-const FRAME_RECT := Rect2(8, 46, 624, 294)   # The iron frame round the paper.
+const FRAME_RECT := Rect2(8, 46, 482, 294)   # The iron frame round the paper.
 const BORDER := 4                            # Its thickness (map_frame.png).
-const PAPER_RECT := Rect2(12, 50, 616, 286)  # The squared paper: the frame's inside.
+const PAPER_RECT := Rect2(12, 50, 474, 286)  # The squared paper: the frame's inside.
+const PANEL_FRAME := Rect2(494, 46, 138, 294)  # The side panel's frame...
+const PANEL_RECT := Rect2(498, 50, 130, 286)   # ...and its inside: the list (items or monsters) above, what is under the mouse below.
+const ROW_H := 18
+const LIST_TOP := 14                         # Rows start this far down the panel (a heading above).
+const INFO_H := 78                           # The "what is here" box at the foot of the panel.
 
-enum Tool { DRAW, SELECT, DOOR, LOCKED, GATE, CRACKED, LEVER, STAIRS, START, SCONCE_LIT, SCONCE_UNLIT, SCONCE_EMPTY }
-const TOOL_ORDER := [Tool.DRAW, Tool.SELECT, Tool.DOOR, Tool.LOCKED, Tool.GATE, Tool.CRACKED, Tool.LEVER, Tool.STAIRS, Tool.START, Tool.SCONCE_LIT, Tool.SCONCE_UNLIT, Tool.SCONCE_EMPTY]
+enum Tool { DRAW, SELECT, DOOR, LOCKED, GATE, CRACKED, LEVER, STAIRS, START, SCONCE_LIT, SCONCE_UNLIT, SCONCE_EMPTY, ITEM, MONSTER }
+const TOOL_ORDER := [Tool.DRAW, Tool.SELECT, Tool.DOOR, Tool.LOCKED, Tool.GATE, Tool.CRACKED, Tool.LEVER, Tool.STAIRS, Tool.START, Tool.SCONCE_LIT, Tool.SCONCE_UNLIT, Tool.SCONCE_EMPTY, Tool.ITEM, Tool.MONSTER]
 const TOOL_NAMES := {Tool.DRAW: "DRAW", Tool.SELECT: "SELECT", Tool.DOOR: "DOOR", Tool.LOCKED: "LOCKED DOOR", Tool.GATE: "GATE", Tool.CRACKED: "CRACKED WALL",
-		Tool.LEVER: "LEVER", Tool.STAIRS: "STAIRS DOWN", Tool.START: "PARTY START", Tool.SCONCE_LIT: "SCONCE LIT", Tool.SCONCE_UNLIT: "SCONCE UNLIT", Tool.SCONCE_EMPTY: "SCONCE EMPTY"}
+		Tool.LEVER: "LEVER", Tool.STAIRS: "STAIRS DOWN", Tool.START: "PARTY START", Tool.SCONCE_LIT: "SCONCE LIT", Tool.SCONCE_UNLIT: "SCONCE UNLIT", Tool.SCONCE_EMPTY: "SCONCE EMPTY", Tool.ITEM: "ITEM", Tool.MONSTER: "MONSTER"}
+const ICON_PATHS := {"item": "res://data/items", "monster": "res://data/monsters"}
 const MESSAGE_SECONDS := 3.0
 # The view moves the other way from the key's direction on the paper: W shows what is above.
 const PAN_KEYS := {KEY_W: Vector2(0, 1), KEY_S: Vector2(0, -1), KEY_A: Vector2(1, 0), KEY_D: Vector2(-1, 0)}
@@ -73,6 +88,14 @@ var selected := {}                # {"kind": "cell", "cell": Vector2i} | {"kind"
 var message := ""                 # A short line shown where the hints are (why something was refused), for MESSAGE_SECONDS.
 var message_left := 0.0
 var tool_buttons: Array = []
+var panel: Control
+var item_list: Array = []         # [{"path": String, "name": String, "icon": Texture2D, "def": Resource}], from data/items.
+var monster_list: Array = []      # The same, from data/monsters.
+var brush_item := ""              # The item (path) the ITEM tool places, or "".
+var brush_monster := ""           # The monster (path) the MONSTER tool places, or "".
+var brush_facing := 2             # The way a newly placed monster faces (the last one turned to; south at first).
+var list_scroll := 0
+var panel_hover := -1             # The list row under the mouse, or -1.
 
 var root: Control
 var paper: Control
@@ -109,6 +132,8 @@ func _ready() -> void:
 	_frame_box.axis_stretch_horizontal = StyleBoxTexture.AXIS_STRETCH_MODE_TILE
 	_frame_box.axis_stretch_vertical = StyleBoxTexture.AXIS_STRETCH_MODE_TILE
 	_build_toolbar()
+	_load_lists()
+	_build_panel()
 	_add_button("NEW", Vector2(488, 3), _show_new_dialog)
 	_add_button("CLOSE", Vector2(560, 3), close)
 	_build_new_dialog()
@@ -237,6 +262,8 @@ func _redraw() -> void:
 	root.queue_redraw()
 	for b in tool_buttons:
 		b.queue_redraw()
+	if panel != null:
+		panel.queue_redraw()
 
 
 ## The square under a point of the paper (its own pixel coordinates), or (-1,-1) off the grid.
@@ -413,6 +440,7 @@ func _draw_paper() -> void:
 func _draw_root() -> void:
 	root.draw_rect(Rect2(0, 0, 640, 360), INK)
 	_frame_box.draw(root.get_canvas_item(), FRAME_RECT)
+	_frame_box.draw(root.get_canvas_item(), PANEL_FRAME)
 	var font := root.get_theme_default_font()
 	root.draw_string(font, Vector2(14, 15), "DUNGEON EDITOR", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_300)
 	root.draw_string(font, Vector2(148, 15), "%dx%d  %d FLOOR" % [grid.width, grid.height, grid.floor_count()], HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_500)
@@ -592,6 +620,10 @@ func _tool_icon(t: int) -> String:
 			return "sconce_lit"
 		Tool.SCONCE_UNLIT:
 			return "sconce_unlit"
+		Tool.ITEM:
+			return "item"
+		Tool.MONSTER:
+			return "monster"
 	return "sconce_empty"
 
 
@@ -628,6 +660,20 @@ func _use_tool(p: Vector2) -> void:
 			var face := _face_at(p)
 			if not face.is_empty():
 				_done(grid.place_lever(face.cell.x, face.cell.y, face.side), {"kind": "lever", "index": grid.levers.size() - 1})
+		Tool.ITEM:
+			if cell.x >= 0:
+				if brush_item == "":
+					_say("PICK AN ITEM FROM THE LIST")
+				else:
+					var max_stack: int = int(load(brush_item).max_stack)
+					var why := grid.place_item(cell.x, cell.y, brush_item, max_stack)
+					_done(why, {"kind": "item", "index": grid.items_at(cell).back() if not grid.items_at(cell).is_empty() else 0})
+		Tool.MONSTER:
+			if cell.x >= 0:
+				if brush_monster == "":
+					_say("PICK A MONSTER FROM THE LIST")
+				else:
+					_done(grid.place_monster(cell.x, cell.y, brush_monster, brush_facing), {"kind": "monster", "index": grid.monsters.size() - 1})
 		Tool.SCONCE_LIT, Tool.SCONCE_UNLIT, Tool.SCONCE_EMPTY:
 			var side_face := _face_at(p)
 			if not side_face.is_empty():
@@ -687,6 +733,22 @@ func _link_click(p: Vector2, cell: Vector2i) -> bool:
 			_say(why)
 		_redraw()
 		return true
+	if selected.get("kind") == "item" and int(selected.index) < grid.items.size() and cell.x >= 0 and grid.type_at(cell.x, cell.y) == EditorGrid.LOCKED:
+		var def: Resource = load(grid.items[int(selected.index)].def)
+		if def != null and int(def.type) == 3:
+			var why3 := grid.link_key(int(selected.index), cell)
+			if why3 != "":
+				_say(why3)
+			_redraw()
+			return true
+	if selected.get("kind") == "cell" and grid.type_at(selected.cell.x, selected.cell.y) == EditorGrid.LOCKED and cell.x >= 0:
+		var key := _key_at(cell)
+		if key >= 0:
+			var why4 := grid.link_key(key, selected.cell)
+			if why4 != "":
+				_say(why4)
+			_redraw()
+			return true
 	if selected.get("kind") == "cell" and grid.is_door_type(grid.type_at(selected.cell.x, selected.cell.y)):
 		var lever := _lever_near(p)
 		if lever >= 0:
@@ -696,6 +758,14 @@ func _link_click(p: Vector2, cell: Vector2i) -> bool:
 			_redraw()
 			return true
 	return false
+
+
+func _key_at(cell: Vector2i) -> int:
+	for i in grid.items_at(cell):
+		var def: Resource = load(grid.items[i].def)
+		if def != null and int(def.type) == 3:  # ItemDef.Type.KEY
+			return i
+	return -1
 
 
 func _lever_near(p: Vector2) -> int:
@@ -727,12 +797,31 @@ func _select_at(p: Vector2) -> void:
 	if best.is_empty():
 		var cell := cell_at(p)
 		if cell.x >= 0:
-			var t := grid.type_at(cell.x, cell.y)
-			if grid.is_door_type(t) or t == EditorGrid.STAIRS or t == EditorGrid.CRACKED:
-				best = {"kind": "cell", "cell": cell}
-			elif not grid.start.is_empty() and grid.start.cell == cell:
-				best = {"kind": "start"}
+			var here := _cell_candidates(cell)
+			if not here.is_empty():
+				best = here[0]
+				for i in here.size():  # Clicking the same square again goes on down the list: monster, the pile's stacks top first, door, start.
+					if here[i] == selected:
+						best = here[(i + 1) % here.size()]
 	selected = best
+
+
+## What can be selected on a square, in the order a click goes through them.
+func _cell_candidates(cell: Vector2i) -> Array:
+	var out := []
+	var m := grid.monster_index_at(cell)
+	if m >= 0:
+		out.append({"kind": "monster", "index": m})
+	var piles := grid.items_at(cell)
+	piles.reverse()
+	for i in piles:
+		out.append({"kind": "item", "index": i})
+	var t := grid.type_at(cell.x, cell.y)
+	if grid.is_door_type(t) or t == EditorGrid.STAIRS or t == EditorGrid.CRACKED:
+		out.append({"kind": "cell", "cell": cell})
+	if not grid.start.is_empty() and grid.start.cell == cell:
+		out.append({"kind": "start"})
+	return out
 
 
 func delete_selected() -> void:
@@ -747,6 +836,10 @@ func delete_selected() -> void:
 			grid.delete_sconce(int(selected.index))
 		"start":
 			grid.clear_start()
+		"item":
+			grid.delete_item(int(selected.index))
+		"monster":
+			grid.delete_monster(int(selected.index))
 		_:
 			_say("SELECT SOMETHING FIRST")
 			return
@@ -766,7 +859,11 @@ func rotate_selected() -> void:
 			var why2 := grid.rotate_face(false, int(selected.index))
 			if why2 != "":
 				_say(why2)
-		"cell":
+		"monster":
+			grid.rotate_monster(int(selected.index))
+			if int(selected.index) < grid.monsters.size():
+				brush_facing = int(grid.monsters[int(selected.index)].facing)
+		"cell", "item":
 			_say("THAT ONE DOES NOT TURN")
 		_:
 			_say("SELECT SOMETHING FIRST")
@@ -789,6 +886,12 @@ func _fix_selection() -> void:
 				selected = {}
 		"start":
 			if grid.start.is_empty():
+				selected = {}
+		"item":
+			if int(selected.index) >= grid.items.size():
+				selected = {}
+		"monster":
+			if int(selected.index) >= grid.monsters.size():
 				selected = {}
 
 
@@ -813,6 +916,7 @@ func _draw_things() -> void:
 			_icon(paper, kind, r, axis, 3)
 	if not grid.start.is_empty():
 		_icon(paper, "start", Rect2(origin + Vector2(grid.start.cell) * c, Vector2(c, c)).grow(-2.0), 0, int(grid.start.facing))
+	_draw_items_and_monsters()
 	for l in grid.levers:
 		var lp := _face_pos(l.cell, l.side)
 		_icon(paper, "lever", Rect2(lp - Vector2(c, c) * 0.3, Vector2(c, c) * 0.6), 0, 3)
@@ -838,6 +942,13 @@ func _draw_links() -> void:
 			for l2 in grid.levers:
 				if l2.target == id:
 					paper.draw_line(_face_pos(l2.cell, l2.side), _cell_centre(selected.cell), INK, 1.0)
+		for it in grid.items:  # A locked door selected: a line to every key linked to it.
+			if it.get("opens", Vector2i(-1, -1)) == selected.cell:
+				paper.draw_line(_cell_centre(it.cell), _cell_centre(selected.cell), INK, 1.0)
+	elif kind == "item" and int(selected.index) < grid.items.size():
+		var key_item: Dictionary = grid.items[int(selected.index)]
+		if key_item.has("opens"):
+			paper.draw_line(_cell_centre(key_item.cell), _cell_centre(key_item.opens), INK, 1.0)
 
 
 func _draw_selection() -> void:
@@ -854,6 +965,10 @@ func _draw_selection() -> void:
 		"sconce":
 			var sc: Dictionary = grid.sconces[int(selected.index)]
 			r = Rect2(_face_pos(sc.cell, sc.side) - Vector2(c, c) * 0.4, Vector2(c, c) * 0.8)
+		"item":
+			r = Rect2(origin + Vector2(grid.items[int(selected.index)].cell) * c, Vector2(c, c))
+		"monster":
+			r = Rect2(origin + Vector2(grid.monsters[int(selected.index)].cell) * c, Vector2(c, c))
 		_:
 			return
 	paper.draw_rect(r, BLOOD_500, false, 2.0)
@@ -922,6 +1037,22 @@ func _icon(ci: CanvasItem, kind: String, r: Rect2, axis: int, facing: int) -> vo
 					ci.draw_colored_polygon(PackedVector2Array([o + Vector2(8, 2) * s, o + Vector2(7, 5) * s, o + Vector2(9, 5) * s]), TORCH_300)
 				else:
 					ci.draw_rect(Rect2(o + Vector2(7, 4) * s, Vector2(2, 2) * s), INK)
+		"item":
+			var flask := Rect2(o + Vector2(4, 7) * s, Vector2(8, 8) * s)
+			ci.draw_rect(flask, STONE_300)
+			ci.draw_rect(flask, INK, false, w)
+			ci.draw_rect(Rect2(o + Vector2(6, 3) * s, Vector2(4, 4) * s), STONE_100)
+			ci.draw_rect(Rect2(o + Vector2(6, 3) * s, Vector2(4, 4) * s), INK, false, w)
+			ci.draw_rect(Rect2(o + Vector2(7, 1) * s, Vector2(2, 2) * s), LEATHER_400)
+			ci.draw_rect(Rect2(o + Vector2(5, 10) * s, Vector2(6, 4) * s), BLOOD_500)
+		"monster":
+			var skull := Rect2(o + Vector2(3, 2) * s, Vector2(10, 9) * s)
+			ci.draw_rect(skull, BONE_300)
+			ci.draw_rect(skull, INK, false, w)
+			ci.draw_rect(Rect2(o + Vector2(4, 11) * s, Vector2(8, 4) * s), BONE_300)
+			ci.draw_rect(Rect2(o + Vector2(4, 11) * s, Vector2(8, 4) * s), INK, false, w)
+			ci.draw_rect(Rect2(o + Vector2(5, 5) * s, Vector2(2, 3) * s), INK)
+			ci.draw_rect(Rect2(o + Vector2(9, 5) * s, Vector2(2, 3) * s), INK)
 		"select":
 			var arrow := PackedVector2Array([o + Vector2(3, 2) * s, o + Vector2(3, 13) * s, o + Vector2(6, 10) * s, o + Vector2(9, 15) * s, o + Vector2(11, 14) * s, o + Vector2(8, 9) * s, o + Vector2(12, 9) * s])
 			ci.draw_colored_polygon(arrow, STONE_100)
@@ -932,3 +1063,247 @@ func _icon(ci: CanvasItem, kind: String, r: Rect2, axis: int, facing: int) -> vo
 			ci.draw_rect(Rect2(o + Vector2(1, 8) * s, Vector2(14, 7) * s), INK, false, w)
 			ci.draw_line(o + Vector2(3, 6) * s, o + Vector2(12, 1) * s, INK, maxf(1.0, w * 1.5))
 			ci.draw_rect(Rect2(o + Vector2(2, 5) * s, Vector2(2, 2) * s), BLOOD_500)
+
+
+# --------------------------------------------------------------------------
+# Items and monsters (E.3): the lists, the side panel, the pieces on the paper
+# --------------------------------------------------------------------------
+
+## Every ItemDef in data/items and MonsterDef in data/monsters, read from the folders (so a new one appears here by itself).
+func _load_lists() -> void:
+	item_list = _scan("res://data/items", false)
+	monster_list = _scan("res://data/monsters", true)
+
+
+func _scan(dir: String, monsters: bool) -> Array:
+	var out := []
+	var d := DirAccess.open(dir)
+	if d == null:
+		return out
+	for f in d.get_files():
+		var file := f.trim_suffix(".remap")
+		if not file.ends_with(".tres"):
+			continue
+		var path := dir + "/" + file
+		var def: Resource = load(path)
+		if def == null:
+			continue
+		var icon: Texture2D = null
+		if monsters:
+			icon = _monster_frame(def)
+		else:
+			icon = def.hud_texture()
+		out.append({"path": path, "name": str(def.display_name).to_upper(), "icon": icon, "def": def})
+	out.sort_custom(func(a, b): return a.name < b.name)
+	return out
+
+
+## A monster's first idle frame, cut from its sheet.
+func _monster_frame(def: Resource) -> Texture2D:
+	if def.sheet == null:
+		return null
+	var frames: int = maxi(1, int(def.hframes))
+	var fw: float = float(def.sheet.get_width()) / frames
+	var tex := AtlasTexture.new()
+	tex.atlas = def.sheet
+	tex.region = Rect2(int(def.idle_frames[0]) * fw if def.idle_frames.size() > 0 else 0.0, 0.0, fw, float(def.sheet.get_height()))
+	return tex
+
+
+func _entry(path: String, monsters: bool) -> Dictionary:
+	for e in (monster_list if monsters else item_list):
+		if e.path == path:
+			return e
+	return {}
+
+
+func _build_panel() -> void:
+	panel = Control.new()
+	panel.position = PANEL_RECT.position
+	panel.size = PANEL_RECT.size
+	panel.clip_contents = true
+	panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	panel.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	panel.draw.connect(_draw_panel)
+	panel.gui_input.connect(_panel_input)
+	panel.mouse_exited.connect(func(): panel_hover = -1; panel.queue_redraw())
+	root.add_child(panel)
+
+
+## The list the panel shows now, or [] (the info box alone) for the other tools.
+func _current_list() -> Array:
+	if tool == Tool.ITEM:
+		return item_list
+	if tool == Tool.MONSTER:
+		return monster_list
+	return []
+
+
+func _visible_rows() -> int:
+	return int((PANEL_RECT.size.y - INFO_H - LIST_TOP) / ROW_H)
+
+
+func _panel_input(event: InputEvent) -> void:
+	if new_dialog.visible:
+		return
+	var list := _current_list()
+	if event is InputEventMouseButton and event.pressed:
+		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
+			list_scroll = maxi(0, list_scroll - 1)
+		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+			list_scroll = clampi(list_scroll + 1, 0, maxi(0, list.size() - _visible_rows()))
+		elif event.button_index == MOUSE_BUTTON_LEFT:
+			var row := _row_at(event.position)
+			if row >= 0 and row < list.size():
+				if tool == Tool.ITEM:
+					brush_item = list[row].path
+				else:
+					brush_monster = list[row].path
+		panel.queue_redraw()
+	elif event is InputEventMouseMotion:
+		var row2 := _row_at(event.position)
+		if row2 != panel_hover:
+			panel_hover = row2
+			panel.queue_redraw()
+
+
+func _row_at(p: Vector2) -> int:
+	if p.y < LIST_TOP or p.y >= PANEL_RECT.size.y - INFO_H:
+		return -1
+	return list_scroll + int((p.y - LIST_TOP) / ROW_H)
+
+
+func select_brush(path: String) -> void:
+	if tool == Tool.MONSTER:
+		brush_monster = path
+	else:
+		brush_item = path
+	_redraw()
+
+
+func _draw_panel() -> void:
+	var font := panel.get_theme_default_font()
+	var size := PANEL_RECT.size
+	panel.draw_rect(Rect2(Vector2.ZERO, size), STONE_900)
+	var list := _current_list()
+	if tool == Tool.ITEM or tool == Tool.MONSTER:
+		panel.draw_string(font, Vector2(4, 10), "ITEMS" if tool == Tool.ITEM else "MONSTERS", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_300)
+		var count := "%d" % list.size()
+		panel.draw_string(font, Vector2(size.x - 4 - count.length() * 8, 10), count, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_700)
+		var brush := brush_item if tool == Tool.ITEM else brush_monster
+		var rows := _visible_rows()
+		for i in rows:
+			var idx := list_scroll + i
+			if idx >= list.size():
+				break
+			var e: Dictionary = list[idx]
+			var y := LIST_TOP + i * ROW_H
+			var row := Rect2(0, y, size.x, ROW_H - 1)
+			if e.path == brush:
+				panel.draw_rect(row, RUST_700)
+				panel.draw_rect(row, BONE_300, false, 1.0)
+			elif idx == panel_hover:
+				panel.draw_rect(row, STONE_700)
+			if e.icon != null:
+				panel.draw_texture_rect(e.icon, Rect2(2, y + 1, 16, 16), false)
+			panel.draw_string(font, Vector2(21, y + 12), e.name.substr(0, 13), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_300 if e.path == brush else BONE_500)
+		if list.size() > rows:  # A scroll mark down the right edge.
+			var track := size.y - INFO_H - LIST_TOP
+			var thumb := maxf(8.0, track * rows / float(list.size()))
+			var top := LIST_TOP + (track - thumb) * list_scroll / float(maxi(1, list.size() - rows))
+			panel.draw_rect(Rect2(size.x - 3, top, 3, thumb), BONE_700)
+	else:
+		panel.draw_string(font, Vector2(4, 10), "THE LISTS", HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_300)
+		for i in 3:
+			panel.draw_string(font, Vector2(4, 28 + i * 10), ["PICK THE ITEM OR", "MONSTER TOOL TO", "PLACE THEM"][i], HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_700)
+	# The foot: what is under the mouse (or, with nothing there, what is selected).
+	var box := Rect2(0, size.y - INFO_H, size.x, INFO_H)
+	panel.draw_rect(box, STONE_700)
+	panel.draw_rect(box, RUST_500, false, 1.0)
+	var lines := _info_lines()
+	for i in mini(lines.size(), 7):
+		panel.draw_string(font, Vector2(4, box.position.y + 11 + i * 10), lines[i].substr(0, 15), HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_300 if i == 0 else BONE_500)
+
+
+## What is on a square, in short lines (15 characters fit): the square, its tile, a monster, the pile, a start, a link.
+func _info_lines() -> Array:
+	var cell := hover
+	if cell.x < 0:
+		var kind: String = selected.get("kind", "")
+		if kind == "monster" and int(selected.index) < grid.monsters.size():
+			cell = grid.monsters[int(selected.index)].cell
+		elif kind == "item" and int(selected.index) < grid.items.size():
+			cell = grid.items[int(selected.index)].cell
+		elif kind == "cell":
+			cell = selected.cell
+		else:
+			return ["(-,-)", "MOUSE OVER A", "SQUARE"]
+	var names := {EditorGrid.FLOOR: "FLOOR", EditorGrid.WALL: "WALL", EditorGrid.DOOR: "DOOR", EditorGrid.LOCKED: "LOCKED DOOR", EditorGrid.STAIRS: "STAIRS DOWN", EditorGrid.GATE: "GATE", EditorGrid.CRACKED: "CRACKED WALL"}
+	var lines := ["(%d,%d)" % [cell.x, cell.y], names[grid.type_at(cell.x, cell.y)]]
+	if not grid.start.is_empty() and grid.start.cell == cell:
+		lines.append("PARTY START")
+	var m := grid.monster_index_at(cell)
+	if m >= 0:
+		var entry := _entry(grid.monsters[m].def, true)
+		lines.append(str(entry.get("name", "MONSTER")))
+		var tier := ("TIER %d" % int(entry.def.tier)) if entry.has("def") else ""
+		lines.append("%s FACES %s" % [tier, ["N", "W", "S", "E"][int(grid.monsters[m].facing)]])
+	var piles := grid.items_at(cell)
+	piles.reverse()
+	for i in piles:
+		var it: Dictionary = grid.items[i]
+		var e := _entry(it.def, false)
+		var label := str(e.get("name", "ITEM"))
+		if int(it.count) > 1:
+			label = "%s X%d" % [label.substr(0, 11), int(it.count)]
+		lines.append(label)
+		if it.has("opens"):
+			lines.append("OPENS (%d,%d)" % [it.opens.x, it.opens.y])
+	return lines
+
+
+func _draw_items_and_monsters() -> void:
+	var c := float(cell_px)
+	var font := paper.get_theme_default_font()
+	var done := {}
+	for it in grid.items:
+		if done.has(it.cell):
+			continue
+		done[it.cell] = true
+		var cx: float = origin.x + it.cell.x * c
+		var cy: float = origin.y + it.cell.y * c
+		if cx + c < 0.0 or cx > PAPER_RECT.size.x or cy + c < 0.0 or cy > PAPER_RECT.size.y:
+			continue
+		var pile := grid.items_at(it.cell)
+		var top: Dictionary = grid.items[pile[pile.size() - 1]]
+		for k in mini(pile.size(), 3):  # A pile shows up to three stacks, each a little behind the one above.
+			var stack: Dictionary = grid.items[pile[pile.size() - 1 - (mini(pile.size(), 3) - 1 - k)]]
+			var e := _entry(stack.def, false)
+			if e.is_empty() or e.icon == null:
+				continue
+			var size := c * 0.62
+			var shift := (mini(pile.size(), 3) - 1 - k) * -c * 0.1
+			paper.draw_texture_rect(e.icon, Rect2(Vector2(cx, cy) + Vector2(c, c) * 0.5 - Vector2(size, size) * 0.5 + Vector2(shift, shift), Vector2(size, size)), false)
+		if int(top.count) > 1 and cell_px >= 20:
+			var label := str(int(top.count))
+			paper.draw_rect(Rect2(cx + c - label.length() * 8 - 2, cy + c - 10, label.length() * 8 + 2, 10), STONE_900)
+			paper.draw_string(font, Vector2(cx + c - label.length() * 8 - 1, cy + c - 2), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 8, BONE_300)
+		if top.has("opens"):  # A key linked to a locked door wears a small red tick.
+			paper.draw_rect(Rect2(cx + 2, cy + 2, 4, 4), BLOOD_500)
+	for m in grid.monsters:
+		var mx: float = origin.x + m.cell.x * c
+		var my: float = origin.y + m.cell.y * c
+		if mx + c < 0.0 or mx > PAPER_RECT.size.x or my + c < 0.0 or my > PAPER_RECT.size.y:
+			continue
+		var me := _entry(m.def, true)
+		if not me.is_empty() and me.icon != null:
+			var ms := c * 1.5
+			paper.draw_texture_rect(me.icon, Rect2(Vector2(mx, my) + Vector2(c, c) * 0.5 - Vector2(ms, ms) * 0.5 + Vector2(0, -c * 0.18), Vector2(ms, ms)), false)
+		else:
+			paper.draw_rect(Rect2(mx + 3, my + 3, c - 6, c - 6), BLOOD_500)
+		# Which way it faces: a small ink triangle on that side of the square.
+		var d := Vector2(EditorGrid.DIRS[int(m.facing)])
+		var side := Vector2(-d.y, d.x)
+		var base := Vector2(mx, my) + Vector2(c, c) * 0.5 + d * c * 0.42
+		paper.draw_colored_polygon(PackedVector2Array([base + d * c * 0.08, base - d * c * 0.1 + side * c * 0.14, base - d * c * 0.1 - side * c * 0.14]), BLOOD_500)
+		paper.draw_polyline(PackedVector2Array([base + d * c * 0.08, base - d * c * 0.1 + side * c * 0.14, base - d * c * 0.1 - side * c * 0.14, base + d * c * 0.08]), INK, 1.0)

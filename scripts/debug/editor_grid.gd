@@ -3,7 +3,8 @@ extends RefCounted
 ## codes as a level's MAP (levels/floor_1.gd): 0 floor (blank paper), 1 wall (the default: solid rock), 2 door, 3 locked door,
 ## 4 stairs down, 5 portcullis (a gate), 6 cracked wall. On top of the squares sit the things that are not whole squares: the party
 ## start (one, with the way it faces), wall levers and wall sconces (each on one face of a floor square) and the links from levers to
-## doors. They use floor 1's own data shapes (LEVERS, DOOR_IDS, TORCHES, START_TILE, START_FACING), see level_data().
+## doors. E.3 adds the things that lie or stand on a floor square: items (in piles, like the game's) and monsters. They use floor 1's
+## own data shapes (LEVERS, DOOR_IDS, TORCHES, START_TILE, START_FACING, ITEMS, MONSTERS), see level_data().
 ##
 ## The outer edge always stays wall: nothing is placed on it. Painting (set_cell) only turns plain floor into wall and back; the other
 ## things are placed by their own calls, which refuse, with a short reason, anything the game would not allow (a door needs a wall on
@@ -33,6 +34,8 @@ var start := {}                 # {"cell": Vector2i, "facing": int} (0 north, 1 
 var levers: Array = []          # {"cell": Vector2i, "side": int, "target": String}: the floor square and the wall it hangs on; target "" is unlinked.
 var sconces: Array = []         # {"cell": Vector2i, "side": int, "state": int (SCONCE_*)}.
 var door_ids := {}              # door or gate cell -> its id, for the doors a lever is linked to (floor 1's DOOR_IDS).
+var items: Array = []           # {"cell": Vector2i, "def": String (an ItemDef path), "count": int, optionally "opens": Vector2i (a key linked to a locked door)}. Several on one square are a pile, the last on top.
+var monsters: Array = []        # {"cell": Vector2i, "def": String (a MonsterDef path), "facing": int}: one to a square.
 var undo_limit := 100
 var _undo: Array = []           # Strokes: {"cells": PackedInt32Array of (index, old, new) triples, "before": things, "after": things}.
 var _redo: Array = []
@@ -53,6 +56,8 @@ func setup(w: int, h: int, limit := 100) -> void:
 	levers = []
 	sconces = []
 	door_ids = {}
+	items = []
+	monsters = []
 	_undo.clear()
 	_redo.clear()
 	_stroke = PackedInt32Array()
@@ -252,6 +257,8 @@ func place_start(x: int, y: int, facing := 3) -> String:
 		return "NOT ON THE EDGE OF THE SHEET"
 	if type_at(x, y) != FLOOR:
 		return "THE PARTY STARTS ON FLOOR"
+	if monster_index_at(Vector2i(x, y)) >= 0:
+		return "A MONSTER STANDS THERE"
 	var single := not _in_stroke
 	if single:
 		begin_stroke()
@@ -407,6 +414,113 @@ func rotate_face(is_lever: bool, index: int) -> String:
 	return "NO OTHER WALL TO TURN TO"
 
 
+# --- Items and monsters (E.3) -------------------------------------------------------------------------------------------
+
+func items_at(cell: Vector2i) -> Array:
+	var out := []
+	for i in items.size():
+		if items[i].cell == cell:
+			out.append(i)
+	return out
+
+
+func monster_index_at(cell: Vector2i) -> int:
+	for i in monsters.size():
+		if monsters[i].cell == cell:
+			return i
+	return -1
+
+
+## Put an item on a floor square. It joins the pile like the game's floor piles: onto the top stack if that is the same item and has
+## room (`max_stack`), else on top as a new stack. "" or the reason it was refused.
+func place_item(x: int, y: int, def_path: String, max_stack := 1) -> String:
+	if not in_bounds(x, y) or is_edge(x, y):
+		return "NOT ON THE EDGE OF THE SHEET"
+	if type_at(x, y) != FLOOR:
+		return "ITEMS LIE ON FLOOR"
+	var single := not _in_stroke
+	if single:
+		begin_stroke()
+	var here := items_at(Vector2i(x, y))
+	if not here.is_empty() and items[here[here.size() - 1]].def == def_path and int(items[here[here.size() - 1]].count) < max_stack:
+		items[here[here.size() - 1]].count = int(items[here[here.size() - 1]].count) + 1
+	else:
+		items.append({"cell": Vector2i(x, y), "def": def_path, "count": 1})
+	if single:
+		end_stroke()
+	return ""
+
+
+## Stand a monster on a floor square, facing a way (0 north, 1 west, 2 south, 3 east). One to a square, and never on the party start.
+func place_monster(x: int, y: int, def_path: String, facing := 2) -> String:
+	if not in_bounds(x, y) or is_edge(x, y):
+		return "NOT ON THE EDGE OF THE SHEET"
+	if type_at(x, y) != FLOOR:
+		return "MONSTERS STAND ON FLOOR"
+	if monster_index_at(Vector2i(x, y)) >= 0:
+		return "A MONSTER STANDS THERE ALREADY"
+	if not start.is_empty() and start.cell == Vector2i(x, y):
+		return "THE PARTY STARTS THERE"
+	var single := not _in_stroke
+	if single:
+		begin_stroke()
+	monsters.append({"cell": Vector2i(x, y), "def": def_path, "facing": facing})
+	if single:
+		end_stroke()
+	return ""
+
+
+func delete_item(index: int) -> void:
+	if index >= 0 and index < items.size():
+		var single := not _in_stroke
+		if single:
+			begin_stroke()
+		items.remove_at(index)
+		if single:
+			end_stroke()
+
+
+func delete_monster(index: int) -> void:
+	if index >= 0 and index < monsters.size():
+		var single := not _in_stroke
+		if single:
+			begin_stroke()
+		monsters.remove_at(index)
+		if single:
+			end_stroke()
+
+
+## Turn a monster a quarter turn clockwise.
+func rotate_monster(index: int) -> void:
+	if index >= 0 and index < monsters.size():
+		var single := not _in_stroke
+		if single:
+			begin_stroke()
+		monsters[index].facing = (int(monsters[index].facing) + 3) % 4
+		if single:
+			end_stroke()
+
+
+## Link a key (item number `index`; the caller says it is a key) to the locked door at `cell`; linking it again unlinks it. Floor 1's
+## keys open any locked door, so the link is for the editor (E.4's check that the level can be finished) and rides along in the item's
+## data as "opens".
+func link_key(index: int, cell: Vector2i) -> String:
+	if index < 0 or index >= items.size():
+		return "NO KEY"
+	if type_at(cell.x, cell.y) != LOCKED:
+		return "A KEY OPENS A LOCKED DOOR"
+	var single := not _in_stroke
+	if single:
+		begin_stroke()
+	if items[index].get("opens", Vector2i(-1, -1)) == cell:
+		items[index].erase("opens")
+	else:
+		items[index]["opens"] = cell
+	if single:
+		end_stroke()
+	return ""
+
+
 ## The level as floor 1's own data: only the fields the editor makes (MAP, START_TILE and START_FACING when a start is placed,
 ## DOOR_IDS, LEVERS, TORCHES). DungeonMap.use_level_data takes it as it is.
 func level_data() -> Dictionary:
@@ -422,7 +536,18 @@ func level_data() -> Dictionary:
 	var lever_list: Array = []
 	for l in levers:
 		lever_list.append({"cell": l.cell, "side": l.side, "target": l.target})
-	var data := {"MAP": map, "DOOR_IDS": door_ids.duplicate(), "LEVERS": lever_list, "TORCHES": torches}
+	var item_list: Array = []
+	for it in items:
+		var entry := {"cell": it.cell, "def": it.def}
+		if int(it.count) > 1:
+			entry["count"] = int(it.count)
+		if it.has("opens"):
+			entry["opens"] = it.opens
+		item_list.append(entry)
+	var monster_list: Array = []
+	for m in monsters:
+		monster_list.append({"cell": m.cell, "def": m.def, "facing": m.facing})
+	var data := {"MAP": map, "DOOR_IDS": door_ids.duplicate(), "LEVERS": lever_list, "TORCHES": torches, "ITEMS": item_list, "MONSTERS": monster_list}
 	if not start.is_empty():
 		data["START_TILE"] = start.cell
 		data["START_FACING"] = start.facing
@@ -459,6 +584,11 @@ func _cleanup() -> void:
 	sconces = sconces.filter(func(s): return face_ok(s.cell, s.side))
 	if not start.is_empty() and type_at(start.cell.x, start.cell.y) != FLOOR:
 		start = {}
+	items = items.filter(func(it): return type_at(it.cell.x, it.cell.y) == FLOOR)
+	monsters = monsters.filter(func(m): return type_at(m.cell.x, m.cell.y) == FLOOR)
+	for it in items:
+		if it.has("opens") and type_at(it.opens.x, it.opens.y) != LOCKED:
+			it.erase("opens")
 	for cell in door_ids.keys():
 		if not is_door_type(type_at(cell.x, cell.y)):
 			door_ids.erase(cell)
@@ -478,7 +608,8 @@ func face_ok(cell: Vector2i, side: int) -> bool:
 
 
 func _things() -> Dictionary:
-	return {"start": start.duplicate(true), "levers": levers.duplicate(true), "sconces": sconces.duplicate(true), "door_ids": door_ids.duplicate(true)}
+	return {"start": start.duplicate(true), "levers": levers.duplicate(true), "sconces": sconces.duplicate(true), "door_ids": door_ids.duplicate(true),
+			"items": items.duplicate(true), "monsters": monsters.duplicate(true)}
 
 
 func _set_things(d: Dictionary) -> void:
@@ -486,3 +617,5 @@ func _set_things(d: Dictionary) -> void:
 	levers = d.levers.duplicate(true)
 	sconces = d.sconces.duplicate(true)
 	door_ids = d.door_ids.duplicate(true)
+	items = d.items.duplicate(true)
+	monsters = d.monsters.duplicate(true)
