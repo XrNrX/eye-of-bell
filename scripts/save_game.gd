@@ -50,7 +50,7 @@ static func has_save() -> bool:
 ## Write the current run to disk. Returns "" on success or why it failed.
 static func save(tree: SceneTree) -> String:
 	if DungeonMap.level_path != "":
-		return "The test room can't be saved."
+		return "This level can't be saved."  # (The test room, or a level built from the editor.)
 	var data := serialize(tree)
 	if data.is_empty():
 		return "Nothing to save."

@@ -28,12 +28,26 @@ extends CanvasLayer
 ## Delete removes it. A key can be linked to a locked door like a lever (select the key, click the door, or the door then the key;
 ## clicking again unlinks): floor 1's keys open any locked door, so the link is for the editor (E.4 checks the level can be finished).
 ##
+## E.4 adds BUILD. It first CHECKS the paper (editor_check.gd): no party start or no stairs down refuses the build; an unreachable
+## square, item or monster, a lever or key linked to nothing, a locked door with no key and a gate with no lever are warnings, listed
+## in a dialog and marked in red ink on the paper (the marks go at the next click). Then it hands the paper to
+## DungeonMap.use_level_data (the same code that builds floor 1) under the id "editor:play" and loads the game scene: the ready-made
+## four with full HP and mana and their starting gear stand on the start. TAB (or F10) in that game goes back to the paper (the
+## game waits) with the party's square marked; Build again puts the party back on that square; Tab or Close goes back to the game.
+## A level built here can never be saved to the real save slot (SaveGame.save refuses any level but floor 1). The editor lives at
+## the tree root (DungeonMap.add_editor, group "dungeon_editor") so a Build changing the scene does not take it away.
+##
 ## The paper is data (editor_grid.gd); this script draws it and turns the mouse and keys into strokes. Pixel rules: every line is one
 ## logical pixel, squares are a whole number of pixels (a multiple of 4, so the hatching of neighbours joins), no smooth gradients,
 ## palette colours only. The numbers (sheet size, zoom steps, undo depth) are in scripts/debug/editor_config.tres.
 
 const EditorConfig := preload("res://scripts/debug/editor_config.gd")
 const EditorGrid := preload("res://scripts/debug/editor_grid.gd")
+const EditorCheck := preload("res://scripts/debug/editor_check.gd")
+const DungeonMap := preload("res://scripts/dungeon_map.gd")
+const RunState := preload("res://scripts/run_state.gd")
+const SaveGame := preload("res://scripts/save_game.gd")
+const MAIN_SCENE := "res://scenes/main.tscn"
 const PARCHMENT := preload("res://art/ui/map_sheet.png")  # The stained paper of the M map (474x298), mirrored to cover the sheet.
 const FRAME := preload("res://art/ui/map_frame.png")
 
@@ -96,6 +110,13 @@ var brush_monster := ""           # The monster (path) the MONSTER tool places, 
 var brush_facing := 2             # The way a newly placed monster faces (the last one turned to; south at first).
 var list_scroll := 0
 var panel_hover := -1             # The list row under the mouse, or -1.
+var problems: Array = []          # The last check: [{"level": "error" | "warn", "text": String, "cells": Array}].
+var marks: Array = []             # The squares the problems point at, marked in red ink until the next click on the paper.
+var play_marker := {}             # Where the party stood when you came back to the paper from a build: {"cell": Vector2i, "facing": int}, or {}.
+var pending_place := {}           # A square to put the party on once the built game has loaded.
+var problem_dialog: PanelContainer
+var problem_lines: VBoxContainer
+var problem_buttons: HBoxContainer
 
 var root: Control
 var paper: Control
@@ -107,6 +128,11 @@ var _frame_box := StyleBoxTexture.new()
 
 
 func _ready() -> void:
+	for other in get_tree().get_nodes_in_group("dungeon_editor"):  # One editor at the tree root: a second one gives way.
+		if other != self and not other.is_queued_for_deletion():
+			queue_free()
+			return
+	add_to_group("dungeon_editor")
 	layer = 20  # Over the full-screen map (18) and the pause menu (19).
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
@@ -134,9 +160,11 @@ func _ready() -> void:
 	_build_toolbar()
 	_load_lists()
 	_build_panel()
+	_add_button("BUILD", Vector2(416, 3), request_build)
 	_add_button("NEW", Vector2(488, 3), _show_new_dialog)
 	_add_button("CLOSE", Vector2(560, 3), close)
 	_build_new_dialog()
+	_build_problem_dialog()
 	_new_sheet(cfg.new_width, cfg.new_height)
 
 
@@ -154,6 +182,9 @@ func open() -> void:
 	opened_pause = false
 	if get_tree().paused:
 		return  # Another screen (inventory, pause menu, end screens) owns the pause: leave it be.
+	if _in_play():  # Back to the paper from the built game: note where the party stands.
+		var party_square := get_tree().get_first_node_in_group("player")
+		play_marker = {"cell": party_square.cell, "facing": int(party_square.facing)}
 	var scene := get_tree().current_scene
 	if scene != null and scene.scene_file_path.ends_with("main.tscn"):
 		get_tree().paused = true  # In the game the world waits. (The main menu has nothing to pause.)
@@ -161,6 +192,7 @@ func open() -> void:
 	get_tree().call_group("party_hud", "cancel_casting")
 	visible = true
 	new_dialog.visible = false
+	problem_dialog.visible = false
 	mode = 0
 	_redraw()
 
@@ -171,6 +203,7 @@ func close() -> void:
 	visible = false
 	mode = 0
 	new_dialog.visible = false
+	problem_dialog.visible = false
 	if opened_pause:
 		get_tree().paused = false
 	opened_pause = false
@@ -186,10 +219,19 @@ func _input(event: InputEvent) -> void:
 			open()
 		get_viewport().set_input_as_handled()
 		return
+	if event.keycode == KEY_TAB and _in_play():  # Tab: from the built game to the paper and back.
+		if visible:
+			close()
+		else:
+			open()
+		get_viewport().set_input_as_handled()
+		return
 	if not visible:
 		return
 	if event.keycode == KEY_ESCAPE:
-		if new_dialog.visible:
+		if problem_dialog.visible:
+			problem_dialog.visible = false
+		elif new_dialog.visible:
 			new_dialog.visible = false
 		elif not selected.is_empty():
 			selected = {}
@@ -228,6 +270,8 @@ func _new_sheet(w: int, h: int) -> void:
 	hover = Vector2i(-1, -1)
 	mode = 0
 	selected = {}
+	marks = []
+	play_marker = {}
 	_centre()
 	_redraw()
 
@@ -289,10 +333,13 @@ func _zoom(steps: int, about: Vector2) -> void:
 # --------------------------------------------------------------------------
 
 func _paper_input(event: InputEvent) -> void:
-	if new_dialog.visible:
+	if new_dialog.visible or problem_dialog.visible:
 		return
 	if event is InputEventMouseButton:
 		var p: Vector2 = event.position
+		if event.pressed and not marks.is_empty() and event.button_index != MOUSE_BUTTON_WHEEL_UP and event.button_index != MOUSE_BUTTON_WHEEL_DOWN:
+			marks = []  # The red ink comes off at the next click.
+			paper.queue_redraw()
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
 			_zoom(1, p)
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
@@ -355,7 +402,7 @@ func _process(delta: float) -> void:
 		if message_left <= 0.0:
 			message = ""
 			root.queue_redraw()
-	if not visible or new_dialog.visible:
+	if not visible or new_dialog.visible or problem_dialog.visible:
 		return
 	var dir := Vector2.ZERO
 	for key in PAN_KEYS:
@@ -578,7 +625,7 @@ func _build_toolbar() -> void:
 
 
 func _tool_button_input(event: InputEvent, t: int) -> void:
-	if new_dialog.visible:
+	if new_dialog.visible or problem_dialog.visible:
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		set_tool(t)
@@ -926,6 +973,7 @@ func _draw_things() -> void:
 		_icon(paper, skind, Rect2(sp - Vector2(c, c) * 0.3, Vector2(c, c) * 0.6), 0, 3)
 	_draw_links()
 	_draw_selection()
+	_draw_marks()
 
 
 ## A thin ink line joins a selected lever to its door, or a selected door to every lever that works it.
@@ -1012,11 +1060,11 @@ func _icon(ci: CanvasItem, kind: String, r: Rect2, axis: int, facing: int) -> vo
 				var sr := Rect2(o + Vector2(step[0], step[1]) * s, Vector2(step[2], step[3]) * s)
 				ci.draw_rect(sr, STONE_500)
 				ci.draw_rect(sr, INK, false, w)
-		"start":
+		"start", "now":
 			var tri: Array = [[Vector2(8, 1), Vector2(2, 14), Vector2(14, 14)], [Vector2(1, 8), Vector2(14, 2), Vector2(14, 14)],
 					[Vector2(8, 15), Vector2(2, 2), Vector2(14, 2)], [Vector2(15, 8), Vector2(2, 2), Vector2(2, 14)]][facing]
 			var pts := PackedVector2Array([o + tri[0] * s, o + tri[1] * s, o + tri[2] * s])
-			ci.draw_colored_polygon(pts, BLOOD_500)
+			ci.draw_colored_polygon(pts, TORCH_500 if kind == "now" else BLOOD_500)
 			ci.draw_polyline(PackedVector2Array([pts[0], pts[1], pts[2], pts[0]]), INK, w)
 		"lever":
 			var plate := Rect2(o + Vector2(2, 11) * s, Vector2(12, 3) * s)
@@ -1144,7 +1192,7 @@ func _visible_rows() -> int:
 
 
 func _panel_input(event: InputEvent) -> void:
-	if new_dialog.visible:
+	if new_dialog.visible or problem_dialog.visible:
 		return
 	var list := _current_list()
 	if event is InputEventMouseButton and event.pressed:
@@ -1307,3 +1355,148 @@ func _draw_items_and_monsters() -> void:
 		var base := Vector2(mx, my) + Vector2(c, c) * 0.5 + d * c * 0.42
 		paper.draw_colored_polygon(PackedVector2Array([base + d * c * 0.08, base - d * c * 0.1 + side * c * 0.14, base - d * c * 0.1 - side * c * 0.14]), BLOOD_500)
 		paper.draw_polyline(PackedVector2Array([base + d * c * 0.08, base - d * c * 0.1 + side * c * 0.14, base - d * c * 0.1 - side * c * 0.14, base + d * c * 0.08]), INK, 1.0)
+
+
+# --------------------------------------------------------------------------
+# Build and play (E.4)
+# --------------------------------------------------------------------------
+
+## Is the built game running (a level built from this paper, in the game scene, with a party)?
+func _in_play() -> bool:
+	var scene := get_tree().current_scene
+	return DungeonMap.level_id == DungeonMap.EDITOR_PLAY_ID and scene != null and scene.scene_file_path == MAIN_SCENE \
+			and get_tree().get_first_node_in_group("player") != null
+
+
+## The BUILD button: check the paper, then build it, or list what is wrong first.
+func request_build() -> void:
+	if new_dialog.visible or problem_dialog.visible:
+		return
+	problems = EditorCheck.run(grid)
+	marks = EditorCheck.marked_cells(problems)
+	if problems.is_empty():
+		build_level()
+	else:
+		_show_problems()
+	_redraw()
+
+
+## Hand the paper to the game: the same level code as floor 1 (DungeonMap.use_level_data), the ready-made four on the start (or where
+## they stood when you came back to the paper), and the game scene loaded fresh. Nothing is saved.
+func build_level() -> void:
+	if grid.start.is_empty():
+		_say("A BUILD NEEDS A PARTY START")
+		return
+	pending_place = {}
+	if not play_marker.is_empty() and grid.type_at(play_marker.cell.x, play_marker.cell.y) == EditorGrid.FLOOR:
+		pending_place = play_marker.duplicate()  # Build again: the party goes back where it was.
+	play_marker = {}
+	marks = []
+	DungeonMap.use_level_data(grid.level_data(), DungeonMap.EDITOR_PLAY_ID)
+	RunState.clear()  # A fresh party: nothing carried over, and no waiting save.
+	SaveGame.pending = {}
+	problem_dialog.visible = false
+	new_dialog.visible = false
+	visible = false
+	opened_pause = false
+	get_tree().paused = false
+	get_tree().change_scene_to_file(MAIN_SCENE)
+	_place_party_when_loaded()
+
+
+## Once the new game scene stands, put the party on the square it left.
+func _place_party_when_loaded() -> void:
+	if pending_place.is_empty():
+		return
+	for i in 120:
+		await get_tree().process_frame
+		var scene := get_tree().current_scene
+		var player := get_tree().get_first_node_in_group("player")
+		if scene != null and scene.scene_file_path == MAIN_SCENE and player != null and scene.is_ancestor_of(player) and player.is_node_ready():
+			await get_tree().process_frame
+			player.restore(pending_place.cell, int(pending_place.facing))
+			pending_place = {}
+			return
+	pending_place = {}
+
+
+func _build_problem_dialog() -> void:
+	problem_dialog = PanelContainer.new()
+	problem_dialog.add_theme_stylebox_override("panel", _style(STONE_900, RUST_500))
+	problem_dialog.visible = false
+	problem_dialog.mouse_filter = Control.MOUSE_FILTER_STOP
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 6)
+	problem_dialog.add_child(box)
+	var title := Label.new()
+	title.text = "BUILD CHECK"
+	title.add_theme_font_size_override("font_size", 8)
+	title.add_theme_color_override("font_color", BONE_300)
+	box.add_child(title)
+	problem_lines = VBoxContainer.new()
+	problem_lines.add_theme_constant_override("separation", 3)
+	box.add_child(problem_lines)
+	problem_buttons = HBoxContainer.new()
+	problem_buttons.add_theme_constant_override("separation", 6)
+	box.add_child(problem_buttons)
+	root.add_child(problem_dialog)
+	problem_dialog.position = Vector2(120, 80)
+
+
+## List the problems: errors in red ink (the build is refused), warnings in bone (the build may go on).
+func _show_problems() -> void:
+	for c in problem_lines.get_children():
+		problem_lines.remove_child(c)
+		c.queue_free()
+	for c in problem_buttons.get_children():
+		problem_buttons.remove_child(c)
+		c.queue_free()
+	var refused := EditorCheck.has_errors(problems)
+	var shown := 0
+	for pr in problems:
+		if shown >= 9:
+			break
+		var l := Label.new()
+		l.text = ("X " if pr.level == "error" else "! ") + pr.text
+		l.add_theme_font_size_override("font_size", 8)
+		l.add_theme_color_override("font_color", Color("a8673a") if pr.level == "error" else BONE_300)
+		problem_lines.add_child(l)
+		shown += 1
+	if problems.size() > shown:
+		var more := Label.new()
+		more.text = "... AND %d MORE" % (problems.size() - shown)
+		more.add_theme_font_size_override("font_size", 8)
+		more.add_theme_color_override("font_color", BONE_700)
+		problem_lines.add_child(more)
+	var note := Label.new()
+	note.text = "THE BUILD IS REFUSED." if refused else "THE LEVEL CAN STILL BE BUILT."
+	note.add_theme_font_size_override("font_size", 8)
+	note.add_theme_color_override("font_color", BONE_500)
+	problem_lines.add_child(note)
+	if refused:
+		_dialog_button("OK", func(): problem_dialog.visible = false)
+	else:
+		_dialog_button("BUILD ANYWAY", build_level)
+		_dialog_button("CANCEL", func(): problem_dialog.visible = false)
+	problem_dialog.visible = true
+
+
+func _dialog_button(text: String, on_press: Callable) -> void:
+	var b := Button.new()
+	b.text = text
+	b.custom_minimum_size = Vector2(88 if text == "BUILD ANYWAY" else 64, 16)
+	_skin(b)
+	b.pressed.connect(on_press)
+	problem_buttons.add_child(b)
+
+
+## The squares the check points at, in red ink (a box and a cross), and the party's square from the game you came back from.
+func _draw_marks() -> void:
+	var c := float(cell_px)
+	for m in marks:
+		var r := Rect2(origin + Vector2(m) * c, Vector2(c, c)).grow(-1.0)
+		paper.draw_rect(r, BLOOD_500, false, 2.0)
+		paper.draw_line(r.position, r.end, BLOOD_500, 1.0)
+		paper.draw_line(Vector2(r.end.x, r.position.y), Vector2(r.position.x, r.end.y), BLOOD_500, 1.0)
+	if not play_marker.is_empty():
+		_icon(paper, "now", Rect2(origin + Vector2(play_marker.cell) * c, Vector2(c, c)).grow(-2.0), 0, int(play_marker.facing))

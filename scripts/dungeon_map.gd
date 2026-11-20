@@ -61,9 +61,18 @@ static var level_path := ""
 static var level_id := FLOOR_1_ID
 const TEST_ROOM_PATH := "res://levels/test_room.gd"
 const EDITOR_PATH := "res://scripts/debug/dungeon_editor.gd"  # F10: the dungeon editor (debug builds only, like the tools).
+const EDITOR_PLAY_ID := "editor:play"  # The level id of a level built from the editor's paper (E.4): it cannot be saved.
 const TOOLS_PATH := "res://scripts/debug/test_room_tools.gd"  # F12, the debug keys and the help overlay (debug builds only).
 const LEVEL_FIELDS := ["MAP", "START_TILE", "START_FACING", "MENU_VIEW_CELL", "TORCHES", "CORRUPTION", "PUZZLES", "DOOR_IDS", "PLATES",
 		"STRUCTURES", "LEVERS", "ITEMS", "MONSTERS", "SIGNS", "ARMED_TRAPS", "AMBUSHES", "STATIONS", "CURSE_ZONES"]
+
+
+## Add the dungeon editor to the tree root, once (it lives there so it survives a Build changing the scene). Debug builds only: quiet if
+## the editor's files are missing (a release export) or one exists already.
+static func add_editor(tree: SceneTree) -> void:
+	if not test_room_available() or not ResourceLoader.exists(EDITOR_PATH) or tree.get_first_node_in_group("dungeon_editor") != null:
+		return
+	tree.root.add_child.call_deferred(load(EDITOR_PATH).new())
 
 
 ## True in a debug build that has the test room's level file (a release export leaves it out).

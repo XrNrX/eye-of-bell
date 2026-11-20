@@ -7,6 +7,8 @@ extends SceneTree
 const EditorGrid := preload("res://scripts/debug/editor_grid.gd")
 const EditorConfig := preload("res://scripts/debug/editor_config.gd")
 const DungeonEditor := preload("res://scripts/debug/dungeon_editor.gd")
+const EditorCheck := preload("res://scripts/debug/editor_check.gd")
+const SaveGame := preload("res://scripts/save_game.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 var fails := 0
 
@@ -21,9 +23,11 @@ func _init() -> void:
 	_check_grid()
 	_check_things()
 	_check_pieces()
+	_check_checker()
 	await _check_editor()
 	await _check_tools()
 	await _check_panel()
+	await _check_build()
 	print("DONE fails=", fails)
 	quit(fails)
 
@@ -601,3 +605,167 @@ func _check_panel() -> void:
 	check("the paper and the panel draw with everything on them", ed.is_open())
 	ed.close()
 	ed.queue_free()
+
+
+func _problem_texts(problems: Array) -> String:
+	return " | ".join(problems.map(func(p): return p.level + ": " + p.text))
+
+
+func _has_problem(problems: Array, fragment: String) -> bool:
+	for p in problems:
+		if fragment in p.text:
+			return true
+	return false
+
+
+func _check_checker() -> void:
+	var key := "res://data/items/key.tres"
+	var slime := "res://data/monsters/slime.tres"
+	var g := _corridor()
+	var p0: Array = EditorCheck.run(g)
+	check("an empty paper has two errors: no party start and no stairs", EditorCheck.has_errors(p0) and _has_problem(p0, "NO PARTY START") and _has_problem(p0, "NO STAIRS"))
+	g.place_start(3, 5, 3)
+	var p1: Array = EditorCheck.run(g)
+	check("with a start but no stairs it is still an error", EditorCheck.has_errors(p1) and not _has_problem(p1, "NO PARTY START") and _has_problem(p1, "NO STAIRS"))
+	g.place_stairs(9, 3)
+	check("a start and stairs on open ground: nothing to report", EditorCheck.run(g).is_empty() and EditorCheck.reachable(g).has(Vector2i(9, 3)))
+	# A locked door needs a key you can get to.
+	g.place_door(5, 5, EditorGrid.LOCKED)
+	var p2: Array = EditorCheck.run(g)
+	check("a locked door with no key: warnings, not errors (%s)" % _problem_texts(p2), not EditorCheck.has_errors(p2) and _has_problem(p2, "LOCKED DOOR") and _has_problem(p2, "STAIRS CAN'T") and _has_problem(p2, "FLOOR SQUARE"))
+	check("...and the squares behind it are marked", EditorCheck.marked_cells(p2).has(Vector2i(5, 5)) and EditorCheck.marked_cells(p2).has(Vector2i(9, 3)) and EditorCheck.marked_cells(p2).has(Vector2i(8, 5)))
+	g.place_item(8, 5, key)
+	g.link_key(g.items_at(Vector2i(8, 5))[0], Vector2i(5, 5))
+	check("a key linked to the door but lying behind it does not help", _has_problem(EditorCheck.run(g), "STAIRS CAN'T"))
+	g.delete_item(0)
+	g.place_item(3, 5, key)
+	g.link_key(g.items_at(Vector2i(3, 5))[0], Vector2i(5, 5))
+	check("a linked key on this side opens the way: nothing to report", EditorCheck.run(g).is_empty())
+	g.items[0].erase("opens")
+	var p3: Array = EditorCheck.run(g)
+	check("a key linked to nothing is a warning, and the door is shut for lack of a key", _has_problem(p3, "KEY") and _has_problem(p3, "STAIRS CAN'T"))
+	# A gate needs a lever on this side.
+	var g2 := _corridor()
+	g2.place_start(3, 5, 3)
+	g2.place_stairs(9, 3)
+	g2.place_door(5, 5, EditorGrid.GATE)
+	var p4: Array = EditorCheck.run(g2)
+	check("a gate with no lever is a warning and shuts the way", _has_problem(p4, "GATE") and _has_problem(p4, "STAIRS CAN'T"))
+	g2.place_lever(4, 5, 0)
+	var p5: Array = EditorCheck.run(g2)
+	check("a lever linked to nothing is a warning", _has_problem(p5, "LEVER") and _has_problem(p5, "GATE"))
+	g2.link_lever(0, Vector2i(5, 5))
+	check("a lever on this side linked to the gate opens it: nothing to report", EditorCheck.run(g2).is_empty())
+	g2.delete_lever(0)
+	g2.place_lever(8, 3, 0)
+	g2.link_lever(g2.levers.size() - 1, Vector2i(5, 5))
+	check("a lever behind the gate cannot open it", _has_problem(EditorCheck.run(g2), "STAIRS CAN'T"))
+	# Chains: one key opens the way to the lever that opens the way to the next.
+	var g3 := EditorGrid.new()
+	g3.setup(16, 8, 100)
+	for x in range(2, 14):
+		g3.set_cell(x, 4, true)
+	g3.place_start(2, 4, 3)
+	g3.place_door(4, 4, EditorGrid.LOCKED)
+	g3.place_door(8, 4, EditorGrid.GATE)
+	g3.place_stairs(13, 4)
+	g3.place_item(3, 4, key)
+	g3.link_key(0, Vector2i(4, 4))
+	g3.place_lever(6, 4, 0)
+	g3.link_lever(0, Vector2i(8, 4))
+	check("a key, then a lever, then the stairs: reachable in turn", EditorCheck.run(g3).is_empty())
+	g3.items[0].erase("opens")
+	check("take the key's link away and nothing past the locked door is reachable", not EditorCheck.reachable(g3).has(Vector2i(6, 4)) and not EditorCheck.reachable(g3).has(Vector2i(13, 4)))
+	# Sealed pockets: items and monsters nobody can reach.
+	var g4 := _corridor()
+	g4.place_start(3, 5, 3)
+	g4.place_stairs(9, 3)
+	g4.set_cell(2, 8, true)
+	g4.place_item(2, 8, "res://data/items/dagger.tres")
+	g4.place_monster(2, 8, slime)
+	var p6: Array = EditorCheck.run(g4)
+	check("an item and a monster in a sealed pocket are warnings, with the square marked (%s)" % _problem_texts(p6), _has_problem(p6, "ITEM") and _has_problem(p6, "MONSTER") and _has_problem(p6, "FLOOR SQUARE") and EditorCheck.marked_cells(p6).has(Vector2i(2, 8)))
+	check("none of it is an error: the build may go on", not EditorCheck.has_errors(p6))
+
+
+func _check_build() -> void:
+	var dummy := Node.new()
+	root.add_child(dummy)
+	current_scene = dummy
+	SaveGame.path = "user://editor_build_test_save.json"
+	if FileAccess.file_exists(SaveGame.path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(SaveGame.path))
+	var ed: Node = DungeonEditor.new()
+	root.add_child(ed)
+	await process_frame
+	ed.open()
+	# Errors refuse the build.
+	ed._new_sheet(14, 10)
+	ed.request_build()
+	check("a build with no start and no stairs is refused with a list", ed.problem_dialog.visible and EditorCheck.has_errors(ed.problems) and DungeonMap.level_id == DungeonMap.FLOOR_1_ID)
+	check("the dialog offers only OK when the build is refused", ed.problem_buttons.get_child_count() == 1)
+	ed.problem_dialog.visible = false
+	# Warnings do not: a lever linked to nothing.
+	for x in range(2, 13):
+		ed.grid.set_cell(x, 5, true)
+	for y in range(3, 8):
+		for x in range(10, 13):
+			ed.grid.set_cell(x, y, true)
+	ed.grid.place_start(2, 5, 3)
+	ed.grid.place_stairs(12, 5)
+	ed.grid.place_lever(3, 5, 0)
+	ed.request_build()
+	check("an unlinked lever is a warning: the list offers BUILD ANYWAY and CANCEL, and marks the lever's square", ed.problem_dialog.visible and not EditorCheck.has_errors(ed.problems) and ed.problem_buttons.get_child_count() == 2 and ed.marks.has(Vector2i(3, 5)))
+	check("nothing was built yet", DungeonMap.level_id == DungeonMap.FLOOR_1_ID)
+	ed.problem_dialog.visible = false
+	_click(_centre_of(ed, 9, 5))
+	check("the red ink comes off at the next click on the paper", ed.marks.is_empty())
+	# The small dungeon: a door, a lever linked to a gate, two monsters and stairs.
+	ed.grid.delete_lever(0)
+	ed.grid.place_door(4, 5, EditorGrid.DOOR)
+	ed.grid.place_lever(6, 5, 0)
+	ed.grid.place_door(8, 5, EditorGrid.GATE)
+	ed.grid.link_lever(0, Vector2i(8, 5))
+	ed.grid.place_monster(11, 3, "res://data/monsters/skeleton.tres", 2)
+	ed.grid.place_monster(12, 7, "res://data/monsters/slime.tres", 1)
+	ed.grid.place_item(5, 5, "res://data/items/healing_potion.tres", 9)
+	check("the little dungeon passes the check", EditorCheck.run(ed.grid).is_empty())
+	ed.request_build()
+	check("it builds at once: the level is the drawn one, under the editor's play id, and cannot be saved",
+			DungeonMap.level_id == DungeonMap.EDITOR_PLAY_ID and DungeonMap.MAP.size() == 10 and DungeonMap.MAP[5][4] == EditorGrid.DOOR and DungeonMap.MAP[5][8] == EditorGrid.GATE
+			and DungeonMap.START_TILE == Vector2i(2, 5) and DungeonMap.MONSTERS.size() == 2 and DungeonMap.level_path != "")
+	check("the editor is out of the way while the game loads", not ed.is_open())
+	await create_timer(1.2).timeout
+	var player: Node = get_first_node_in_group("player")
+	var party: Node = get_first_node_in_group("party")
+	check("the game scene stands, with the party on the start facing east", player != null and party != null and player.cell == Vector2i(2, 5) and player.facing == 3 and current_scene.scene_file_path == "res://scenes/main.tscn")
+	check("the ready-made four, with full HP and mana", party.members.size() == 4 and party.members.all(func(m): return m.hp == m.def.max_hp and is_equal_approx(m.mana, float(m.def.max_mana))))
+	var kinds: Array = get_nodes_in_group("monsters").map(func(m): return m.def.display_name)
+	check("the drawn monsters are in the game, and nothing else (%s)" % str(kinds), kinds.size() == 2 and "Skeleton" in kinds and "Slime" in kinds)
+	check("the door, the gate and the stairs are the game's", DungeonMap.is_door(Vector2i(4, 5)) and DungeonMap.is_portcullis(Vector2i(8, 5)) and DungeonMap.is_stairs(Vector2i(12, 5)) and DungeonMap.door_id(Vector2i(8, 5)) != "")
+	check("there is still only one editor", get_nodes_in_group("dungeon_editor").size() == 1 and is_instance_valid(ed))
+	var saved: String = SaveGame.save(self)
+	check("saving is refused (%s) and nothing is written to the save slot" % saved, saved != "" and not FileAccess.file_exists(SaveGame.path))
+	# Walk a little, then Tab back to the paper.
+	player.restore(Vector2i(6, 5), 3)
+	_key(KEY_TAB)
+	check("Tab goes back to the paper, the game waits, and the party's square is marked", ed.is_open() and paused and ed.play_marker.get("cell") == Vector2i(6, 5) and ed.play_marker.get("facing") == 3)
+	_key(KEY_TAB)
+	check("Tab again goes back to the game", not ed.is_open() and not paused)
+	_key(KEY_F10)
+	check("F10 in the built game also opens the paper (the marker follows the party)", ed.is_open() and ed.play_marker.get("cell") == Vector2i(6, 5))
+	# Edit, then build again: the party goes back where it was.
+	ed.grid.place_item(7, 5, "res://data/items/dagger.tres")
+	ed.request_build()
+	check("build again: the level has the new item and the party is waiting to be put back", DungeonMap.ITEMS.size() == 2 and ed.pending_place.get("cell") == Vector2i(6, 5))
+	await create_timer(1.4).timeout
+	player = get_first_node_in_group("player")
+	check("the party stands where it was left (6,5), facing the same way", player != null and player.cell == Vector2i(6, 5) and player.facing == 3 and ed.play_marker.is_empty())
+	check("the game after a rebuild is still fresh: full HP", get_first_node_in_group("party").members.all(func(m): return m.hp == m.def.max_hp))
+	# Out of play: the menu's level reset and the editor's marker are gone with it.
+	DungeonMap.use_level("")
+	current_scene.queue_free()
+	await process_frame
+	check("with the built game gone Tab does nothing and F10 opens the paper as usual", not ed._in_play())
+	ed.queue_free()
+	await process_frame
