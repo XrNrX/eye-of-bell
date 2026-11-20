@@ -1,34 +1,66 @@
 extends RefCounted
-## The dungeon editor's paper as data (dungeon_editor.gd draws and edits it): a width x height grid of squares, each wall (1, the
-## default: solid rock) or floor (0, blank paper), with undo and redo.
+## The dungeon editor's paper as data (dungeon_editor.gd draws and edits it): a width x height grid of squares holding the SAME tile
+## codes as a level's MAP (levels/floor_1.gd): 0 floor (blank paper), 1 wall (the default: solid rock), 2 door, 3 locked door,
+## 4 stairs down, 5 portcullis (a gate), 6 cracked wall. On top of the squares sit the things that are not whole squares: the party
+## start (one, with the way it faces), wall levers and wall sconces (each on one face of a floor square) and the links from levers to
+## doors. They use floor 1's own data shapes (LEVERS, DOOR_IDS, TORCHES, START_TILE, START_FACING), see level_data().
 ##
-## The outer edge always stays wall: set_cell refuses it (and anything off the grid). A STROKE is one drag of the mouse: begin_stroke,
-## any number of set_cell / line calls, end_stroke; undo and redo take back or put back a whole stroke. A change made outside a stroke
-## is a stroke of one. Only the last `undo_limit` strokes are kept; a new stroke clears what could have been redone.
+## The outer edge always stays wall: nothing is placed on it. Painting (set_cell) only turns plain floor into wall and back; the other
+## things are placed by their own calls, which refuse, with a short reason, anything the game would not allow (a door needs a wall on
+## each side of it, a sconce or lever needs a wall face, and so on). After any change, things that no longer make sense (a lever
+## whose wall was painted away, a door that became floor) are dropped (_cleanup).
+##
+## A STROKE is one action: begin_stroke, any number of changes, end_stroke; undo and redo take back or put back the whole stroke,
+## squares AND things. A change made outside a stroke is a stroke of one. Only the last `undo_limit` strokes are kept; a new stroke
+## clears what could have been redone.
+
+const FLOOR := 0
+const WALL := 1
+const DOOR := 2
+const LOCKED := 3
+const STAIRS := 4
+const GATE := 5
+const CRACKED := 6
+const DIRS := [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0)]  # Sides: 0 north, 1 west, 2 south, 3 east (as the game's).
+const SCONCE_LIT := 0
+const SCONCE_UNLIT := 1
+const SCONCE_EMPTY := 2
 
 var width := 0
 var height := 0
-var cells := PackedByteArray()  # y * width + x: 1 wall, 0 floor.
+var cells := PackedByteArray()  # y * width + x: a tile code.
+var start := {}                 # {"cell": Vector2i, "facing": int} (0 north, 1 west, 2 south, 3 east), or {} for none.
+var levers: Array = []          # {"cell": Vector2i, "side": int, "target": String}: the floor square and the wall it hangs on; target "" is unlinked.
+var sconces: Array = []         # {"cell": Vector2i, "side": int, "state": int (SCONCE_*)}.
+var door_ids := {}              # door or gate cell -> its id, for the doors a lever is linked to (floor 1's DOOR_IDS).
 var undo_limit := 100
-var _undo: Array = []  # Strokes, each a PackedInt32Array of (index, old, new) triples.
+var _undo: Array = []           # Strokes: {"cells": PackedInt32Array of (index, old, new) triples, "before": things, "after": things}.
 var _redo: Array = []
 var _stroke := PackedInt32Array()
+var _before := {}
 var _in_stroke := false
 
 
-## A fresh sheet of solid rock (all wall); the undo history starts empty.
+## A fresh sheet of solid rock (all wall) with nothing on it; the undo history starts empty.
 func setup(w: int, h: int, limit := 100) -> void:
 	width = maxi(3, w)
 	height = maxi(3, h)
 	undo_limit = maxi(1, limit)
 	cells = PackedByteArray()
 	cells.resize(width * height)
-	cells.fill(1)
+	cells.fill(WALL)
+	start = {}
+	levers = []
+	sconces = []
+	door_ids = {}
 	_undo.clear()
 	_redo.clear()
 	_stroke = PackedInt32Array()
+	_before = {}
 	_in_stroke = false
 
+
+# --- Questions ---------------------------------------------------------------------------------------------------------
 
 func in_bounds(x: int, y: int) -> bool:
 	return x >= 0 and y >= 0 and x < width and y < height
@@ -38,38 +70,63 @@ func is_edge(x: int, y: int) -> bool:
 	return x == 0 or y == 0 or x == width - 1 or y == height - 1
 
 
+## The tile code of a square, or -1 off the grid.
+func type_at(x: int, y: int) -> int:
+	return cells[y * width + x] if in_bounds(x, y) else -1
+
+
 func is_floor(x: int, y: int) -> bool:
-	return in_bounds(x, y) and cells[y * width + x] == 0
+	return type_at(x, y) == FLOOR
+
+
+func is_wall_type(t: int) -> bool:
+	return t == WALL or t == CRACKED
+
+
+func is_door_type(t: int) -> bool:
+	return t == DOOR or t == LOCKED or t == GATE
+
+
+## Can the party walk through it (everything that is not wall or off the grid)?
+func is_open(x: int, y: int) -> bool:
+	var t := type_at(x, y)
+	return t >= 0 and not is_wall_type(t)
 
 
 func floor_count() -> int:
 	var n := 0
 	for c in cells:
-		if c == 0:
+		if c == FLOOR:
 			n += 1
 	return n
 
 
+func door_id_of(cell: Vector2i) -> String:
+	return door_ids.get(cell, "")
+
+
+# --- Strokes, painting -------------------------------------------------------------------------------------------------
+
 func begin_stroke() -> void:
 	_stroke = PackedInt32Array()
+	_before = _things()
 	_in_stroke = true
 
 
-## Make the square floor (or wall). False, changing nothing, off the grid, on the outer edge, or if it already is that.
+## Paint a plain square: floor or wall. False, changing nothing, off the grid, on the outer edge, if it already is that, or if the
+## square holds a door, stairs or a cracked wall (those are removed with Delete, never painted over by accident).
 func set_cell(x: int, y: int, make_floor: bool) -> bool:
 	if not in_bounds(x, y) or is_edge(x, y):
 		return false
-	var i := y * width + x
-	var now: int = 0 if make_floor else 1
-	if cells[i] == now:
+	var now: int = FLOOR if make_floor else WALL
+	var here := type_at(x, y)
+	if here == now or (here != FLOOR and here != WALL):
 		return false
 	var single := not _in_stroke
 	if single:
 		begin_stroke()
-	_stroke.append(i)
-	_stroke.append(cells[i])
-	_stroke.append(now)
-	cells[i] = now
+	_put(x, y, now)
+	_cleanup()
 	if single:
 		end_stroke()
 	return true
@@ -101,12 +158,15 @@ func line(a: Vector2i, b: Vector2i, make_floor: bool) -> int:
 
 
 func end_stroke() -> void:
-	if _in_stroke and not _stroke.is_empty():
-		_undo.append(_stroke)
-		while _undo.size() > undo_limit:
-			_undo.pop_front()
-		_redo.clear()
+	if _in_stroke:
+		var after := _things()
+		if not _stroke.is_empty() or after != _before:
+			_undo.append({"cells": _stroke, "before": _before, "after": after})
+			while _undo.size() > undo_limit:
+				_undo.pop_front()
+			_redo.clear()
 	_stroke = PackedInt32Array()
+	_before = {}
 	_in_stroke = false
 
 
@@ -121,22 +181,308 @@ func can_redo() -> bool:
 func undo() -> bool:
 	if _undo.is_empty():
 		return false
-	var stroke: PackedInt32Array = _undo.pop_back()
+	var entry: Dictionary = _undo.pop_back()
+	var stroke: PackedInt32Array = entry.cells
 	for k in range(stroke.size() - 3, -1, -3):  # Backwards: a square touched twice in one stroke ends as it began.
 		cells[stroke[k]] = stroke[k + 1]
-	_redo.append(stroke)
+	_set_things(entry.before)
+	_redo.append(entry)
 	return true
 
 
 func redo() -> bool:
 	if _redo.is_empty():
 		return false
-	var stroke: PackedInt32Array = _redo.pop_back()
+	var entry: Dictionary = _redo.pop_back()
+	var stroke: PackedInt32Array = entry.cells
 	for k in range(0, stroke.size(), 3):
 		cells[stroke[k]] = stroke[k + 2]
-	_undo.append(stroke)
+	_set_things(entry.after)
+	_undo.append(entry)
 	return true
 
 
 func undo_depth() -> int:
 	return _undo.size()
+
+
+# --- Placing things (each returns "" when done, or why it was refused) -----------------------------------------------
+
+## A door, locked door or gate (portcullis) on a floor square, or in place of another door: it needs a wall on both sides and open
+## ground ahead and behind, like a doorway in a corridor wall.
+func place_door(x: int, y: int, kind: int) -> String:
+	if not in_bounds(x, y) or is_edge(x, y):
+		return "NOT ON THE EDGE OF THE SHEET"
+	var here := type_at(x, y)
+	if here != FLOOR and not is_door_type(here):
+		return "A DOOR GOES ON FLOOR"
+	var across_x := is_wall_type(type_at(x - 1, y)) and is_wall_type(type_at(x + 1, y)) and is_open(x, y - 1) and is_open(x, y + 1)
+	var across_y := is_wall_type(type_at(x, y - 1)) and is_wall_type(type_at(x, y + 1)) and is_open(x - 1, y) and is_open(x + 1, y)
+	if not (across_x or across_y):
+		return "A DOOR NEEDS WALL ON BOTH SIDES"
+	return _set_thing_cell(x, y, kind)
+
+
+## A cracked wall replaces a wall that has floor beside it.
+func place_cracked(x: int, y: int) -> String:
+	if not in_bounds(x, y) or is_edge(x, y):
+		return "NOT ON THE EDGE OF THE SHEET"
+	if type_at(x, y) != WALL:
+		return "A CRACK GOES IN A WALL"
+	var beside := false
+	for d in DIRS:
+		if is_open(x + d.x, y + d.y):
+			beside = true
+	if not beside:
+		return "A CRACKED WALL NEEDS FLOOR BESIDE IT"
+	return _set_thing_cell(x, y, CRACKED)
+
+
+func place_stairs(x: int, y: int) -> String:
+	if not in_bounds(x, y) or is_edge(x, y):
+		return "NOT ON THE EDGE OF THE SHEET"
+	if type_at(x, y) != FLOOR:
+		return "STAIRS GO ON FLOOR"
+	return _set_thing_cell(x, y, STAIRS)
+
+
+## The party start: one only (placing it again moves it). Keeps the way it faced if it is already placed.
+func place_start(x: int, y: int, facing := 3) -> String:
+	if not in_bounds(x, y) or is_edge(x, y):
+		return "NOT ON THE EDGE OF THE SHEET"
+	if type_at(x, y) != FLOOR:
+		return "THE PARTY STARTS ON FLOOR"
+	var single := not _in_stroke
+	if single:
+		begin_stroke()
+	start = {"cell": Vector2i(x, y), "facing": int(start.get("facing", facing)) if not start.is_empty() else facing}
+	if single:
+		end_stroke()
+	return ""
+
+
+## Why a wall face cannot take a lever or sconce, or "": the square must be plain floor, the way `side` must be wall, and nothing
+## else hangs there.
+func face_reason(x: int, y: int, side: int) -> String:
+	if not in_bounds(x, y) or type_at(x, y) != FLOOR:
+		return "A WALL FACE NEEDS FLOOR IN FRONT"
+	if side < 0 or side > 3 or not is_wall_type(type_at(x + DIRS[side].x, y + DIRS[side].y)):
+		return "THAT SIDE IS NOT A WALL"
+	if lever_index(Vector2i(x, y), side) >= 0 or sconce_index(Vector2i(x, y), side) >= 0:
+		return "THERE IS ALREADY SOMETHING ON THAT WALL"
+	return ""
+
+
+func place_lever(x: int, y: int, side: int) -> String:
+	var why := face_reason(x, y, side)
+	if why != "":
+		return why
+	var single := not _in_stroke
+	if single:
+		begin_stroke()
+	levers.append({"cell": Vector2i(x, y), "side": side, "target": ""})
+	if single:
+		end_stroke()
+	return ""
+
+
+func place_sconce(x: int, y: int, side: int, state: int) -> String:
+	var why := face_reason(x, y, side)
+	if why != "":
+		return why
+	var single := not _in_stroke
+	if single:
+		begin_stroke()
+	sconces.append({"cell": Vector2i(x, y), "side": side, "state": state})
+	if single:
+		end_stroke()
+	return ""
+
+
+func lever_index(cell: Vector2i, side: int) -> int:
+	for i in levers.size():
+		if levers[i].cell == cell and levers[i].side == side:
+			return i
+	return -1
+
+
+func sconce_index(cell: Vector2i, side: int) -> int:
+	for i in sconces.size():
+		if sconces[i].cell == cell and sconces[i].side == side:
+			return i
+	return -1
+
+
+## Link lever number `index` to the door or gate at `cell`; linking it again unlinks it. The door gets an id (floor 1's DOOR_IDS) that
+## the lever names as its "target".
+func link_lever(index: int, cell: Vector2i) -> String:
+	if index < 0 or index >= levers.size():
+		return "NO LEVER"
+	if not is_door_type(type_at(cell.x, cell.y)) or type_at(cell.x, cell.y) == LOCKED:
+		return "A LEVER OPENS A DOOR OR A GATE"
+	var id := "door_%d_%d" % [cell.x, cell.y]
+	var single := not _in_stroke
+	if single:
+		begin_stroke()
+	if levers[index].target == id:
+		levers[index].target = ""  # Linked already: unlink.
+	else:
+		levers[index].target = id
+		door_ids[cell] = id
+	_cleanup()
+	if single:
+		end_stroke()
+	return ""
+
+
+## Take away a door, gate, locked door or stairs (the square becomes floor) or a cracked wall (it becomes wall again). "" if it did.
+func delete_cell_thing(x: int, y: int) -> String:
+	var t := type_at(x, y)
+	if t == CRACKED:
+		return _set_thing_cell(x, y, WALL)
+	if is_door_type(t) or t == STAIRS:
+		return _set_thing_cell(x, y, FLOOR)
+	return "NOTHING THERE TO DELETE"
+
+
+func delete_lever(index: int) -> void:
+	if index >= 0 and index < levers.size():
+		var single := not _in_stroke
+		if single:
+			begin_stroke()
+		levers.remove_at(index)
+		_cleanup()
+		if single:
+			end_stroke()
+
+
+func delete_sconce(index: int) -> void:
+	if index >= 0 and index < sconces.size():
+		var single := not _in_stroke
+		if single:
+			begin_stroke()
+		sconces.remove_at(index)
+		if single:
+			end_stroke()
+
+
+func clear_start() -> void:
+	if not start.is_empty():
+		var single := not _in_stroke
+		if single:
+			begin_stroke()
+		start = {}
+		if single:
+			end_stroke()
+
+
+## Turn the party start a quarter turn clockwise (north, east, south, west).
+func rotate_start() -> void:
+	if start.is_empty():
+		return
+	var single := not _in_stroke
+	if single:
+		begin_stroke()
+	start.facing = (int(start.facing) + 3) % 4  # (The game's facing numbers go round anticlockwise: 0 N, 1 W, 2 S, 3 E.)
+	if single:
+		end_stroke()
+
+
+## Move a lever or sconce to the next wall face of its square that can take it (a quarter turn at a time). "" if it moved.
+func rotate_face(is_lever: bool, index: int) -> String:
+	var list: Array = levers if is_lever else sconces
+	if index < 0 or index >= list.size():
+		return "NOTHING TO TURN"
+	var item: Dictionary = list[index]
+	for step in range(1, 4):
+		var side := (int(item.side) + step) % 4
+		if face_reason(item.cell.x, item.cell.y, side) == "":
+			var single := not _in_stroke
+			if single:
+				begin_stroke()
+			item.side = side
+			if single:
+				end_stroke()
+			return ""
+	return "NO OTHER WALL TO TURN TO"
+
+
+## The level as floor 1's own data: only the fields the editor makes (MAP, START_TILE and START_FACING when a start is placed,
+## DOOR_IDS, LEVERS, TORCHES). DungeonMap.use_level_data takes it as it is.
+func level_data() -> Dictionary:
+	var map: Array = []
+	for y in height:
+		var row: Array = []
+		for x in width:
+			row.append(cells[y * width + x])
+		map.append(row)
+	var torches: Array = []
+	for s in sconces:
+		torches.append(Vector4i(s.cell.x, s.cell.y, s.side, s.state))
+	var lever_list: Array = []
+	for l in levers:
+		lever_list.append({"cell": l.cell, "side": l.side, "target": l.target})
+	var data := {"MAP": map, "DOOR_IDS": door_ids.duplicate(), "LEVERS": lever_list, "TORCHES": torches}
+	if not start.is_empty():
+		data["START_TILE"] = start.cell
+		data["START_FACING"] = start.facing
+	return data
+
+
+# --- Inside ------------------------------------------------------------------------------------------------------------
+
+func _put(x: int, y: int, code: int) -> void:
+	var i := y * width + x
+	_stroke.append(i)
+	_stroke.append(cells[i])
+	_stroke.append(code)
+	cells[i] = code
+
+
+func _set_thing_cell(x: int, y: int, code: int) -> String:
+	if type_at(x, y) == code:
+		return ""
+	var single := not _in_stroke
+	if single:
+		begin_stroke()
+	_put(x, y, code)
+	_cleanup()
+	if single:
+		end_stroke()
+	return ""
+
+
+## Drop what no longer makes sense after a change: levers and sconces whose square is no longer floor or whose wall is gone, a start
+## that is no longer on floor, door ids of squares that are no longer doors, and links to a door that is gone.
+func _cleanup() -> void:
+	levers = levers.filter(func(l): return face_ok(l.cell, l.side))
+	sconces = sconces.filter(func(s): return face_ok(s.cell, s.side))
+	if not start.is_empty() and type_at(start.cell.x, start.cell.y) != FLOOR:
+		start = {}
+	for cell in door_ids.keys():
+		if not is_door_type(type_at(cell.x, cell.y)):
+			door_ids.erase(cell)
+	for l in levers:
+		if l.target != "" and not door_ids.values().has(l.target):
+			l.target = ""
+	for cell in door_ids.keys():  # An id nobody is linked to is dropped.
+		var used := false
+		for l in levers:
+			used = used or l.target == door_ids[cell]
+		if not used:
+			door_ids.erase(cell)
+
+
+func face_ok(cell: Vector2i, side: int) -> bool:
+	return type_at(cell.x, cell.y) == FLOOR and is_wall_type(type_at(cell.x + DIRS[side].x, cell.y + DIRS[side].y))
+
+
+func _things() -> Dictionary:
+	return {"start": start.duplicate(true), "levers": levers.duplicate(true), "sconces": sconces.duplicate(true), "door_ids": door_ids.duplicate(true)}
+
+
+func _set_things(d: Dictionary) -> void:
+	start = d.start.duplicate(true)
+	levers = d.levers.duplicate(true)
+	sconces = d.sconces.duplicate(true)
+	door_ids = d.door_ids.duplicate(true)

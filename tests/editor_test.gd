@@ -7,6 +7,7 @@ extends SceneTree
 const EditorGrid := preload("res://scripts/debug/editor_grid.gd")
 const EditorConfig := preload("res://scripts/debug/editor_config.gd")
 const DungeonEditor := preload("res://scripts/debug/dungeon_editor.gd")
+const DungeonMap := preload("res://scripts/dungeon_map.gd")
 var fails := 0
 
 
@@ -18,7 +19,9 @@ func check(name: String, ok: bool) -> void:
 
 func _init() -> void:
 	_check_grid()
+	_check_things()
 	await _check_editor()
+	await _check_tools()
 	print("DONE fails=", fails)
 	quit(fails)
 
@@ -205,4 +208,207 @@ func _check_editor() -> void:
 	ed.open()
 	check("it will not open while another screen owns the pause", not ed.is_open())
 	paused = false
+	ed.queue_free()
+
+
+## A corridor along y = 5 (x 2 to 9) with a room at its east end, on a 12x10 sheet: walls above and below the corridor.
+func _corridor() -> RefCounted:
+	var g := EditorGrid.new()
+	g.setup(12, 10, 100)
+	for x in range(2, 10):
+		g.set_cell(x, 5, true)
+	for y in range(3, 8):
+		for x in range(7, 10):
+			g.set_cell(x, y, true)
+	return g
+
+
+func _check_things() -> void:
+	var g := _corridor()
+	# Doors: a wall each side, open ground ahead and behind.
+	check("a door goes in the corridor (between two walls)", g.place_door(4, 5, EditorGrid.DOOR) == "" and g.type_at(4, 5) == EditorGrid.DOOR)
+	check("a door on a wall is refused", g.place_door(4, 4, EditorGrid.DOOR) != "" and g.type_at(4, 4) == EditorGrid.WALL)
+	check("a door in the open room is refused (no wall each side)", g.place_door(8, 5, EditorGrid.DOOR).contains("WALL") and g.type_at(8, 5) == EditorGrid.FLOOR)
+	check("a door at the dead end of the corridor is refused (nothing ahead)", g.place_door(2, 5, EditorGrid.DOOR) != "")
+	check("the outer edge takes nothing", g.place_door(0, 5, EditorGrid.DOOR) != "" and g.place_stairs(0, 0) != "")
+	check("a locked door replaces the door, and so does a gate", g.place_door(4, 5, EditorGrid.LOCKED) == "" and g.type_at(4, 5) == EditorGrid.LOCKED and g.place_door(4, 5, EditorGrid.GATE) == "" and g.type_at(4, 5) == EditorGrid.GATE)
+	check("painting over a door does nothing (Delete removes it)", not g.set_cell(4, 5, false) and not g.set_cell(4, 5, true) and g.type_at(4, 5) == EditorGrid.GATE)
+	# Cracked wall, stairs, start.
+	check("a cracked wall goes in a wall with floor beside it", g.place_cracked(5, 4) == "" and g.type_at(5, 4) == EditorGrid.CRACKED)
+	check("a cracked wall deep in the rock is refused, and so is one on floor", g.place_cracked(10, 1) != "" and g.place_cracked(3, 5) != "")
+	check("stairs go on floor and not in a wall", g.place_stairs(9, 3) == "" and g.type_at(9, 3) == EditorGrid.STAIRS and g.place_stairs(5, 2) != "")
+	check("the party start goes on floor and not in a wall", g.place_start(3, 5, 3) == "" and g.start.cell == Vector2i(3, 5) and g.start.facing == 3 and g.place_start(5, 2) != "")
+	check("only one start: placing it again moves it, keeping its facing", g.place_start(8, 5) == "" and g.start.cell == Vector2i(8, 5) and g.start.facing == 3)
+	g.rotate_start()
+	check("R turns the start a quarter turn clockwise (east to south)", g.start.facing == 2)
+	g.rotate_start()
+	g.rotate_start()
+	g.rotate_start()
+	check("four turns bring it round", g.start.facing == 3)
+	# Levers and sconces: a face of a floor square with a wall that way.
+	check("a lever goes on a wall face", g.place_lever(3, 5, 0) == "" and g.lever_index(Vector2i(3, 5), 0) == 0)
+	check("a second thing on the same face is refused", g.place_sconce(3, 5, 0, EditorGrid.SCONCE_LIT) != "" and g.place_lever(3, 5, 0) != "")
+	check("a face that is not a wall is refused (east of (3,5) is floor)", g.place_sconce(3, 5, 3, EditorGrid.SCONCE_LIT) != "")
+	check("a sconce goes on another face, lit, unlit or empty", g.place_sconce(3, 5, 2, EditorGrid.SCONCE_UNLIT) == "" and g.sconces[0].state == EditorGrid.SCONCE_UNLIT and g.place_sconce(2, 5, 0, EditorGrid.SCONCE_EMPTY) == "")
+	check("a sconce on a cracked wall's face is fine too (it is wall)", g.place_sconce(5, 5, 0, EditorGrid.SCONCE_LIT) == "")
+	check("a sconce needs floor in front of it", g.place_sconce(5, 4, 0, EditorGrid.SCONCE_LIT) != "")
+	check("a lever whose square has no other free wall cannot turn (south there is taken by a sconce)", g.rotate_face(true, 0) != "" and g.levers[0].side == 0)
+	g.place_lever(6, 5, 0)
+	var turned: int = g.levers.size() - 1
+	check("R moves a lever to another wall face of its square (north to south)", g.rotate_face(true, turned) == "" and g.levers[turned].side == 2)
+	check("...and on round again (south to north)", g.rotate_face(true, turned) == "" and g.levers[turned].side == 0)
+	# Links.
+	var g2 := _corridor()
+	g2.place_door(4, 5, EditorGrid.DOOR)
+	g2.place_lever(3, 5, 0)
+	check("a lever links to a door (it gets an id, as floor 1's DOOR_IDS)", g2.link_lever(0, Vector2i(4, 5)) == "" and g2.levers[0].target == "door_4_5" and g2.door_ids.get(Vector2i(4, 5)) == "door_4_5")
+	check("linking again unlinks, and the id goes with it", g2.link_lever(0, Vector2i(4, 5)) == "" and g2.levers[0].target == "" and g2.door_ids.is_empty())
+	check("a lever cannot be linked to floor", g2.link_lever(0, Vector2i(5, 5)) != "")
+	g2.link_lever(0, Vector2i(4, 5))
+	g2.delete_cell_thing(4, 5)
+	check("deleting a door makes it floor again and unlinks its levers", g2.type_at(4, 5) == EditorGrid.FLOOR and g2.levers[0].target == "" and g2.door_ids.is_empty())
+	# A change that takes the ground from under a thing takes the thing too.
+	var g3 := _corridor()
+	g3.place_sconce(3, 5, 0, EditorGrid.SCONCE_LIT)
+	g3.place_lever(5, 5, 2)
+	g3.place_start(3, 5)
+	g3.set_cell(3, 4, true)
+	check("painting the wall away takes a sconce on it with it", g3.sconces.is_empty())
+	g3.set_cell(3, 5, false)
+	check("rubbing the floor back to wall takes the start with it", g3.start.is_empty())
+	g3.set_cell(5, 6, true)
+	check("opening the wall behind a lever takes the lever", g3.levers.is_empty())
+	g3.place_cracked(5, 4)
+	check("a cracked wall can be taken back to plain wall", g3.delete_cell_thing(5, 4) == "" and g3.type_at(5, 4) == EditorGrid.WALL)
+	# Undo takes back things as well as squares.
+	var g4 := _corridor()
+	g4.place_door(4, 5, EditorGrid.DOOR)
+	g4.place_lever(3, 5, 0)
+	g4.link_lever(0, Vector2i(4, 5))
+	g4.place_start(8, 5)
+	check("undo takes back the start", g4.undo() and g4.start.is_empty())
+	check("undo takes back the link, but keeps the lever", g4.undo() and g4.levers.size() == 1 and g4.levers[0].target == "" and g4.door_ids.is_empty())
+	check("undo takes back the lever", g4.undo() and g4.levers.is_empty())
+	check("undo takes back the door", g4.undo() and g4.type_at(4, 5) == EditorGrid.FLOOR)
+	check("redo puts door, lever, link and start back", g4.redo() and g4.redo() and g4.redo() and g4.redo() and g4.type_at(4, 5) == EditorGrid.DOOR and g4.levers[0].target == "door_4_5" and g4.start.cell == Vector2i(8, 5))
+	# Deleting a thing is undone whole, links and all.
+	g4.delete_cell_thing(4, 5)
+	g4.undo()
+	check("undoing a door's deletion brings back the door and its link", g4.type_at(4, 5) == EditorGrid.DOOR and g4.levers[0].target == "door_4_5" and g4.door_ids.has(Vector2i(4, 5)))
+	# The data is floor 1's own shapes: the game's DungeonMap takes it as it is.
+	var g5 := _corridor()
+	g5.place_door(3, 5, EditorGrid.DOOR)
+	g5.place_door(4, 5, EditorGrid.LOCKED)
+	g5.place_door(5, 5, EditorGrid.GATE)
+	g5.place_cracked(6, 4)
+	g5.place_stairs(9, 3)
+	g5.place_start(8, 5, 1)
+	g5.place_lever(2, 5, 0)
+	g5.place_sconce(8, 3, 0, EditorGrid.SCONCE_UNLIT)
+	g5.link_lever(0, Vector2i(5, 5))
+	var data: Dictionary = g5.level_data()
+	check("level_data holds floor 1's own fields (MAP, START_TILE, START_FACING, DOOR_IDS, LEVERS, TORCHES)", data.has("MAP") and data.has("START_TILE") and data.has("START_FACING") and data.has("DOOR_IDS") and data.has("LEVERS") and data.has("TORCHES"))
+	DungeonMap.use_level_data(data, "seed:editor_test")
+	check("the game reads the drawn doors (door, locked door, gate), cracked wall and stairs",
+			DungeonMap.is_door(Vector2i(3, 5)) and DungeonMap.is_locked(Vector2i(4, 5)) and DungeonMap.is_portcullis(Vector2i(5, 5))
+			and DungeonMap.is_destructible(Vector2i(6, 4)) and DungeonMap.is_stairs(Vector2i(9, 3)) and not DungeonMap.is_blocked(Vector2i(8, 5)))
+	check("...the linked gate's id, the lever, the sconce and the start",
+			DungeonMap.door_id(Vector2i(5, 5)) == "door_5_5" and DungeonMap.lever_at(Vector2i(2, 5), 0).get("target") == "door_5_5"
+			and DungeonMap.TORCHES.has(Vector4i(8, 3, 0, 1)) and DungeonMap.START_TILE == Vector2i(8, 5) and DungeonMap.START_FACING == 1)
+	DungeonMap.use_level("")
+
+
+## The tools through real input: toolbar clicks, placing, refusing with a message, linking, selecting, Delete and R.
+func _check_tools() -> void:
+	var ed: Node = DungeonEditor.new()
+	root.add_child(ed)
+	await process_frame
+	ed.open()
+	ed._new_sheet(14, 10)
+	for x in range(2, 12):
+		ed.grid.set_cell(x, 5, true)
+	for y in range(3, 8):
+		for x in range(9, 12):
+			ed.grid.set_cell(x, y, true)
+	ed._redraw()
+	check("the toolbar has a button for every tool (DRAW, SELECT and ten things)", ed.tool_buttons.size() == 12 and ed.tool == DungeonEditor.Tool.DRAW)
+	# A click on a toolbar button picks the tool.
+	var door_button: Control = ed.tool_buttons[DungeonEditor.TOOL_ORDER.find(DungeonEditor.Tool.DOOR)]
+	_press(door_button.global_position + Vector2(6, 6), MOUSE_BUTTON_LEFT, true)
+	_press(door_button.global_position + Vector2(6, 6), MOUSE_BUTTON_LEFT, false)
+	check("clicking the door button picks the DOOR tool", ed.tool == DungeonEditor.Tool.DOOR)
+	# Place a door; a refusal says why.
+	_press(_centre_of(ed, 5, 5), MOUSE_BUTTON_LEFT, true)
+	check("a click places a door in the corridor (and selects it)", ed.grid.type_at(5, 5) == EditorGrid.DOOR and ed.selected.get("kind") == "cell")
+	_press(_centre_of(ed, 5, 4), MOUSE_BUTTON_LEFT, true)
+	check("a click on a wall is refused with a short message", ed.grid.type_at(5, 4) == EditorGrid.WALL and ed.message != "" and ed.message.length() < 40)
+	# A lever on a wall face: click near the north edge of a corridor square.
+	ed.set_tool(DungeonEditor.Tool.LEVER)
+	_press(_centre_of(ed, 3, 5) + Vector2(0, -0.38 * ed.cell_px), MOUSE_BUTTON_LEFT, true)
+	check("clicking near a square's north edge hangs a lever on that wall face", ed.grid.levers.size() == 1 and ed.grid.levers[0].cell == Vector2i(3, 5) and ed.grid.levers[0].side == 0)
+	check("the new lever is selected, ready to be linked", ed.selected.get("kind") == "lever")
+	_press(_centre_of(ed, 3, 5), MOUSE_BUTTON_LEFT, true)
+	check("a click in the middle of a square is refused (it wants an edge)", ed.grid.levers.size() == 1 and ed.message != "")
+	# With the lever selected, a click on the door links them.
+	_press(_centre_of(ed, 3, 5) + Vector2(0, -0.38 * ed.cell_px), MOUSE_BUTTON_LEFT, true)
+	check("a second lever on the same face is refused", ed.grid.levers.size() == 1)
+	ed.selected = {"kind": "lever", "index": 0}
+	_press(_centre_of(ed, 5, 5), MOUSE_BUTTON_LEFT, true)
+	check("click the lever, then the door: they are linked (a line joins them while selected)", ed.grid.levers[0].target == "door_5_5" and ed.grid.door_ids.has(Vector2i(5, 5)))
+	_press(_centre_of(ed, 5, 5), MOUSE_BUTTON_LEFT, true)
+	check("clicking the door again unlinks", ed.grid.levers[0].target == "")
+	# A sconce from the wall's own side: click near the south edge of the wall square above the corridor.
+	ed.set_tool(DungeonEditor.Tool.SCONCE_LIT)
+	_press(_centre_of(ed, 6, 4) + Vector2(0, 0.38 * ed.cell_px), MOUSE_BUTTON_LEFT, true)
+	check("clicking the wall's own edge from the wall side puts the sconce on the floor square across it", ed.grid.sconces.size() == 1 and ed.grid.sconces[0].cell == Vector2i(6, 5) and ed.grid.sconces[0].side == 0 and ed.grid.sconces[0].state == EditorGrid.SCONCE_LIT)
+	ed.set_tool(DungeonEditor.Tool.SCONCE_UNLIT)
+	_press(_centre_of(ed, 6, 5) + Vector2(0, 0.38 * ed.cell_px), MOUSE_BUTTON_LEFT, true)
+	check("an unlit sconce on the south face", ed.grid.sconces.size() == 2 and ed.grid.sconces[1].state == EditorGrid.SCONCE_UNLIT)
+	# The rest of the tools.
+	ed.set_tool(DungeonEditor.Tool.STAIRS)
+	_press(_centre_of(ed, 10, 3), MOUSE_BUTTON_LEFT, true)
+	ed.set_tool(DungeonEditor.Tool.CRACKED)
+	_press(_centre_of(ed, 7, 4), MOUSE_BUTTON_LEFT, true)
+	ed.set_tool(DungeonEditor.Tool.START)
+	_press(_centre_of(ed, 10, 5), MOUSE_BUTTON_LEFT, true)
+	ed.set_tool(DungeonEditor.Tool.GATE)
+	_press(_centre_of(ed, 7, 5), MOUSE_BUTTON_LEFT, true)
+	ed.set_tool(DungeonEditor.Tool.LOCKED)
+	_press(_centre_of(ed, 4, 5), MOUSE_BUTTON_LEFT, true)
+	check("stairs, a cracked wall, the start, a gate and a locked door are all placed",
+			ed.grid.type_at(10, 3) == EditorGrid.STAIRS and ed.grid.type_at(7, 4) == EditorGrid.CRACKED and ed.grid.start.cell == Vector2i(10, 5)
+			and ed.grid.type_at(7, 5) == EditorGrid.GATE and ed.grid.type_at(4, 5) == EditorGrid.LOCKED)
+	# Select, R and Delete.
+	ed.set_tool(DungeonEditor.Tool.SELECT)
+	_press(_centre_of(ed, 10, 5), MOUSE_BUTTON_LEFT, true)
+	check("SELECT picks the party start", ed.selected.get("kind") == "start")
+	var facing_before: int = ed.grid.start.facing
+	_key(KEY_R)
+	check("R turns the selected start", ed.grid.start.facing != facing_before)
+	_press(_centre_of(ed, 7, 5), MOUSE_BUTTON_LEFT, true)
+	check("SELECT picks a gate", ed.selected.get("kind") == "cell" and ed.selected.cell == Vector2i(7, 5))
+	_key(KEY_DELETE)
+	check("Delete takes the gate away (the square is floor again)", ed.grid.type_at(7, 5) == EditorGrid.FLOOR and ed.selected.is_empty())
+	_press(_centre_of(ed, 6, 5) + Vector2(0, -0.36 * ed.cell_px), MOUSE_BUTTON_LEFT, true)
+	check("SELECT picks a sconce by its icon", ed.selected.get("kind") == "sconce")
+	_key(KEY_R)
+	check("R moves a sconce to another wall face", ed.grid.sconces[ed.selected.index].side != 0 or ed.grid.sconces.size() == 2)
+	_key(KEY_DELETE)
+	check("Delete removes the sconce", ed.grid.sconces.size() == 1)
+	_key(KEY_DELETE)
+	check("Delete with nothing selected only says so", ed.message != "" and ed.grid.sconces.size() == 1)
+	# Escape lets go of a selection before it closes the editor.
+	ed.selected = {"kind": "start"}
+	_key(KEY_ESCAPE)
+	check("Escape lets go of the selection first and leaves the editor open", ed.selected.is_empty() and ed.is_open())
+	# Undo puts things back.
+	var stairs_there: bool = ed.grid.type_at(10, 3) == EditorGrid.STAIRS
+	_key(KEY_Z, true)
+	_key(KEY_Z, true)
+	check("Ctrl+Z undoes things too (the deleted sconce and gate come back)", stairs_there and ed.grid.sconces.size() == 2 and ed.grid.type_at(7, 5) == EditorGrid.GATE)
+	# The drawing code runs for all of it without a fault (a frame is drawn).
+	ed._redraw()
+	await process_frame
+	check("the paper draws with everything on it", ed.is_open())
+	ed.close()
 	ed.queue_free()
