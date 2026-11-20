@@ -26,7 +26,7 @@ Finished phases (1 to 8 and the test room), with every prompt, now live in the D
 
 Do these first, in this order, ticking each one off. Each prompt sits right under its step. When all ten are ticked, carry on from the Build order below.
 
-- [ ] 1. Zombie gas prompt (Brown death): a quick fix before Saturday
+- [x] 1. Zombie gas prompt (Brown death): a quick fix before Saturday
 
 ```
 Recolour the zombie's death gas so it reads as rot and disease, not
@@ -54,7 +54,7 @@ commit.
 
 - [ ] 3. Sort the Saturday Post-its with Claude: bugs into fixes, confusion onto the roadmap, nat 20s into the Ideas inbox. Big bugs may jump ahead of steps 4 to 10
 
-- [ ] 4. Foundations Step 12 (Levels as data)
+- [x] 4. Foundations Step 12 (Levels as data)
 
 ```
 Make levels loadable as data and let the party survive a change of level
@@ -218,7 +218,7 @@ Loose ends from phases that are otherwise done, plus things the 13 Nov tech brie
 - [x] Mini-boss: the Cursed Warden at the stairs (prompt below)
 - [x] Plague rat: tier 1, fears fire, nests in the cave (prompt below)
 - [x] Slower mana: 1 point per 6 s instead of 2.5 s (prompt below)
-- [ ] Zombie gas: recolour the death gas to rot and disease, not the curse (prompt below)
+- [x] Zombie gas: recolour the death gas to rot and disease, not the curse (prompt below)
 - [x] Parked work: turn the git stashes (boss-room ambush, fog of war) into named branches, e.g. wip/boss-ambush and wip/fog-of-war, and list them in CLAUDE.md under "Parked work". Do this before Step 7, so the refactors don't make them harder to apply.
 
 **5.7 prompt (Enemy health bars)**
@@ -531,7 +531,7 @@ Rules for this phase:
 * [x] Step 9 Puzzles on the event bus (S7, before 7e)
 * [ ] Step 10 Monster behaviours (S4, before 7d)
 * [ ] Step 11 Item behaviour hooks (S5, before 7g)
-* [ ] Step 12 Levels as data, party survives the stairs (S6, before a second floor or Phase 9)
+* [x] Step 12 Levels as data, party survives the stairs (S6, before a second floor or Phase 9)
 
 **Step 0 prompt (Smoke test)**
 
