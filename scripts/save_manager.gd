@@ -13,6 +13,7 @@ extends Node
 ## moment of real play.
 
 const SaveGame := preload("res://scripts/save_game.gd")
+const RunState := preload("res://scripts/run_state.gd")
 
 
 func _ready() -> void:
@@ -20,6 +21,14 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if not SaveGame.pending.is_empty():
 		call_deferred("_apply_pending")  # After every sibling's _ready (and its own deferred setup).
+	elif RunState.has():
+		call_deferred("_apply_run_state")  # The party carried from the last level (run_state.gd).
+
+
+func _apply_run_state() -> void:
+	var error := RunState.apply(get_tree())
+	if error != "":
+		_say("Couldn't bring the party along: " + error)
 
 
 func _apply_pending() -> void:

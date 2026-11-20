@@ -42,8 +42,7 @@ const TORCH_300 := Color("f5cf80")
 
 const TITLE_SIZE := 32        # Four native pixels per font pixel: chunky.
 const TEXT_SIZE := 16         # Two (the same pixel size as the 2x dungeon view).
-const VIEW_CELL := Vector2i(6, 13)  # Camera starts in this cell of the level, facing east...
-const VIEW_FACING_DEG := -90.0     # ...down the long south corridor (torches on the right wall).
+const VIEW_FACING_DEG := -90.0     # The camera looks east (the level says which cell it stands in: DungeonMap.MENU_VIEW_CELL, floor 1's long south corridor, torches on the right wall).
 const SWAY := 0.035           # How far the camera drifts, in world units, so the view is alive.
 const VOLUME_STEP := 0.1
 
@@ -93,7 +92,7 @@ func _ready() -> void:
 	_style_title()
 
 	# The camera: a hand's breadth inside the corridor's west end, looking east.
-	var world := DungeonMap.cell_to_world(VIEW_CELL)
+	var world := DungeonMap.cell_to_world(DungeonMap.MENU_VIEW_CELL)
 	base_position = Vector3(world.x - 0.6, 1.0, world.z)
 	camera.position = base_position
 	camera.rotation_degrees.y = VIEW_FACING_DEG

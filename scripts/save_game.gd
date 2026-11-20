@@ -17,6 +17,8 @@ extends RefCounted
 ##   cursor     CursorItem:   the item held on the cursor ({"held": stack or null})
 ##   flags      the run flags (DungeonMap.flags: things that have happened, by name)
 ##   level      the level's script path ("" = floor 1; the test room cannot be saved)
+##   level_id   which level this is (DungeonMap.level_id: "floor_1", a level script's path, or a generated level's id/seed);
+##              optional, an older save has only `level`. DungeonMap.use_level_id builds it again on load.
 ## Not saved: cooldowns (they restart ready), animations in flight, floating text, fights.
 ##
 ## VALIDATE FIRST: `validate` checks the whole file (every key and its type) before anything in the game is touched, and a
@@ -111,7 +113,12 @@ static func validate(data: Dictionary, hero_count := -1) -> String:
 	var problem: String = SaveData.maybe(data, "flags", "dict", "save file")
 	if problem == "":
 		problem = SaveData.maybe(data, "level", "string", "save file")
+	if problem == "":
+		problem = SaveData.maybe(data, "level_id", "string", "save file")
 	if problem == "" and str(data.get("level", "")) != "" and not ResourceLoader.exists(str(data.level)):
+		problem = "The saved level is not in this game."
+	var saved_id := str(data.get("level_id", data.get("level", "")))  # (An older save has only the level path.)
+	if problem == "" and saved_id != "" and saved_id != DungeonMap.FLOOR_1_ID and not (saved_id.begins_with("res://") and ResourceLoader.exists(saved_id)):
 		problem = "The saved level is not in this game."
 	if problem == "":
 		problem = _script("res://scripts/party.gd").validate_state(data.party, hero_count)
@@ -137,7 +144,7 @@ static func load_game(tree: SceneTree) -> String:
 	if data.has("error"):
 		return data.error
 	pending = data
-	DungeonMap.use_level(str(data.get("level", "")))  # "" is floor 1 (the test room cannot be saved).
+	DungeonMap.use_level_id(str(data.get("level_id", data.get("level", ""))))  # Floor 1, or a level script (the test room cannot be saved).
 	tree.paused = false
 	if tree.current_scene != null and tree.current_scene.scene_file_path == MAIN_SCENE:
 		tree.reload_current_scene()
@@ -160,6 +167,7 @@ static func serialize(tree: SceneTree) -> Dictionary:
 	return {
 		"version": VERSION,
 		"level": DungeonMap.level_path,
+		"level_id": DungeonMap.level_id,
 		"party": party.save_state(),
 		"player": player.save_state(),
 		"dungeon": dungeon.save_state(),

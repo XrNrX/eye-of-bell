@@ -53,6 +53,7 @@ func _init() -> void:
 	DungeonMap.set_flag("smoke.left_over", true)
 	DungeonMap.use_level("")  # Starting a level starts a run: it clears the run flags.
 	check("starting a run clears the run flags", DungeonMap.flags.is_empty())
+	_check_level_data()
 	var scene: Node = load("res://scenes/main.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene  # So loading can reload it, as in the real game.
@@ -85,6 +86,7 @@ func _init() -> void:
 	await _check_curse_look()
 	_check_death_gas()
 	_check_inventory_quick()
+	_check_run_state()
 	_check_food_to_portrait()
 	await _check_oil()
 	await _check_torch_throw()
@@ -1326,6 +1328,75 @@ func _check_inventory_quick() -> void:
 	_rest_everyone()
 
 
+## Levels are data (docs/code_review.md S6, Foundations Step 12): floor 1 lives in levels/floor_1.gd, use_level_data takes any
+## dictionary, use_level is the thin wrapper. Pure DungeonMap checks, run before the scene is built; ends on floor 1.
+func _check_level_data() -> void:
+	DungeonMap.use_level("")
+	check("floor 1 comes from levels/floor_1.gd with all its data (25 rows, 25 sconces, 17 monsters, start (5,9), the menu camera (6,13))",
+			DungeonMap.MAP.size() == 25 and DungeonMap.TORCHES.size() == 25 and DungeonMap.MONSTERS.size() == 17 and DungeonMap.START_TILE == Vector2i(5, 9)
+			and DungeonMap.MENU_VIEW_CELL == Vector2i(6, 13) and DungeonMap.level_id == DungeonMap.FLOOR_1_ID and DungeonMap.level_path == "")
+	var data := {"MAP": [[1, 1, 1], [1, 0, 1], [1, 1, 1]], "START_TILE": Vector2i(1, 1), "START_FACING": 2,
+			"MONSTERS": [{"cell": Vector2i(1, 1), "def": "res://data/monsters/slime.tres"}]}
+	var copy: Dictionary = data.duplicate(true)
+	DungeonMap.use_level_data(data, "seed:42")
+	check("use_level_data puts a level given as a dictionary in place (map, start, facing, monsters)",
+			DungeonMap.MAP.size() == 3 and DungeonMap.START_TILE == Vector2i(1, 1) and DungeonMap.START_FACING == 2 and DungeonMap.MONSTERS.size() == 1)
+	check("fields the data leaves out are empty, and the menu camera falls back to the start tile",
+			DungeonMap.TORCHES.is_empty() and DungeonMap.ITEMS.is_empty() and DungeonMap.PUZZLES.is_empty() and DungeonMap.CORRUPTION.is_empty()
+			and DungeonMap.MENU_VIEW_CELL == Vector2i(1, 1))
+	check("its id is kept (and a level that is not floor 1 refuses a save through level_path)", DungeonMap.level_id == "seed:42" and DungeonMap.level_path == "seed:42")
+	DungeonMap.MAP[1][1] = 7
+	check("the caller's dictionary is copied, never changed by the run", data == copy)
+	check("use_level_id builds floor 1 and a level script, and says no to an id it cannot build",
+			DungeonMap.use_level_id("") and DungeonMap.level_id == DungeonMap.FLOOR_1_ID and DungeonMap.use_level_id(DungeonMap.FLOOR_1_ID)
+			and not DungeonMap.use_level_id("seed:42") and not DungeonMap.use_level_id("res://levels/nothing_here.gd"))
+	if DungeonMap.test_room_available():
+		var consts: Dictionary = load(DungeonMap.TEST_ROOM_PATH).get_script_constant_map()
+		DungeonMap.use_level(DungeonMap.TEST_ROOM_PATH)
+		check("use_level(path) is the wrapper: the test room's own data, its path as the id", DungeonMap.MAP == consts.MAP and DungeonMap.level_id == DungeonMap.TEST_ROOM_PATH
+				and DungeonMap.level_path == DungeonMap.TEST_ROOM_PATH)
+		check("a level file with no menu camera gets its start tile for it", DungeonMap.MENU_VIEW_CELL == DungeonMap.START_TILE)
+	DungeonMap.use_level("")
+	check("and floor 1 comes back whole after any of it", DungeonMap.MAP.size() == 25 and DungeonMap.MAP[4][16] == 7 and DungeonMap.MONSTERS.size() == 17
+			and DungeonMap.MENU_VIEW_CELL == Vector2i(6, 13))
+
+
+## RunState carries the party to the next level (run_state.gd): their HP, gear and food, the cursor's item and the banter flags.
+func _check_run_state() -> void:
+	_rest_everyone()
+	var RunState := preload("res://scripts/run_state.gd")
+	var cursor: Node = get_first_node_in_group("cursor")
+	var hero = party.member(1)
+	var bread: Resource = load("res://data/items/stale_bread.tres")
+	hero.hp = 7
+	hero.mana = 2.0
+	hero.backpack[5] = ItemStack.wrap(bread)
+	hero.backpack[5].count = 4
+	cursor.hold(ItemStack.wrap(load("res://data/items/dried_meat.tres")))
+	DungeonMap.set_flag("banter.once.carried", true)
+	DungeonMap.set_flag("puzzle.some.step", 2)
+	check("RunState.carry takes the party", RunState.carry(self) and RunState.has())
+	# The next level's party starts fresh...
+	hero.hp = hero.def.max_hp
+	hero.mana = float(hero.def.max_mana)
+	hero.backpack[5] = null
+	cursor.release()
+	DungeonMap.flags.clear()
+	# ...and apply puts the carried party on it.
+	check("RunState.apply brings it back with no problem", RunState.apply(self) == "" and not RunState.has())
+	check("the party's HP, mana and backpack stack are as they were",
+			hero.hp == 7 and is_equal_approx(hero.mana, 2.0) and hero.backpack[5] != null and hero.backpack[5].def == bread and hero.backpack[5].count == 4)
+	check("the item on the cursor comes along", cursor.is_holding() and cursor.held.def.resource_path == "res://data/items/dried_meat.tres")
+	check("banter flags come along, a level's own flags do not", DungeonMap.has_flag("banter.once.carried") and not DungeonMap.has_flag("puzzle.some.step"))
+	check("with nothing waiting apply does nothing", RunState.apply(self) == "")
+	RunState.pending = {"party": {"heroes": "not a list"}, "cursor": {"held": null}, "flags": {}}
+	check("a damaged carry is refused with a message and changes nothing", RunState.apply(self) != "" and hero.hp == 7 and not RunState.has())
+	cursor.release()
+	DungeonMap.flags.clear()
+	hero.backpack[5] = null
+	_rest_everyone()
+
+
 ## Food on the cursor, clicked onto a portrait, goes into that hero's backpack; Shift+click feeds them.
 func _check_food_to_portrait() -> void:
 	_rest_everyone()
@@ -2281,6 +2352,13 @@ func _check_save_load() -> void:
 			and doused_back != null and doused_back.has_status("doused") and doused_back.status_left("doused") > 10.0 and oiled_back == 2)
 	var level_text := FileAccess.get_file_as_string(SaveGame.path)
 	var written = JSON.parse_string(level_text)
+	check("the save stores the level id too (floor_1)", written is Dictionary and written.get("level_id") == DungeonMap.FLOOR_1_ID)
+	var no_id: Dictionary = written.duplicate(true)
+	no_id.erase("level_id")
+	var other_id: Dictionary = written.duplicate(true)
+	other_id["level_id"] = "seed:9"
+	check("a save without a level id (an older one) is accepted, and one naming a level this game cannot build is refused",
+			SaveGame.validate(no_id, party.members.size()) == "" and SaveGame.validate(other_id, party.members.size()) != "")
 	check("the save stores its version and level path", written is Dictionary and int(written.version) == SaveGame.VERSION and written.level == DungeonMap.level_path
 			and written.cursor is Dictionary and written.cursor.has("held"))
 
