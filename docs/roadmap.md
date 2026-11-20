@@ -127,7 +127,7 @@ Add items and monsters to the editor.
 Run the tests and show me a screenshot with a few monsters and items.
 ```
 
-- [ ] 8. E.4 (Build and play): switch to Opus if Sonnet loops
+- [x] 8. E.4 (Build and play): switch to Opus if Sonnet loops
 
 ```
 Add Build to the editor: it turns the paper into a level and drops the
@@ -2043,7 +2043,7 @@ Rules for this phase:
 - [x] E.1 Squared paper and drawing
 - [x] E.2 Doors, gates, levers, stairs and sconces
 - [x] E.3 Items and monsters
-- [ ] E.4 Build and play
+- [x] E.4 Build and play
 - [ ] E.5 Save, load and the round-trip test
 - [ ] E.6 Curse zones, puzzles and ambushes (later, once 7e and 7d exist)
 - [ ] E.7 donjon import (optional)
