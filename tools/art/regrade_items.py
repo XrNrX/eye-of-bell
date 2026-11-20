@@ -45,17 +45,20 @@ RUSTY_TRAP_ARMED = {**FLAIL_STEEL, "torch_300": "rust_300", "torch_500": "rust_5
 # The torch and candle: any curse green or bruise purple left is wood and soot (their warm colours stay: they are the light).
 TORCH_WOOD = {"curse_300": "bone_500", "curse_500": "wood_500", "curse_700": "wood_700", "bruise_500": "wood_500", "bruise_700": "wood_700", "bruise_900": "soil_900"}
 
+# The mana potion's silvery-blue liquid snapped to curse green (the enemy's colour): it is bruised violet instead (arcane, never the curse's green).
+MANA_POTION = {"curse_300": "bruise_500", "curse_500": "bruise_700", "curse_700": "bruise_900"}
+
 REMAPS = {
     "stale_bread": GRIM_FOOD, "hard_cheese": GRIM_CHEESE,
     "short_sword": PLAIN_STEEL, "long_sword": PLAIN_STEEL, "flail": FLAIL_STEEL, "bow": BOW_WOOD, "arrow": PLAIN_STEEL, "dagger": PLAIN_STEEL, "mace": PLAIN_STEEL, "war_hammer": PLAIN_STEEL, "darts": PLAIN_STEEL,
     "bear_trap": RUSTY_TRAP, "bear_trap_armed": RUSTY_TRAP_ARMED,
-    "torch": TORCH_WOOD, "candle": TORCH_WOOD,
+    "torch": TORCH_WOOD, "candle": TORCH_WOOD, "mana_potion": MANA_POTION,
 }
 # No monsters: all four now use PixelLab animation sets with their own outline (gen_monster_sheets.py), and a second ring would
 # double it. (The skeletons used to be listed here; their untouched copies in pieces/regrade_src/monsters are gone.)
 MONSTERS = {}
 # Hand and quick-slot icons made natively at 32x32 (tools/art/pieces/items32/): already outlined and steel-grey, so left alone.
-NATIVE32 = {"short_sword", "long_sword", "flail", "slingshot", "stone", "bow", "arrow", "war_hammer", "mace", "dagger", "darts", "bear_trap", "torch", "candle", "oil_flask"}
+NATIVE32 = {"short_sword", "long_sword", "flail", "slingshot", "stone", "bow", "arrow", "war_hammer", "mace", "dagger", "darts", "bear_trap", "torch", "candle", "oil_flask", "mana_potion"}
 
 
 def source(rel):

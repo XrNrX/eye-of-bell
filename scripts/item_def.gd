@@ -32,6 +32,7 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export var defence_bonus := 0       # Armour: added to the wearer's defence.
 @export var cant_use: PackedStringArray = []  # Hero class ids (CharacterDef.class_id, lower case) who can't wear or wield it, e.g. ["mage"].
 @export var heal_amount := 0         # Consumable: HP restored when used (right-click).
+@export var mana_amount := 0         # Consumable: mana restored when used (a mana potion): whole points, up to the hero's maximum; refused by a hero with no mana or a full pool.
 @export var spell_damage_min := 0    # Consumable: a scroll. Used once, it hits the monster
 @export var spell_damage_max := 0    # ahead for this much, never missing (right-click).
 

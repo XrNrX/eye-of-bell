@@ -88,6 +88,7 @@ func _init() -> void:
 	_check_inventory_quick()
 	_check_run_state()
 	_check_food_to_portrait()
+	_check_mana_potion()
 	await _check_oil()
 	await _check_torch_throw()
 	await _check_food()
@@ -1394,6 +1395,30 @@ func _check_run_state() -> void:
 	cursor.release()
 	DungeonMap.flags.clear()
 	hero.backpack[5] = null
+	_rest_everyone()
+
+
+## The mana potion (data/items/mana_potion.tres, ItemDef.mana_amount 5): a caster gets mana back, nobody else wastes one.
+func _check_mana_potion() -> void:
+	_rest_everyone()
+	var potion: Resource = load("res://data/items/mana_potion.tres")
+	check("mana potion: restores 5 mana, stacks to 9, is a consumable a quick slot takes", potion.mana_amount == 5 and potion.max_stack == 9 and potion.heal_amount == 0 and party.quick_accepts(potion))
+	var mage = party.member(3)
+	var fighter = party.member(0)
+	mage.mana = 2.0
+	var result: Dictionary = party.use_item(3, potion)
+	check("mana potion: a mage at 2 mana drinks it and has 7 (%s)" % result.message, result.used and is_equal_approx(mage.mana, 7.0) and "+5 mana" in result.message)
+	mage.mana = 10.0
+	result = party.use_item(3, potion)
+	check("mana potion: near the top it only gives what fits (+%d), never above the maximum" % (mage.def.max_mana - 10), result.used and is_equal_approx(mage.mana, float(mage.def.max_mana)) and ("+%d mana" % (mage.def.max_mana - 10)) in result.message)
+	result = party.use_item(3, potion)
+	check("mana potion: a full pool keeps the potion (%s)" % result.message, not result.used and is_equal_approx(mage.mana, float(mage.def.max_mana)))
+	result = party.use_item(0, potion)
+	check("mana potion: a hero with no mana keeps it too (%s)" % result.message, not result.used and fighter.def.max_mana <= 0)
+	mage.mana = 0.0
+	mage.hp = 0
+	result = party.use_item(3, potion)
+	check("mana potion: nothing for the dead", not result.used and is_equal_approx(mage.mana, 0.0))
 	_rest_everyone()
 
 

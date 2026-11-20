@@ -1808,6 +1808,8 @@ func use_item(slot: int, def: Resource) -> Dictionary:
 		return eat(slot, def)
 	if def.heal_amount > 0:
 		return _drink(m, def)
+	if def.mana_amount > 0:
+		return _drink_mana(m, def)
 	if def.spell_damage_max > 0:
 		return _read_scroll(m, def)
 	return {"used": false, "message": "Nothing happens.", "close": false}
@@ -1876,6 +1878,21 @@ func _drink(m: Member, def: Resource) -> Dictionary:
 	_cue("potion")
 	return {"used": true, "close": false,
 		"message": "%s drinks the %s (+%d HP)." % [m.name(), def.display_name, healed]}
+
+
+## A mana potion: the hero gets `mana_amount` points back (never above their maximum). A hero with no mana to speak of, or a full
+## pool, keeps the potion.
+func _drink_mana(m: Member, def: Resource) -> Dictionary:
+	if m.def.max_mana <= 0:
+		return {"used": false, "message": "%s has no use for it." % m.name(), "close": false}
+	var room: int = m.def.max_mana - int(floorf(m.mana))
+	if m.mana >= float(m.def.max_mana) or room <= 0:
+		return {"used": false, "message": "%s's mana is full." % m.name(), "close": false}
+	var gained: int = mini(def.mana_amount, m.def.max_mana - int(floorf(m.mana)))
+	m.mana = minf(float(m.def.max_mana), m.mana + float(def.mana_amount))
+	_cue("potion")
+	return {"used": true, "close": false,
+		"message": "%s drinks the %s (+%d mana)." % [m.name(), def.display_name, gained]}
 
 
 ## A scroll's missile: it flies straight ahead, stopping at walls and closed doors,
