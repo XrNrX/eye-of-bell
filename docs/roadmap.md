@@ -90,7 +90,7 @@ No saving yet. Show me a screenshot of a small dungeon drawn in it, and
 run the tests.
 ```
 
-- [ ] 6. E.2 (Doors, gates, levers, stairs and sconces)
+- [x] 6. E.2 (Doors, gates, levers, stairs and sconces)
 
 ```
 Add a toolbar to the editor. Each tool places a thing the game already
@@ -2041,7 +2041,7 @@ Rules for this phase:
 - Every step keeps floor 1 playing exactly as before. Run the tests, plus tests/editor\_test.gd once E.5 adds it.
 
 - [x] E.1 Squared paper and drawing
-- [ ] E.2 Doors, gates, levers, stairs and sconces
+- [x] E.2 Doors, gates, levers, stairs and sconces
 - [ ] E.3 Items and monsters
 - [ ] E.4 Build and play
 - [ ] E.5 Save, load and the round-trip test
