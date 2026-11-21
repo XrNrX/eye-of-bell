@@ -911,9 +911,9 @@ func _check_save_open() -> void:
 	ed.build_level()
 	await create_timer(1.5).timeout
 	var player: Node = get_first_node_in_group("player")
-	check("floor 1 built from the paper has its puzzle, its corrupted walls, 25 sconces, 18 monsters and the start",
+	check("floor 1 built from the paper has its puzzle, its corrupted walls, 25 sconces, 20 monsters and the start",
 			DungeonMap.level_id == DungeonMap.EDITOR_PLAY_ID and DungeonMap.PUZZLES.size() == 2 and DungeonMap.is_corrupted(Vector2i(7, 9)) and DungeonMap.TORCHES.size() == 25
-			and get_nodes_in_group("monsters").size() == 18 and player != null and player.cell == Vector2i(5, 9) and player.facing == 3)
+			and get_nodes_in_group("monsters").size() == 20 and player != null and player.cell == Vector2i(5, 9) and player.facing == 3)
 	player.command("forward")
 	await create_timer(0.5).timeout
 	player.command("forward")

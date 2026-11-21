@@ -91,6 +91,7 @@ func _init() -> void:
 	await _check_legendary()
 	await _check_azure_brand()
 	await _check_red_shaman()
+	await _check_goblin()
 	await _check_music()
 	await _check_curse_look()
 	_check_death_gas()
@@ -1366,8 +1367,8 @@ func _check_inventory_quick() -> void:
 ## dictionary, use_level is the thin wrapper. Pure DungeonMap checks, run before the scene is built; ends on floor 1.
 func _check_level_data() -> void:
 	DungeonMap.use_level("")
-	check("floor 1 comes from levels/floor_1.gd with all its data (25 rows, 25 sconces, 18 monsters, start (5,9), the menu camera (6,13))",
-			DungeonMap.MAP.size() == 25 and DungeonMap.TORCHES.size() == 25 and DungeonMap.MONSTERS.size() == 18 and DungeonMap.START_TILE == Vector2i(5, 9)
+	check("floor 1 comes from levels/floor_1.gd with all its data (25 rows, 25 sconces, 20 monsters, start (5,9), the menu camera (6,13))",
+			DungeonMap.MAP.size() == 25 and DungeonMap.TORCHES.size() == 25 and DungeonMap.MONSTERS.size() == 20 and DungeonMap.START_TILE == Vector2i(5, 9)
 			and DungeonMap.MENU_VIEW_CELL == Vector2i(6, 13) and DungeonMap.level_id == DungeonMap.FLOOR_1_ID and DungeonMap.level_path == "")
 	var data := {"MAP": [[1, 1, 1], [1, 0, 1], [1, 1, 1]], "START_TILE": Vector2i(1, 1), "START_FACING": 2,
 			"MONSTERS": [{"cell": Vector2i(1, 1), "def": "res://data/monsters/slime.tres"}]}
@@ -1391,7 +1392,7 @@ func _check_level_data() -> void:
 				and DungeonMap.level_path == DungeonMap.TEST_ROOM_PATH)
 		check("a level file with no menu camera gets its start tile for it", DungeonMap.MENU_VIEW_CELL == DungeonMap.START_TILE)
 	DungeonMap.use_level("")
-	check("and floor 1 comes back whole after any of it", DungeonMap.MAP.size() == 25 and DungeonMap.MAP[4][16] == 7 and DungeonMap.MONSTERS.size() == 18
+	check("and floor 1 comes back whole after any of it", DungeonMap.MAP.size() == 25 and DungeonMap.MAP[4][16] == 7 and DungeonMap.MONSTERS.size() == 20
 			and DungeonMap.MENU_VIEW_CELL == Vector2i(6, 13))
 
 
@@ -2258,6 +2259,24 @@ func _check_red_shaman() -> void:
 	for name in ["hero_hurt", "hero_died"]:
 		events[name].clear()
 	CombatRules.rng().state = dice_state
+
+## The Goblin (data/monsters/goblin.tres): tier 1 fodder, a spear jab from the next tile only.
+func _check_goblin() -> void:
+	_rest_everyone()
+	dungeon.clear_monsters()
+	player.restore(SPOT, EAST)
+	await create_timer(0.2).timeout
+	var def: Resource = load("res://data/monsters/goblin.tres")
+	check("goblin: tier 1, 6 HP, a melee spear (no ranged attack), with idle, attack, walk and hurt frames and a hit frame inside the attack",
+			def.tier == 1 and def.max_hp == 6 and def.ranged_range == 0 and def.hframes == 23 and def.idle_frames.size() > 0 and def.walk_frames.size() == 8
+			and def.hurt_frames.size() == 3 and def.attack_frames.size() == 7 and def.attack_hit_frame >= 0 and def.attack_hit_frame < def.attack_frames.size())
+	var goblin: Node = _monster("goblin", Vector2i(8, 13))
+	check("goblin: two tiles away it cannot strike; next to the party it can", not goblin._can_strike())
+	goblin.cell = AHEAD_1
+	check("goblin: ...next to the party it can", goblin._can_strike())
+	dungeon.clear_monsters()
+	DungeonMap.occupied.clear()
+
 
 ## The background music: Walen's "Dark Heart", one looping player under the tree root so it survives scene changes.
 func _check_music() -> void:
