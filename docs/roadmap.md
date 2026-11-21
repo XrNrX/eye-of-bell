@@ -2282,6 +2282,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Camp art and the test room's campfire station: PixelLab campfire (crossed logs, ember bed, animated VFX flame), cooking spit and one 3D bedroll for each hero, shown as scenery by `scripts/camp_site.gd` (STRUCTURES kind `campfire`); no camping yet, that is 7h.2 (`0585a00`)
 - [x] The Cursed Warden redrawn from the user's PixelLab "hardcore warden" picture: PixelLab idle, attack and walk clips, a hurt made in code, 128px frames (`f379bf8`)
 - [x] Background music: Walen's "Dark Heart" loops over the menu and the game from one player that survives scene changes; credit in `audio/music/CREDITS.md` (`ea9a59c`)
+- [x] The Azure Brand: a legendary glowing blue long sword with flame damage, built on the 7g framework (PixelLab art, a four-colour arcane blue ramp added to the palette), in the test room (`a3df5fd`)
 
 ## Ideas inbox
 
