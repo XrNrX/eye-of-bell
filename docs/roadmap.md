@@ -2279,11 +2279,19 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Zombie death gas: a 1 in 5 chance of a toxic cloud within a tile of the body that stings the party, with a test VFX cloud (`6ec327b`)
 - [x] Design docs and demo READMEs: `docs/design/expansion_design.md` (`9cadb9c`), the classes plan (`69d9eca`), `docs/code_review.md`, `docs/tone.md`, `docs/technical_brief.md`, demo READMEs v0.2 to v0.11
 - [x] Editor: double-click the party start (or Enter with it selected) to build and play the map from there (`d0ddbc9`)
-- [x] Camp art and the test room's campfire station: PixelLab campfire (crossed logs, ember bed, animated VFX flame), cooking spit and one 3D bedroll for each hero, shown as scenery by `scripts/camp_site.gd` (STRUCTURES kind `campfire`); no camping yet, that is 7h.2 (`0585a00`)
+- [x] Zombie gas gets its own palette colour, `mustard_500` for rot and disease, and a smoke-puff VFX cloud with dark flies (`f0ecca9`)
+- [x] Minimap moved to the top-right corner of the 3D view and made slightly translucent (`e69ac12`)
+- [x] Food held on the cursor and clicked onto a portrait goes into that hero's backpack; Shift+click feeds them (`c2bf36c`)
+- [x] Inventory shows the hero's two quick slots beside hands and armour; I opens and closes the inventory (`653b1b8`)
+- [x] Mana Potion: restores 5 mana (`ItemDef.mana_amount`), violet PixelLab art, in the test room's item table (`274528e`)
+- [x] Story arc design doc, `docs/design/story_arc.md`, "The Prisoner in the Dungeon" (`1cbb8c4`), and the roadmap becoming the master copy in this repo (`b70a89f`)
+- [x] Screenshots of the dungeon editor, E.1 to E.5, in `screenshots/dungeon_editor/` (`62e575d`)
+- [x] Camp art and the test room's campfire station: PixelLab campfire (crossed logs, ember bed, animated VFX flame), cooking spit and one 3D bedroll for each hero, shown as scenery by `scripts/camp_site.gd` (STRUCTURES kind `campfire`); no camping yet, that is 7h.2 (`0585a00`, then the kindling and front logs in `05e5279`)
 - [x] The Cursed Warden redrawn from the user's PixelLab "hardcore warden" picture: PixelLab idle, attack and walk clips, a hurt made in code, 128px frames (`f379bf8`)
 - [x] Background music: Walen's "Dark Heart" loops over the menu and the game from one player that survives scene changes; credit in `audio/music/CREDITS.md` (`ea9a59c`)
 - [x] The Azure Brand: a legendary glowing blue long sword with flame damage, built on the 7g framework (PixelLab art, a four-colour arcane blue ramp added to the palette), in the test room (`a3df5fd`)
 - [x] The Red Shaman: a goblin caster from the user's PixelLab picture with a ranged bolt attack (`MonsterDef.ranged_range`), animated, VFX bolt and impact, in the test room arena (`ca0f8fb`)
+- [x] Traps: a snap the party can neither see nor hear is silent (`TrapField.witness`: seen within 10 tiles with a clear line, heard within 6, else no log, sound or news), and level monsters may hold their ground (`"holds": true`) so the test room's trap skeleton stops wandering onto the trap (`3dd06ce`)
 
 ## Ideas inbox
 
