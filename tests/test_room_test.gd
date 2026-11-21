@@ -269,6 +269,20 @@ func _check_game() -> void:
 			signs += 1
 	check("signs are built", signs == DungeonMap.SIGNS.size())
 	check("player starts at the hall", player.cell == Vector2i(20, 14))
+	# The campfire station: a camp at (21,21) with four bedrolls, an animated flame and a flickering light the dark rules count.
+	var camps := get_nodes_in_group("camp_sites")
+	var camp_ok: bool = camps.size() == 1 and camps[0].cell == Vector2i(21, 21) and camps[0].bedrolls.size() == 4 and camps[0].flame != null and camps[0].light != null
+	check("the campfire station has a camp with four bedrolls, a flame and a light", camp_ok)
+	if camp_ok:
+		var flame: Node = camps[0].flame
+		var t0: float = flame.t
+		await create_timer(0.3).timeout
+		check("its flame is playing and its light is a sprite light", flame.t > t0 and camps[0].light.is_in_group("sprite_lights") and camps[0].light.light_energy > 0.0)
+		var ahead: Vector2 = Vector2(camps[0].global_position.x, camps[0].global_position.z)
+		var lit := false
+		for l in get_nodes_in_group("sprite_lights"):
+			lit = lit or (l == camps[0].light and Vector2(l.global_position.x, l.global_position.z).distance_to(ahead) < l.omni_range)
+		check("the fire's light reaches the camp (so the dark penalty does not apply beside it)", lit)
 	check("monsters are in the arena and the held-monster room", get_nodes_in_group("monsters").size() == DungeonMap.MONSTERS.size())
 
 	var press := func(code: Key):

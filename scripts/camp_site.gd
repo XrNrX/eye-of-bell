@@ -1,0 +1,163 @@
+extends Node3D
+## A camp in the dungeon: a campfire of crossed logs with an animated flame, a cooking spit over it, a light
+## that flickers (group "sprite_lights", so monsters and the party's tiles are lit by it), and one bedroll for each of the four heroes.
+## A level places one with a STRUCTURES entry {"cell": Vector2i, "kind": "campfire"}; wall_decor.add_structures builds it. Scenery
+## for now: nothing blocks movement and nothing can be clicked yet (making camp is roadmap 7h.2, cooking 7h.3).
+## Art: tools/art/gen_camp.py -> art/camp/ (PixelLab pieces, see docs/asset_log.md): the pit and spit are billboards at PIXEL world units
+## an art pixel, the flame a looping flipbook (fx_flipbook.gd); the bedrolls are small 3D models (boxes and a pillow) with a drawn quilt top.
+
+const DungeonMap := preload("res://scripts/dungeon_map.gd")
+const FxFlipbook := preload("res://scripts/fx_flipbook.gd")
+const TorchLight := preload("res://scripts/torch.gd")
+
+const DIR := "res://art/camp/"
+const PIXEL := 0.022          # World size of one art pixel for the pit (a 64 px picture is 1.4 units wide), times FIRE_SCALE.
+const FIRE_SCALE := 1.45      # The fire and spit are drawn bigger than life next to the bedrolls: the fire is the centre of the camp.
+const FLAME_PIXEL := 0.0174 * FIRE_SCALE   # The flame is 0.79 of the pit's pixel size: it sits inside the logs.
+const SPIT_PIXEL := 0.0253 * FIRE_SCALE
+const FLAME_TOWARD := 0.3     # The flame and the spit stand this far toward the camera from the logs, so the logs never hide them
+const SPIT_TOWARD := 0.12     # from any side (billboards at the same depth fight).
+
+## One bedroll for each hero position (0 and 1 the front pair), where it lies in world units from the fire (x east, z south): two behind the
+## fire, two in front. Each lies along the line from the fire with its pillow outward and its feet to the flames.
+const BEDROLLS := [Vector2(-2.3, -1.5), Vector2(2.3, -1.5), Vector2(-2.2, 1.9), Vector2(2.2, 1.9)]
+## Each blanket's tint (a quilt colour multiplied by it), so the four beds can be told apart.
+const BLANKETS := [Color(0.85, 0.9, 1.0), Color(1.0, 0.8, 0.72), Color(0.82, 1.0, 0.82), Color(1.0, 0.95, 0.7)]
+const BED_SIZE := Vector3(1.7, 0.1, 0.85)      # The straw pallet: length, thickness, width.
+const BLANKET_SIZE := Vector3(1.45, 0.07, 0.8)
+const PALLET_COLOUR := Color("74553a")   # leather_400
+const PILLOW_COLOUR := Color("9c9278")   # bone_500
+
+var cell := Vector2i.ZERO
+var flame: MeshInstance3D
+var spit: Sprite3D
+var light: OmniLight3D
+var bedrolls := []   # [Node3D], one per hero position
+
+
+## Build a camp on this tile as a child of the dungeon.
+static func build(builder: Node3D, at: Vector2i) -> Node3D:
+	var camp = load("res://scripts/camp_site.gd").new()
+	camp.cell = at
+	builder.add_child(camp)
+	return camp
+
+
+func _ready() -> void:
+	add_to_group("camp_sites")
+	position = DungeonMap.cell_to_world(cell)
+	if not ResourceLoader.exists(DIR + "pit.png"):
+		return  # The art is generated: without it there is nothing to show.
+	for i in BEDROLLS.size():
+		bedrolls.append(_bedroll(i))
+	_sprite("pit", PIXEL * FIRE_SCALE, Vector2.ZERO)
+	spit = _sprite("spit", SPIT_PIXEL, Vector2.ZERO)
+	_add_flame()
+	light = OmniLight3D.new()
+	light.set_script(TorchLight)
+	light.base_energy = 1.5
+	light.light_color = Color(1.0, 0.72, 0.42)
+	light.omni_range = 9.0
+	light.position = Vector3(0, 0.8, 0)
+	add_child(light)
+	_face_camera()
+
+
+func _process(_delta: float) -> void:
+	_face_camera()
+
+
+## Keep the flame and the spit a little toward the camera from the logs, whichever side it is on.
+func _face_camera() -> void:
+	var cam := get_viewport().get_camera_3d()
+	if cam == null or flame == null:
+		return
+	var d := Vector3(cam.global_position.x - global_position.x, 0.0, cam.global_position.z - global_position.z)
+	if d.length() < 0.01:
+		return
+	d = d.normalized()
+	flame.position = Vector3(d.x * FLAME_TOWARD, flame.position.y, d.z * FLAME_TOWARD)
+	if spit != null:
+		spit.position = Vector3(d.x * SPIT_TOWARD, spit.position.y, d.z * SPIT_TOWARD)
+
+
+## A bedroll lying on the floor: a straw pallet, a quilted blanket on it and a round pillow at the head, real 3D so it sits on the stone
+## and looks right from every side. Shaded, so the fire lights it. The head points away from the fire.
+func _bedroll(index: int) -> Node3D:
+	var spot: Vector2 = BEDROLLS[index]
+	var bed := Node3D.new()
+	bed.position = Vector3(spot.x, 0.0, spot.y)
+	bed.rotation.y = atan2(-spot.y, spot.x)   # Local +x (the head end) points away from the fire.
+	add_child(bed)
+	var pallet := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = BED_SIZE
+	pallet.mesh = box
+	pallet.material_override = _material(PALLET_COLOUR)
+	pallet.position = Vector3(0, BED_SIZE.y * 0.5, 0)
+	_no_shadow(pallet)
+	bed.add_child(pallet)
+	var blanket := MeshInstance3D.new()
+	var top := BoxMesh.new()
+	top.size = BLANKET_SIZE
+	blanket.mesh = top
+	var quilt := _material(BLANKETS[index % BLANKETS.size()])
+	if ResourceLoader.exists(DIR + "quilt.png"):
+		quilt.albedo_texture = load(DIR + "quilt.png")
+		quilt.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	blanket.material_override = quilt
+	blanket.position = Vector3(-0.1, BED_SIZE.y + BLANKET_SIZE.y * 0.5, 0)
+	_no_shadow(blanket)
+	bed.add_child(blanket)
+	var pillow := MeshInstance3D.new()
+	var ball := SphereMesh.new()
+	ball.radius = 0.3
+	ball.height = 0.6
+	ball.radial_segments = 8
+	ball.rings = 4
+	pillow.mesh = ball
+	pillow.scale = Vector3(0.9, 0.42, 1.2)
+	pillow.material_override = _material(PILLOW_COLOUR)
+	pillow.position = Vector3(BED_SIZE.x * 0.5 - 0.32, BED_SIZE.y + BLANKET_SIZE.y + 0.04, 0)
+	_no_shadow(pillow)
+	bed.add_child(pillow)
+	return bed
+
+
+func _material(colour: Color) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.albedo_color = colour
+	m.roughness = 1.0
+	return m
+
+
+func _no_shadow(node: GeometryInstance3D) -> void:
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+
+
+func _sprite(file: String, pixel: float, offset: Vector2, tint := Color.WHITE, mirror := false) -> Sprite3D:
+	var sprite := Sprite3D.new()
+	var tex: Texture2D = load(DIR + file + ".png")
+	sprite.texture = tex
+	sprite.pixel_size = pixel
+	sprite.flip_h = mirror
+	sprite.modulate = tint
+	sprite.shaded = false
+	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	sprite.position = Vector3(offset.x, tex.get_height() * pixel * 0.5, offset.y)
+	add_child(sprite)
+	return sprite
+
+
+func _add_flame() -> void:
+	var info = JSON.parse_string(FileAccess.get_file_as_string(DIR + "flame_sheet.json"))
+	var frames := int(info.frames)
+	flame = FxFlipbook.new()
+	flame.setup(load(DIR + "flame_sheet.png"), frames, float(info.fps), true, FLAME_PIXEL, Color.WHITE, false)
+	# The frame's anchor (24, 58 of 76) is 18 px above its bottom edge: stand it on the top of the logs.
+	var h := float(info.frame_h)
+	flame.position = Vector3(0, 0.45 * FIRE_SCALE + (h * 0.5 - 18.0) * FLAME_PIXEL, -0.2)  # (A little toward the party: billboards of the same depth fight, and the flame must win over the logs.)
+	add_child(flame)

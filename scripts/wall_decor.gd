@@ -10,6 +10,7 @@ extends RefCounted
 ## Where a decal sits on a face follows its file name (PLACEMENT): roots hang from the top, stains start high, blood is
 ## low or middle, tally marks are at hand height, cobwebs sit in a top corner (web_l / web_r), cracks go anywhere.
 
+const CampSite := preload("res://scripts/camp_site.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const Config := preload("res://scripts/wall_decor_config.gd")
 const TorchLight := preload("res://scripts/torch.gd")
@@ -150,6 +151,8 @@ func add_structures(builder: Node3D) -> void:
 				_pillar(builder, cell, int(entry.get("side", 1)))
 			"alcove":
 				add_alcove(builder, cell, int(entry.get("side", 1)))
+			"campfire":
+				CampSite.build(builder, cell)
 		placed[cell] = true
 	var reserved := {}
 	for t in DungeonMap.TORCHES:

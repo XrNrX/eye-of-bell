@@ -153,6 +153,7 @@ const LEVERS := [
 
 const STRUCTURES := [
 	{"cell": Vector2i(3, 21), "kind": "arch", "axis": "z"},  # In the ambush corridor: cast a spell past it and press P to compare shadows.
+	{"cell": Vector2i(21, 21), "kind": "campfire"},  # The campfire station: fire, spit, rocks and four bedrolls (scripts/camp_site.gd). Scenery only for now.
 ]
 
 # The item table: one of every item in data/items, two rows. (Add new items here when they exist.)
@@ -229,7 +230,8 @@ V = SPAWN"},
 CORRIDOR"},
 	{"cell": Vector2i(12, 16), "side": 2, "text": "PUZZLE ROOM"},
 	{"cell": Vector2i(22, 16), "side": 2, "text": "CAMPFIRE
-!NOT BUILT YET"},
+FIRE, SPIT, 4 BEDROLLS
+SCENERY ONLY: NO CAMP YET"},
 	{"cell": Vector2i(29, 16), "side": 2, "text": "XP AND LEVELS
 !NOT BUILT YET"},
 	{"cell": Vector2i(35, 16), "side": 2, "text": "TRAPS
