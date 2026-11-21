@@ -214,7 +214,8 @@ const ITEMS := [
 ]
 
 # Monsters: the floor cell they start on and their definition resource (see
-# scripts/monster_def.gd). New monsters are just new .tres files listed here.
+# scripts/monster_def.gd). New monsters are just new .tres files listed here. An entry may add "holds": true: that monster does not wander
+# at random, it stands where it is until it sees the party.
 const MONSTERS := [
 	{"cell": Vector2i(9, 10), "def": "res://data/monsters/slime.tres"},
 	{"cell": Vector2i(9, 13), "def": "res://data/monsters/skeleton.tres"},

@@ -59,6 +59,7 @@ var _walk_time := 0.0
 var _one_shot := PackedInt32Array()  # Frames of an attack/hurt animation playing now.
 var _one_shot_time := 0.0
 var _one_shot_fps := 10.0
+var holds_ground := false  # It does not wander: it stands where it is until it sees the party (a level entry with "holds": true; saved).
 var _swinging := false  # The attack animation is playing and the blow lands when attack_cooldown runs out (see _begin_swing).
 
 
@@ -177,11 +178,12 @@ func save_state() -> Dictionary:
 	for entry in statuses.values():
 		list.append({"def": entry.def.resource_path, "left": entry.left, "source": entry.source})
 	return {"def": def.resource_path, "cell": [cell.x, cell.y], "hp": hp, "attack_cooldown": attack_cooldown,
-			"statuses": list, "boss_seen": _boss_seen}
+			"statuses": list, "boss_seen": _boss_seen, "holds": holds_ground}
 
 
 ## The part of a saved monster the dungeon's spawn_monster does not set (kind, tile, hp and attack timer it does).
 func load_state(d: Dictionary) -> void:
+	holds_ground = bool(d.get("holds", false))  # (An older save has none: it wanders.)
 	_boss_seen = bool(d.get("boss_seen", false))  # (An older save has none: the boss may greet the party again.)
 	for st in d.get("statuses", []):
 		if ResourceLoader.exists(str(st.def)):
@@ -613,7 +615,7 @@ func _on_tick() -> void:
 		dir = _chase_dir()
 	else:
 		_drop_pass()
-		dir = _wander_dir()
+		dir = Vector2i.ZERO if holds_ground else _wander_dir()
 	if dir != Vector2i.ZERO:
 		_step(dir)
 

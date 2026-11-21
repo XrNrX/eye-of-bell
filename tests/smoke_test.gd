@@ -763,6 +763,27 @@ func _check_trap() -> void:
 	check("trap: dropped where it can't be set, it stays on the cursor", cursor.is_holding() and cursor.held.count == 1 and traps.armed_at(AHEAD_1) == trap_def)
 	cursor.release()
 	traps.disarm(AHEAD_1)
+	# A snap the party can neither see nor hear is not news (a monster wandering onto a trap across the level): the trap still works.
+	trap_def.break_chance = 0.0
+	check("trap: a snap right in front is seen", traps.witness(AHEAD_2) == "seen")
+	player.restore(Vector2i(9, 13), EAST)
+	check("trap: three tiles away round a wall it is only heard", traps.witness(Vector2i(9, 10)) == "heard")
+	check("trap: across the level, nobody knows", traps.witness(Vector2i(40, 40)) == "")
+	player.restore(SPOT, EAST)
+	DungeonMap.player_cell = Vector2i(40, 40)  # (The party "is" far away.)
+	traps.arm(AHEAD_1, trap_def, thief.hero_index)
+	var lines_before: int = hud.lines.size()
+	var events_before: int = events.trap_triggered.size()
+	skel = _monster("skeleton", AHEAD_2, 50)
+	skel.move_wait = 999.0
+	skel._step(Vector2i(-1, 0))
+	await create_timer(0.45).timeout
+	check("trap: out of sight and hearing it still snaps shut on the monster (hurt, held, spent)...", skel.hp < 50 and skel.has_status("held") and traps.armed_at(AHEAD_1) == null)
+	check("trap: ...but says nothing: no log line, no news", hud.lines.size() == lines_before and events.trap_triggered.size() == events_before)
+	trap_def.break_chance = saved_break
+	dungeon.clear_monsters()
+	dungeon.set_pile(AHEAD_1, [])
+	player.restore(SPOT, EAST)
 	_rest_everyone()
 
 

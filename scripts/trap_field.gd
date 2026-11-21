@@ -19,6 +19,8 @@ const CombatRules := preload("res://scripts/combat_rules.gd")
 const ItemStack := preload("res://scripts/item_stack.gd")
 const Events := preload("res://scripts/game_events.gd")
 
+const SEE_RANGE := 10    # A snap this close along a clear line is seen: the full line in the log, the fight, the news.
+const HEAR_RANGE := 6    # Closer than this without a line it is heard ("Something snaps shut nearby."). Further, nobody knows: the log says nothing.
 const ARMED_HEIGHT := 0.03   # The open trap lies just above the floor...
 const ARMED_TILT := -70.0    # ...tipped up a little from flat (-90), so it reads at a glance from eye height.
 const ARMED_SCALE := 1.3     # A touch bigger than the floor items, for the same reason (the art's readability rule).
@@ -127,7 +129,18 @@ func party_entered(cell: Vector2i) -> void:
 	_say("%s steps carefully over the trap." % who)
 
 
-## A monster finished a step onto a tile (Monster._step): snap it, if this tile has an armed trap.
+## How the party knows about a snap on this tile: "seen" (within SEE_RANGE with a clear line to the party), "heard" (within HEAR_RANGE) or "".
+func witness(cell: Vector2i) -> String:
+	var d: Vector2i = (cell - DungeonMap.player_cell).abs()
+	var dist := maxi(d.x, d.y)
+	if dist <= SEE_RANGE and DungeonMap.has_line_of_sight(cell, DungeonMap.player_cell):
+		return "seen"
+	return "heard" if dist <= HEAR_RANGE else ""
+
+
+## A monster finished a step onto a tile (Monster._step): snap it, if this tile has an armed trap. The trap works wherever it is, but only a
+## snap the party can see or hear is reported (witness): a monster wandering onto a trap across the level makes no log line, no sound, no
+## fight and no news.
 func monster_entered(monster: Node) -> void:
 	var cell: Vector2i = monster.cell
 	if not armed.has(cell) or monster.dying or monster.def.wall_monster:
@@ -137,15 +150,19 @@ func monster_entered(monster: Node) -> void:
 	var monster_name: String = str(monster.def.display_name).to_lower()
 	var tiers := preload("res://scripts/monster_tiers.gd").get_config()
 	var odds: Dictionary = tiers.odds(def.trap_row, monster.def)
+	var seen: String = witness(cell)
 	if odds.immune:  # The slime oozes through: the trap stays armed.
 		var line: String = odds.message if odds.message != "" else "The trap does not close on the {monster}."
-		_say(line.replace("{monster}", monster_name))
+		if seen == "seen":
+			_say(line.replace("{monster}", monster_name))
 		return
 	armed.erase(cell)
 	entry.sprite.queue_free()
-	_cue("trap_snap")
-	get_tree().call_group("spell_effects", "trap_snap", cell)
-	get_tree().call_group("fight_tracker", "blow")
+	if seen != "":
+		_cue("trap_snap")
+	if seen == "seen":
+		get_tree().call_group("spell_effects", "trap_snap", cell)
+		get_tree().call_group("fight_tracker", "blow")
 	var damage := CombatRules.roll_damage(def.trap_damage_min, def.trap_damage_max) if def.trap_damage_max > 0 else 0
 	if damage > 0:
 		monster.take_hit({"hit": true, "damage": damage, "chance": 100, "crit": false, "by": entry.setter})
@@ -163,11 +180,16 @@ func monster_entered(monster: Node) -> void:
 			text = "The trap snaps shut, but the %s tears free." % monster_name
 		elif result.message != "":
 			text += " " + str(result.message).replace("{monster}", monster_name)
-	_say(text)
-	Events.send(get_tree(), "trap_triggered", [def, monster])
+	if seen == "seen":
+		_say(text)
+	elif seen == "heard":
+		_say("Something snaps shut nearby.")
+	if seen != "":
+		Events.send(get_tree(), "trap_triggered", [def, monster])
 	if def.break_chance > 0.0 and CombatRules.rng().randf() < def.break_chance:
-		_say("The trap's spring snaps.")
-		get_tree().call_group("banter", "event", "trap_broke", {})
+		if seen == "seen":
+			_say("The trap's spring snaps.")
+			get_tree().call_group("banter", "event", "trap_broke", {})
 		return
 	var dungeon := get_tree().get_first_node_in_group("dungeon")
 	if dungeon != null:

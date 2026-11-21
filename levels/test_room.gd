@@ -221,7 +221,7 @@ const MONSTERS := [
 	{"cell": Vector2i(25, 39), "def": "res://data/monsters/skeleton.tres"},
 	{"cell": Vector2i(28, 39), "def": "res://data/monsters/skeleton_guard.tres"},
 	{"cell": Vector2i(31, 39), "def": "res://data/monsters/slime.tres"},
-	{"cell": Vector2i(34, 24), "def": "res://data/monsters/skeleton.tres"},  # The traps station: lure it onto the armed trap.
+	{"cell": Vector2i(34, 24), "def": "res://data/monsters/skeleton.tres", "holds": true},  # The traps station: lure it onto the armed trap. (It holds its ground: left to wander it walked onto the trap by itself.)
 	{"cell": Vector2i(18, 38), "def": "res://data/monsters/slime.tres"},  # The light room: it fears fire (a torch's hit makes it recoil).
 ]
 

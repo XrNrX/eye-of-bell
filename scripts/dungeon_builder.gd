@@ -203,7 +203,8 @@ func _ready() -> void:
 		for entry in DungeonMap.ITEMS:
 			place_item(entry.cell, ItemStack.of(load(entry.def), entry.get("count", 1)))
 		for entry in DungeonMap.MONSTERS:
-			spawn_monster(load(entry.def), entry.cell)
+			var placed := spawn_monster(load(entry.def), entry.cell)
+			placed.holds_ground = bool(entry.get("holds", false))  # Optional: it stays put until it sees the party (no random wandering).
 		for bad in DungeonMap.zone_tier_violations():
 			push_warning("curse zone '%s': a tier %d monster (%s) is placed at %s; nothing above tier 1 may stand in a zone" % [bad.zone, bad.tier, bad.def, bad.cell])
 	for plate in DungeonMap.PLATES:
