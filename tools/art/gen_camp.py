@@ -1,8 +1,9 @@
-"""The camp: art/camp/{pit,spit,quilt}.png and art/camp/flame_sheet.png (+ .json: one row of 8 frames, 10 fps).
+"""The camp: art/camp/{pit,pit_front,spit,quilt,kindling}.png and art/camp/flame_sheet.png (+ .json: one row of 8 frames, 10 fps).
 
 Source pieces are in tools/art/pieces/camp/ (PixelLab, see docs/asset_log.md "Campfire and bedroll"):
     pit_e_nodisc.png  64x56  crossed charred logs on an ember bed, no flame, no stone disc
     bed_d.png         64x40  a dark grey-brown quilted blanket on a pallet (the 3D bedroll's look; the bedroll itself is built in code)
+    kindling_a.png    48x32  sticks over a bed of glowing coals (its painted flame is removed here: the animated flame stands on it)
     spit_a.png        64x48  two iron-forked posts with a rod and a piece of meat (cropped to its box)
     flame.png         3x3 grid of 8 frames of 48x76, the VFX tool's campfire flame
 quilt.png is drawn here (32x16): the top of a bedroll's blanket, a quilted bone-grey with dark stitching.
@@ -19,6 +20,7 @@ from palette import ART_DIR, PAL
 
 PIECES = Path(__file__).parent / "pieces" / "camp"
 FRAME_W, FRAME_H, FRAMES, FPS = 48, 76, 8, 10
+FRONT_FROM = 42   # pit_front keeps the pit's rows from here down (of 56)
 
 
 def _recolour(img, fn):
@@ -57,6 +59,29 @@ def flame_sheet():
     return PAL.snap(sheet)
 
 
+def kindling():
+    """kindling_a without its painted flame: the bright yellow-orange flame pixels above the coal bed (the top 16 rows) are cleared, the red
+    coals and the sticks stay."""
+    img = Image.open(PIECES / "kindling_a.png").convert("RGBA")
+    px = img.load()
+    for y in range(min(16, img.height)):
+        for x in range(img.width):
+            r, g, b, a = px[x, y]
+            if a and r > 170 and g > 60 and r > b + 60 and (g > 90 or r > 235):
+                px[x, y] = (0, 0, 0, 0)
+    return PAL.snap(img)
+
+
+def pit_front():
+    """The lower part of the pit (rows from FRONT_FROM down): drawn in front of the flame so the fire burns from inside the pile."""
+    img = Image.open(ART_DIR / "camp" / "pit.png").convert("RGBA")
+    px = img.load()
+    for y in range(min(FRONT_FROM, img.height)):
+        for x in range(img.width):
+            px[x, y] = (0, 0, 0, 0)
+    return img
+
+
 def quilt():
     """The top of a bedroll's blanket: bone-grey squares (3 x 2) with dark stitching between them and a darker hem, a little worn."""
     w, h = 32, 16
@@ -88,6 +113,8 @@ def build(scale=None):
         written.append(save_png(PAL.snap(img), f"camp/{name}.png"))
     written.append(save_png(flame_sheet(), "camp/flame_sheet.png"))
     written.append(save_png(quilt(), "camp/quilt.png"))
+    written.append(save_png(kindling(), "camp/kindling.png"))
+    written.append(save_png(pit_front(), "camp/pit_front.png"))
     info = out / "flame_sheet.json"
     info.write_text(json.dumps({"frames": FRAMES, "fps": FPS, "frame_w": FRAME_W, "frame_h": FRAME_H}, indent=2))
     written.append(info)

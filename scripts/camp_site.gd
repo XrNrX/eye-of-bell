@@ -13,10 +13,15 @@ const TorchLight := preload("res://scripts/torch.gd")
 const DIR := "res://art/camp/"
 const PIXEL := 0.022          # World size of one art pixel for the pit (a 64 px picture is 1.4 units wide), times FIRE_SCALE.
 const FIRE_SCALE := 1.45      # The fire and spit are drawn bigger than life next to the bedrolls: the fire is the centre of the camp.
-const FLAME_PIXEL := 0.0174 * FIRE_SCALE   # The flame is 0.79 of the pit's pixel size: it sits inside the logs.
+const FLAME_PIXEL := 0.0174 * FIRE_SCALE * 0.95   # Smaller than the pit's logs, so they show round it. # The flame is 0.79 of the pit's pixel size: it sits inside the logs.
 const SPIT_PIXEL := 0.0253 * FIRE_SCALE
 const FLAME_TOWARD := 0.3     # The flame and the spit stand this far toward the camera from the logs, so the logs never hide them
 const SPIT_TOWARD := 0.12     # from any side (billboards at the same depth fight).
+const KINDLING_TOWARD := 0.5  # The kindling and coals lie in front of the flame's base and the front logs just behind them, so it burns from inside the pile.
+const KINDLING_SCALE := 0.55  # (Smaller than the pit: a busy bed of coals at full size hid the flame.)
+const PIT_FRONT_TOWARD := 0.4
+const FLAME_WIDTH := 0.7      # The flame is squeezed to this share of its width: a tall flame, not a wide blob that hides the logs.
+const FLAME_BASE := 0.3 * FIRE_SCALE   # How high the flame's base stands: on the kindling, not above it.
 
 ## One bedroll for each hero position (0 and 1 the front pair), where it lies in world units from the fire (x east, z south): two behind the
 ## fire, two in front. Each lies along the line from the fire with its pillow outward and its feet to the flames.
@@ -31,6 +36,8 @@ const PILLOW_COLOUR := Color("9c9278")   # bone_500
 var cell := Vector2i.ZERO
 var flame: MeshInstance3D
 var spit: Sprite3D
+var kindling: Sprite3D
+var pit_front: Sprite3D
 var light: OmniLight3D
 var bedrolls := []   # [Node3D], one per hero position
 
@@ -51,6 +58,9 @@ func _ready() -> void:
 	for i in BEDROLLS.size():
 		bedrolls.append(_bedroll(i))
 	_sprite("pit", PIXEL * FIRE_SCALE, Vector2.ZERO)
+	kindling = _sprite("kindling", PIXEL * FIRE_SCALE * KINDLING_SCALE, Vector2.ZERO)
+	kindling.position.y = kindling.texture.get_height() * PIXEL * FIRE_SCALE * KINDLING_SCALE * 0.5 + 0.02
+	pit_front = _sprite("pit_front", PIXEL * FIRE_SCALE, Vector2.ZERO)
 	spit = _sprite("spit", SPIT_PIXEL, Vector2.ZERO)
 	_add_flame()
 	light = OmniLight3D.new()
@@ -79,6 +89,10 @@ func _face_camera() -> void:
 	flame.position = Vector3(d.x * FLAME_TOWARD, flame.position.y, d.z * FLAME_TOWARD)
 	if spit != null:
 		spit.position = Vector3(d.x * SPIT_TOWARD, spit.position.y, d.z * SPIT_TOWARD)
+	if kindling != null:
+		kindling.position = Vector3(d.x * KINDLING_TOWARD, kindling.position.y, d.z * KINDLING_TOWARD)
+	if pit_front != null:
+		pit_front.position = Vector3(d.x * PIT_FRONT_TOWARD, pit_front.position.y, d.z * PIT_FRONT_TOWARD)
 
 
 ## A bedroll lying on the floor: a straw pallet, a quilted blanket on it and a round pillow at the head, real 3D so it sits on the stone
@@ -159,5 +173,6 @@ func _add_flame() -> void:
 	flame.setup(load(DIR + "flame_sheet.png"), frames, float(info.fps), true, FLAME_PIXEL, Color.WHITE, false)
 	# The frame's anchor (24, 58 of 76) is 18 px above its bottom edge: stand it on the top of the logs.
 	var h := float(info.frame_h)
-	flame.position = Vector3(0, 0.45 * FIRE_SCALE + (h * 0.5 - 18.0) * FLAME_PIXEL, -0.2)  # (A little toward the party: billboards of the same depth fight, and the flame must win over the logs.)
+	flame.position = Vector3(0, FLAME_BASE + (h * 0.5 - 18.0) * FLAME_PIXEL, -0.2)  # (A little toward the party: billboards of the same depth fight, and the flame must win over the logs.)
+	flame.scale = Vector3(FLAME_WIDTH, 1.0, 1.0)
 	add_child(flame)
