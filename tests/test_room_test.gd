@@ -202,6 +202,8 @@ func _check_pacing(tools: Node, press: Callable, player: Node) -> void:
 	root.push_input(esc)
 	await process_frame
 	check("Esc closes it", not is_instance_valid(loot) or loot.is_queued_for_deletion())
+	var first_hero = the_party.carry_order()[0]
+	first_hero.backpack[first_hero.backpack.size() - 1] = null  # (The test room stocks every item in the packs: leave this one room.)
 	loot = player.world_right_click()
 	var key2 := InputEventKey.new()
 	key2.physical_keycode = KEY_1
@@ -305,11 +307,14 @@ func _check_game() -> void:
 	var cleric_m = party.members.filter(func(m): return m.class_id() == "cleric")[0]
 	check("the legendary station has the Test Blade in front of it: legendary, with its text, fighter only", blade != null and blade.def.legendary and blade.def.legend_text().contains("Price:")
 			and party.can_equip(fighter_m, blade.def) and not party.can_equip(cleric_m, blade.def))
+	var azure = dungeon.item_at(Vector2i(35, 9))
+	check("the legendary station also has the Azure Brand on the floor: a real legendary, for the fighter and the thief but not the cleric",
+			azure != null and azure.def.resource_path.ends_with("azure_brand.tres") and azure.def.legendary and party.can_equip(fighter_m, azure.def) and not party.can_equip(cleric_m, azure.def))
 	var station_sign := ""
 	for s_entry in DungeonMap.SIGNS:
 		if s_entry.cell == Vector2i(35, 12):
 			station_sign = s_entry.text
-	check("the legendary station's sign no longer says it is not built", station_sign.contains("TEST BLADE") and not station_sign.contains("NOT BUILT"))
+	check("the legendary station's sign no longer says it is not built", station_sign.contains("AZURE BRAND") and station_sign.contains("TEST BLADE") and not station_sign.contains("NOT BUILT"))
 	check("the help shows whether the party may camp", tools.help_label.text.contains("CAMP   "))
 	press.call(KEY_COMMA)
 	var wounded := true

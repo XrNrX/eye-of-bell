@@ -1,6 +1,6 @@
 extends CanvasLayer
 ## The optional palette filter on the dungeon's SubViewport: a full-screen ColorRect running
-## shaders/palette_snap.gdshader, which snaps every pixel of the 3D render to the 33 palette colours with a light
+## shaders/palette_snap.gdshader, which snaps every pixel of the 3D render to the 37 palette colours with a light
 ## ordered dither. Added by game_view.gd to the viewport; shown when Settings.palette_filter is on (Options:
 ## PALETTE FILTER). How strong the dither is lives in data/spell_effects.tres (palette_dither).
 
@@ -12,7 +12,7 @@ const SHADER := preload("res://shaders/palette_snap.gdshader")
 ## Keep this in step with palette.json.
 const PALETTE := ["0b0a10", "14131b", "1f1e28", "31303c", "504f5e", "7b7a88", "aaa9b4", "1c1511", "33261c", "4f3a28",
 		"74553a", "4e2a1a", "7c4426", "a8673a", "161e1a", "26382c", "44624a", "86a672", "6b6250", "9c9278", "c9c0a4",
-		"9a5f1c", "d99a36", "f5cf80", "3a6b4c", "7fb88a", "cdeec0", "1e1428", "3b2850", "6a4a86", "4a1418", "7a2224", "b89a2e"]
+		"9a5f1c", "d99a36", "f5cf80", "3a6b4c", "7fb88a", "cdeec0", "1e1428", "3b2850", "6a4a86", "4a1418", "7a2224", "b89a2e", "1f3f8f", "3a78d6", "8fc4ff", "e0f2ff"]
 
 var rect: ColorRect
 

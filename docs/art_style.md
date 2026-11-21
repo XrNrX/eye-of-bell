@@ -15,7 +15,7 @@ torchlight, and it is weak. Nothing is clean, bright, cute or heroic.
 
 ## Palette
 
-The palette is `tools/art/palette.json` (33 colours, "Cursed Dungeon 33"). Every game image uses
+The palette is `tools/art/palette.json` (37 colours, "Cursed Dungeon"; the last four, `arcane_700/500/300/100`, are a cold blue ramp added on 21 Nov 2026 for glowing legendary items only: spell art is still drawn in grey and tinted). Every game image uses
 only these colours; the importer snaps anything else to the nearest one (nearest colour, no
 dithering unless asked), so prompt for the *mood* and let the snap do the exact values.
 
@@ -56,7 +56,7 @@ Every kind of magic has one colour, so players read a spell at a glance. These a
 | Arcane | **cold pale blue** | Magic Missile, the Mage's other spells |
 | Curse | **sickly green** (curse_500 / curse_300) | cracks, veins, the dead: **never used for a spell**, so green always reads as danger |
 
-The palette has no blue, so arcane art is drawn in neutral grey and bone (stone_100 / bone_300 for the bright parts) and the game
+The palette has no blue for spells, so arcane spell art is drawn in neutral grey and bone (stone_100 / bone_300 for the bright parts) and the game
 tints it blue at run time (a tint above 1.0 so it blooms), with a pale blue light. Draw spell flipbooks with those greys, not with
 blue pixels, or the palette snap turns them green or purple.
 

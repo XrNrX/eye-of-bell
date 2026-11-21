@@ -2270,7 +2270,7 @@ func _melee(m: Member, hand: int) -> void:
 	var swung_with = _item_hit(m, weapon, hand, target, result)
 	target.take_hit(result)
 	_item_kill(m, swung_with, target)
-	var recoiled: bool = fire > 0 and target.hp > 0 and target.def.fears_fire
+	var recoiled: bool = (fire > 0 or result.get("recoil", false)) and target.hp > 0 and target.def.fears_fire  # (An item behaviour may ask for the flinch too: result.recoil.)
 	if recoiled:
 		target.recoil(player.cell)
 	if helpless and result.hit:

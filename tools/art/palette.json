@@ -33,7 +33,11 @@
     {"name": "bruise_500", "hex": "#6a4a86", "group": "purple"},
     {"name": "blood_700",  "hex": "#4a1418", "group": "blood"},
     {"name": "blood_500",  "hex": "#7a2224", "group": "blood"},
-    {"name": "mustard_500", "hex": "#b89a2e", "group": "rot"}
+    {"name": "mustard_500", "hex": "#b89a2e", "group": "rot"},
+    {"name": "arcane_700", "hex": "#1f3f8f", "group": "arcane"},
+    {"name": "arcane_500", "hex": "#3a78d6", "group": "arcane"},
+    {"name": "arcane_300", "hex": "#8fc4ff", "group": "arcane"},
+    {"name": "arcane_100", "hex": "#e0f2ff", "group": "arcane"}
   ],
   "ramps": {
     "stone": ["stone_900", "stone_800", "stone_700", "stone_500", "stone_300", "stone_100"],
@@ -45,6 +49,7 @@
     "curse": ["curse_700", "curse_500", "curse_300"],
     "bruise": ["bruise_900", "bruise_700", "bruise_500"],
     "rot": ["mustard_500"],
-    "blood": ["blood_700", "blood_500"]
+    "blood": ["blood_700", "blood_500"],
+    "arcane": ["arcane_700", "arcane_500", "arcane_300", "arcane_100"]
   }
 }

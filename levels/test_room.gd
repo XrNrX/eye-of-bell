@@ -194,6 +194,7 @@ const ITEMS := [
 	{"cell": Vector2i(28, 9), "def": "res://data/items/healing_potion.tres", "count": 2},
 	{"cell": Vector2i(28, 9), "def": "res://data/items/stale_bread.tres", "count": 3},
 	{"cell": Vector2i(28, 9), "def": "res://data/items/dagger.tres"},
+	{"cell": Vector2i(35, 9), "def": "res://data/items/azure_brand.tres"},  # The Azure Brand: a real legendary (fighter or thief), to look at and use.
 	{"cell": Vector2i(36, 9), "def": "res://data/debug/test_legendary.tres"},  # The legendary station: a framework test item (data/debug, debug builds only).
 	{"cell": Vector2i(21, 19), "def": "res://data/items/bedroll.tres", "count": 3},  # The camp survival station: a bedroll right in front of the T teleport.
 	{"cell": Vector2i(19, 19), "def": "res://data/items/bedroll.tres"},
@@ -233,9 +234,9 @@ V = SPAWN"},
 	{"cell": Vector2i(18, 12), "side": 0, "text": "WALL TYPES"},
 	{"cell": Vector2i(29, 12), "side": 0, "text": "ITEM TABLE"},
 	{"cell": Vector2i(35, 12), "side": 0, "text": "LEGENDARY ITEMS
-THE TEST BLADE (FIGHTER)
-GOLD FRAME, SHIMMER, TIP
-SHEET TEXT, A LINE ONCE
+AZURE BRAND: FLAME BLADE
+(FIGHTER OR THIEF)
+TEST BLADE: THE HOOKS
 V FOR A TARGET"},
 	{"cell": Vector2i(4, 16), "side": 2, "text": "AMBUSH
 CORRIDOR"},

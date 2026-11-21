@@ -89,6 +89,7 @@ func _init() -> void:
 	await _check_camp()
 	await _check_cooking()
 	await _check_legendary()
+	await _check_azure_brand()
 	await _check_music()
 	await _check_curse_look()
 	_check_death_gas()
@@ -2015,6 +2016,142 @@ func _check_legendary() -> void:
 	events["hero_hurt"].clear()
 	events["hero_died"].clear()
 	CombatRules.rng().state = dice_state
+
+## The Azure Brand (data/items/azure_brand.tres): a legendary long sword with flame damage, built on the step 11 hooks.
+func _check_azure_brand() -> void:
+	var dice_state: int = CombatRules.rng().state  # (The swings below roll the dice: put back at the end, so later checks roll what they always did.)
+	_rest_everyone()
+	dungeon.clear_monsters()
+	party.fight.in_fight = false
+	player.restore(SPOT, EAST)
+	await create_timer(0.2).timeout
+	var def: Resource = load("res://data/items/azure_brand.tres")
+	var fighter = party.members.filter(func(m): return m.class_id() == "fighter")[0]
+	var thief = party.members.filter(func(m): return m.class_id() == "thief")[0]
+	var cleric = party.members.filter(func(m): return m.class_id() == "cleric")[0]
+	var mage = party.members.filter(func(m): return m.class_id() == "mage")[0]
+	var behaviour = party.behaviour_of(def)
+	check("azure brand: a legendary long sword (+2 attack, 5-11, never slips) with its text, for a fighter or a thief only",
+			def.legendary and behaviour != null and def.type == ItemDef.Type.WEAPON and def.attack_bonus == 2 and def.damage_min == 5 and def.damage_max == 11 and def.never_slips
+			and def.legend_text().contains("Power:") and def.legend_text().contains("Price:") and party.can_equip(fighter, def) and party.can_equip(thief, def)
+			and not party.can_equip(cleric, def) and not party.can_equip(mage, def))
+	check("azure brand: its art is there, in the palette's blues (the glowing blade) and never curse green",
+			def.icon != null and def.hud_icon != null and def.floor_icon != null and _azure_colours_ok(def.icon) and _azure_colours_ok(def.hud_icon))
+
+	# The flame on a landed blow: 2-5 more, fire, a recoil for fire-fearers; a miss is untouched.
+	var lo := 99
+	var hi := 0
+	var fire_flag := true
+	var recoil_flag := true
+	fighter.hands = [ItemStack.of(def, 1), null]
+	var tgt: Node = _monster("slime", AHEAD_1, 40)
+	for i in 200:
+		var r := {"hit": true, "damage": 5}
+		party._item_hit(fighter, def, 0, tgt, r)
+		lo = mini(lo, r.damage)
+		hi = maxi(hi, r.damage)
+		fire_flag = fire_flag and r.get("fire", false)
+		recoil_flag = recoil_flag and r.get("recoil", false)
+	dungeon.clear_monsters()
+	check("azure brand: a landed blow burns for 2 to 5 more (damage 7 to 10 from a 5), counts as fire and asks for the recoil (%d to %d)" % [lo, hi], lo == 7 and hi == 10 and fire_flag and recoil_flag)
+	var miss := {"hit": false, "damage": 0}
+	var slime0: Node = _monster("slime", AHEAD_1, 40)
+	party._item_hit(fighter, def, 0, slime0, miss)
+	check("azure brand: a miss burns nothing", miss.damage == 0 and not miss.has("fire"))
+	# Oil under its target catches light.
+	dungeon.oil.load_state({"slicks": [], "burning": []})
+	dungeon.oil.add_slick(AHEAD_1)
+	party._item_hit(fighter, def, 0, slime0, {"hit": true, "damage": 5})
+	check("azure brand: a blow sets oil under its target alight", dungeon.oil.is_burning(AHEAD_1))
+	dungeon.oil.load_state({"slicks": [], "burning": []})
+	dungeon.clear_monsters()
+
+	# A real swing: the slime fears fire and flinches, and the damage is the sword's plus the flame.
+	CombatRules.seed_rng(41)
+	var hit := false
+	var tries := 0
+	var slime: Node = null
+	while not hit and tries < 30:
+		tries += 1
+		dungeon.clear_monsters()
+		slime = _monster("slime", AHEAD_1, 40)
+		slime.move_wait = 999.0
+		slime.attack_cooldown = 0.0
+		fighter.hands = [ItemStack.of(def, 1), null]
+		fighter.cooldown_left = 0.0
+		party.act(fighter.slot, 0)
+		hit = slime.hp < 40
+	check("azure brand: a real swing does at least 7 (5 plus the flame) and the slime recoils from the flame (%d swings)" % tries,
+			hit and 40 - slime.hp >= 7 and slime.attack_cooldown >= LightConfig.get_config().recoil_delay)
+	# A doused monster hit by the blade takes the fire bonus and burns.
+	hit = false
+	tries = 0
+	var doused: Node = null
+	while not hit and tries < 30:
+		tries += 1
+		dungeon.clear_monsters()
+		doused = _monster("skeleton", AHEAD_1, 99)
+		doused.add_status(load("res://data/statuses/held.tres"), 30.0, 1)
+		doused.add_status(load("res://data/statuses/doused.tres"), 30.0, 1)
+		fighter.hands = [ItemStack.of(def, 1), null]
+		fighter.cooldown_left = 0.0
+		party.act(fighter.slot, 0)
+		hit = doused.hp < 99
+	check("azure brand: a doused monster struck by it takes the +6 and catches light (%d swings)" % tries, hit and doused.has_status("burning") and not doused.has_status("doused") and 99 - doused.hp >= 13)
+	dungeon.clear_monsters()
+
+	# The price: a kill singes the wielder for 1, and never takes them to 0.
+	fighter.hp = fighter.def.max_hp
+	var before_hp: int = fighter.hp
+	var killed := false
+	tries = 0
+	while not killed and tries < 40:
+		tries += 1
+		dungeon.clear_monsters()
+		_monster("slime", AHEAD_1, 1)
+		fighter.cooldown_left = 0.0
+		fighter.hands = [ItemStack.of(def, 1), null]
+		before_hp = fighter.hp
+		party.act(fighter.slot, 0)
+		killed = get_nodes_in_group("monsters").is_empty() or get_nodes_in_group("monsters").all(func(m): return m.dying or m.hp <= 0)
+	check("azure brand: a kill singes the wielder for 1 HP (%d to %d)" % [before_hp, fighter.hp], killed and fighter.hp == before_hp - 1)
+	fighter.hp = 1
+	var corpse: Node = _monster("slime", AHEAD_1, 1)
+	corpse.hp = 0
+	party._item_kill(fighter, fighter.hands[0], corpse)
+	check("azure brand: ...and the singe never kills (a hero at 1 HP stays at 1)", fighter.hp == 1 and fighter.is_alive())
+	dungeon.clear_monsters()
+
+	# Found: the first time a hero holds it.
+	var found_before: int = events.legendary_found.size()
+	DungeonMap.flags.erase("legendary.found.%s" % def.resource_path)
+	fighter.hands = [ItemStack.of(def, 1), null]
+	party._tick_items(0.0)
+	check("azure brand: holding it for the first time sends legendary_found once, naming the sword and the fighter",
+			events.legendary_found.size() == found_before + 1 and events.legendary_found[-1][0] == def and events.legendary_found[-1][1] == fighter.hero_index)
+	party._tick_items(0.0)
+	check("azure brand: ...and only once", events.legendary_found.size() == found_before + 1)
+	fighter.hands = [null, null]
+	_rest_everyone()
+	DungeonMap.occupied.clear()
+	for name in ["legendary_found", "hero_hurt", "hero_died"]:
+		events[name].clear()
+	CombatRules.rng().state = dice_state
+
+
+## True if no pixel of this icon is curse green or bruise purple (a legendary blade is blue and steel only).
+func _azure_colours_ok(tex: Texture2D) -> bool:
+	var img: Image = tex.get_image()
+	var blue := 0
+	for y in img.get_height():
+		for x in img.get_width():
+			var c := img.get_pixel(x, y)
+			if c.a > 0.0:
+				if c.g > c.r + 0.06 and c.g > c.b + 0.06:
+					return false
+				if c.b > c.r + 0.2 and c.b > c.g:
+					blue += 1
+	return blue > 20
 
 ## The background music: Walen's "Dark Heart", one looping player under the tree root so it survives scene changes.
 func _check_music() -> void:

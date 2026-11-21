@@ -1,0 +1,26 @@
+[gd_resource type="Resource" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/item_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/items/azure_brand.png" id="2_icon"]
+[ext_resource type="Texture2D" path="res://art/items/azure_brand_floor.png" id="3_floor"]
+[ext_resource type="Texture2D" path="res://art/items/azure_brand_hud.png" id="90_hud"]
+[ext_resource type="Script" path="res://scripts/item_behaviours/azure_brand.gd" id="4_behaviour"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Azure Brand"
+type = 0
+icon = ExtResource("2_icon")
+floor_icon = ExtResource("3_floor")
+hud_icon = ExtResource("90_hud")
+icon_pixel_size = 0.01
+attack_bonus = 2
+damage_min = 5
+damage_max = 11
+cant_use = PackedStringArray("cleric", "mage")
+never_slips = true
+behaviour = ExtResource("4_behaviour")
+legendary = true
+legend_blurb = "A long sword whose edge burns with a cold blue flame."
+legend_power = "Each blow burns for 2-5 more and lights oil."
+legend_price = "A kill singes the wielder for 1."
