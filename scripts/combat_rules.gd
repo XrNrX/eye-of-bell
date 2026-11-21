@@ -42,9 +42,10 @@ static func roll_damage(low: int, high: int) -> int:
 
 
 ## Roll one attack. Returns {hit: bool, damage: int, chance: int, crit: bool}. A crit is rolled only on a
-## hit (crit_percent is a share of landed hits), so it never changes the hit chance.
-static func resolve_attack(attacker: Object, target: Object, crit_percent := 0, crit_mult := CRIT_MULT) -> Dictionary:
-	var chance := hit_chance(attacker.attack, target.defence)
+## hit (crit_percent is a share of landed hits), so it never changes the hit chance. `hit_mod` is added to the hit chance in percentage
+## points (the dark's -10 for a hero's weapon), the result still kept within MIN_HIT..MAX_HIT.
+static func resolve_attack(attacker: Object, target: Object, crit_percent := 0, crit_mult := CRIT_MULT, hit_mod := 0) -> Dictionary:
+	var chance := clampi(hit_chance(attacker.attack, target.defence) + hit_mod, MIN_HIT, MAX_HIT)
 	var hit := rng().randi_range(1, 100) <= chance
 	var damage := roll_damage(attacker.damage_min, attacker.damage_max) if hit else 0
 	var crit := hit and roll_crit(crit_percent)

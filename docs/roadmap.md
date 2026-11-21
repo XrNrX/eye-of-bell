@@ -1588,7 +1588,7 @@ Updated 18 Nov from docs/design/expansion\_design.md (sections 2 and 3 "7l"): on
 - [x] 7l.3 Curse zones that snuff flames
 - [x] 7l.4 Throwing torches
 - [x] 7l.5 Flask of oil
-- [ ] 7l.6 Place light and darkness in floor 1
+- [x] 7l.6 Place light and darkness in floor 1
 
 **7l.1 prompt (Torches and candles in hand)**
 

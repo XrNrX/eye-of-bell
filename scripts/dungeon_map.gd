@@ -273,6 +273,8 @@ static func curse_zone_at(cell: Vector2i) -> String:
 
 
 ## The id of a curse zone in force with a tile within `reach` tiles of this one (a square, as the haze reaches a little past its tiles), or "".
+## The haze spreads over open ground, so a tile that is not in the zone itself only counts if it can see the zone tile (a wall between,
+## like the one between the long corridor and the cave, stops it: the sconce on the far side stays lit).
 ## Wall sconces use it: a torch on a wall within 2 tiles of the haze goes out too.
 static func curse_zone_near(cell: Vector2i, reach: int) -> String:
 	for zone in CURSE_ZONES:
@@ -280,7 +282,7 @@ static func curse_zone_near(cell: Vector2i, reach: int) -> String:
 			continue
 		for tile in zone.tiles:
 			var d: Vector2i = (tile - cell).abs()
-			if maxi(d.x, d.y) <= reach:
+			if maxi(d.x, d.y) <= reach and (d == Vector2i.ZERO or has_line_of_sight(cell, tile)):
 				return zone.id
 	return ""
 

@@ -92,6 +92,8 @@ const CORRUPTION := {
 # A puzzle is data: when every condition in "when" holds, its "then" effects run, once (scripts/puzzles.gd).
 #   conditions: {"kind": "wall_purified", "cell": Vector2i}   a corrupted wall has been burned away
 #               {"kind": "lever_on", "cell": Vector2i, "side": int}   a wall lever is switched on
+#               {"kind": "monsters_dead", "def": String (optional), "area": Rect2i (optional)}   every monster of that kind (and/or standing
+#                                                    in that area) the level placed is dead; needs at least one placed, so an empty level never fires it
 #               {"kind": "flag", "name": String, "value": true}   a run flag has this value (memory: see below)
 #               {"kind": "lever_order", "levers": [{"cell": Vector2i, "side": int}, ...]}   those levers pulled one after another
 #   Puzzles listen to the event bus and are re-checked on ANY event (scripts/puzzles.gd), so a condition needs no call site.
@@ -107,6 +109,10 @@ const PUZZLES := [
 	{"id": "nook_blessing", "when": [{"kind": "wall_purified", "cell": Vector2i(16, 4)}], "then": [
 		{"kind": "message", "text": "The curse bleeds out of the stone. Somewhere in the dark, a latch gives way."},
 		{"kind": "open_door", "id": "gate_n"},
+	]},
+	{"id": "cave_cleansed", "when": [{"kind": "monsters_dead", "def": "res://data/monsters/plague_rat.tres"}], "then": [
+		{"kind": "message", "text": "The air in the cave loosens. Fire would live there now."},
+		{"kind": "clear_curse_zone", "id": "cave"},
 	]},
 ]
 
@@ -201,6 +207,10 @@ const ITEMS := [
 	{"cell": Vector2i(7, 16), "def": "res://data/items/mouldy_bread.tres"},  # The cave.
 	{"cell": Vector2i(20, 1), "def": "res://data/items/dried_meat.tres", "count": 2},  # The locked closet.
 	{"cell": Vector2i(2, 4), "def": "res://data/items/hard_cheese.tres"},  # The secret closet.
+	# Light (docs/design/expansion_design.md section 5): loose torches and a candle; the sconce torches are in TORCHES.
+	{"cell": Vector2i(15, 15), "def": "res://data/items/torch.tres"},  # The east corridor, where the sconces have gone dark.
+	{"cell": Vector2i(20, 7), "def": "res://data/items/torch.tres"},  # Room 2.
+	{"cell": Vector2i(16, 8), "def": "res://data/items/candle.tres"},  # Room 3, among the weapons.
 ]
 
 # Monsters: the floor cell they start on and their definition resource (see
@@ -218,7 +228,7 @@ const MONSTERS := [
 	{"cell": Vector2i(20, 22), "def": "res://data/monsters/warden.tres"},  # The Cursed Warden: the mini-boss, in the one-tile corridor before the stairs.
 	{"cell": Vector2i(17, 20), "def": "res://data/monsters/skeleton.tres"},
 	{"cell": Vector2i(13, 17), "def": "res://data/monsters/slime_acid.tres"},
-	{"cell": Vector2i(8, 16), "def": "res://data/monsters/skeleton_guard.tres"},
+	{"cell": Vector2i(16, 21), "def": "res://data/monsters/skeleton_guard.tres"},  # Room 6 (it stood in the cave, but nothing above tier 1 may stand in a curse zone).
 	{"cell": Vector2i(15, 11), "def": "res://data/monsters/zombie.tres"},  # Room 3, far corner: the zombie (slow, tough, tier 2).
 	# The rats' nest in the cave: three plague rats (they replace the skeleton that stood at (9,18)).
 	{"cell": Vector2i(8, 17), "def": "res://data/monsters/plague_rat.tres"},
@@ -247,7 +257,16 @@ const STATIONS := []
 # the floor of the zone. A puzzle effect {"kind": "clear_curse_zone", "id": ...} lifts one for good (the run flag
 # "curse_zone.<id>.cleared", saved). Nothing above tier 1 may stand in one (zone_tier_violations: a warning when the level loads).
 # Rules and numbers: scripts/curse_zones.gd, data/light.tres "Curse zones".
-const CURSE_ZONES := []
+const CURSE_ZONES := [
+	# The cave (x 6-10, y 15-19, its floor tiles): where the three plague rats nest. Lifted for good when they are dead (PUZZLES "cave_cleansed").
+	{"id": "cave", "tiles": [
+		Vector2i(8, 15), Vector2i(9, 15),
+		Vector2i(7, 16), Vector2i(8, 16), Vector2i(9, 16), Vector2i(10, 16),
+		Vector2i(6, 17), Vector2i(7, 17), Vector2i(8, 17), Vector2i(9, 17), Vector2i(10, 17),
+		Vector2i(6, 18), Vector2i(7, 18), Vector2i(8, 18), Vector2i(9, 18),
+		Vector2i(7, 19), Vector2i(8, 19), Vector2i(9, 19),
+	]},
+]
 
 # Where the main menu's backdrop camera stands: a cell of this level, looking east down its long south corridor (main_menu.gd). A level
 # that leaves this out gets its START_TILE.

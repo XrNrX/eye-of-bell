@@ -226,8 +226,9 @@ behind, so a lit sprite in front of a torch-bearing party came out a silhouette 
   for the last `pocket_warn_seconds` 4 both creep back as a warning (the glow to `vignette_warn` 0.5), the fog fully a couple of seconds after. **Reduce flashing**:
   one still fog frame, no flicker, and a steady vignette with no breathing. Every strength, colour and time is in the "Curse zones" group of `data/light.tres`. A puzzle effect `clear_curse_zone` lifts a zone
   for good (the run flag `curse_zone.<id>.cleared`, saved). `GameEvents.entered_curse_zone` / `left_curse_zone` (banter lines for both). **Nothing above tier 1
-  may be placed in a zone:** the builder warns when the level loads (`DungeonMap.zone_tier_violations`). Floor 1 has none yet (the cave's, over x 6-10, y 15-19
-  and lifting when its three rats die, is roadmap 7l.6); the test room's light room has one over its east end and the backslash key lifts it or puts it back.
+  may be placed in a zone:** the builder warns when the level loads (`DungeonMap.zone_tier_violations`). Floor 1 has the cave's (over x 6-10, y 15-19
+  and lifting when its three rats die; a zone's reach (2 tiles) stops at walls); the test room's light room has one over its east end and the backslash key lifts it or puts it back.
+- **Fighting in the dark** (roadmap 7l.6): a hero's weapon blow (swing, throw, shot) has -10 percentage points to hit when no light reaches the party's tile beyond the ambient (`Party.tile_is_lit`: the party's own light, a wall torch or floor flame with a clear line, a spell's glow). Spells and monsters are unaffected.
 - **Throwing a torch** (roadmap 7l.4; `ItemDef` torch `throw_damage_min/max` 1-3): **shift+click the hand** that holds a lit torch (`Party.act(slot, hand, true)`:
   a plain click still swings it, and shift+click also throws a dagger from the front row; a quick slot still swaps a light into a hand). It flies up to 4 tiles
   (`MISSILE_RANGE`, the thrown-weapon code `_do_throw`) with its light (a light rides the flying sprite, `Dungeon.show_throw`), the usual hit roll,

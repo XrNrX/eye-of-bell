@@ -685,7 +685,7 @@ func _fire(m: Member, hand: int) -> void:
 	s.damage_min = weapon.shot_damage_min
 	s.damage_max = weapon.shot_damage_max
 	var helpless: bool = target.is_helpless()
-	var result := CombatRules.resolve_attack(s, target.def, CombatRules.crit_chance(m.def, weapon, 0, helpless))
+	var result := CombatRules.resolve_attack(s, target.def, CombatRules.crit_chance(m.def, weapon, 0, helpless), CombatRules.CRIT_MULT, -dark_penalty())
 	result.by = m.hero_index  # Who struck: GameEvents.monster_killed names the killer.
 	target.take_hit(result)
 	if helpless and result.hit:
@@ -916,7 +916,7 @@ func _do_throw(m: Member, source: Dictionary) -> bool:
 	s.damage_min = def.throw_damage_min
 	s.damage_max = def.throw_damage_max
 	var helpless: bool = target.is_helpless()
-	var result := CombatRules.resolve_attack(s, target.def, CombatRules.crit_chance(m.def, def, 0, helpless))
+	var result := CombatRules.resolve_attack(s, target.def, CombatRules.crit_chance(m.def, def, 0, helpless), CombatRules.CRIT_MULT, -dark_penalty())
 	result.fail = not result.hit and CombatRules.roll_fumble()
 	result.by = m.hero_index  # Who struck: GameEvents.monster_killed names the killer.
 	var flame: bool = def.is_light() and result.hit  # A thrown torch burns what it hits: fire (a doused monster catches), and a monster that fears fire flinches.
@@ -1744,6 +1744,38 @@ func light_level() -> float:
 	return snappedf(best.def.light_energy * (1.0 + bonus), 0.01)
 
 
+## Does any light reach the party's tile beyond the ambient: the party's own light, a wall torch, a flame on the floor, a spell's glow
+## (every OmniLight3D in the group "sprite_lights" with a clear line to the tile, whose share there is at least LightConfig.dark_light_min)?
+## A party with no player or no lights in the scene (a bare test) counts as lit, so nothing is penalised by accident.
+func tile_is_lit() -> bool:
+	if player == null or not player.is_inside_tree():
+		return true
+	var lights := get_tree().get_nodes_in_group("sprite_lights")
+	if lights.is_empty():
+		return true
+	var c: Resource = LightConfig.get_config()
+	var here := Vector2(player.global_position.x, player.global_position.z)
+	for l in lights:
+		if not (l is OmniLight3D) or not l.is_visible_in_tree() or l.light_energy <= 0.0:
+			continue
+		var at := Vector2(l.global_position.x, l.global_position.z)
+		var d := here.distance_to(at)
+		if d >= l.omni_range:
+			continue
+		var lc := Vector2i(roundi(at.x / DungeonMap.TILE_SIZE), roundi(at.y / DungeonMap.TILE_SIZE))
+		if lc != player.cell and not DungeonMap.has_line_of_sight(lc, player.cell):
+			continue
+		if l.light_energy * pow(1.0 - d / l.omni_range, l.omni_attenuation) >= c.dark_light_min:
+			return true
+	return false
+
+
+## The to-hit penalty for a weapon attack by the party right now, in percentage points: LightConfig.dark_hit_penalty in the dark, else 0. Weapons only
+## (swings, throws, shots): spells and monsters never call it.
+func dark_penalty() -> int:
+	return 0 if tile_is_lit() else int(LightConfig.get_config().dark_hit_penalty)
+
+
 ## Take the light as it is now without any news (a new run, a loaded save).
 func sync_light_level() -> void:
 	_light_level = light_level()
@@ -2066,7 +2098,7 @@ func _melee(m: Member, hand: int) -> void:
 		return
 	var weapon: Resource = equipped_weapon(m) if hand < 0 else _melee_weapon_in(m, hand)
 	var helpless: bool = target.is_helpless()  # Held: it can't dodge or turn (a crit bonus, the Thief's the biggest).
-	var result := CombatRules.resolve_attack(effective_stats(m, hand), target.def, CombatRules.crit_chance(m.def, weapon, 0, helpless))
+	var result := CombatRules.resolve_attack(effective_stats(m, hand), target.def, CombatRules.crit_chance(m.def, weapon, 0, helpless), CombatRules.CRIT_MULT, -dark_penalty())  # No light on the tile: -10 to hit.
 	result.fail = not result.hit and CombatRules.roll_fumble()
 	result.by = m.hero_index  # Who struck: GameEvents.monster_killed names the killer.
 	var fire := 0  # A torch's flame adds a little to a landed blow.

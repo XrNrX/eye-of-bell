@@ -65,6 +65,7 @@ func _init() -> void:
 		return
 	check("floor 1 is built with its four heroes", party.members.size() == 4 and get_nodes_in_group("monsters").size() == DungeonMap.MONSTERS.size())
 	check("the GameEvents autoload is there", _listen())
+	DungeonMap.puzzles_done["cave_cleansed"] = true  # Set aside: the older checks clear the monsters by hand, which must not lift the cave's zone. _check_floor_light puts it back.
 
 	dungeon.clear_monsters()
 	player.restore(SPOT, EAST)
@@ -83,6 +84,7 @@ func _init() -> void:
 	await _check_shockwave()
 	await _check_sconces()
 	await _check_curse_zones()
+	await _check_floor_light()
 	await _check_curse_look()
 	_check_death_gas()
 	_check_inventory_quick()
@@ -1155,9 +1157,10 @@ func _check_curse_zones() -> void:
 			and dungeon.sconce_at(Vector3i(9, 13, 2)) == DungeonMap.SCONCE_UNLIT and dungeon.sconce_at(Vector3i(12, 14, 1)) == DungeonMap.SCONCE_UNLIT
 			and is_equal_approx(dungeon.sconce_time(Vector3i(9, 13, 2)), 120.0))
 
-	# The wall torches within 2 tiles of the haze go out too: (6,12) and (6,11) are 2 tiles from the zone's west end, (3,7) is far away.
-	check("zones: wall torches within 2 tiles of the zone went out too, a far one did not, and none of them will light again there",
-			dungeon.sconce_at(Vector3i(6, 12, 3)) == DungeonMap.SCONCE_UNLIT and dungeon.sconce_at(Vector3i(6, 11, 1)) == DungeonMap.SCONCE_UNLIT
+	# The wall torches within 2 tiles of the haze AND in sight of it go out too: (6,12) is 2 tiles from the zone's west end with a clear line,
+	# (6,11) is just as near but a wall hides the zone (the haze does not creep round corners, as the cave's corridor sconce needs), (3,7) is far.
+	check("zones: a wall torch within 2 tiles and in sight went out too, one behind a wall and a far one did not, and it will not light again there",
+			dungeon.sconce_at(Vector3i(6, 12, 3)) == DungeonMap.SCONCE_UNLIT and dungeon.sconce_at(Vector3i(6, 11, 1)) == DungeonMap.SCONCE_LIT
 			and dungeon.sconce_at(Vector3i(3, 7, 0)) == DungeonMap.SCONCE_LIT and dungeon.sconces[Vector3i(6, 12, 3)].light == null
 			and not dungeon.light_sconce(Vector3i(6, 12, 3)) and dungeon.sconce_blocked(Vector2i(6, 12)) and not dungeon.sconce_blocked(Vector2i(3, 7)))
 
@@ -1267,7 +1270,7 @@ func _check_curse_zones() -> void:
 	party.set_flames_out(false)
 	player.restore(Vector2i(6, 13), 3)
 	await create_timer(0.2).timeout
-	check("zones: floor 1 has none (the cave's comes with the light on floor 1, 7l.6) and nothing is left over", DungeonMap.CURSE_ZONES.is_empty() and curse._haze.is_empty() and not party.flames_out and dungeon.alcoves.all(func(a): return a.lit))
+	check("zones: floor 1 has only the cave's, and nothing is left over", DungeonMap.CURSE_ZONES.size() == 1 and DungeonMap.CURSE_ZONES[0].id == "cave" and not party.flames_out and dungeon.alcoves.all(func(a): return a.lit))
 
 
 ## How a curse zone looks (the fog and the edge glow): the fog creeps in from the zone's edges, a Bless pushes it back and the edge glow
@@ -1501,6 +1504,92 @@ func _check_death_gas() -> void:
 	zdef.death_gas_chance = def_chance
 	dungeon.clear_monsters()
 	_rest_everyone()
+
+## Roadmap 7l.6: the light placed on floor 1 and the dark's to-hit penalty (weapons only).
+func _check_floor_light() -> void:
+	var dice_state: int = CombatRules.rng().state  # The dice are put back at the end, so the checks after this one roll what they always did.
+	_rest_everyone()
+	dungeon.clear_monsters()
+	var lit_n := 0
+	var unlit_n := 0
+	var empty_n := 0
+	for e in DungeonMap.TORCHES:
+		if e is Vector4i:
+			match e.w:
+				DungeonMap.SCONCE_LIT: lit_n += 1
+				DungeonMap.SCONCE_UNLIT: unlit_n += 1
+				DungeonMap.SCONCE_EMPTY: empty_n += 1
+	check("floor 1 light: 8 lit sconces, 7 unlit with a torch, 10 empty brackets (%d/%d/%d)" % [lit_n, unlit_n, empty_n], lit_n == 8 and unlit_n == 7 and empty_n == 10)
+	var torch_cells := [Vector2i(15, 15), Vector2i(20, 7)]
+	var loose_ok := true
+	for c in torch_cells:
+		var t = dungeon.item_at(c)
+		loose_ok = loose_ok and t != null and t.def.resource_path.ends_with("torch.tres")
+	var candle_at = dungeon.item_at(Vector2i(16, 8))
+	check("floor 1 light: loose torches at (15,15) and in room 2, a candle in room 3", loose_ok and candle_at != null and candle_at.def.resource_path.ends_with("candle.tres"))
+	check("floor 1 light: nothing above tier 1 stands in the cave's zone", DungeonMap.zone_tier_violations().is_empty())
+	check("floor 1 light: the long corridor's wall torch (9,13) stays lit (a wall stops the haze)", DungeonMap.curse_zone_near(Vector2i(9, 13), 2) == "" and DungeonMap.curse_zone_at(Vector2i(8, 17)) == "cave")
+	# The cave's rats: all three dead lifts the zone for good.
+	DungeonMap.puzzles_done.erase("cave_cleansed")
+	for c in [Vector2i(8, 17), Vector2i(7, 18), Vector2i(8, 18)]:
+		_monster("plague_rat", c, 5)
+	var Puzzles := preload("res://scripts/puzzles.gd")
+	Puzzles.check(dungeon, "")
+	check("floor 1 light: three live rats keep the zone", DungeonMap.curse_zone_at(Vector2i(8, 17)) == "cave" and not DungeonMap.puzzles_done.has("cave_cleansed"))
+	var live := get_nodes_in_group("monsters").filter(func(m): return m.def.resource_path.ends_with("plague_rat.tres"))
+	for i in live.size():
+		if i < live.size() - 1:
+			live[i].take_hit({"hit": true, "damage": 99, "chance": 100, "crit": false, "by": 0})
+	await create_timer(0.1).timeout
+	check("floor 1 light: two dead rats of three: still in force", DungeonMap.curse_zone_at(Vector2i(8, 17)) == "cave")
+	live[live.size() - 1].take_hit({"hit": true, "damage": 99, "chance": 100, "crit": false, "by": 0})
+	await create_timer(0.1).timeout
+	check("floor 1 light: the third rat dead lifts the zone for good", DungeonMap.curse_zone_at(Vector2i(8, 17)) == "" and DungeonMap.puzzles_done.has("cave_cleansed"))
+	# Put it back for the checks after this one.
+	DungeonMap.flags.erase("curse_zone.cave.cleared")
+	DungeonMap.puzzles_done["cave_cleansed"] = true
+	dungeon.clear_monsters()
+
+	# The dark: -10 to hit with a weapon, never for a spell, never for a monster.
+	var cleric = party.members.filter(func(m): return m.class_id() == "cleric")[0]
+	var fighter = party.members.filter(func(m): return m.class_id() == "fighter")[0]
+	var torch: Resource = load("res://data/items/torch.tres")
+	var keep: Array = cleric.hands.duplicate()
+	player.restore(Vector2i(6, 13), 3)  # Between two wall torches' reach? (6,12) and (6,11) are lit sconces, so this tile is lit by them.
+	await create_timer(0.2).timeout
+	check("dark: a tile in a lit corridor is lit (no penalty)", party.tile_is_lit() and party.dark_penalty() == 0)
+	player.restore(Vector2i(16, 15), 3)  # East corridor, sconces unlit and the party's own torch put away.
+	cleric.hands = [null, null]
+	await create_timer(0.3).timeout
+	var waited_dark := 0.0
+	while party.tile_is_lit() and waited_dark < 6.0:  # (A spell's last glow from an earlier check may still be fading.)
+		await create_timer(0.25).timeout
+		waited_dark += 0.25
+	check("dark: no light on the tile, the penalty is 10 (%d)" % party.dark_penalty(), not party.tile_is_lit() and party.dark_penalty() == 10)
+	var target: Node = _monster("skeleton", Vector2i(17, 15), 20)
+	var plain_chance: int = CombatRules.hit_chance(fighter.def.attack, target.def.defence)
+	CombatRules.seed_rng(777)
+	var hits := 0
+	var runs := 400
+	for i in runs:
+		if CombatRules.resolve_attack(party.effective_stats(fighter, -1), target.def, 0, CombatRules.CRIT_MULT, -party.dark_penalty()).hit:
+			hits += 1
+	var dark_chance: int = plain_chance - 10
+	check("dark: a weapon blow's hit chance drops from %d%% to %d%% (%d of %d hit)" % [plain_chance, dark_chance, hits, runs], absf(hits / float(runs) * 100.0 - dark_chance) < 8.0)
+	var mon_stats = target.def
+	check("dark: a monster's blow does not read the penalty (CombatRules.hit_chance on its own stats)", CombatRules.hit_chance(mon_stats.attack, party.effective_stats(fighter).defence) == CombatRules.hit_chance(mon_stats.attack, fighter.def.defence + (fighter.armour.def.defence_bonus if fighter.armour != null else 0)))
+	dungeon.clear_monsters()
+	# Light on the tile: the party's own torch, and then the penalty is gone.
+	var held = ItemStack.of(torch, 1)
+	cleric.hands = [held, null]
+	await create_timer(0.3).timeout
+	check("dark: with a torch in a hand the tile is lit again", party.tile_is_lit() and party.dark_penalty() == 0)
+	cleric.hands = keep
+	player.restore(SPOT, EAST)
+	await create_timer(0.2).timeout
+	events["puzzle_solved"].clear()  # (The cave's puzzle was solved on purpose above.)
+	CombatRules.rng().state = dice_state
+
 
 
 func _check_curse_look() -> void:
@@ -1752,7 +1841,7 @@ func _check_puzzles() -> void:
 		DungeonMap.puzzles_done.erase(id)
 	for flag_name in ["puzzle.smoke_order.step", "smoke.order", "smoke.chain", "smoke.go", "smoke.went"]:
 		DungeonMap.flags.erase(flag_name)
-	check("puzzles: the real puzzle is back in place and still done", DungeonMap.PUZZLES.size() == 1 and DungeonMap.puzzles_done.has("nook_blessing"))
+	check("puzzles: the real puzzle is back in place and still done", DungeonMap.PUZZLES.size() == 2 and DungeonMap.puzzles_done.has("nook_blessing"))
 
 
 ## The shockwave: a Fireball explosion starts a ring (a Magic Missile impact a smaller one) that is gone after shock_seconds; Reduce flashing (with

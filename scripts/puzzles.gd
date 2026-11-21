@@ -81,8 +81,35 @@ static func met(dungeon: Node, condition: Dictionary, puzzle := {}, event := "",
 			return DungeonMap.flag(condition.name, false) == condition.get("value", true)
 		"lever_order":
 			return _lever_order(condition, puzzle, event, args)
+		"monsters_dead":
+			return _monsters_dead(dungeon, condition)
 	push_warning("puzzles: unknown condition kind '%s'" % condition.kind)
 	return false
+
+
+## Every monster the level placed that matches (`def`: a MonsterDef path, `area`: a Rect2i of tiles; either or both) is dead. Needs at
+## least one placed (DungeonMap.MONSTERS), so a level without any never fires it. A monster still dying counts as dead. (7e.1's
+## "every monster in an area dead", so far only this one: the cave's plague rats.)
+static func _monsters_dead(dungeon: Node, condition: Dictionary) -> bool:
+	var def_path: String = condition.get("def", "")
+	var has_area: bool = condition.has("area")
+	var area: Rect2i = condition.get("area", Rect2i())
+	var placed := 0
+	for entry in DungeonMap.MONSTERS:
+		if (def_path == "" or entry.def == def_path) and (not has_area or area.has_point(entry.cell)):
+			placed += 1
+	if placed == 0:
+		return false
+	for m in dungeon.get_tree().get_nodes_in_group("monsters"):
+		if not is_instance_valid(m) or m.def == null:
+			continue
+		if def_path != "" and m.def.resource_path != def_path:
+			continue
+		if has_area and not area.has_point(m.cell):
+			continue
+		if m.hp > 0 and not m.dying:
+			return false
+	return true
 
 
 ## The levers in `condition.levers` ({"cell", "side"} each) pulled one after another in that order. Progress is the run flag

@@ -807,7 +807,7 @@ func _check_save_open() -> void:
 			ed.grid.width == 22 and ed.grid.height == 25 and ed.grid.start.cell == Vector2i(5, 9) and ed.grid.sconces.size() == 25 and ed.grid.levers.size() == 3
 			and ed.grid.items.size() == floor_one.ITEMS.size() and ed.grid.monsters.size() == floor_one.MONSTERS.size() and ed.grid.door_ids.size() == 2)
 	check("it opens at a readable zoom with the sheet's width on the paper (%d px squares)" % ed.cell_px, ed.cell_px == 16 and ed.cell_px * ed.grid.width <= DungeonEditor.PAPER_RECT.size.x)
-	check("what it cannot edit yet is kept, and listed in grey (%s)" % str(ed._kept_summary()), ed.grid.extras.has("PUZZLES") and ed.grid.extras.has("PLATES") and ed._kept_summary().has("1 PUZZLES") and ed._kept_summary().has("1 PLATES") and ed._kept_summary().has("2 CORRUPTED"))
+	check("what it cannot edit yet is kept, and listed in grey (%s)" % str(ed._kept_summary()), ed.grid.extras.has("PUZZLES") and ed.grid.extras.has("PLATES") and ed._kept_summary().has("2 PUZZLES") and ed._kept_summary().has("1 PLATES") and ed._kept_summary().has("1 CURSE ZONES") and ed._kept_summary().has("2 CORRUPTED"))
 	check("a kept plate shows in the info box's square (18,21)", ed._kept_at(Vector2i(18, 21)).has("PLATE") and ed.grid.type_at(7, 9) == EditorGrid.CORRUPTED)
 	check("tidying floor 1 changes nothing (it already follows every rule the editor enforces)", _differing(floor_one, _tidied(floor_one)).is_empty())
 	# Save it unchanged under a new name: identical.
@@ -912,7 +912,7 @@ func _check_save_open() -> void:
 	await create_timer(1.5).timeout
 	var player: Node = get_first_node_in_group("player")
 	check("floor 1 built from the paper has its puzzle, its corrupted walls, 25 sconces, 17 monsters and the start",
-			DungeonMap.level_id == DungeonMap.EDITOR_PLAY_ID and DungeonMap.PUZZLES.size() == 1 and DungeonMap.is_corrupted(Vector2i(7, 9)) and DungeonMap.TORCHES.size() == 25
+			DungeonMap.level_id == DungeonMap.EDITOR_PLAY_ID and DungeonMap.PUZZLES.size() == 2 and DungeonMap.is_corrupted(Vector2i(7, 9)) and DungeonMap.TORCHES.size() == 25
 			and get_nodes_in_group("monsters").size() == 17 and player != null and player.cell == Vector2i(5, 9) and player.facing == 3)
 	player.command("forward")
 	await create_timer(0.5).timeout

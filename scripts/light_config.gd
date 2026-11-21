@@ -17,6 +17,10 @@ const PATH := "res://data/light.tres"
 @export var ambient_color := Color(0.17, 0.18, 0.25)  # Cold and faint: "b_dim", agreed 14 Nov 2026 from before-and-after shots.
 @export var ambient_energy := 1.0
 
+@export_group("Fighting in the dark")
+@export var dark_hit_penalty := 10     # A hero whose tile gets no light beyond the ambient: -10 to hit with weapons (never spells, never monsters).
+@export var dark_light_min := 0.08     # A light "reaches" the tile when its share there (energy x (1 - distance / range) ^ attenuation) is at least this.
+
 @export_group("The party's light")
 @export var extra_light_bonus := 0.1   # Each extra light held adds this share of the brightest one's energy...
 @export var extra_light_cap := 0.2     # ...up to this much in all: two torches are not twice as bright.
