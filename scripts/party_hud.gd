@@ -11,6 +11,7 @@ extends CanvasLayer
 ## click anywhere else cancels the pop-up or target mode. Otherwise a portrait click
 ## opens that hero's inventory (group "inventory"). The game keeps running throughout.
 
+const LegendaryMark := preload("res://scripts/legendary_mark.gd")
 const LightConfig := preload("res://scripts/light_config.gd")
 const CombatRules := preload("res://scripts/combat_rules.gd")
 const QuickSlot := preload("res://scripts/quick_slot.gd")
@@ -323,6 +324,9 @@ func _show_hand(m, i: int, hand: TextureButton) -> void:
 		party.Act.CANT_REACH: hand.tooltip_text = "Can't reach"
 		party.Act.USE: hand.tooltip_text = "Use (right-click to take it out)"
 		_: hand.tooltip_text = ""
+	LegendaryMark.sync(hand, stack)
+	if stack and stack.def.legendary:
+		hand.tooltip_text = "%s\n%s%s" % [stack.def.display_name, stack.def.legend_text(), "\n" + hand.tooltip_text if hand.tooltip_text != "" else ""]
 
 
 # --------------------------------------------------------------------------

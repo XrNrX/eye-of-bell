@@ -13,6 +13,7 @@ extends PanelContainer
 
 signal closed
 
+const LegendaryMark := preload("res://scripts/legendary_mark.gd")
 const Events := preload("res://scripts/game_events.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
 const FRAME := preload("res://art/ui/spell_frame.png")
@@ -71,7 +72,12 @@ func setup(a_party: Node, a_dungeon: Node, a_player: Node, a_cell: Vector2i) -> 
 	head.add_theme_constant_override("separation", 6)
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(head)
-	head.add_child(_icon(stack.def.icon, true))
+	var head_icon := _icon(stack.def.icon, true)
+	head.add_child(head_icon)
+	LegendaryMark.sync(head_icon, stack)
+	if stack.def.legendary:
+		head.mouse_filter = Control.MOUSE_FILTER_PASS  # So its tooltip can show: the description, power and price.
+		head.tooltip_text = "%s\n%s" % [stack.def.display_name, stack.def.legend_text()]
 	head.add_child(_label(stack.def.display_name.to_upper(), HEADING, true))
 	if stack.count > 1:
 		head.add_child(_label("x%d" % stack.count, KEY_COLOUR, false))

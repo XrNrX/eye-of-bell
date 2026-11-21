@@ -14,6 +14,7 @@ extends PanelContainer
 ## Pure view: it reads Party and writes nothing. refresh() is called by the inventory
 ## screen after every change, so equipping a sword updates it live.
 
+const LEGEND := Color("f5cf80")  # torch_300: gold, the legendary items' colour.
 const CombatRules := preload("res://scripts/combat_rules.gd")
 const StonePanel := preload("res://scripts/stone_panel.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
@@ -33,6 +34,7 @@ var class_label: Label
 var row_label: Label
 var rows := {}          # stat key -> {name, value, delta} labels
 var buff_label: Label
+var legend_label: Label
 var gear_labels := []   # One per hand slot, then armour.
 var mana_row: Control
 var spell_crit_row: Control
@@ -93,6 +95,11 @@ func _ready() -> void:
 
 	buff_label = _label("", BETTER)  # Buffs are good news.
 	col.add_child(buff_label)
+
+	legend_label = _label("", LEGEND)  # Every legendary item the hero holds: its blurb, power and price (7g.1).
+	legend_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	legend_label.custom_minimum_size.x = WIDTH - 16.0
+	col.add_child(legend_label)
 
 
 func _label(text: String, colour: Color) -> Label:
@@ -181,6 +188,13 @@ func refresh(a_party: Node, slot: int) -> void:
 	buff_label.text = "
 ".join(parts)
 	buff_label.visible = not parts.is_empty()
+
+	var legends := []  # The legendary items this hero holds, anywhere: worn, ready or packed.
+	for stack in m.hands + [m.armour] + m.quick + m.backpack:
+		if stack != null and stack.def.legendary:
+			legends.append("%s\n%s" % [stack.def.display_name.to_upper(), stack.def.legend_text().trim_prefix("LEGENDARY\n")])
+	legend_label.text = "\n\n".join(legends)
+	legend_label.visible = not legends.is_empty()
 
 
 func _item_name(stack) -> String:

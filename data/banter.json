@@ -339,5 +339,15 @@
 		"lines": [
 			{"speaker": "thief", "text": "Was that the zombie or the fighter?", "reply": [{"speaker": "fighter", "text": "Don't look at me."}]}
 		]
+	},
+	"legendary_found": {
+		"chance": 1.0,
+		"cooldown": 5,
+		"lines": [
+			{"speaker": "$actor", "actor": "fighter", "text": "Give it here. I will carry it."},
+			{"speaker": "$actor", "actor": "cleric", "text": "The Light has sent me a gift."},
+			{"speaker": "$actor", "actor": "thief", "text": "Shiny. I will look after it."},
+			{"speaker": "$actor", "actor": "mage", "text": "That is humming. I dislike it."}
+		]
 	}
 }

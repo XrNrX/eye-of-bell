@@ -57,6 +57,9 @@ signal oil_ignited(cell: Vector2i)
 signal camp_made
 signal camp_ended(interrupted: bool)
 
+## The party held a legendary item for the first time this run (once per item: the run flag "legendary.found.<item path>", saved).
+## `item` is its ItemDef, `hero` the hero_index of whoever was holding it. Sent by Party._note_legendaries; 30 XP follows once Party.add_xp exists.
+signal legendary_found(item: Resource, hero: int)
 ## Food was cooked at a camp fire (Camp.cook_*): def is the raw ItemDef it started as, hero the hero_index who carried it (-1: the cursor's).
 signal food_cooked(def: Resource, hero: int)
 

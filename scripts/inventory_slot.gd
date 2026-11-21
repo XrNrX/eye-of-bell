@@ -24,6 +24,7 @@ extends Panel
 ## press, wherever the pointer has moved since, so the press is the only event that
 ## reliably belongs to the slot under the pointer.
 
+const LegendaryMark := preload("res://scripts/legendary_mark.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
 const StackCount := preload("res://scripts/stack_count.gd")
 
@@ -164,6 +165,12 @@ func refresh() -> void:
 					tooltip_text += "\nShift+right-click to use one"
 			elif stack.def.type == ItemDef.Type.CONSUMABLE:
 				tooltip_text += "\nRight-click to use"
+		if stack and stack.def.legendary:
+			tooltip_text += "\n" + stack.def.legend_text()  # The description, power and price live here, never on right-click (it splits stacks).
+	if kind != Kind.CHARACTER:
+		LegendaryMark.sync(self, get_item())
+	else:
+		LegendaryMark.sync(self, null)
 	var box := StyleBoxFlat.new()
 	box.bg_color = FILLED_BG if filled else EMPTY_BG
 	box.border_color = EDGE

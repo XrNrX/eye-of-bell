@@ -18,6 +18,7 @@ extends Control
 ## The contents live on the Party.Member (member.quick), not here; this is just the
 ## view and the click handling. Acts on the mouse PRESS (see inventory_slot.gd for why).
 
+const LegendaryMark := preload("res://scripts/legendary_mark.gd")
 const PartyScript := preload("res://scripts/party.gd")
 const StackCount := preload("res://scripts/stack_count.gd")
 const FRAME_FILLED := preload("res://art/ui/quickslot.png")
@@ -114,6 +115,9 @@ func refresh() -> void:
 		var def: Resource = item.def
 		icon.texture = def.hud_texture()  # 32x32 fills the frame's inside; a smaller (24x24) icon sits centred. Never scaled.
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
+		if def.legendary:
+			tooltip_text = "%s\n%s\n%s" % [def.display_name, def.legend_text(), tooltip_text]
+	LegendaryMark.sync(self, item)
 	_update_hint()
 
 

@@ -530,7 +530,7 @@ Rules for this phase:
 * [ ] Step 8 Hero stats layer (S3, before 7i and 8b)
 * [x] Step 9 Puzzles on the event bus (S7, before 7e)
 * [ ] Step 10 Monster behaviours (S4, before 7d)
-* [ ] Step 11 Item behaviour hooks (S5, before 7g)
+* [x] Step 11 Item behaviour hooks (S5, before 7g)
 * [x] Step 12 Levels as data, party survives the stairs (S6, before a second floor or Phase 9)
 
 **Step 0 prompt (Smoke test)**
@@ -1158,7 +1158,7 @@ A handful of unique items, each with a personality. Rules: only two or three per
 
 Updated 18 Nov from docs/design/expansion\_design.md (section 3 "7g"): floor 1 gets three, Grudge (mid-floor), Penitent's Mace (the purge room's reliquary) and the Unquenchable (dropped by the Cursed Warden). 7g.3, 7g.4, 7g.5 and 7g.7 wait for later floors; the Shield and the Crown need slots the game doesn't have yet. Do Foundations Step 11 first.
 
-- [ ] 7g.1 Legendary item framework
+- [x] 7g.1 Legendary item framework
 - [ ] 7g.2 Grudge, the talking sword
 - [ ] 7g.3 The Too Old For This Shield
 - [ ] 7g.4 The Gilded Hand

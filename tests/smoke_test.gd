@@ -26,7 +26,7 @@ const PLAIN_DOOR := Vector2i(16, 6)
 const LEVER := Vector3i(19, 7, 0)  # The north lever of gate_n: cell (19,7), side 0.
 
 const EVENTS := ["monster_killed", "monster_held", "monster_released", "trap_triggered", "light_out", "light_changed", "hero_hurt", "mana_low", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
-		"wall_purified", "puzzle_solved", "level_completed", "entered_curse_zone", "left_curse_zone", "oil_ignited", "camp_made", "camp_ended", "food_cooked"]
+		"wall_purified", "puzzle_solved", "level_completed", "entered_curse_zone", "left_curse_zone", "oil_ignited", "camp_made", "camp_ended", "food_cooked", "legendary_found"]
 const CRACKED_WALL := Vector2i(2, 6)
 const THICK_CORRUPTION := Vector2i(16, 4)  # Purifying it fires the puzzle "nook_blessing".
 const SWORD_TILE := Vector2i(6, 10)        # The short sword in front of the start.
@@ -88,6 +88,7 @@ func _init() -> void:
 	await _check_floor_light()
 	await _check_camp()
 	await _check_cooking()
+	await _check_legendary()
 	await _check_music()
 	await _check_curse_look()
 	_check_death_gas()
@@ -917,7 +918,8 @@ func _check_torch_throw() -> void:
 		hit = slime.hp < 40
 	check("torch throw: a landed hit does 1-3 fire (a crit up to 6), the slime recoils from it, and the torch lies burning on its tile (%d throws)" % tries,
 			hit and 40 - slime.hp >= 1 and 40 - slime.hp <= 6 and slime.attack_cooldown >= LightConfig.get_config().recoil_delay and dungeon.fire_at(AHEAD_2))
-	dungeon.take_item(AHEAD_2)
+	while dungeon.take_item(AHEAD_2) != null:
+		pass  # (Every throw that missed also left a burning torch on that tile: take them all, however many the dice gave.)
 	dungeon.clear_monsters()
 
 	# A doused monster hit by a thrown torch takes +6 and burns.
@@ -935,7 +937,8 @@ func _check_torch_throw() -> void:
 		party.act(fighter.slot, 0, true)
 		hit = doused.hp < 99
 	check("torch throw: a doused monster hit by a thrown torch takes the +6 and burns (%d throws)" % tries, hit and doused.has_status("burning") and not doused.has_status("doused") and 99 - doused.hp >= 7)
-	dungeon.take_item(AHEAD_2)
+	while dungeon.take_item(AHEAD_2) != null:
+		pass
 	dungeon.clear_monsters()
 	dungeon.lights.restore()
 
@@ -1837,6 +1840,180 @@ func _check_cooking() -> void:
 	_rest_everyone()
 	for name in ["camp_made", "camp_ended", "food_cooked", "hero_hurt"]:
 		events[name].clear()
+	CombatRules.rng().state = dice_state
+
+## Foundations step 11 (item behaviour hooks) and roadmap 7g.1 (the legendary framework), with the Test Blade in data/debug.
+func _check_legendary() -> void:
+	var dice_state: int = CombatRules.rng().state  # (Swings below roll the dice: put back at the end, so later checks roll what they always did.)
+	_rest_everyone()
+	dungeon.clear_monsters()
+	party.fight.in_fight = false
+	player.restore(SPOT, EAST)
+	await create_timer(0.2).timeout
+	var def: Resource = load("res://data/debug/test_legendary.tres")
+	var fighter = party.members.filter(func(m): return m.class_id() == "fighter")[0]
+	var cleric = party.members.filter(func(m): return m.class_id() == "cleric")[0]
+	var mage = party.members.filter(func(m): return m.class_id() == "mage")[0]
+	var war_hammer: Resource = load("res://data/items/war_hammer.tres")
+	check("legendary: ordinary items have no behaviour and are not legendary; the Test Blade is, with its text and class limits",
+			war_hammer.behaviour == null and not war_hammer.legendary and war_hammer.legend_text() == "" and def.legendary and def.behaviour != null
+			and def.legend_text().begins_with("LEGENDARY") and def.legend_text().contains("Power:") and def.legend_text().contains("Price:")
+			and party.can_equip(fighter, def) and not party.can_equip(cleric, def) and not party.can_equip(mage, def) and party.class_refusal(cleric, def) != "")
+	var behaviour = party.behaviour_of(def)
+	check("legendary: Party makes one behaviour per item kind, and none for an ordinary item", behaviour != null and party.behaviour_of(def) == behaviour and party.behaviour_of(war_hammer) == null)
+	var found_before: int = events.legendary_found.size()
+	DungeonMap.flags.erase("legendary.found.%s" % def.resource_path)
+
+	# The hooks: equip, tick, unequip, stowed.
+	var stack: RefCounted = ItemStack.of(def, 1)
+	fighter.hands = [stack, null]
+	var equips: int = behaviour.counts.equip
+	var ticks: int = behaviour.counts.tick
+	party._tick_items(0.1)
+	check("hook: on_equip fired when the blade came into the hand, and on_tick runs while it is held", behaviour.counts.equip == equips + 1 and behaviour.counts.tick == ticks + 1)
+	party._tick_items(0.1)
+	check("hook: ...and on_equip does not fire again for a blade that stays", behaviour.counts.equip == equips + 1 and behaviour.counts.tick == ticks + 2)
+	check("legendary: finding it sent GameEvents.legendary_found once, naming the item and the hero holding it, and set the run flag",
+			events.legendary_found.size() == found_before + 1 and events.legendary_found[-1][0] == def and events.legendary_found[-1][1] == fighter.hero_index
+			and DungeonMap.has_flag("legendary.found.%s" % def.resource_path))
+	var unequips: int = behaviour.counts.unequip
+	var stowed: int = behaviour.counts.stowed
+	fighter.hands = [null, null]
+	fighter.backpack[5] = stack
+	party._tick_items(0.1)
+	check("hook: on_unequip fired when it left the hand, and on_stowed runs while it sits in a pack", behaviour.counts.unequip == unequips + 1 and behaviour.counts.stowed == stowed + 1)
+	party._tick_items(25.0)
+	check("hook: on_stowed carries the time: 25 s in the pack and the blade sulks", behaviour.sulking)
+	check("legendary: it is found once a run: putting it away and taking it out again sends nothing more", events.legendary_found.size() == found_before + 1)
+	fighter.backpack[5] = null
+	fighter.hands = [stack, null]
+	party._tick_items(0.0)
+	check("hook: it was equipped again from the pack (on_equip, and the pack time starts over)", behaviour.counts.equip == equips + 2 and behaviour.stowed_for == 0.0)
+	var told: float = behaviour.tick_seconds
+	party.camping = true
+	party._process(5.0)
+	party.camping = false
+	check("hook: the clocks wait while camped (on_tick is told no time)", is_equal_approx(behaviour.tick_seconds, told))
+	party._process(2.0)
+	check("hook: ...and are told the time again afterwards", is_equal_approx(behaviour.tick_seconds, told + 2.0))
+
+	# on_hit and on_kill through the real swing.
+	var plain := {"hit": true, "damage": 5}
+	var kept_sulk: bool = behaviour.sulking
+	behaviour.sulking = true
+	party._item_hit(fighter, def, 0, null, plain)
+	check("hook: on_hit may change the damage (a sulking blade does 2 less, once)", plain.damage == 3 and not behaviour.sulking)
+	var better := {"hit": true, "damage": 5}
+	var hits_before: int = behaviour.counts.hit
+	party._item_hit(fighter, def, 0, null, better)
+	var missed := {"hit": false, "damage": 0}
+	party._item_hit(fighter, def, 0, null, missed)
+	check("hook: ...and does 1 more when it is not sulking; a miss is no hit", better.damage == 6 and behaviour.counts.hit == hits_before + 1 and missed.damage == 0)
+	behaviour.sulking = kept_sulk
+	_monster("skeleton", AHEAD_1, 80)
+	CombatRules.seed_rng(31)
+	var swing_hits: int = behaviour.counts.hit
+	for i in 40:
+		fighter.cooldown_left = 0.0
+		party.act(fighter.slot, 0)
+		if behaviour.counts.hit > swing_hits:
+			break
+	check("hook: a real swing with the blade lands and on_hit hears it", behaviour.counts.hit > swing_hits)
+	dungeon.clear_monsters()
+	var kills: int = behaviour.counts.kill
+	_monster("slime", AHEAD_1, 1)
+	for i in 60:
+		fighter.cooldown_left = 0.0
+		party.act(fighter.slot, 0)
+		if behaviour.counts.kill > kills:
+			break
+	check("hook: a swing that kills sends on_kill", behaviour.counts.kill == kills + 1)
+	dungeon.clear_monsters()
+	fighter.cooldown_left = 0.0
+
+	# A holder who dies lets go of it.
+	var before_death: int = behaviour.counts.unequip
+	fighter.hp = 0
+	party._tick_items(0.0)
+	check("hook: a hero who dies holding it counts as letting go (on_unequip)", behaviour.counts.unequip == before_death + 1)
+	fighter.hp = fighter.def.max_hp
+	party._tick_items(0.0)
+
+	# The framework's look: the gold mark on slots, text on tooltips and the sheet.
+	var Mark: GDScript = load("res://scripts/legendary_mark.gd")
+	var probe := Control.new()
+	root.add_child(probe)
+	Mark.sync(probe, stack)
+	var mark = probe.get_node_or_null("LegendMark")
+	await process_frame
+	check("look: a legendary stack gets the gold mark (the frame and the shimmer), an ordinary one none, and it goes when the item does",
+			mark != null and mark.get_child_count() == 2 and probe.get_node_or_null("LegendMark") == mark)
+	Mark.sync(probe, ItemStack.of(war_hammer, 1))
+	check("look: ...the mark is taken away for an ordinary item", probe.get_node_or_null("LegendMark") == null)
+	Mark.sync(probe, stack)
+	Settings.reduce_flashing = true
+	var shown = probe.get_node("LegendMark")
+	await process_frame
+	await process_frame
+	check("look: Reduce flashing keeps the frame and drops the twinkle", shown._shimmer != null and not shown._shimmer.visible and shown._frame.visible)
+	Settings.reduce_flashing = false
+	probe.queue_free()
+	var colours_ok := true
+	for file in ["res://art/ui/legend_frame.png", "res://art/ui/legend_shimmer_sheet.png"]:
+		var img: Image = (load(file) as Texture2D).get_image()
+		for y in img.get_height():
+			for x in img.get_width():
+				var c := img.get_pixel(x, y)
+				if c.a > 0.0 and c.g > c.r + 0.06 and c.g > c.b + 0.06:
+					colours_ok = false  # Anything greener than it is red and blue: never the curse green.
+	check("look: the gold frame and shimmer have no curse green in them", colours_ok)
+
+	fighter.hands = [stack, null]
+	var inventory: Node = get_first_node_in_group("inventory")
+	inventory.show_screen(fighter.slot, true)
+	await process_frame
+	await process_frame
+	var found_slot: Control = null
+	var stack_stack := [inventory]
+	while not stack_stack.is_empty():
+		var n: Node = stack_stack.pop_back()
+		if n is Control and n.has_method("get_item") and n.get_item() == stack and n.get_node_or_null("LegendMark") != null:
+			found_slot = n
+		for c in n.get_children():
+			stack_stack.append(c)
+	check("look: the inventory slot holding it has the gold mark and a tooltip with its description, power and price (never on right-click)",
+			found_slot != null and found_slot.tooltip_text.contains("Test Blade") and found_slot.tooltip_text.contains("Power:") and found_slot.tooltip_text.contains("Price:"))
+	check("look: the character sheet lists it with its power and price", inventory.sheet.legend_label.visible and inventory.sheet.legend_label.text.contains("TEST BLADE") and inventory.sheet.legend_label.text.contains("Price:"))
+	inventory.visible = false
+	paused = false
+	var hud: Node = get_first_node_in_group("party_hud")
+	await process_frame
+	await process_frame
+	var hand: TextureButton = hud.panels[fighter.slot].hands[0]
+	check("look: the party panel's hand button has the mark and the item's text in its tooltip", hand.get_node_or_null("LegendMark") != null and hand.tooltip_text.contains("Power:") and hand.tooltip_text.begins_with("Test Blade"))
+	fighter.hands = [null, null]
+	await process_frame
+	await process_frame
+	check("look: ...and drops the mark when the hand is empty", hand.get_node_or_null("LegendMark") == null)
+
+	# The banter line from the finder.
+	var banter: Node = get_first_node_in_group("banter")
+	banter.reset_timers()
+	var said := ""
+	for i in 12:
+		var lines: Array = banter.event("legendary_found", {"actor": "fighter", "item": "Test Blade"})
+		if not lines.is_empty():
+			said = str(lines[0])
+			break
+		banter.reset_timers()
+	check("banter: the finder says a line when they find a legendary (%s)" % said, said != "" and said.begins_with(fighter.name()))
+	party._tick_items(0.0)
+	fighter.hands = [null, null]
+	_rest_everyone()
+	DungeonMap.occupied.clear()
+	events["legendary_found"].clear()
+	events["hero_hurt"].clear()
+	events["hero_died"].clear()
 	CombatRules.rng().state = dice_state
 
 ## The background music: Walen's "Dark Heart", one looping player under the tree root so it survives scene changes.

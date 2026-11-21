@@ -29,6 +29,7 @@ const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
 const FightTracker := preload("res://scripts/fight_tracker.gd")
 const MonsterTiers := preload("res://scripts/monster_tiers.gd")
 const LightConfig := preload("res://scripts/light_config.gd")
+const LEGENDARY_XP := 30        # Finding a legendary item (7g.1), once per item: paid by Party.add_xp when that exists.
 const CAMP_MONSTER_REACH := 4   # No living monster within this many tiles (a square) when making camp...
 const CAMP_SIGHT_REACH := 12    # ...or in sight, up to this far.
 const CAMP_AMBUSH_REACH := 2    # ...and no armed ambush trigger this close.
@@ -61,6 +62,8 @@ signal wiped
 
 var flames_out := false   # A curse zone has put the party's held flames out (curse_zones.gd; see snuffed).
 var sputter_left := 0.0   # Seconds a held flame still has before it goes out in a curse zone (0: not sputtering): the light flickers hard.
+var _behaviours := {}   # ItemDef -> its ItemBehaviour instance, made on first use (behaviour_of).
+var _item_where := {}   # ItemStack -> {"where": "worn" | "pack", "member": Member}: where each behaviour item was last frame (_tick_items).
 var camping := false   # The party is resting at a camp (camp.gd): burn timers, meals and slow mana regeneration wait.
 var god_mode := false  # Debug (the test room's G key): monsters' blows land on nobody.
 
@@ -214,6 +217,7 @@ func _process(delta: float) -> void:
 		if not camping:  # "Lights do not burn down during a rest. The fire is the light."
 			_tick_lights(m, delta)
 	_check_light_level()
+	_tick_items(0.0 if camping else delta)  # Item behaviours (step 11) and the first sight of a legendary (7g).
 
 
 # --------------------------------------------------------------------------
@@ -695,7 +699,9 @@ func _fire(m: Member, hand: int) -> void:
 	var helpless: bool = target.is_helpless()
 	var result := CombatRules.resolve_attack(s, target.def, CombatRules.crit_chance(m.def, weapon, 0, helpless), CombatRules.CRIT_MULT, -dark_penalty())
 	result.by = m.hero_index  # Who struck: GameEvents.monster_killed names the killer.
+	var shot_with = _item_hit(m, weapon, -1, target, result)  # (An item behaviour may change the damage.)
 	target.take_hit(result)
+	_item_kill(m, shot_with, target)
 	if helpless and result.hit:
 		_banter("hit_held", m, weapon)
 	if not result.hit:
@@ -930,7 +936,9 @@ func _do_throw(m: Member, source: Dictionary) -> bool:
 	var flame: bool = def.is_light() and result.hit  # A thrown torch burns what it hits: fire (a doused monster catches), and a monster that fears fire flinches.
 	if flame:
 		result.fire = true
+	var thrown_with = _item_hit(m, def, -1, target, result)
 	target.take_hit(result)
+	_item_kill(m, thrown_with, target)
 	if flame and target.hp > 0 and target.def.fears_fire:
 		target.recoil(player.cell)
 		_say("The %s recoils from the flame." % target.def.display_name.to_lower())
@@ -1858,6 +1866,99 @@ func use_item(slot: int, def: Resource) -> Dictionary:
 
 
 # --------------------------------------------------------------------------
+# Item behaviours (Foundations step 11) and legendary items (7g)
+# --------------------------------------------------------------------------
+
+## The behaviour of an item kind (an ItemBehaviour), made the first time it is asked for; null for an ordinary item.
+func behaviour_of(def: Resource):
+	if def == null or def.behaviour == null:
+		return null
+	if not _behaviours.has(def):
+		_behaviours[def] = def.behaviour.new()
+	return _behaviours[def]
+
+
+## The stack in a hand that holds this kind of item (that hand first if `hand` is 0 or 1), or null.
+func _stack_for(m: Member, def: Resource, hand := -1):
+	if def == null:
+		return null
+	if hand >= 0 and hand < m.hands.size() and m.hands[hand] != null and m.hands[hand].def == def:
+		return m.hands[hand]
+	for stack in m.hands:
+		if stack != null and stack.def == def:
+			return stack
+	return null
+
+
+## A blow was struck with `def`: give a behaviour the landed hit (it may change result.damage). Returns the stack if it has a behaviour.
+func _item_hit(m: Member, def: Resource, hand: int, target: Node, result: Dictionary):
+	var stack = _stack_for(m, def, hand)
+	var behaviour = behaviour_of(def) if stack != null else null
+	if behaviour == null:
+		return null
+	if result.hit:
+		behaviour.on_hit(self, m, stack, target, result)
+	return stack
+
+
+## After the blow: if it killed, tell the behaviour.
+func _item_kill(m: Member, stack, target: Node) -> void:
+	if stack != null and target.hp <= 0:
+		behaviour_of(stack.def).on_kill(self, m, stack, target)
+
+
+## Every frame: who holds which behaviour item and where (worn: a living hero's hands and armour; packed: a backpack), the on_equip /
+## on_unequip moves between those, on_tick and on_stowed, and the first sight of a legendary.
+func _tick_items(delta: float) -> void:
+	var seen := {}
+	for m in members:
+		for stack in m.hands + [m.armour]:
+			if stack != null and stack.def.behaviour != null:
+				seen[stack] = {"where": "worn" if m.is_alive() else "dead", "member": m}
+		for stack in m.backpack:
+			if stack != null and stack.def.behaviour != null:
+				seen[stack] = {"where": "pack", "member": m}
+	for stack in seen:
+		var now: Dictionary = seen[stack]
+		var before = _item_where.get(stack)
+		var was: String = before.where if before != null else ""
+		var behaviour = behaviour_of(stack.def)
+		if was != now.where:
+			if was == "worn":
+				behaviour.on_unequip(self, before.member, stack)
+			if now.where == "worn":
+				behaviour.on_equip(self, now.member, stack)
+		if now.where == "worn":
+			behaviour.on_tick(self, now.member, stack, delta)
+		elif now.where == "pack":
+			behaviour.on_stowed(self, now.member, stack, delta)
+		_item_where[stack] = now
+	for stack in _item_where.keys():
+		if not seen.has(stack):
+			var gone: Dictionary = _item_where[stack]
+			if gone.where == "worn":
+				behaviour_of(stack.def).on_unequip(self, gone.member, stack)
+			_item_where.erase(stack)
+	_note_legendaries()
+
+
+## The first time any hero holds a legendary item in a run: GameEvents.legendary_found, once per item (a run flag, so it is saved), and 30 XP
+## when the party has an XP system. Hands, armour, quick slots and backpacks all count; the cursor and the floor do not.
+func _note_legendaries() -> void:
+	for m in members:
+		for stack in m.hands + [m.armour] + m.quick + m.backpack:
+			if stack == null or not stack.def.legendary:
+				continue
+			var key := "legendary.found.%s" % stack.def.resource_path
+			if DungeonMap.has_flag(key):
+				continue
+			DungeonMap.set_flag(key, true)
+			Events.send(get_tree(), "legendary_found", [stack.def, m.hero_index])
+			if has_method("add_xp"):
+				call("add_xp", LEGENDARY_XP)
+
+
+# --------------------------------------------------------------------------
 # Making camp (roadmap 7h.2; the rest itself is camp.gd)
 # --------------------------------------------------------------------------
 
@@ -2166,7 +2267,9 @@ func _melee(m: Member, hand: int) -> void:
 		m.oiled_hits -= 1
 	if fire > 0 or oil_fire > 0:
 		result.fire = true  # Fire: a doused monster takes the bonus and burns (Monster.take_hit).
+	var swung_with = _item_hit(m, weapon, hand, target, result)
 	target.take_hit(result)
+	_item_kill(m, swung_with, target)
 	var recoiled: bool = fire > 0 and target.hp > 0 and target.def.fears_fire
 	if recoiled:
 		target.recoil(player.cell)

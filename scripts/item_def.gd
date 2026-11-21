@@ -63,6 +63,17 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export var food_sick_damage := 0
 @export var food_sick_seconds := 0.0
 
+@export_group("Behaviour and legend")
+## Foundations step 11: an optional script (extends item_behaviour.gd) with on_equip / on_unequip / on_hit / on_kill / on_tick / on_stowed
+## hooks that Party calls. Ordinary items leave it empty.
+@export var behaviour: Script
+## Phase 7g: a legendary item. It gets the worn-gold slot frame and shimmer (legendary_mark.gd), its text in the tooltip and on the
+## character sheet, and GameEvents.legendary_found the first time the party holds it in a run. Its limits are `cant_use`, like the spellbook's.
+@export var legendary := false
+@export_multiline var legend_blurb := ""  # What it is, a line or two (narrator voice: docs/tone.md).
+@export var legend_power := ""             # What it does for its owner.
+@export var legend_price := ""             # What it costs them.
+
 @export_group("Camp")
 @export var cooks_into: Resource  # Raw food: the ItemDef it becomes when cooked at a camp fire (camp.gd: the Cook button or clicking it on the fire). Cooking keeps the count.
 @export var makes_camp := false  # A bedroll: using it (from a hand, a quick slot or the pack) makes camp if the party may (Party.camp_refusal), and is spent only then.
@@ -123,6 +134,20 @@ static func allowed_in_hand(item_type: Type) -> bool:
 ## The icon for the party panel's hand and quick slots.
 func hud_texture() -> Texture2D:
 	return hud_icon if hud_icon else icon
+
+
+## The legendary text for a tooltip or the character sheet ("" for an ordinary item): its blurb, then what it gives and what it costs.
+func legend_text() -> String:
+	if not legendary:
+		return ""
+	var lines := ["LEGENDARY"]
+	if legend_blurb != "":
+		lines.append(legend_blurb)
+	if legend_power != "":
+		lines.append("Power: " + legend_power)
+	if legend_price != "":
+		lines.append("Price: " + legend_price)
+	return "\n".join(lines)
 
 
 ## Can this be cooked at a camp fire (has a cooks_into)?

@@ -194,6 +194,7 @@ const ITEMS := [
 	{"cell": Vector2i(28, 9), "def": "res://data/items/healing_potion.tres", "count": 2},
 	{"cell": Vector2i(28, 9), "def": "res://data/items/stale_bread.tres", "count": 3},
 	{"cell": Vector2i(28, 9), "def": "res://data/items/dagger.tres"},
+	{"cell": Vector2i(36, 9), "def": "res://data/debug/test_legendary.tres"},  # The legendary station: a framework test item (data/debug, debug builds only).
 	{"cell": Vector2i(21, 19), "def": "res://data/items/bedroll.tres", "count": 3},  # The camp survival station: a bedroll right in front of the T teleport.
 	{"cell": Vector2i(19, 19), "def": "res://data/items/bedroll.tres"},
 	{"cell": Vector2i(22, 19), "def": "res://data/items/raw_rat_meat.tres", "count": 5},  # Camp cooking: raw food to cook on the fire (COOK, or hold it on the cursor and click the fire)...
@@ -231,8 +232,11 @@ V = SPAWN"},
 	{"cell": Vector2i(7, 12), "side": 0, "text": "COMBAT ARENA"},
 	{"cell": Vector2i(18, 12), "side": 0, "text": "WALL TYPES"},
 	{"cell": Vector2i(29, 12), "side": 0, "text": "ITEM TABLE"},
-	{"cell": Vector2i(35, 12), "side": 0, "text": "LEGENDARY
-!NOT BUILT YET"},
+	{"cell": Vector2i(35, 12), "side": 0, "text": "LEGENDARY ITEMS
+THE TEST BLADE (FIGHTER)
+GOLD FRAME, SHIMMER, TIP
+SHEET TEXT, A LINE ONCE
+V FOR A TARGET"},
 	{"cell": Vector2i(4, 16), "side": 2, "text": "AMBUSH
 CORRIDOR"},
 	{"cell": Vector2i(12, 16), "side": 2, "text": "PUZZLE ROOM"},

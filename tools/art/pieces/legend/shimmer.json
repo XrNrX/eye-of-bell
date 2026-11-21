@@ -1,0 +1,443 @@
+{
+ "frames": [
+  {
+   "filename": "legendary-shimmer 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 1.png",
+   "frame": {
+    "x": 27,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 2.png",
+   "frame": {
+    "x": 54,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 3.png",
+   "frame": {
+    "x": 81,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 4.png",
+   "frame": {
+    "x": 0,
+    "y": 34,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 5.png",
+   "frame": {
+    "x": 27,
+    "y": 34,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 6.png",
+   "frame": {
+    "x": 54,
+    "y": 34,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 7.png",
+   "frame": {
+    "x": 81,
+    "y": 34,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 8.png",
+   "frame": {
+    "x": 0,
+    "y": 68,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 9.png",
+   "frame": {
+    "x": 27,
+    "y": 68,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 10.png",
+   "frame": {
+    "x": 54,
+    "y": 68,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 11.png",
+   "frame": {
+    "x": 81,
+    "y": 68,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 12.png",
+   "frame": {
+    "x": 0,
+    "y": 102,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 13.png",
+   "frame": {
+    "x": 27,
+    "y": 102,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 14.png",
+   "frame": {
+    "x": 54,
+    "y": 102,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  },
+  {
+   "filename": "legendary-shimmer 15.png",
+   "frame": {
+    "x": 81,
+    "y": 102,
+    "w": 27,
+    "h": 34
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 34
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 34
+   },
+   "pivot": {
+    "x": 0.4444444444444444,
+    "y": 0.5882352941176471
+   },
+   "duration": 83
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "legendary-shimmer.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 108,
+   "h": 136
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 12,
+   "y": 20
+  },
+  "frameTags": [
+   {
+    "name": "legendary-shimmer",
+    "from": 0,
+    "to": 15,
+    "direction": "forward"
+   }
+  ]
+ }
+}

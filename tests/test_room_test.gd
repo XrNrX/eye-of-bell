@@ -299,6 +299,17 @@ func _check_game() -> void:
 	var wood_pile = dungeon.item_at(Vector2i(21, 19))
 	check("the camp survival station has a bedroll in front of it and ash on the camp spot", wood_pile != null and wood_pile.def.makes_camp and wood_pile.count == 3
 			and DungeonMap.camp_spot_at(Vector2i(21, 20)) and get_nodes_in_group("camp_spot_marks").size() == 1)
+	# The legendary station: the Test Blade (a framework item in data/debug) lies in front of it, fighter only.
+	var blade = dungeon.item_at(Vector2i(36, 9))
+	var fighter_m = party.members.filter(func(m): return m.class_id() == "fighter")[0]
+	var cleric_m = party.members.filter(func(m): return m.class_id() == "cleric")[0]
+	check("the legendary station has the Test Blade in front of it: legendary, with its text, fighter only", blade != null and blade.def.legendary and blade.def.legend_text().contains("Price:")
+			and party.can_equip(fighter_m, blade.def) and not party.can_equip(cleric_m, blade.def))
+	var station_sign := ""
+	for s_entry in DungeonMap.SIGNS:
+		if s_entry.cell == Vector2i(35, 12):
+			station_sign = s_entry.text
+	check("the legendary station's sign no longer says it is not built", station_sign.contains("TEST BLADE") and not station_sign.contains("NOT BUILT"))
 	check("the help shows whether the party may camp", tools.help_label.text.contains("CAMP   "))
 	press.call(KEY_COMMA)
 	var wounded := true

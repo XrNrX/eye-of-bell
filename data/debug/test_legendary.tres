@@ -1,0 +1,26 @@
+[gd_resource type="Resource" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/item_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/items/long_sword.png" id="2_icon"]
+[ext_resource type="Texture2D" path="res://art/items/long_sword_floor.png" id="3_floor"]
+[ext_resource type="Texture2D" path="res://art/items/long_sword_hud.png" id="90_hud"]
+[ext_resource type="Script" path="res://scripts/debug/test_legendary_behaviour.gd" id="4_behaviour"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Test Blade"
+type = 0
+icon = ExtResource("2_icon")
+floor_icon = ExtResource("3_floor")
+hud_icon = ExtResource("90_hud")
+icon_pixel_size = 0.01
+attack_bonus = 1
+damage_min = 4
+damage_max = 9
+cant_use = PackedStringArray("cleric", "thief", "mage")
+never_slips = true
+behaviour = ExtResource("4_behaviour")
+legendary = true
+legend_blurb = "A plain sword for testing."
+legend_power = "+1 to every blow."
+legend_price = "Sulks if left in a pack."
