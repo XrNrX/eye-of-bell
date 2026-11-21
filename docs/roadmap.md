@@ -2293,6 +2293,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] The Red Shaman: a goblin caster from the user's PixelLab picture with a ranged bolt attack (`MonsterDef.ranged_range`), animated, VFX bolt and impact, in the test room arena (`ca0f8fb`)
 - [x] Traps: a snap the party can neither see nor hear is silent (`TrapField.witness`: seen within 10 tiles with a clear line, heard within 6, else no log, sound or news), and level monsters may hold their ground (`"holds": true`) so the test room's trap skeleton stops wandering onto the trap (`3dd06ce`)
 - [x] The Goblin: a tier 1 spear carrier from the user's PixelLab picture, animated; two guard floor 1's west corridor, one in the test room arena (`6254d0e`)
+- [x] Message log scrolls back: mouse wheel or a thin bar, 200 lines of history, your place kept when a new line arrives (`7d784c5`)
 
 ## Ideas inbox
 
