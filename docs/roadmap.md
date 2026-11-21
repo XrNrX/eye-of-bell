@@ -2283,6 +2283,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] The Cursed Warden redrawn from the user's PixelLab "hardcore warden" picture: PixelLab idle, attack and walk clips, a hurt made in code, 128px frames (`f379bf8`)
 - [x] Background music: Walen's "Dark Heart" loops over the menu and the game from one player that survives scene changes; credit in `audio/music/CREDITS.md` (`ea9a59c`)
 - [x] The Azure Brand: a legendary glowing blue long sword with flame damage, built on the 7g framework (PixelLab art, a four-colour arcane blue ramp added to the palette), in the test room (`a3df5fd`)
+- [x] The Red Shaman: a goblin caster from the user's PixelLab picture with a ranged bolt attack (`MonsterDef.ranged_range`), animated, VFX bolt and impact, in the test room arena (`ca0f8fb`)
 
 ## Ideas inbox
 
