@@ -17,6 +17,7 @@ const LightConfig := preload("res://scripts/light_config.gd")
 const FeelConfigScript := preload("res://scripts/combat_feel_config.gd")
 const AiConfigScript := preload("res://scripts/monster_ai_config.gd")
 const MonsterTiers := preload("res://scripts/monster_tiers.gd")
+const MonsterBolt := preload("res://scripts/monster_bolt.gd")
 
 const DAMAGE_COLOUR := Color(0.961, 0.812, 0.502)  # Palette torch_300.
 const MISS_COLOUR := Color(0.667, 0.663, 0.706)   # Palette stone_100.
@@ -104,7 +105,7 @@ func _process(delta: float) -> void:
 	if dying:
 		return  # (A damage-over-time tick killed it.)
 	# The party slipped out of reach: a beat before it follows. This only ever pushes the next move later.
-	var in_reach := _next_to_player()
+	var in_reach := _can_strike()
 	if _was_in_reach and not in_reach:
 		move_wait = maxf(move_wait, def.reaction_delay)
 	held_back = held_back + delta if _queued else 0.0
@@ -113,7 +114,7 @@ func _process(delta: float) -> void:
 		if move_wait <= 0.0:
 			move_wait = def.step_interval
 			_on_tick()
-	_was_in_reach = _next_to_player()
+	_was_in_reach = _can_strike()
 	_fight(delta)
 
 
@@ -127,7 +128,7 @@ func _fight(delta: float) -> void:
 			_one_shot = PackedInt32Array()
 			attack_cooldown = maxf(attack_cooldown, _hit_delay())  # The swing starts again from the top when it is free.
 		return
-	var in_reach := _next_to_player()
+	var in_reach := _can_strike()
 	if in_reach and not _walking and recovery_left <= 0.0:
 		attack_cooldown -= delta / _status_scale("attack_time_scale")
 		# The swing starts early enough that its impact frame appears just as the blow lands (see _begin_swing).
@@ -366,6 +367,32 @@ func _next_to_player() -> bool:
 	return absi(d.x) + absi(d.y) == 1
 
 
+## Can it attack the party now: standing next to it, or (a caster, MonsterDef.ranged_range above 1) on the same row or column within range
+## with a clear line. A monster that can strike stops moving and fights.
+func _can_strike() -> bool:
+	if _next_to_player():
+		return true
+	if def.ranged_range <= 1:
+		return false
+	var d := DungeonMap.player_cell - cell
+	if d.x != 0 and d.y != 0:
+		return false
+	return absi(d.x) + absi(d.y) <= def.ranged_range and DungeonMap.has_line_of_sight(cell, DungeonMap.player_cell)
+
+
+## The tiles a caster would like to stand on: in line with the party within range, with a clear line to it (never beside it), not taken.
+func _ranged_goals() -> Dictionary:
+	var goals := {}
+	for d in DIRS:
+		for k in range(2, def.ranged_range + 1):
+			var c: Vector2i = DungeonMap.player_cell + d * k
+			if DungeonMap.is_blocked(c) or not DungeonMap.has_line_of_sight(c, DungeonMap.player_cell):
+				break  # (Past a wall or a door nothing is in line.)
+			if not DungeonMap.is_occupied(c) or c == cell:
+				goals[c] = true
+	return goals
+
+
 ## Seconds from the start of the attack animation to the frame where the blow lands (MonsterDef.attack_hit_frame): the
 ## swing's anticipation. 0 for a monster with no attack animation.
 func _hit_delay() -> float:
@@ -390,6 +417,34 @@ func _attack() -> void:
 	attack_cooldown = def.attack_interval
 	_swinging = false
 	blows_struck += 1
+	if def.ranged_range > 0:
+		_cast()
+		return
+	get_tree().call_group("party", "cue_attack_from", self)
+	get_tree().call_group("party", "take_hit_from", self)
+
+
+## A caster's attack: a bolt leaves now (a picture flying to the party and the cast sound) and does its damage when it arrives. A caster
+## that dies before it arrives takes the bolt with it.
+func _cast() -> void:
+	var d := DungeonMap.player_cell - cell
+	var tiles := maxi(1, absi(d.x) + absi(d.y))
+	var travel: float = tiles * def.ranged_seconds_per_tile
+	if def.cast_sound != "":
+		get_tree().call_group("audio", "play", def.cast_sound)
+	if def.bolt_effect != "" and is_inside_tree():
+		var bolt := MonsterBolt.new()
+		get_parent().add_child(bolt)
+		var start: Vector3 = (sprite.global_position if sprite != null else global_position) + Vector3(0, 0.15, 0)
+		var toward := Vector3(-d.x, 0.0, -d.y) * 0.4  # (Stops a little short of the camera.)
+		bolt.launch(def.bolt_effect, start, DungeonMap.cell_to_world(DungeonMap.player_cell) + Vector3(0, 1.0, 0) + toward, travel)
+	get_tree().create_timer(travel).timeout.connect(_bolt_lands)
+
+
+## The bolt arrives: the hit, with everything that follows from it (sound, flash, shake), exactly as a blow landing.
+func _bolt_lands() -> void:
+	if dying or not is_inside_tree():
+		return
 	get_tree().call_group("party", "cue_attack_from", self)
 	get_tree().call_group("party", "take_hit_from", self)
 
@@ -542,7 +597,7 @@ func _on_tick() -> void:
 	if dying:
 		return
 	_queued = false
-	if _next_to_player():
+	if _can_strike():
 		get_tree().call_group("fight_tracker", "noticed", self)  # (Keeps the fight on while it stands at the party's side.)
 		if _others_at(_around_party()).is_empty():
 			_drop_pass()  # It is simply the one at the party now: another may earn a pass.
@@ -568,6 +623,10 @@ func _on_tick() -> void:
 ## the party, never onto another tile beside the party. After flank_after seconds queued it may take a pass (at most
 ## max_flankers at once) and go round. Paths are found by a short breadth-first search (path_radius steps).
 func _chase_dir() -> Vector2i:
+	if def.ranged_range > 1:  # A caster wants a firing line, not the party's side; if there is none to reach, it closes in as the rest do.
+		var line := _path_dir(_ranged_goals(), {})
+		if line != Vector2i.ZERO:
+			return line
 	var around := _around_party()
 	var at_party := _others_at(around)
 	var may_close: bool = at_party.is_empty() or _has_pass()

@@ -90,6 +90,7 @@ func _init() -> void:
 	await _check_cooking()
 	await _check_legendary()
 	await _check_azure_brand()
+	await _check_red_shaman()
 	await _check_music()
 	await _check_curse_look()
 	_check_death_gas()
@@ -2152,6 +2153,90 @@ func _azure_colours_ok(tex: Texture2D) -> bool:
 				if c.b > c.r + 0.2 and c.b > c.g:
 					blue += 1
 	return blue > 20
+
+## The Red Shaman (data/monsters/red_shaman.tres): a goblin caster with a ranged bolt (MonsterDef.ranged_range), built into the monster code.
+func _check_red_shaman() -> void:
+	var dice_state: int = CombatRules.rng().state  # (The casts below roll the dice: put back at the end, so later checks roll what they always did.)
+	_rest_everyone()
+	dungeon.clear_monsters()
+	party.fight.in_fight = false
+	party.god_mode = false
+	player.restore(SPOT, EAST)
+	await create_timer(0.2).timeout
+	var def: Resource = load("res://data/monsters/red_shaman.tres")
+	check("shaman: a tier 2 caster with 9 HP that casts from 4 tiles, with a cast animation, a bolt, a sound and a hit effect all present",
+			def.tier == 2 and def.max_hp == 9 and def.ranged_range == 4 and def.attack_frames.size() == 7 and def.attack_hit_frame == 3 and def.hframes == 22
+			and ResourceLoader.exists("res://art/spells/%s/bolt_sheet.png" % def.bolt_effect) and FileAccess.file_exists("res://art/spells/%s/bolt_sheet.json" % def.bolt_effect)
+			and ResourceLoader.exists("res://art/spells/hit_fx/%s_sheet.png" % def.hit_effect) and FileAccess.file_exists("res://audio/sfx/%s.wav" % def.cast_sound))
+
+	# Who can strike from where.
+	var shaman: Node = _monster("red_shaman", Vector2i(10, 13))
+	var skeleton: Node = _monster("skeleton", Vector2i(9, 13))
+	check("shaman: four tiles down the corridor, in line and in sight, it can strike; a skeleton at three tiles cannot", shaman._can_strike() and not skeleton._can_strike())
+	dungeon.clear_monsters()
+	var far: Node = _monster("red_shaman", Vector2i(11, 13))
+	var off: Node = _monster("red_shaman", Vector2i(8, 11))
+	check("shaman: five tiles away is out of range, and off the line (two across, two up) is no firing line", not far._can_strike() and not off._can_strike())
+	dungeon.clear_monsters()
+	player.restore(Vector2i(9, 13), EAST)
+	var walled: Node = _monster("red_shaman", Vector2i(9, 10))
+	check("shaman: in line and in range, but with a wall between, it cannot strike", not walled._can_strike())
+	dungeon.clear_monsters()
+	player.restore(SPOT, EAST)
+	var goal_ok := true
+	var near_shaman: Node = _monster("red_shaman", Vector2i(8, 11))
+	var goals: Dictionary = near_shaman._ranged_goals()
+	for c in goals:
+		var d: Vector2i = c - SPOT
+		goal_ok = goal_ok and (d.x == 0 or d.y == 0) and absi(d.x) + absi(d.y) >= 2 and absi(d.x) + absi(d.y) <= 4 and DungeonMap.has_line_of_sight(c, SPOT)
+	check("shaman: the tiles it heads for are all in line with the party, two to four away, in sight (%d of them)" % goals.size(), goals.size() >= 3 and goal_ok and goals.has(Vector2i(10, 13)))
+	check("shaman: from off the line it walks toward a firing line (west, toward the corridor's end), not at the party", near_shaman._chase_dir() == Vector2i(-1, 0))
+	dungeon.clear_monsters()
+
+	# Standing in range it stays put and casts: the bolt flies, then the hit lands.
+	shaman = _monster("red_shaman", Vector2i(10, 13))
+	shaman.move_wait = 0.0
+	shaman._on_tick()
+	check("shaman: in range it does not close in", shaman.cell == Vector2i(10, 13))
+	CombatRules.seed_rng(97)
+	var struck := []
+	var on_struck := func(monster: Node, side: String, damage: int, crit: bool): struck.append([monster, side, damage])
+	party.monster_struck.connect(on_struck)
+	var hurt_before: int = events.hero_hurt.size()
+	var bolts_seen := 0
+	var blows_before: int = shaman.blows_struck
+	for i in 25:
+		shaman.attack_cooldown = 0.0
+		shaman._attack()
+		bolts_seen = maxi(bolts_seen, get_nodes_in_group("monster_bolts").size())
+		await create_timer(0.45).timeout
+		if not struck.is_empty():
+			break
+	party.monster_struck.disconnect(on_struck)
+	check("shaman: a cast sends a bolt flying (%d in flight), and when it arrives the party is struck from the front (%d casts)" % [bolts_seen, shaman.blows_struck - blows_before],
+			bolts_seen >= 1 and not struck.is_empty() and struck[0][0] == shaman and struck[0][1] == "front" and events.hero_hurt.size() > hurt_before)
+	await create_timer(0.5).timeout
+	check("shaman: the bolt is gone once it has arrived", get_nodes_in_group("monster_bolts").is_empty())
+
+	# A caster killed while its bolt is in the air takes the bolt with it.
+	_rest_everyone()
+	var hp_total := 0
+	for m in party.members:
+		hp_total += m.hp
+	shaman.attack_cooldown = 0.0
+	shaman._attack()
+	shaman.dying = true
+	await create_timer(0.5).timeout
+	var hp_after := 0
+	for m in party.members:
+		hp_after += m.hp
+	check("shaman: if he dies before it arrives, his bolt does no damage", hp_after == hp_total)
+	dungeon.clear_monsters()
+	DungeonMap.occupied.clear()
+	_rest_everyone()
+	for name in ["hero_hurt", "hero_died"]:
+		events[name].clear()
+	CombatRules.rng().state = dice_state
 
 ## The background music: Walen's "Dark Heart", one looping player under the tree root so it survives scene changes.
 func _check_music() -> void:

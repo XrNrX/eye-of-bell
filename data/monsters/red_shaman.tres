@@ -1,0 +1,37 @@
+[gd_resource type="Resource" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/monster_def.gd" id="1_def"]
+[ext_resource type="Texture2D" path="res://art/monsters/red_shaman/red_shaman_sheet.png" id="2_sheet"]
+
+[resource]
+script = ExtResource("1_def")
+display_name = "Red Shaman"
+max_hp = 9
+attack = 3
+defence = 1
+damage_min = 2
+damage_max = 5
+attack_interval = 2.4
+step_interval = 1.2
+reaction_delay = 0.5
+arrival_recovery = 0.5
+wind_up = 0.5
+sight_range = 6
+tier = 2
+hit_effect = "shaman_bolt"
+ranged_range = 4
+ranged_seconds_per_tile = 0.07
+bolt_effect = "shaman"
+cast_sound = "shaman_cast"
+sheet = ExtResource("2_sheet")
+hframes = 22
+idle_frames = PackedInt32Array(0, 1, 2, 3, 4, 3, 2, 1)
+attack_hit_frame = 3
+attack_frames = PackedInt32Array(5, 6, 7, 8, 9, 10, 11)
+hurt_frames = PackedInt32Array(12, 13)
+walk_frames = PackedInt32Array(14, 15, 16, 17, 18, 19, 20, 21)
+idle_fps = 4.0
+attack_fps = 10.0
+hurt_fps = 12.0
+walk_fps = 12.0
+pixel_size = 0.01043

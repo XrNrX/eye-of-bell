@@ -216,6 +216,7 @@ const MONSTERS := [
 	{"cell": Vector2i(9, 7), "def": "res://data/monsters/slime_acid.tres"},
 	{"cell": Vector2i(11, 5), "def": "res://data/monsters/plague_rat.tres"},
 	{"cell": Vector2i(7, 5), "def": "res://data/monsters/zombie.tres"},
+	{"cell": Vector2i(7, 3), "def": "res://data/monsters/red_shaman.tres"},  # A caster: a bolt from up to 4 tiles away down a clear line.
 	# The held-monster room: different hold resistances (skeleton 35%, guard 45%, slime immune).
 	{"cell": Vector2i(25, 39), "def": "res://data/monsters/skeleton.tres"},
 	{"cell": Vector2i(28, 39), "def": "res://data/monsters/skeleton_guard.tres"},

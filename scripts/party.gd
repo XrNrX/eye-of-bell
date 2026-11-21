@@ -2402,7 +2402,8 @@ func take_hit_from(monster: Node) -> void:
 
 ## Which side of the party this tile is on, for the way it faces now: "front", "behind", "left" or "right".
 func side_of(cell: Vector2i) -> String:
-	var side: Vector2i = cell - player.cell
+	var offset: Vector2i = cell - player.cell
+	var side := Vector2i(signi(offset.x), signi(offset.y))  # (A caster across the room is still in front, behind or to a side: only the direction counts.)
 	var f: int = player.facing
 	if side == player.DIRS[f]:
 		return "front"

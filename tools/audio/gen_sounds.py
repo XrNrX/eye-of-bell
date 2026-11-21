@@ -240,6 +240,14 @@ def sizzle():
     return finish(mix(hiss, pops), 0.5)
 
 
+def shaman_cast():
+    """A goblin's spell: a rising raspy whine with a crackle under it, then a short fiery snap as the bolt leaves."""
+    whine = gain(swell(osc(glide(280, 1000, 0.4), 0.4, "saw"), 0.06, 0.3), 0.3)
+    crackle = gain(decay(bandpass(noise(0.4, 83), 1500, 7000), 0.14), 0.5)
+    snap = gain(decay(bandpass(noise(0.08, 84), 800, 5000), 0.02), 0.7)
+    return finish(mix(whine, crackle, (snap, 0.36)), 0.55)
+
+
 def pickup():
     return finish(mix(decay(osc(660, 0.1), 0.05), (decay(osc(990, 0.14), 0.07), 0.06)), 0.45)
 
@@ -378,7 +386,7 @@ SOUNDS = {
     "turn": (turn, None), "bump": (bump, None),
     "door_open": (door_open, None), "door_close": (door_close, None), "door_locked": (door_locked, None),
     "unlock": (unlock, None), "lever": (lever, None), "plate": (plate, None),
-    "trap_set": (trap_set, None), "trap_snap": (trap_snap, None), "sizzle": (sizzle, None),
+    "trap_set": (trap_set, None), "trap_snap": (trap_snap, None), "sizzle": (sizzle, None), "shaman_cast": (shaman_cast, None),
     "pickup": (pickup, None), "drop": (drop, None),
     "swing": (swing, None), "whiff": (whiff, None), "hit": (hit, None), "throw": (throw, None),
     "crit_hit": (crit_hit, None), "crit_hurt": (crit_hurt, None), "fumble": (fumble, None),

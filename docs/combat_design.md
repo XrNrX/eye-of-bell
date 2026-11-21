@@ -100,6 +100,18 @@ feels weak, raise his mana from 12 to 14 before touching the rate. Reasons and t
 - **Art:** the user's PixelLab "hardcore warden" (21 Nov 2026): a horned warden in spiked red and black plate with a tall axe and chains, animated with PixelLab clips (idle 5, attack 6, walk 8 frames) and a hurt made in code (a lean back and a flash), 128x128 frames (`tools/art/gen_warden_hd.py`). The axe's slam is attack frame 3 (`attack_hit_frame` 3). The old single-pose placeholder (`gen_warden.py`) is no longer built.
 - **Not built yet:** he does not carry the Unquenchable (7g), and his hall's sconces are not special (7l.2).
 
+## The Red Shaman and ranged attacks
+
+A monster with `MonsterDef.ranged_range` above 1 casts at the party from up to that many tiles away along a clear straight line (the same row or column, nothing in the way). The first caster is
+the Red Shaman (`data/monsters/red_shaman.tres`, a goblin in a red hood with a skull staff): tier 2, 9 HP, attack 3, defence 1, damage 2-5, a bolt every 2.4 s, notices the party from 6 tiles.
+
+- **Behaviour:** it walks toward a firing line (in line with the party, 2 to 4 tiles away, in sight) rather than the party's side, stops there and casts; at point blank it casts too. Anything in the way
+  (a wall, a closed door) means no shot; a portcullis does not block it.
+- **The bolt:** a crimson orb leaves on the cast animation's hit frame (`attack_hit_frame` 3) and flies 0.07 s a tile; the damage lands when it arrives, rolled like any monster blow (hit chance, crits,
+  hit direction, the red flash and a bolt-burst `hit_effect` across the view). A shaman killed while the bolt is in the air takes it with him.
+- **Not built:** he is not on floor 1, has no drop and no banter, and keeps no distance (he does not back off from a party that closes in).
+- Art: PixelLab (see `docs/asset_log.md` "The Red Shaman").
+
 ## Monster tiers
 
 Every monster has a tier (`MonsterDef.tier`), and every status effect reads one table by it: `data/tiers.tres` (`scripts/monster_tiers.gd`). **Rule of thumb: on tier 1 a spell almost always works; on tier 4 it is a gamble.**

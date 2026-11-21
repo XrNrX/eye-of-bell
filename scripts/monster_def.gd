@@ -50,6 +50,18 @@ extends Resource
 ## "skeleton_claws". "" for none (the red flash alone).
 @export var hit_effect := ""
 
+@export_group("Ranged attack")
+## A caster: 0 for a monster that only strikes from the next tile. Above 1, it casts at the party from up to this many tiles away along
+## a straight, clear line (the same row or column, nothing in the way) and stops coming closer once it can. Its attack animation is the
+## cast, `attack_hit_frame` the frame its bolt leaves; the bolt flies `ranged_seconds_per_tile` per tile and the damage lands when it
+## arrives (Monster._cast). It still casts at point blank. Damage, accuracy and `attack_interval` are the monster's usual.
+@export var ranged_range := 0
+@export var ranged_seconds_per_tile := 0.07
+## The flying bolt's art: a folder in art/spells/ holding bolt_sheet.png and bolt_sheet.json ("" for no picture). `cast_sound` is played at
+## the cast (a name in audio/sfx, "" for none).
+@export var bolt_effect := ""
+@export var cast_sound := ""
+
 @export_group("Bite")
 ## A landed blow may leave the hero sick (the food sickness: Member.sick_*: `sick_damage` HP over `sick_seconds`, never kills): the
 ## chance is 0..1. 0 for most monsters. The plague rat's is 0.2.
