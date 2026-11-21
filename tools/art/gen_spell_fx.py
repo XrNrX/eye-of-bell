@@ -121,9 +121,9 @@ def build(scale=None):
     # Hold Monster: grey and bone runes, tinted cold pale blue in the game like Magic Missile (bind, held loop, shatter).
     # The bear trap's snap: rusted iron jaws, sparks and a spatter (drawn normally in the game, not added).
     # hit_fx: what a monster's landed blow leaves across the view (MonsterDef.hit_effect; hit_overlay.gd), drawn normally.
-    for spell in ("gas", "fireball", "magic_missile", "heal", "bless", "shield", "resurrection", "hold_monster", "bear_trap", "hit_fx", "light", "curse", "oil"):
+    for spell in ("gas", "fireball", "magic_missile", "heal", "bless", "shield", "resurrection", "hold_monster", "bear_trap", "hit_fx", "light", "curse", "oil", "cooking"):
         for name in ("cast", "projectile", "impact", "burst", "ring", "flash", "column", "portrait", "portrait_large",
-                     "bind", "held", "shatter", "snap", "skeleton_claws", "guard_axe", "slime_splat", "acid_splat", "rat_bite", "flame", "haze", "flames", "fog", "wisp", "cloud"):
+                     "bind", "held", "shatter", "snap", "skeleton_claws", "guard_axe", "slime_splat", "acid_splat", "rat_bite", "flame", "haze", "flames", "fog", "wisp", "cloud", "sizzle"):
             if (PIECES / spell / f"{name}.png").exists():
                 (ART_DIR / "spells" / spell).mkdir(parents=True, exist_ok=True)
                 written += build_sheet(spell, name)

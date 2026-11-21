@@ -26,7 +26,7 @@ const PLAIN_DOOR := Vector2i(16, 6)
 const LEVER := Vector3i(19, 7, 0)  # The north lever of gate_n: cell (19,7), side 0.
 
 const EVENTS := ["monster_killed", "monster_held", "monster_released", "trap_triggered", "light_out", "light_changed", "hero_hurt", "mana_low", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
-		"wall_purified", "puzzle_solved", "level_completed", "entered_curse_zone", "left_curse_zone", "oil_ignited", "camp_made", "camp_ended"]
+		"wall_purified", "puzzle_solved", "level_completed", "entered_curse_zone", "left_curse_zone", "oil_ignited", "camp_made", "camp_ended", "food_cooked"]
 const CRACKED_WALL := Vector2i(2, 6)
 const THICK_CORRUPTION := Vector2i(16, 4)  # Purifying it fires the puzzle "nook_blessing".
 const SWORD_TILE := Vector2i(6, 10)        # The short sword in front of the start.
@@ -87,6 +87,7 @@ func _init() -> void:
 	await _check_curse_zones()
 	await _check_floor_light()
 	await _check_camp()
+	await _check_cooking()
 	await _check_music()
 	await _check_curse_look()
 	_check_death_gas()
@@ -1735,6 +1736,108 @@ func _check_camp() -> void:
 	await create_timer(0.1).timeout
 	for name in ["camp_made", "camp_ended", "hero_hurt", "hero_revived", "hero_died"]:
 		events[name].clear()
+
+## Roadmap 7h.3: cooking at the camp fire. The cooked foods, the COOK button (every raw stack, one by one), food held on the cursor, the
+## sizzle, the news, and that a camp is needed.
+func _check_cooking() -> void:
+	var dice_state: int = CombatRules.rng().state  # (A cook may burn the food: that rolls the dice, which are put back at the end so later checks roll what they always did.)
+	_rest_everyone()
+	dungeon.clear_monsters()
+	party.fight.in_fight = false
+	player.restore(SPOT, EAST)
+	await create_timer(0.2).timeout
+	var camp: Node = get_first_node_in_group("camp")
+	var raw_meat: Resource = load("res://data/items/raw_rat_meat.tres")
+	var cooked_meat: Resource = load("res://data/items/cooked_rat_meat.tres")
+	var mouldy: Resource = load("res://data/items/mouldy_bread.tres")
+	var toast: Resource = load("res://data/items/toasted_bread.tres")
+	var dried: Resource = load("res://data/items/dried_meat.tres")
+	check("cooking: raw rat meat becomes cooked rat meat (12 HP over 6 s, no sickness), mouldy bread becomes toast with no sickness chance, dried meat is not cookable",
+			raw_meat.cooks_into == cooked_meat and cooked_meat.food_heal == 12 and is_equal_approx(cooked_meat.food_seconds, 6.0) and cooked_meat.food_sick_chance == 0.0
+			and raw_meat.food_sick_chance > 0.0 and mouldy.cooks_into == toast and toast.food_sick_chance == 0.0 and toast.food_heal > mouldy.food_heal
+			and toast.food_seconds < mouldy.food_seconds and not dried.can_cook() and raw_meat.can_cook())
+	var fighter = party.members.filter(func(m): return m.class_id() == "fighter")[0]
+	var mage = party.members.filter(func(m): return m.class_id() == "mage")[0]
+	var thief = party.members.filter(func(m): return m.class_id() == "thief")[0]
+	check("cooking: outside a camp nothing can be cooked", camp.cook_all() == 0 and not camp.active)
+
+	# What the party carries: raw meat in a pack, mouldy bread in a hand and in a quick slot.
+	for m in party.members:
+		for i in m.backpack.size():
+			if m.backpack[i] != null and m.backpack[i].def.can_cook():
+				m.backpack[i] = null
+		for i in m.hands.size():
+			if m.hands[i] != null and m.hands[i].def.can_cook():
+				m.hands[i] = null
+		for i in m.quick.size():
+			if m.quick[i] != null and m.quick[i].def.can_cook():
+				m.quick[i] = null
+	fighter.backpack[3] = ItemStack.of(raw_meat, 4)
+	mage.hands[1] = ItemStack.of(mouldy, 2)
+	thief.quick[0] = ItemStack.of(mouldy, 3)
+	var cooked_before: int = events.food_cooked.size()
+	check("cooking: a camp starts, the party is ready, and the COOK button counts the raw food (9 items)", camp.begin() and camp.cookable_count() == 9)
+	camp._process(0.0)
+	check("cooking: the button says how many (%s)" % camp.cook_button.text, camp.cook_button.text == "COOK (9)" and not camp.cook_button.disabled)
+	check("cooking: the COOK button queues every raw stack (3)", camp.cook_all() == 3)
+	camp._process(0.01)
+	check("cooking: one stack is cooked at once, with a sizzle on the fire", events.food_cooked.size() == cooked_before + 1 and camp.sizzles.size() == 1 and camp.cook_button.disabled)
+	camp._process(0.8)
+	camp._process(0.8)
+	check("cooking: all three are cooked one by one, keeping their counts, and nothing raw is left",
+			events.food_cooked.size() == cooked_before + 3 and camp.cookable_count() == 0
+			and fighter.hands.all(func(h): return h == null or not h.def.can_cook()) and camp.cookables().is_empty())
+	var cooked_in_packs := 0
+	for m in party.members:
+		for stack in m.backpack + m.hands + m.quick:
+			if stack != null and stack.def in [cooked_meat, toast]:
+				cooked_in_packs += stack.count
+	check("cooking: 4 cooked rat meat, 5 slices of toast (%d in all) and the same slots" % cooked_in_packs,
+			cooked_in_packs == 9 and fighter.backpack[3].def == cooked_meat and fighter.backpack[3].count == 4 and mage.hands[1].def == toast and mage.hands[1].count == 2 and thief.quick[0].def == toast and thief.quick[0].count == 3)
+	check("cooking: the news names the raw food and who carried it", events.food_cooked[cooked_before][0] == raw_meat or events.food_cooked[cooked_before][0] == mouldy)
+	var cooks_line := false
+	for line in get_first_node_in_group("hud").lines:
+		cooks_line = cooks_line or str(line.text if line is Dictionary else line).contains("cooks the") or str(line.text if line is Dictionary else line).contains("burns the")
+	check("cooking: the log says it was cooked (or burnt)", cooks_line)
+	check("cooking: the button now says there is nothing to cook, and the sizzle plays out", camp.cook_button.text == "NOTHING TO COOK" and camp.cook_button.disabled)
+	camp._process(2.0)
+	check("cooking: the sizzle ends by itself", camp.sizzles.is_empty())
+
+	# Cooked food heals more and faster and never makes anyone sick.
+	fighter.hp = 5
+	var healed_ok := true
+	for i in 30:
+		fighter.sick_left = 0.0
+		var result: Dictionary = party.eat(fighter.slot, cooked_meat)
+		healed_ok = healed_ok and result.used and fighter.sick_left == 0.0 and is_equal_approx(fighter.food_left, 6.0) and is_equal_approx(fighter.food_rate, 2.0)
+	check("cooking: eating cooked rat meat (30 times) heals 12 over 6 s and never makes anyone sick", healed_ok)
+
+	# Food held on the cursor goes on the fire.
+	var cursor: Node = get_first_node_in_group("cursor")
+	cursor.release()
+	check("cooking: an empty cursor on the fire cooks nothing", not camp.cook_held(cursor))
+	cursor.hold(ItemStack.of(load("res://data/items/dagger.tres"), 1))
+	check("cooking: a dagger on the fire will not cook and stays held", not camp.cook_held(cursor) and cursor.held.def.display_name == "Dagger")
+	cursor.hold(ItemStack.of(raw_meat, 3))
+	var before: int = events.food_cooked.size()
+	check("cooking: raw meat held on the cursor is cooked on the fire, count kept, news sent once", camp.cook_held(cursor) and cursor.held.def == cooked_meat and cursor.held.count == 3
+			and events.food_cooked.size() == before + 1 and events.food_cooked[-1][1] == -1 and camp.sizzles.size() == 1)
+	cursor.release()
+
+	# A camp that ends drops what was still queued.
+	fighter.backpack[4] = ItemStack.of(raw_meat, 2)
+	check("cooking: raw food again, queued", camp.cook_all() == 1)
+	camp.end(true)
+	check("cooking: ending the camp drops the queue, and nothing cooks outside a camp", camp._cook_queue.is_empty() and camp.cook_all() == 0 and fighter.backpack[4].def == raw_meat)
+	fighter.backpack[3] = null
+	fighter.backpack[4] = null
+	mage.hands[1] = null
+	thief.quick[0] = null
+	party.fight.in_fight = false
+	_rest_everyone()
+	for name in ["camp_made", "camp_ended", "food_cooked", "hero_hurt"]:
+		events[name].clear()
+	CombatRules.rng().state = dice_state
 
 ## The background music: Walen's "Dark Heart", one looping player under the tree root so it survives scene changes.
 func _check_music() -> void:

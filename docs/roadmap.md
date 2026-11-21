@@ -1282,7 +1282,7 @@ Updated 18 Nov from docs/design/expansion\_design.md (section 3 "7h"): one bedro
 
 - [ ] 7h.1 Resting rules into the combat page
 - [x] 7h.2 Making camp
-- [ ] 7h.3 Cooking at the fire
+- [x] 7h.3 Cooking at the fire
 - [ ] 7h.4 Interrupted rests
 - [ ] 7h.5 Campfire banter
 - [ ] 7h.6 Camp spots and bedroll in floor 1

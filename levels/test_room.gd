@@ -196,6 +196,10 @@ const ITEMS := [
 	{"cell": Vector2i(28, 9), "def": "res://data/items/dagger.tres"},
 	{"cell": Vector2i(21, 19), "def": "res://data/items/bedroll.tres", "count": 3},  # The camp survival station: a bedroll right in front of the T teleport.
 	{"cell": Vector2i(19, 19), "def": "res://data/items/bedroll.tres"},
+	{"cell": Vector2i(22, 19), "def": "res://data/items/raw_rat_meat.tres", "count": 5},  # Camp cooking: raw food to cook on the fire (COOK, or hold it on the cursor and click the fire)...
+	{"cell": Vector2i(20, 19), "def": "res://data/items/mouldy_bread.tres", "count": 3},
+	{"cell": Vector2i(24, 3), "def": "res://data/items/cooked_rat_meat.tres", "count": 3},  # ...and what it becomes, on the item table.
+	{"cell": Vector2i(25, 3), "def": "res://data/items/toasted_bread.tres", "count": 3},
 	{"cell": Vector2i(10, 34), "def": "res://data/items/torch.tres", "count": 3},  # The light room.
 	{"cell": Vector2i(14, 34), "def": "res://data/items/candle.tres", "count": 5},
 	{"cell": Vector2i(12, 35), "def": "res://data/items/oil_flask.tres", "count": 3},  # Flasks of oil: throw at the floor, at the slime, or use on a weapon; light them with a torch, a swing or a Fireball.
@@ -234,6 +238,7 @@ CORRIDOR"},
 	{"cell": Vector2i(12, 16), "side": 2, "text": "PUZZLE ROOM"},
 	{"cell": Vector2i(22, 16), "side": 2, "text": "CAMP SURVIVAL
 USE A BEDROLL TO CAMP
+RAW FOOD NEARBY: COOK IT
 , WOUNDS THE PARTY
 V SPAWNS A MONSTER:
 THAT REFUSES THE CAMP"},

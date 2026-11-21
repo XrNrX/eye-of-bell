@@ -1,9 +1,11 @@
-[gd_resource type="Resource" load_steps=5 format=3]
+[gd_resource type="Resource" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/item_def.gd" id="1_def"]
 [ext_resource type="Texture2D" path="res://art/items/raw_rat_meat.png" id="2_icon"]
 [ext_resource type="Texture2D" path="res://art/items/raw_rat_meat_floor.png" id="3_floor"]
 [ext_resource type="Texture2D" path="res://art/items/raw_rat_meat_hud.png" id="90_hud"]
+
+[ext_resource type="Resource" path="res://data/items/cooked_rat_meat.tres" id="96_cooked"]
 
 [resource]
 script = ExtResource("1_def")
@@ -19,3 +21,4 @@ food_seconds = 6.0
 food_sick_chance = 0.5
 food_sick_damage = 6
 food_sick_seconds = 6.0
+cooks_into = ExtResource("96_cooked")

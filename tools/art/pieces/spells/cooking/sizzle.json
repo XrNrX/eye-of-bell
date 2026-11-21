@@ -1,0 +1,339 @@
+{
+ "frames": [
+  {
+   "filename": "cooking-sizzle 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 69
+   },
+   "pivot": {
+    "x": 0.581081081081081,
+    "y": 0.391304347826087
+   },
+   "duration": 71
+  },
+  {
+   "filename": "cooking-sizzle 1.png",
+   "frame": {
+    "x": 74,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 69
+   },
+   "pivot": {
+    "x": 0.581081081081081,
+    "y": 0.391304347826087
+   },
+   "duration": 71
+  },
+  {
+   "filename": "cooking-sizzle 2.png",
+   "frame": {
+    "x": 148,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 69
+   },
+   "pivot": {
+    "x": 0.581081081081081,
+    "y": 0.391304347826087
+   },
+   "duration": 71
+  },
+  {
+   "filename": "cooking-sizzle 3.png",
+   "frame": {
+    "x": 222,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 69
+   },
+   "pivot": {
+    "x": 0.581081081081081,
+    "y": 0.391304347826087
+   },
+   "duration": 71
+  },
+  {
+   "filename": "cooking-sizzle 4.png",
+   "frame": {
+    "x": 0,
+    "y": 69,
+    "w": 74,
+    "h": 69
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 69
+   },
+   "pivot": {
+    "x": 0.581081081081081,
+    "y": 0.391304347826087
+   },
+   "duration": 71
+  },
+  {
+   "filename": "cooking-sizzle 5.png",
+   "frame": {
+    "x": 74,
+    "y": 69,
+    "w": 74,
+    "h": 69
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 69
+   },
+   "pivot": {
+    "x": 0.581081081081081,
+    "y": 0.391304347826087
+   },
+   "duration": 71
+  },
+  {
+   "filename": "cooking-sizzle 6.png",
+   "frame": {
+    "x": 148,
+    "y": 69,
+    "w": 74,
+    "h": 69
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 69
+   },
+   "pivot": {
+    "x": 0.581081081081081,
+    "y": 0.391304347826087
+   },
+   "duration": 71
+  },
+  {
+   "filename": "cooking-sizzle 7.png",
+   "frame": {
+    "x": 222,
+    "y": 69,
+    "w": 74,
+    "h": 69
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 69
+   },
+   "pivot": {
+    "x": 0.581081081081081,
+    "y": 0.391304347826087
+   },
+   "duration": 71
+  },
+  {
+   "filename": "cooking-sizzle 8.png",
+   "frame": {
+    "x": 0,
+    "y": 138,
+    "w": 74,
+    "h": 69
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 69
+   },
+   "pivot": {
+    "x": 0.581081081081081,
+    "y": 0.391304347826087
+   },
+   "duration": 71
+  },
+  {
+   "filename": "cooking-sizzle 9.png",
+   "frame": {
+    "x": 74,
+    "y": 138,
+    "w": 74,
+    "h": 69
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 69
+   },
+   "pivot": {
+    "x": 0.581081081081081,
+    "y": 0.391304347826087
+   },
+   "duration": 71
+  },
+  {
+   "filename": "cooking-sizzle 10.png",
+   "frame": {
+    "x": 148,
+    "y": 138,
+    "w": 74,
+    "h": 69
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 69
+   },
+   "pivot": {
+    "x": 0.581081081081081,
+    "y": 0.391304347826087
+   },
+   "duration": 71
+  },
+  {
+   "filename": "cooking-sizzle 11.png",
+   "frame": {
+    "x": 222,
+    "y": 138,
+    "w": 74,
+    "h": 69
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 74,
+    "h": 69
+   },
+   "sourceSize": {
+    "w": 74,
+    "h": 69
+   },
+   "pivot": {
+    "x": 0.581081081081081,
+    "y": 0.391304347826087
+   },
+   "duration": 71
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "cooking-sizzle.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 296,
+   "h": 207
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 43,
+   "y": 27
+  },
+  "frameTags": [
+   {
+    "name": "cooking-sizzle",
+    "from": 0,
+    "to": 11,
+    "direction": "forward"
+   }
+  ]
+ }
+}

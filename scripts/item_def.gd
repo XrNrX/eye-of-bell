@@ -64,6 +64,7 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export var food_sick_seconds := 0.0
 
 @export_group("Camp")
+@export var cooks_into: Resource  # Raw food: the ItemDef it becomes when cooked at a camp fire (camp.gd: the Cook button or clicking it on the fire). Cooking keeps the count.
 @export var makes_camp := false  # A bedroll: using it (from a hand, a quick slot or the pack) makes camp if the party may (Party.camp_refusal), and is spent only then.
 
 @export_group("Resurrection")
@@ -122,6 +123,11 @@ static func allowed_in_hand(item_type: Type) -> bool:
 ## The icon for the party panel's hand and quick slots.
 func hud_texture() -> Texture2D:
 	return hud_icon if hud_icon else icon
+
+
+## Can this be cooked at a camp fire (has a cooks_into)?
+func can_cook() -> bool:
+	return cooks_into != null
 
 
 ## A food (see the Food group): eaten, it heals over time.

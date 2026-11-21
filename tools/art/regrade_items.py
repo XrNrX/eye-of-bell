@@ -48,7 +48,12 @@ TORCH_WOOD = {"curse_300": "bone_500", "curse_500": "wood_500", "curse_700": "wo
 # The mana potion's silvery-blue liquid snapped to curse green (the enemy's colour): it is bruised violet instead (arcane, never the curse's green).
 MANA_POTION = {"curse_300": "bruise_500", "curse_500": "bruise_700", "curse_700": "bruise_900"}
 
+# Cooked food (PixelLab drew the meat raw pink-purple and the toast bright orange, and put curse green on both): browns and dull golds.
+COOKED_MEAT = {"blood_500": "leather_400", "blood_700": "wood_500", "bruise_700": "wood_700", "bruise_900": "soil_900", "curse_300": "bone_500", "bone_300": "bone_500"}
+TOASTED = {"torch_300": "torch_500", "torch_500": "leather_400", "torch_700": "wood_500", "bruise_900": "soil_900", "blood_500": "rust_500", "blood_700": "rust_700", "curse_300": "torch_500"}
+
 REMAPS = {
+    "cooked_rat_meat": COOKED_MEAT, "toasted_bread": TOASTED,
     "stale_bread": GRIM_FOOD, "hard_cheese": GRIM_CHEESE,
     "short_sword": PLAIN_STEEL, "long_sword": PLAIN_STEEL, "flail": FLAIL_STEEL, "bow": BOW_WOOD, "arrow": PLAIN_STEEL, "dagger": PLAIN_STEEL, "mace": PLAIN_STEEL, "war_hammer": PLAIN_STEEL, "darts": PLAIN_STEEL,
     "bear_trap": RUSTY_TRAP, "bear_trap_armed": RUSTY_TRAP_ARMED,
@@ -58,7 +63,7 @@ REMAPS = {
 # double it. (The skeletons used to be listed here; their untouched copies in pieces/regrade_src/monsters are gone.)
 MONSTERS = {}
 # Hand and quick-slot icons made natively at 32x32 (tools/art/pieces/items32/): already outlined and steel-grey, so left alone.
-NATIVE32 = {"short_sword", "long_sword", "flail", "slingshot", "stone", "bow", "arrow", "war_hammer", "mace", "dagger", "darts", "bear_trap", "torch", "candle", "oil_flask", "mana_potion", "bedroll"}
+NATIVE32 = {"short_sword", "long_sword", "flail", "slingshot", "stone", "bow", "arrow", "war_hammer", "mace", "dagger", "darts", "bear_trap", "torch", "candle", "oil_flask", "mana_potion", "bedroll", "cooked_rat_meat", "toasted_bread"}
 
 
 def source(rel):
@@ -87,7 +92,7 @@ def outlined(img):
 
 # Floor sprites of the items that were hard to see on a dark floor (under about 2.3:1 at two tiles): their dark pixels are lifted
 # one step and the lit top-left edge gets a pale rim just inside the outline.
-LIFT_FLOOR = {"bedroll", "mace", "key", "darts", "spellbook", "dried_meat", "raw_rat_meat", "withered_apple", "holy_symbol", "war_hammer", "leather_armour"}
+LIFT_FLOOR = {"cooked_rat_meat", "toasted_bread", "bedroll", "mace", "key", "darts", "spellbook", "dried_meat", "raw_rat_meat", "withered_apple", "holy_symbol", "war_hammer", "leather_armour"}
 LIFT = {"stone_800": "stone_700", "stone_700": "stone_500", "stone_500": "stone_300", "wood_700": "wood_500", "wood_500": "leather_400",
         "rust_700": "rust_500", "rust_500": "rust_300", "moss_700": "moss_500", "soil_900": "wood_700", "bruise_700": "bruise_500",
         "blood_700": "blood_500", "curse_700": "curse_500"}

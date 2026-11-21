@@ -8,6 +8,11 @@ extends CanvasLayer
 ## Party.camping, which pauses every burn timer (Party._tick_lights, light_field.gd) and the slow mana regeneration. The end saves the game
 ## (not after an interruption; SaveGame refuses the test room and built levels).
 ##
+## **Cooking (7h.3):** while camped, food with a `cooks_into` (raw rat meat, mouldy bread) can be cooked: the COOK button cooks every such stack the
+## party carries, one by one (COOK_STEP s apart, each with a sizzle and a log line), or hold the food on the cursor and click the fire. Cooked
+## food heals more and faster and carries no sickness (data/items/cooked_rat_meat.tres, toasted_bread.tres). A cook may burn the food
+## (BURN_CHANCE): the same result and a line that says so.
+##
 ## A bedroll is a button: click it and that hero's pack and character sheet open (the inventory pauses the game, and so the camp). A
 ## hero who can level up will say so there once levelling exists (Party.level_up_ready, Phase 7i: nothing yet).
 ##
@@ -17,8 +22,13 @@ extends CanvasLayer
 const UiLayout := preload("res://scripts/ui_layout.gd")
 const Events := preload("res://scripts/game_events.gd")
 const SaveGame := preload("res://scripts/save_game.gd")
+const ItemStack := preload("res://scripts/item_stack.gd")
+const CombatRules := preload("res://scripts/combat_rules.gd")
 
 const REST_SECONDS := 30.0
+const COOK_STEP := 0.8          # Seconds between one stack and the next when cooking everything.
+const BURN_CHANCE := 0.15       # A cosmetic mishap: the food is cooked all the same, and the line says it was burnt.
+const SIZZLE_SCALE := 1.1
 const MOVE_LOCK := 0.35         # After the rest ends, a held movement key must not walk the party at once.
 const DIR := "res://art/camp/"
 const FIRE_AT := Vector2(208, 140)   # Where the fire stands in the camp screen (view units, 416x260).
@@ -47,6 +57,13 @@ var picture: Control
 var status: Label
 var beds := []          # [{root, bed, portrait, name, hp_fill, mana_fill, note}] by hero position
 var stop_button: Button
+var cook_button: Button
+var fire_hit: Control   # The fire as a click target (food held on the cursor).
+var _cook_queue := []   # Entries still to cook ({stack, member, where, index}), a stack every COOK_STEP.
+var _cook_wait := 0.0
+var sizzles := []       # [{t}] sizzle animations playing over the fire
+var sizzle_sheet: Texture2D
+var sizzle_info := {"frames": 12, "fps": 14.0, "frame_w": 74, "frame_h": 69}
 var textures := {}
 var flame_sheet: Texture2D
 var flame_info := {"frames": 8, "fps": 10.0, "frame_w": 48, "frame_h": 76}
@@ -105,7 +122,9 @@ func _process(delta: float) -> void:
 		return
 	elapsed += delta
 	rest_to(minf(1.0, elapsed / REST_SECONDS))
+	_tick_cooking(delta)
 	_refresh_beds()
+	_refresh_cook_button()
 	picture.queue_redraw()
 	if elapsed >= REST_SECONDS:
 		end(false)
@@ -132,6 +151,8 @@ func end(interrupted := false) -> void:
 	party.camping = false
 	start_hp.clear()
 	start_mana.clear()
+	_cook_queue.clear()
+	sizzles.clear()
 	if root != null:
 		root.visible = false
 	for node in _hidden:
@@ -207,10 +228,33 @@ func _build_screen() -> void:
 	status.size = Vector2(root.size.x, 10)
 	status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	root.add_child(status)
+	cook_button = Button.new()
+	cook_button.text = "COOK"
+	cook_button.size = Vector2(100, 16)
+	cook_button.position = Vector2(root.size.x * 0.5 - 104.0, root.size.y - 32.0)
+	cook_button.focus_mode = Control.FOCUS_NONE
+	cook_button.add_theme_font_size_override("font_size", 8)
+	cook_button.tooltip_text = "Cook every raw food the party carries."
+	cook_button.pressed.connect(func(): cook_all())
+	root.add_child(cook_button)
+	fire_hit = Control.new()
+	fire_hit.position = FIRE_AT + Vector2(-54, -78)
+	fire_hit.size = Vector2(108, 104)
+	fire_hit.mouse_filter = Control.MOUSE_FILTER_STOP
+	fire_hit.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+	fire_hit.tooltip_text = "Click food on the fire to cook it."
+	fire_hit.gui_input.connect(_fire_input)
+	root.add_child(fire_hit)
+	if ResourceLoader.exists("res://art/spells/cooking/sizzle_sheet.png"):
+		sizzle_sheet = load("res://art/spells/cooking/sizzle_sheet.png")
+	if sizzle_sheet != null and FileAccess.file_exists("res://art/spells/cooking/sizzle_sheet.json"):
+		var info = JSON.parse_string(FileAccess.get_file_as_string("res://art/spells/cooking/sizzle_sheet.json"))
+		if info is Dictionary:
+			sizzle_info = info
 	stop_button = Button.new()
 	stop_button.text = "STOP RESTING"
 	stop_button.size = Vector2(112, 16)
-	stop_button.position = Vector2((root.size.x - 112.0) * 0.5, root.size.y - 32.0)
+	stop_button.position = Vector2(root.size.x * 0.5 + 4.0, root.size.y - 32.0)
 	stop_button.add_theme_font_size_override("font_size", 8)
 	stop_button.focus_mode = Control.FOCUS_NONE
 	stop_button.pressed.connect(stop)
@@ -354,3 +398,134 @@ func _draw_fire() -> void:
 	if kindling != null:
 		var ks := Vector2(kindling.get_width(), kindling.get_height()) * s * 0.7
 		picture.draw_texture_rect(kindling, Rect2(FIRE_AT + Vector2(-ks.x * 0.5, 12.0 - ks.y * 0.4), ks), false)
+	if sizzle_sheet != null:
+		var zw := float(sizzle_info.frame_w)
+		var zh := float(sizzle_info.frame_h)
+		for z in sizzles:
+			var frame := int(z.t * float(sizzle_info.fps))
+			if frame < int(sizzle_info.frames):
+				var anchor := FIRE_AT + Vector2(0, -8)  # The frame's anchor (43, 27) sits just above the logs.
+				picture.draw_texture_rect_region(sizzle_sheet, Rect2(anchor - Vector2(43.0, 27.0) * SIZZLE_SCALE, Vector2(zw, zh) * SIZZLE_SCALE), Rect2(frame * zw, 0, zw, zh))
+
+
+# --------------------------------------------------------------------------
+# Cooking (7h.3)
+# --------------------------------------------------------------------------
+
+## Every stack of food the party carries that can be cooked (hands, packs and quick slots, the fallen's too): [{stack, member, where, index}].
+func cookables() -> Array:
+	var out := []
+	if party == null:
+		return out
+	for m in party.members:
+		for i in m.hands.size():
+			if m.hands[i] != null and m.hands[i].def.can_cook():
+				out.append({"stack": m.hands[i], "member": m, "where": "hand", "index": i})
+		for i in m.backpack.size():
+			if m.backpack[i] != null and m.backpack[i].def.can_cook():
+				out.append({"stack": m.backpack[i], "member": m, "where": "pack", "index": i})
+		for i in m.quick.size():
+			if m.quick[i] != null and m.quick[i].def.can_cook():
+				out.append({"stack": m.quick[i], "member": m, "where": "quick", "index": i})
+	return out
+
+
+## How many raw items (not stacks) could be cooked now.
+func cookable_count() -> int:
+	var n := 0
+	for e in cookables():
+		n += e.stack.count
+	return n
+
+
+## The COOK button: cook everything raw the party carries, a stack at a time. Returns how many stacks are queued (0 outside a camp).
+func cook_all() -> int:
+	if not active:
+		return 0
+	_cook_queue = cookables()
+	_cook_wait = 0.0   # The first one at once.
+	_refresh_cook_button()
+	return _cook_queue.size()
+
+
+func _tick_cooking(delta: float) -> void:
+	if not _cook_queue.is_empty():
+		_cook_wait -= delta
+		if _cook_wait <= 0.0:
+			_cook_next()
+			_cook_wait = COOK_STEP
+	for z in sizzles:
+		z.t += delta
+	sizzles = sizzles.filter(func(z): return int(z.t * float(sizzle_info.fps)) < int(sizzle_info.frames))
+
+
+## Cook the next queued stack, if it is still where it was (the player may have moved it meanwhile).
+func _cook_next() -> void:
+	while not _cook_queue.is_empty():
+		var e: Dictionary = _cook_queue.pop_front()
+		var m = e.member
+		var here = null
+		match e.where:
+			"hand": here = m.hands[e.index]
+			"pack": here = m.backpack[e.index]
+			"quick": here = m.quick[e.index]
+		if here == e.stack and here.def.can_cook():
+			var cooked := ItemStack.of(here.def.cooks_into, here.count)
+			match e.where:
+				"hand": m.hands[e.index] = cooked
+				"pack": m.backpack[e.index] = cooked
+				"quick": party.set_quick(m.slot, e.index, cooked)
+			_cooked(here.def, m)
+			return
+
+
+## Click on the fire: food held on the cursor is cooked, a held thing that will not cook is refused, an empty hand is told what to do.
+func _fire_input(event: InputEvent) -> void:
+	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		return
+	var cursor := get_tree().get_first_node_in_group("cursor")
+	if cursor == null:
+		return
+	get_viewport().set_input_as_handled()
+	cook_held(cursor)
+
+
+## The cursor's held stack goes on the fire. Returns true if it was cooked.
+func cook_held(cursor: Node) -> bool:
+	if cursor.held == null:
+		get_tree().call_group("hud", "show_message", "Hold food to cook it.")
+		return false
+	if not cursor.held.def.can_cook():
+		get_tree().call_group("hud", "show_message", "That will not cook.")
+		return false
+	var raw: Resource = cursor.held.def
+	cursor.hold(ItemStack.of(raw.cooks_into, cursor.held.count))
+	var cook = null
+	for m in party.members:
+		if m.is_alive():
+			cook = m
+			break
+	_cooked(raw, cook, -1)
+	return true
+
+
+## One stack has been cooked: the sizzle (picture and sound), the log line (a cook may burn it), and the news.
+func _cooked(raw: Resource, cook, hero_index := -2) -> void:
+	sizzles.append({"t": 0.0})
+	get_tree().call_group("audio", "play", "sizzle")
+	var who: String = cook.short_name() if cook != null else "Someone"
+	var food: String = raw.display_name.to_lower().replace("raw ", "")
+	var burnt: bool = CombatRules.rng().randf() < BURN_CHANCE
+	get_tree().call_group("hud", "show_message", ("%s burns the %s. Nobody mentions it." if burnt else "%s cooks the %s.") % [who, food])
+	var hero: int = hero_index
+	if hero == -2:
+		hero = cook.hero_index if cook != null else -1
+	Events.send(get_tree(), "food_cooked", [raw, hero])
+
+
+func _refresh_cook_button() -> void:
+	if cook_button == null:
+		return
+	var n := cookable_count()
+	cook_button.text = "COOK (%d)" % n if n > 0 else "NOTHING TO COOK"
+	cook_button.disabled = n == 0 or not _cook_queue.is_empty()

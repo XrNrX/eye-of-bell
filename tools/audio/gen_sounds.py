@@ -233,6 +233,13 @@ def trap_snap():
     return finish(mix(clack, thud(140, 60, 0.06, 0.25, 47, 0.8, 800)), 0.85)
 
 
+def sizzle():
+    """Food on the fire: a rising hiss of noise with a handful of small pops and spits over it."""
+    hiss = gain(swell(bandpass(noise(0.9, 61), 2500, 8500), 0.08, 0.55), 0.55)
+    pops = mix(*[(gain(decay(bandpass(noise(0.04, 70 + i), 1400, 6500), 0.007), 0.7), 0.08 + 0.12 * i) for i in range(6)])
+    return finish(mix(hiss, pops), 0.5)
+
+
 def pickup():
     return finish(mix(decay(osc(660, 0.1), 0.05), (decay(osc(990, 0.14), 0.07), 0.06)), 0.45)
 
@@ -371,7 +378,7 @@ SOUNDS = {
     "turn": (turn, None), "bump": (bump, None),
     "door_open": (door_open, None), "door_close": (door_close, None), "door_locked": (door_locked, None),
     "unlock": (unlock, None), "lever": (lever, None), "plate": (plate, None),
-    "trap_set": (trap_set, None), "trap_snap": (trap_snap, None),
+    "trap_set": (trap_set, None), "trap_snap": (trap_snap, None), "sizzle": (sizzle, None),
     "pickup": (pickup, None), "drop": (drop, None),
     "swing": (swing, None), "whiff": (whiff, None), "hit": (hit, None), "throw": (throw, None),
     "crit_hit": (crit_hit, None), "crit_hurt": (crit_hurt, None), "fumble": (fumble, None),

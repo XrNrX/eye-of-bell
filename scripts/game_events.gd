@@ -57,6 +57,9 @@ signal oil_ignited(cell: Vector2i)
 signal camp_made
 signal camp_ended(interrupted: bool)
 
+## Food was cooked at a camp fire (Camp.cook_*): def is the raw ItemDef it started as, hero the hero_index who carried it (-1: the cursor's).
+signal food_cooked(def: Resource, hero: int)
+
 # Sent by Party.hurt, Party.cast (mana_low) and the fight tracker.
 signal hero_hurt(hero: int, amount: int, source: String)  # Sent by Party.hurt: a hero lost HP (source: "monster", "sickness"...).
 signal fight_started                                      # Sent by the fight tracker (fight_tracker.gd): the first blow, or a monster noticed the party.
