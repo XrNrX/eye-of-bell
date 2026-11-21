@@ -295,6 +295,24 @@ func _check_game() -> void:
 	check("the help shows the fight state", tools.help_label.text.contains("FIGHT  OFF"))
 	press.call(KEY_H)
 	check("H hides it again", not tools.help.visible)
+	# Camp survival: a bedroll in front of the station, ash where the party rests, the wound key, the free camp key and the status line.
+	var wood_pile = dungeon.item_at(Vector2i(21, 19))
+	check("the camp survival station has a bedroll in front of it and ash on the camp spot", wood_pile != null and wood_pile.def.makes_camp and wood_pile.count == 3
+			and DungeonMap.camp_spot_at(Vector2i(21, 20)) and get_nodes_in_group("camp_spot_marks").size() == 1)
+	check("the help shows whether the party may camp", tools.help_label.text.contains("CAMP   "))
+	press.call(KEY_COMMA)
+	var wounded := true
+	for m in party.members:
+		wounded = wounded and m.hp < m.def.max_hp and m.mana == 0.0 and m.sick_left > 0.0
+	check(", wounds, drains and sickens the party for the camp test", wounded)
+	var camp_node: Node = get_first_node_in_group("camp")
+	press.call(KEY_PERIOD)
+	check(". makes camp without a bedroll when the party may, and the help says it is resting", camp_node != null and camp_node.active and party.camping)
+	camp_node._process(31.0)
+	var healed := true
+	for m in party.members:
+		healed = healed and m.hp == m.def.max_hp
+	check("and the rest heals everyone and ends", healed and not camp_node.active and not party.camping)
 	press.call(KEY_G)
 	check("G god mode", party.god_mode)
 	var m0 = get_nodes_in_group("monsters")[0]

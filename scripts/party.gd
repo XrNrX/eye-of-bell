@@ -29,6 +29,9 @@ const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
 const FightTracker := preload("res://scripts/fight_tracker.gd")
 const MonsterTiers := preload("res://scripts/monster_tiers.gd")
 const LightConfig := preload("res://scripts/light_config.gd")
+const CAMP_MONSTER_REACH := 4   # No living monster within this many tiles (a square) when making camp...
+const CAMP_SIGHT_REACH := 12    # ...or in sight, up to this far.
+const CAMP_AMBUSH_REACH := 2    # ...and no armed ambush trigger this close.
 const NO_CELL := Vector2i(-1, -1)
 const MISSILE_RANGE := 4  # How many tiles down the corridor ahead a scroll's missile reaches.
 const QUICK_SLOTS := 2        # Quick slots per member (see use_quick), shown under their portrait.
@@ -58,6 +61,7 @@ signal wiped
 
 var flames_out := false   # A curse zone has put the party's held flames out (curse_zones.gd; see snuffed).
 var sputter_left := 0.0   # Seconds a held flame still has before it goes out in a curse zone (0: not sputtering): the light flickers hard.
+var camping := false   # The party is resting at a camp (camp.gd): burn timers, meals and slow mana regeneration wait.
 var god_mode := false  # Debug (the test room's G key): monsters' blows land on nobody.
 
 ## Hero definitions (CharacterDef .tres), in slot order.
@@ -191,9 +195,12 @@ func _process(delta: float) -> void:
 				m.spell_wait.erase(spell)
 		for i in QUICK_SLOTS:
 			m.quick_cooldown[i] = maxf(0.0, m.quick_cooldown[i] - delta)
-		_tick_food(m, delta)
+		if not camping:  # (A camp settles the meal, the sickness and the burn timers itself: Camp.begin / Camp.rest.)
+			_tick_food(m, delta)
 		if not m.is_alive():
 			m.shaken_left = 0.0  # Dying ends it.
+		elif camping:
+			pass  # The camp raises mana evenly over the rest (camp.gd), so the slow regeneration waits.
 		elif m.shaken_left > 0.0:
 			m.shaken_left -= delta
 			if m.shaken_left <= 0.0:
@@ -204,7 +211,8 @@ func _process(delta: float) -> void:
 		for b in m.buffs:
 			b.left -= delta
 		m.buffs = m.buffs.filter(func(b): return b.left > 0.0)
-		_tick_lights(m, delta)
+		if not camping:  # "Lights do not burn down during a rest. The fire is the light."
+			_tick_lights(m, delta)
 	_check_light_level()
 
 
@@ -1829,6 +1837,8 @@ func use_item(slot: int, def: Resource) -> Dictionary:
 	var m := member(slot)
 	if m == null or def == null or def.type != ItemDef.Type.CONSUMABLE:
 		return {"used": false, "message": "", "close": false}
+	if def.makes_camp:  # Makes camp for the whole party, so it needs no living user and no target.
+		return _bedroll(m)
 	if def.revive_percent > 0:  # A Scroll of Resurrection is read on a fallen hero's portrait, not by its holder.
 		return {"used": false, "close": false, "message": "The scroll needs the fallen." if fallen().is_empty() \
 				else "Click a fallen hero's portrait with it."}
@@ -1845,6 +1855,50 @@ func use_item(slot: int, def: Resource) -> Dictionary:
 	if def.spell_damage_max > 0:
 		return _read_scroll(m, def)
 	return {"used": false, "message": "Nothing happens.", "close": false}
+
+
+# --------------------------------------------------------------------------
+# Making camp (roadmap 7h.2; the rest itself is camp.gd)
+# --------------------------------------------------------------------------
+
+## "" if the party may make camp where it stands, else the line that says why not (narrator voice, 35 characters). The rules
+## (docs/combat_design.md "Making camp"): not in a fight, no living monster within CAMP_MONSTER_REACH tiles or in sight, and no armed
+## ambush trigger within CAMP_AMBUSH_REACH tiles.
+func camp_refusal() -> String:
+	if camping:
+		return "The party is already resting."
+	if fight != null and fight.in_fight:
+		return "Not in the middle of a fight."
+	if player == null:
+		return ""
+	var here: Vector2i = player.cell
+	for monster in get_tree().get_nodes_in_group("monsters"):
+		if not is_instance_valid(monster) or monster.dying or monster.hp <= 0:
+			continue
+		var d: Vector2i = (monster.cell - here).abs()
+		if maxi(d.x, d.y) <= CAMP_MONSTER_REACH:
+			return "Something is too close to rest."
+		if maxi(d.x, d.y) <= CAMP_SIGHT_REACH and DungeonMap.has_line_of_sight(monster.cell, here):
+			return "Something is watching."
+	if DungeonMap.ambush_trigger_near(here, CAMP_AMBUSH_REACH):
+		return "Something waits close by."
+	return ""
+
+
+## A bedroll used by `m` (from a hand, a quick slot or the pack): makes camp if the party may. Spent only when it does. The caller takes
+## one away when `used`; `close` shuts the inventory so the camp shows.
+func _bedroll(m: Member) -> Dictionary:
+	var why := camp_refusal()
+	if why == "":
+		var camp = get_tree().get_first_node_in_group("camp")
+		if camp == null:
+			why = "There is nowhere to rest."
+		elif camp.begin():
+			return {"used": true, "message": "The party makes camp.", "close": true}
+		else:
+			why = "Nobody is left to rest."
+	_say(why)
+	return {"used": false, "message": why, "close": false}
 
 
 ## The heroes at 0 HP.

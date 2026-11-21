@@ -52,6 +52,11 @@ signal left_curse_zone(id: String)
 ## A slick of oil caught fire on this tile (oil_field.gd): a torch, a swing, a Fireball or a thrown torch touched it.
 signal oil_ignited(cell: Vector2i)
 
+## The party made camp (Camp.begin: bedroll was used where it may be). camp_ended: the rest is over, because it ran its 30 s, the player
+## stopped it or moved (interrupted false), or a fight broke it (interrupted true).
+signal camp_made
+signal camp_ended(interrupted: bool)
+
 # Sent by Party.hurt, Party.cast (mana_low) and the fight tracker.
 signal hero_hurt(hero: int, amount: int, source: String)  # Sent by Party.hurt: a hero lost HP (source: "monster", "sickness"...).
 signal fight_started                                      # Sent by the fight tracker (fight_tracker.gd): the first blow, or a monster noticed the party.

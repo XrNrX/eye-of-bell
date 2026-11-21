@@ -297,3 +297,27 @@ Roadmap 7l.5; the numbers are in `docs/design/expansion_design.md` section 2 and
   about 20 damage (+6 and the burning) for one flask, one trap and 6 mana. Intended: the best trick in the game.
 - **Saving:** slicks and burning tiles (with the time left) are saved under the dungeon's `oil`; doused and burning monsters ride on their `statuses`;
   an older save has none.
+
+## Making camp
+
+Roadmap 7h.2 (the numbers are in `docs/design/expansion_design.md` section 2 "Resting"). Interrupted rests, cooking and banter are 7h.3 to 7h.5.
+
+- **Making camp.** One **Bedroll** (`data/items/bedroll.tres`, `ItemDef.makes_camp`, a consumable that stacks to 3) used from a hand, a quick slot or the
+  pack, if `Party.camp_refusal()` says "" (the log says why not and nothing is spent): not in a fight (`Party.fight.in_fight`), no living monster within
+  4 tiles (a square, `CAMP_MONSTER_REACH`) or in sight within 12 (`CAMP_SIGHT_REACH`), no armed ambush trigger within 2 (`CAMP_AMBUSH_REACH`;
+  `DungeonMap.ambush_trigger_near`). There is no tinderbox.
+- **The rest** (`scripts/camp.gd`, group `camp`, canvas layer 3 over the 3D view): the view is covered by a near-black camp screen round a small fire with
+  a bedroll for each hero (portrait on the pillow, name, HP and mana bars). For 30 s (`REST_SECONDS`) every living hero's HP (whole points) and mana climb
+  evenly from where they began to full. The dead are not raised. The corner map is hidden meanwhile.
+- **It ends** at 30 s, by the STOP RESTING button, by any step or turn (`Player.command` asks `Camp.consumes_move`; the key that did it goes no further and
+  a held key stays spent for 0.35 s) or when a fight starts (`GameEvents.camp_ended(true)`). Everything gained is kept. **A camp that ends by itself or by
+  Stop saves the game** (`SaveGame.save`; refused in the test room and built levels, quietly). An interrupted one does not.
+- **Beginning a camp also:** clears the Cleric's "shaken", everyone's sickness and their spell recasts, gives the rest of a running meal's healing at once,
+  and starts `Party.camping`: burn timers stop (held lights `_tick_lights`, lights lying burning `light_field.gd`), meals and the slow mana regeneration wait.
+- **Bedrolls** are buttons: a click opens that hero's pack and character sheet (`inventory.show_screen`, which pauses the game and so the camp). A hero who can
+  level up will say so on their bedroll once levelling exists (`Party.level_up_ready`, Phase 7i: nothing yet).
+- **Camp spots** are STRUCTURES entries `{"cell", "kind": "camp_spot"}` (old ash on the floor, `art/camp/ash.png`; `DungeonMap.camp_spot_at`). They carry no rule yet:
+  the interruption chances (3% at a camp spot, 6% in a dead end, 12% in the open, rolled at 10, 20 and 30 s) are 7h.4. The map symbol for a camp spot is not drawn yet.
+- **News:** `GameEvents.camp_made` and `camp_ended(interrupted)`. Test room: the camp survival station (T "Campfire"): bedroll in front, ash on the spot, a 3D camp
+  (`camp_site.gd`) and the keys `,` (wound, drain and sicken the party) and `.` (make camp without bedroll); the H overlay shows `CAMP MAY CAMP` or why not.
+

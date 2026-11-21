@@ -297,6 +297,9 @@ func _process(_delta: float) -> void:
 func command(kind: String) -> void:
 	if tween and tween.is_running():
 		return
+	var camp = get_tree().get_first_node_in_group("camp")
+	if camp != null and camp.consumes_move():  # Any step or turn ends a rest (and the key that did it goes no further).
+		return
 	match kind:
 		"forward": _try_move(DIRS[facing])
 		"back": _try_move(DIRS[(facing + 2) % 4])

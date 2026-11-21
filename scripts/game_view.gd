@@ -19,6 +19,7 @@ const CurseVignette := preload("res://scripts/curse_vignette.gd")
 const EnemyBars := preload("res://scripts/enemy_bars.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const UiScale := preload("res://scripts/ui_scale.gd")
+const Camp := preload("res://scripts/camp.gd")
 
 var player: Node
 
@@ -46,6 +47,7 @@ func _ready() -> void:
 		_view_scale_changed(get_meta("view_scale", 1))
 	# Debug builds only: the test room's tools (F12, debug keys). The files are left out of a release export, so look them up
 	# by path instead of preloading them.
+	(owner if owner != null else get_tree().root).add_child.call_deferred(Camp.new())  # The camp screen (a bedroll), over the view and under the frame.
 	(owner if owner != null else get_tree().root).add_child.call_deferred(CurseVignette.new())  # The curse zone's edge glow (over the view, under the frame).
 	if DungeonMap.test_room_available():
 		var tools: Script = load(DungeonMap.TOOLS_PATH)

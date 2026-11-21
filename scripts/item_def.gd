@@ -63,6 +63,9 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export var food_sick_damage := 0
 @export var food_sick_seconds := 0.0
 
+@export_group("Camp")
+@export var makes_camp := false  # A bedroll: using it (from a hand, a quick slot or the pack) makes camp if the party may (Party.camp_refusal), and is spent only then.
+
 @export_group("Resurrection")
 ## A Scroll of Resurrection: read on a fallen hero's portrait. revive_percent is the share of max HP
 ## they return with (a divine caster, the Cleric, returns with full HP but is shaken: no mana and no

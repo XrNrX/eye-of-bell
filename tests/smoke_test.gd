@@ -14,6 +14,7 @@ const Settings := preload("res://scripts/settings.gd")
 const LightConfig := preload("res://scripts/light_config.gd")
 const SaveGame := preload("res://scripts/save_game.gd")
 const ItemStack := preload("res://scripts/item_stack.gd")
+const ItemDef := preload("res://scripts/item_def.gd")
 
 const SAVE_PATH := "user://smoke_test_save.json"
 const SPOT := Vector2i(6, 13)   # West end of the long corridor; facing east (3) there are six open tiles ahead.
@@ -25,7 +26,7 @@ const PLAIN_DOOR := Vector2i(16, 6)
 const LEVER := Vector3i(19, 7, 0)  # The north lever of gate_n: cell (19,7), side 0.
 
 const EVENTS := ["monster_killed", "monster_held", "monster_released", "trap_triggered", "light_out", "light_changed", "hero_hurt", "mana_low", "hero_died", "hero_revived", "item_picked_up", "door_unlocked", "lever_pulled", "wall_broken",
-		"wall_purified", "puzzle_solved", "level_completed", "entered_curse_zone", "left_curse_zone", "oil_ignited"]
+		"wall_purified", "puzzle_solved", "level_completed", "entered_curse_zone", "left_curse_zone", "oil_ignited", "camp_made", "camp_ended"]
 const CRACKED_WALL := Vector2i(2, 6)
 const THICK_CORRUPTION := Vector2i(16, 4)  # Purifying it fires the puzzle "nook_blessing".
 const SWORD_TILE := Vector2i(6, 10)        # The short sword in front of the start.
@@ -85,6 +86,7 @@ func _init() -> void:
 	await _check_sconces()
 	await _check_curse_zones()
 	await _check_floor_light()
+	await _check_camp()
 	await _check_curse_look()
 	_check_death_gas()
 	_check_inventory_quick()
@@ -1590,6 +1592,148 @@ func _check_floor_light() -> void:
 	events["puzzle_solved"].clear()  # (The cave's puzzle was solved on purpose above.)
 	CombatRules.rng().state = dice_state
 
+## Roadmap 7h.2: making camp. A bedroll, the refusals, the rest (even climb, Stop, an interruption, a step), what a camp clears, paused burn
+## timers, the bedrolls and the events.
+func _check_camp() -> void:
+	_rest_everyone()
+	dungeon.clear_monsters()
+	party.fight.in_fight = false
+	player.restore(Vector2i(6, 13), 3)
+	await create_timer(0.2).timeout
+	var camp: Node = get_first_node_in_group("camp")
+	var wood: Resource = load("res://data/items/bedroll.tres")
+	var cleric = party.members.filter(func(m): return m.class_id() == "cleric")[0]
+	var fighter = party.members.filter(func(m): return m.class_id() == "fighter")[0]
+	var mage = party.members.filter(func(m): return m.class_id() == "mage")[0]
+	var thief = party.members.filter(func(m): return m.class_id() == "thief")[0]
+	check("camp: a bedroll is a consumable that stacks to 3 and makes camp, and the camp node is in the game", wood.type == ItemDef.Type.CONSUMABLE and wood.max_stack == 3 and wood.makes_camp and camp != null)
+	if camp == null:
+		return
+	var ended_before: int = events.camp_ended.size()
+	var made_before: int = events.camp_made.size()
+
+	# The refusals. Nothing is spent and nothing starts.
+	check("camp: a quiet tile is fine", party.camp_refusal() == "")
+	_monster("skeleton", Vector2i(9, 13), 20)
+	check("camp: a living monster within 4 tiles refuses it (%s)" % party.camp_refusal(), party.camp_refusal() == "Something is too close to rest.")
+	var refused: Dictionary = party.use_item(fighter.slot, wood)
+	check("camp: using the bedroll then spends nothing and starts nothing", not refused.used and not party.camping and not camp.active and events.camp_made.size() == made_before and refused.message == "Something is too close to rest.")
+	dungeon.clear_monsters()
+	_monster("skeleton", Vector2i(12, 13), 20)  # Six tiles down the corridor, in plain sight.
+	check("camp: a monster in sight, beyond 4 tiles, refuses it (%s)" % party.camp_refusal(), party.camp_refusal() == "Something is watching.")
+	dungeon.clear_monsters()
+	_monster("skeleton", Vector2i(14, 9), 20)  # In room 3: eight tiles away and walled off.
+	check("camp: a monster beyond 4 tiles and out of sight does not (%s)" % party.camp_refusal(), party.camp_refusal() == "")
+	dungeon.clear_monsters()
+	party.fight.blow()
+	check("camp: not in a fight (%s)" % party.camp_refusal(), party.camp_refusal() == "Not in the middle of a fight.")
+	party.fight.in_fight = false
+	var real_ambushes: Array = DungeonMap.AMBUSHES
+	DungeonMap.AMBUSHES = [{"trigger": Vector2i(8, 13), "text": "x", "monsters": []}]
+	check("camp: an ambush trigger within 2 tiles refuses it (%s)" % party.camp_refusal(), party.camp_refusal() == "Something waits close by.")
+	DungeonMap.AMBUSHES = [{"trigger": Vector2i(11, 13), "text": "x", "monsters": []}]
+	check("camp: one 5 tiles away does not", party.camp_refusal() == "")
+	DungeonMap.AMBUSHES = real_ambushes
+
+	# Make camp from a hand, with the party hurt, sick, drained and shaken.
+	for m in party.members:
+		m.hp = maxi(1, m.def.max_hp / 2)
+		m.mana = 0.0
+		m.sick_left = 8.0
+		m.sick_rate = 0.5
+		m.food_left = 10.0
+		m.food_rate = 0.4
+		m.spell_wait[load("res://data/spells/hold_monster.tres")] = 9.0
+	cleric.shaken_left = 20.0
+	var torch_stack: RefCounted = cleric.hands[0]
+	var burn_before: float = torch_stack.seconds_left() if torch_stack != null and torch_stack.def.is_light() else -1.0
+	fighter.hands = [ItemStack.of(wood, 2), null]
+	fighter.cooldown_left = 0.0
+	var meal_hp: int = fighter.hp
+	party.act(fighter.slot, 0)
+	check("camp: a bedroll in a hand makes camp: one is spent, the camp is on, the party is camping, camp_made once", fighter.hands[0] != null and fighter.hands[0].count == 1 and camp.active and party.camping
+			and events.camp_made.size() == made_before + 1)
+	check("camp: it cleared the Cleric's shaken, everyone's sickness and recasts, and gave the rest of a running meal at once",
+			cleric.shaken_left == 0.0 and party.members.all(func(m): return m.sick_left == 0.0 and m.food_left == 0.0 and m.spell_wait.is_empty()) and fighter.hp >= meal_hp + 3)
+	var hp_start := {}
+	var mana_start := {}
+	for m in party.members:
+		hp_start[m] = m.hp  # (the meal's healing is part of where the rest starts)
+		mana_start[m] = m.mana
+	check("camp: the camp screen shows with a bedroll for each hero", camp.root != null and camp.root.visible and camp.beds.size() == 4 and camp.beds.all(func(b): return b.root.visible))
+	party._process(0.1)
+	check("camp: while camping the slow mana regeneration waits", cleric.mana == mana_start[cleric])
+	camp._process(15.0)
+	var half_ok := true
+	for m in party.members:
+		var want: int = hp_start[m] + int(round((m.def.max_hp - hp_start[m]) * 0.5))
+		half_ok = half_ok and m.hp == want
+	check("camp: after 15 s HP is half way from where it began to full, for everyone (%d/%d for the fighter)" % [fighter.hp, fighter.def.max_hp], half_ok)
+	check("camp: and the casters' mana is half way too (%.1f of %d)" % [cleric.mana, cleric.def.max_mana], is_equal_approx(cleric.mana, cleric.def.max_mana * 0.5) and is_equal_approx(mage.mana, mage.def.max_mana * 0.5) and fighter.mana == 0.0)
+	party._process(5.0)
+	check("camp: burn timers did not run (a held torch has the same time left)", burn_before < 0.0 or is_equal_approx(torch_stack.seconds_left(), burn_before))
+	camp._process(15.1)
+	check("camp: after 30 s everyone is at full HP and mana, the rest has ended by itself, and camp_ended(false) went out once",
+			party.members.all(func(m): return m.hp == m.def.max_hp and is_equal_approx(m.mana, float(m.def.max_mana))) and not camp.active and not party.camping
+			and events.camp_ended.size() == ended_before + 1 and events.camp_ended[-1][0] == false and not camp.root.visible)
+
+	# Stop early: what was gained is kept.
+	for m in party.members:
+		m.hp = maxi(1, m.def.max_hp / 2)
+		m.mana = 0.0
+		hp_start[m] = m.hp
+	check("camp: it starts again with the stack's last bedroll", party.use_item(fighter.slot, wood).used and camp.active)
+	camp._process(10.0)
+	var third := true
+	for m in party.members:
+		third = third and absf(m.hp - (hp_start[m] + (m.def.max_hp - hp_start[m]) / 3.0)) <= 1.0
+	check("camp: after 10 s, a third of the way", third)
+	var kept: int = fighter.hp
+	camp.stop()
+	check("camp: Stop ends it and keeps what was gained, and camp_ended(false) went out", fighter.hp == kept and fighter.hp > hp_start[fighter] and not camp.active and not party.camping and events.camp_ended.size() == ended_before + 2)
+
+	# A step or turn ends a rest, and goes no further.
+	check("camp: a third camp (no bedroll)", camp.begin() and camp.active)
+	var cell_before: Vector2i = player.cell
+	player.command("forward")
+	check("camp: a step key ends it and the party does not move; a held key stays spent a moment", not camp.active and player.cell == cell_before and camp.consumes_move())
+	await create_timer(0.5).timeout
+	check("camp: after that moment the party walks again", not camp.consumes_move())
+
+	# A fight breaks it: what was gained is kept, and the event says interrupted.
+	for m in party.members:
+		m.hp = maxi(1, m.def.max_hp / 2)
+	camp.begin()
+	camp._process(10.0)
+	var gained: int = fighter.hp
+	party.fight.blow()
+	camp._process(0.1)
+	check("camp: a fight ends it as interrupted, keeping what was gained", not camp.active and not party.camping and fighter.hp >= gained and events.camp_ended[-1][0] == true)
+	party.fight.in_fight = false
+
+	# The dead are not raised; a bedroll opens its hero's pack and sheet.
+	thief.hp = 0
+	camp.begin()
+	camp._process(30.5)
+	check("camp: a fallen hero stays fallen (a camp does not raise the dead) and the others are whole", thief.hp == 0 and fighter.hp == fighter.def.max_hp)
+	camp.begin()
+	camp._refresh_beds()
+	var shown_note: String = camp.beds[thief.slot].note.text
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	camp._bed_input(click, 1)
+	var inventory: Node = get_first_node_in_group("inventory")
+	check("camp: the bedroll marks a fallen hero, and clicking a bedroll opens that hero's pack and sheet", shown_note == "FALLEN" and inventory != null and inventory.visible and inventory.focused_slot == 1)
+	inventory.visible = false
+	paused = false
+	camp.stop()
+	thief.hp = thief.def.max_hp
+	_rest_everyone()
+	player.restore(SPOT, EAST)
+	await create_timer(0.1).timeout
+	for name in ["camp_made", "camp_ended", "hero_hurt", "hero_revived", "hero_died"]:
+		events[name].clear()
 
 
 func _check_curse_look() -> void:

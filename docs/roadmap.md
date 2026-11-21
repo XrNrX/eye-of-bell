@@ -976,7 +976,7 @@ on a plate to keep a door open, then walks through.
 Place the puzzles from docs/design/expansion_design.md section 5.
 - Room 7: braziers at (18,3) and (20,3); the closet door (18,2) is
   warded until both burn. Move key two to (19,4). The closet holds three
-  potions, two flasks of oil and one firewood.
+  potions, two flasks of oil and one bedroll.
 - Room 6: a purge room. Add a plain door at (15,19). A skeleton at
   (17,20), a guard at (16,21), an acid slime at (18,19). The reliquary
   rises at (17,20) with whatever 7g has put in it (a placeholder scroll
@@ -1278,14 +1278,14 @@ Done when: players remember the legendaries by name, and at least one of them ca
 
 A place to catch your breath: make camp, heal up, cook, and let the party talk. It's the calm between scares, and the home of the quieter character moments.
 
-Updated 18 Nov from docs/design/expansion\_design.md (section 3 "7h"): one firewood makes one camp, there is no tinderbox, and camp is made by using the firewood like any other item. Camp spots are placed with 7j's remains.
+Updated 18 Nov from docs/design/expansion\_design.md (section 3 "7h"): one bedroll makes one camp, there is no tinderbox, and camp is made by using the bedroll like any other item. Camp spots are placed with 7j's remains.
 
 - [ ] 7h.1 Resting rules into the combat page
-- [ ] 7h.2 Making camp
+- [x] 7h.2 Making camp
 - [ ] 7h.3 Cooking at the fire
 - [ ] 7h.4 Interrupted rests
 - [ ] 7h.5 Campfire banter
-- [ ] 7h.6 Camp spots and firewood in floor 1
+- [ ] 7h.6 Camp spots and bedroll in floor 1
 
 **7h.1 prompt (Resting rules into the combat page)**
 
@@ -1300,7 +1300,7 @@ tinderbox.
 ```
 Add making camp, following docs/design/expansion_design.md sections 2
 and 3 "7h".
-- Firewood is an item (stacks to 3). Using it (from a hand, a quick slot
+- Bedroll is an item (stacks to 3). Using it (from a hand, a quick slot
   or the inventory) makes camp, if no living monster is within 4 tiles
   or in sight, the party is not in a fight, and no armed ambush trigger
   is within 2 tiles. Otherwise refuse with a line and spend nothing.
@@ -1314,7 +1314,7 @@ and 3 "7h".
   the map once seen. The interruption chances in section 2 depend on it.
 - Making camp saves the game. F5 and the pause menu still save.
 - GameEvents.camp_made and camp_ended(interrupted).
-- The fire from the VFX tool, the firewood and ash from PixelLab; log.
+- The fire from the VFX tool, the bedroll and ash from PixelLab; log.
 - A test-room station replacing the "not built yet" campfire.
 Run the tests.
 ```
@@ -1357,7 +1357,7 @@ fighter's "*cough* I'm hungry. Someone get a fire on." as a line that
 can prompt making camp.
 ```
 
-**7h.6:** add one or two safe-ish camp spots to the floor 1 map (cleared rooms with a door to shut), and place firewood sparingly: enough for two or three rests in total.
+**7h.6:** add one or two safe-ish camp spots to the floor 1 map (cleared rooms with a door to shut), and place bedroll sparingly: enough for two or three rests in total.
 
 Done when: making camp feels like a relief, being woken by a monster feels like a betrayal, and the campfire chats are where players get attached to the party.
 
@@ -1473,9 +1473,9 @@ Run the tests.
 
 ```
 Place the six remains from docs/design/expansion_design.md section 5:
-1 at (8,13) in the alcove: firewood. 2 at (8,9): nothing. 3 at (16,5):
+1 at (8,13) in the alcove: bedroll. 2 at (8,9): nothing. 3 at (16,5):
 a candle and Bellius's note (ask me for the text). 4 at (20,17):
-firewood, with old ash beside it (a camp spot). 5 at (16,15): it bites;
+bedroll, with old ash beside it (a camp spot). 5 at (16,15): it bites;
 a bear trap and a flask of oil (remove the loose trap at (18,14)). 6 at
 (14,19): it sits up. Run the tests.
 ```

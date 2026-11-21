@@ -301,6 +301,25 @@ static func zone_tier_violations() -> Array:
 	return out
 
 
+## Is this tile a camp spot: old ash on the floor, where a rest is rarely disturbed? A level lists them as STRUCTURES entries
+## {"cell": Vector2i, "kind": "camp_spot"} (wall_decor.gd lays the ash). Nothing else uses them yet (the interruption rolls are 7h.4).
+static func camp_spot_at(cell: Vector2i) -> bool:
+	for entry in STRUCTURES:
+		if entry.get("kind", "") == "camp_spot" and entry.cell == cell:
+			return true
+	return false
+
+
+## Is an ambush trigger tile within `reach` tiles of this one (a square)? The party may not make camp beside one. (AMBUSHES is the test
+## room's stand-in; the real ambush system will list its triggers the same way.)
+static func ambush_trigger_near(cell: Vector2i, reach: int) -> bool:
+	for a in AMBUSHES:
+		var d: Vector2i = (a.trigger - cell).abs()
+		if maxi(d.x, d.y) <= reach:
+			return true
+	return false
+
+
 ## The key of a TORCHES entry in the sconce dictionaries.
 static func sconce_key(entry) -> Vector3i:
 	return Vector3i(entry.x, entry.y, entry.z)

@@ -48,7 +48,7 @@ Traps are now set to "nothing gets past".
 
 ## 6. How far does levelling go on floor 1?
 
-There are about 15 monsters and firewood for two or three camps, and levels only land at a campfire.
+There are about 15 monsters and bedrolls for two or three camps, and levels only land at a campfire.
 
 - **a (my pick):** most parties reach the stairs at level 3, thorough ones at 4. Level 5 waits for
   floor 2.
@@ -58,7 +58,7 @@ There are about 15 monsters and firewood for two or three camps, and levels only
 
 - **a (my pick):** no. Camping saves too, but F5 and the pause menu keep working. Kinder for friends
   playing a demo.
-- **b:** yes, camps are the only save points, which makes firewood matter much more.
+- **b:** yes, camps are the only save points, which makes bedroll matter much more.
 
 ## 8. Which legendaries go on floor 1?
 

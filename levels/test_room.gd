@@ -153,7 +153,8 @@ const LEVERS := [
 
 const STRUCTURES := [
 	{"cell": Vector2i(3, 21), "kind": "arch", "axis": "z"},  # In the ambush corridor: cast a spell past it and press P to compare shadows.
-	{"cell": Vector2i(21, 21), "kind": "campfire"},  # The campfire station: fire, spit, rocks and four bedrolls (scripts/camp_site.gd). Scenery only for now.
+	{"cell": Vector2i(21, 21), "kind": "campfire"},  # The campfire station: fire, spit and four bedrolls (scripts/camp_site.gd).
+	{"cell": Vector2i(21, 20), "kind": "camp_spot"},  # Old ash where the party rests: a camp here is rarely disturbed (7h.4 will roll for it).
 ]
 
 # The item table: one of every item in data/items, two rows. (Add new items here when they exist.)
@@ -193,6 +194,8 @@ const ITEMS := [
 	{"cell": Vector2i(28, 9), "def": "res://data/items/healing_potion.tres", "count": 2},
 	{"cell": Vector2i(28, 9), "def": "res://data/items/stale_bread.tres", "count": 3},
 	{"cell": Vector2i(28, 9), "def": "res://data/items/dagger.tres"},
+	{"cell": Vector2i(21, 19), "def": "res://data/items/bedroll.tres", "count": 3},  # The camp survival station: a bedroll right in front of the T teleport.
+	{"cell": Vector2i(19, 19), "def": "res://data/items/bedroll.tres"},
 	{"cell": Vector2i(10, 34), "def": "res://data/items/torch.tres", "count": 3},  # The light room.
 	{"cell": Vector2i(14, 34), "def": "res://data/items/candle.tres", "count": 5},
 	{"cell": Vector2i(12, 35), "def": "res://data/items/oil_flask.tres", "count": 3},  # Flasks of oil: throw at the floor, at the slime, or use on a weapon; light them with a torch, a swing or a Fireball.
@@ -229,9 +232,11 @@ V = SPAWN"},
 	{"cell": Vector2i(4, 16), "side": 2, "text": "AMBUSH
 CORRIDOR"},
 	{"cell": Vector2i(12, 16), "side": 2, "text": "PUZZLE ROOM"},
-	{"cell": Vector2i(22, 16), "side": 2, "text": "CAMPFIRE
-FIRE, SPIT, 4 BEDROLLS
-SCENERY ONLY: NO CAMP YET"},
+	{"cell": Vector2i(22, 16), "side": 2, "text": "CAMP SURVIVAL
+USE A BEDROLL TO CAMP
+, WOUNDS THE PARTY
+V SPAWNS A MONSTER:
+THAT REFUSES THE CAMP"},
 	{"cell": Vector2i(29, 16), "side": 2, "text": "XP AND LEVELS
 !NOT BUILT YET"},
 	{"cell": Vector2i(35, 16), "side": 2, "text": "TRAPS
@@ -261,8 +266,10 @@ THE LEVER."},
 	{"cell": Vector2i(11, 27), "side": 2, "text": "ALTAR
 !NOT BUILT YET"},
 	{"cell": Vector2i(19, 18), "side": 0, "text": "CAMPFIRE SPOT"},
-	{"cell": Vector2i(21, 24), "side": 2, "text": "FIREWOOD
-!NOT BUILT YET"},
+	{"cell": Vector2i(21, 24), "side": 2, "text": "BEDROLLS BY THE DOOR
+. CAMPS WITHOUT ONE
+CLICK A BED ON THE
+CAMP SCREEN: ITS PACK"},
 	{"cell": Vector2i(27, 18), "side": 0, "text": "XP AND LEVELS
 !NOT BUILT YET"},
 	{"cell": Vector2i(33, 18), "side": 0, "text": "BEAR TRAP: SET

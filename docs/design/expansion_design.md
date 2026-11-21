@@ -151,7 +151,7 @@ weak, raise his mana from 12 to 14 before touching the regen again.
 
 | | Number |
 |---|---|
-| Making camp | 1 firewood. No living monster within 4 tiles or in sight. Not in a fight. |
+| Making camp | 1 bedroll. No living monster within 4 tiles or in sight. Not in a fight. |
 | A full rest | 30 s on screen. HP and mana rise evenly to full. Stop at any time and keep what you have. |
 | Also clears | The Cleric's "shaken", sickness, a running meal |
 | Does not | Raise the dead |
@@ -190,7 +190,7 @@ XP is shared. A level is applied at the next camp. Floor 1 holds 930 XP in all (
 
 | Item | Count | Where it comes from |
 |---|---|---|
-| Firewood | 3 | Remains 1, the brazier closet, remains 4 |
+| Bedroll | 3 | Remains 1, the brazier closet, remains 4 |
 | Torch (loose) | 2 | The east corridor, room 2. Plus the Cleric's. |
 | Candle (loose) | 2 | Room 3, remains 3. Plus the Cleric's two. |
 | Sconces lit at the start | 8 | The start, the long corridor's first half, the Warden's hall |
@@ -344,13 +344,13 @@ cannot walk away from.
 
 **Rules.** The numbers are in section 2. In words:
 
-- One firewood makes one camp, anywhere no monster is near. **There is no tinderbox.** Lights already light
+- One bedroll makes one camp, anywhere no monster is near. **There is no tinderbox.** Lights already light
   themselves in a hand, so a second fire-making item is only a way to be locked out of camping.
 - The view sinks to a small fire. HP and mana climb for 30 s. Stop at any time.
 - A camp clears "shaken" and sickness, applies waiting levels, and saves the game.
 - **Camp spots** are marked places (old ash on the floor, a symbol on the map once seen) where a rest is rarely
   disturbed. Anywhere else is a gamble.
-- An interrupted rest keeps what it healed and keeps its levels. The firewood is gone.
+- An interrupted rest keeps what it healed and keeps its levels. The bedroll is gone.
 - Cooking is a button in the camp view: it cooks every raw thing the party carries, one by one.
 - Lights do not burn down during a rest. The fire is the light.
 
@@ -359,11 +359,11 @@ cannot walk away from.
 - 7h.1 is a design pass; this page is it.
 - 7h.1 and 7h.2 require a tinderbox. Dropped (above).
 - 7h.2 gives camp a Rest button and the R key. R is "refill" in the test room, and the screen has no room for
-  another button. Bind nothing new: camp is made by using the firewood (from a hand, a quick slot or the
+  another button. Bind nothing new: camp is made by using the bedroll (from a hand, a quick slot or the
   inventory), like every other item.
 - 7h.2 says resting "also saves". Decision 7: it does, and F5 still works.
 - 7h.3's raw meat needs a monster to drop it. That is the plague rat.
-- 7h.4 never says an interruption cannot happen in the first seconds. Without that, firewood feels like a coin toss.
+- 7h.4 never says an interruption cannot happen in the first seconds. Without that, a bedroll feels like a coin toss.
 - Nothing says what a rest does to a held torch, to a running meal, to Hold Monster's recast or to an armed trap.
   Torches pause; the meal's remaining healing is given at once; recasts clear; traps stay armed.
 - The fight tracker (`Party.fight.in_fight`) is the "is a monster near" test's first half. Use it.
@@ -606,7 +606,7 @@ Fennick, and you may change them.
 |---|---|
 | Levelling and legendaries | Grudge's +1 attack and the Fighter's +1 at level 2 take him to 75% against a guard. The cap is 95, so nothing breaks. Penitent's Mace with "Firm hand" does not stack: the perk is Heal only. |
 | Levelling and the Warden | A level 2 rusher with a short sword takes about 18 s and loses about 35 HP from the front row. A level 3 party about 13 s and 24 HP. Both live. |
-| Levelling and camps | Three firewood means three chances to level. **Flag:** a player who burns all three early cannot apply a later level. **A waiting level is also applied at the stairs, so XP is never lost.** |
+| Levelling and camps | Three bedrolls mean three chances to level. **Flag:** a player who burns all three early cannot apply a later level. **A waiting level is also applied at the stairs, so XP is never lost.** |
 | Levelling and a dead hero | Shares the XP all the same (the simple rule). |
 | Levelling and the generator | Flat gains on top of rolled bases. A hero's Constitution changes level 1 HP only. |
 | Perks and loot | "Light fingers" multiplies drop chances by 1.5: skeleton bread 25% to 38%, rat meat 40% to 60%. |
@@ -616,7 +616,7 @@ Fennick, and you may change them.
 | The loot pop-up and legendaries | "Can't use" already shows for class limits. A legendary's row should carry its gold frame. |
 | Remains and the loot pop-up | An item from remains drops on the tile in front and uses the same pop-up. No second loot window. |
 | Weighted plates and dropping a trap | Dropping a trap in front sets it (14 Nov). **Flag:** then a trap cannot be dropped onto a plate. **A plate tile refuses a trap already ("The trap won't sit flat there."), so a trap dropped at a plate is put down as an item, and holds it.** |
-| Firewood and the campfire's light | The fire is a light source for the room (it must join `sprite_lights`). |
+| The bedroll and the campfire's light | The fire is a light source for the room (it must join `sprite_lights`). |
 
 ---
 
@@ -663,13 +663,13 @@ weapons are. Act three is the Warden, and after him the south-west, which most p
 | 3 | The wall between the two ways into room 5, (7,10) | Claw scratches on both faces, bones, a glow in the mortar. You walk past them going in. | A clue nobody reads |
 | 4 | Room 5 | A slime. Key one at (10,10). Remains 2 at (8,9): nothing. | First fight |
 | 5 | Leaving room 5 with the key, by (7,9) or (7,11) | **The giant hand** bursts from (7,10) into whichever passage you take. Grab hold. Armed by picking up the key. | **Scare one** |
-| 6 | Long corridor, alcove (8,13) | Remains 1: firewood. A bear trap lies at (6,12). The skeleton comes. | Relief, then a lesson |
+| 6 | Long corridor, alcove (8,13) | Remains 1: bedroll. A bear trap lies at (6,12). The skeleton comes. | Relief, then a lesson |
 | 7 | About here | The Cleric's torch gutters out. | The dark arrives |
 | 8 | (12,14) on | The sconces are unlit from here. | Tension |
 | 9 | East corridor | A slime. A torch lying at (15,15). Remains 5 at (16,15): it bites, and you keep the trap, plus a flask of oil. | A flinch, a tool |
 | 10 | Junction (18,15) | North to act two. South to the door. | A choice |
 | 11 | (19,17) | A skeleton guard at the locked door. | Fight |
-| 12 | Stub (20,17) | **Camp spot.** Remains 4: firewood, beside a cold fire. | **Relief.** Level 2 lands here for a rusher. |
+| 12 | Stub (20,17) | **Camp spot.** Remains 4: bedroll, beside a cold fire. | **Relief.** Level 2 lands here for a rusher. |
 
 ### Act two: the north-east (about 15 minutes, optional)
 
@@ -680,7 +680,7 @@ weapons are. Act three is the Warden, and after him the south-west, which most p
 | 15 | Room 2 after | The bow, arrows, a torch. The lever for the north gate. | Reward |
 | 16 | Room 3 by the west door | A guard and an acid slime among the weapons: long sword, mace, war hammer, a candle. | Fight, big reward |
 | 17 | Room 7 | A skeleton and an acid slime. Key two. Two cold braziers in the corners (18,3) and (20,3). | Fight |
-| 18 | Closet door (18,2) | Warded until both braziers burn. Torch, candle, Fireball, oil or a thrown torch. Inside: three potions, two oil, firewood. | **Puzzle one**, reward |
+| 18 | Closet door (18,2) | Warded until both braziers burn. Torch, candle, Fireball, oil or a thrown torch. Inside: three potions, two oil, bedroll. | **Puzzle one**, reward |
 | 19 | Nook (16,5) | **Camp spot**, two doors to shut. Remains 3: a candle and Bellius's note. | **Relief.** Level 2 or 3. |
 | 20 | Thick corrupted wall (16,4) | Two Blesses. Behind it: **Grudge**. The north gate unlatches (the puzzle that exists today). | Secret, legendary |
 | 21 | Back west: the cracked wall (2,6) | The war hammer or a Fireball. The closet behind: the safest camp on the floor, and a Scroll of Resurrection. | Secret |
@@ -702,7 +702,7 @@ weapons are. Act three is the Warden, and after him the south-west, which most p
 
 ### Why this order
 
-- **Scare, relief, reward, three times.** The hand, then firewood and the trap. The tentacles, then weapons and a
+- **Scare, relief, reward, three times.** The hand, then a bedroll and the trap. The tentacles, then weapons and a
   camp. The Warden, then the torch.
 - **No two scares touch.** The hand is at minute three, the fake-out and tentacles around minute twelve, the Warden
   at the end. The body that sits up is in act three, far from any of them.
@@ -760,8 +760,8 @@ phase, using section 5.
 | 4 | **Foundations step 9,** then **7e:** framework, braziers, runes, purge room, plates, altar (test room only) | 3 | Braziers and runes are light puzzles. The sealing built here is reused by ambushes. |
 | 5 | **7l.3 curse zones, 7l.5 oil,** the plague rat | 4 | Zones need the puzzle effect that clears them. Oil needs braziers to be worth finding. |
 | 6 | **Foundations step 10,** then **7d:** the hand, tentacles, lock-ins, clues, the double tap | 4 | Needs monster behaviours, and the seals from 7e. Take data and art from `wip/boss-ambush`. |
-| 7 | **7j** fallen adventurers | - | Small. Places the firewood that resting needs. |
-| 8 | **7h** resting and cooking | 7 | Needs firewood on the floor and rat meat to cook. |
+| 7 | **7j** fallen adventurers | - | Small. Places the bedroll that resting needs. |
+| 8 | **7h** resting and cooking | 7 | Needs bedrolls on the floor and rat meat to cook. |
 | 9 | **Foundations step 8,** then **7i** levelling | 6, 8 | Needs camps to land levels, and ambushes and puzzles to pay XP. |
 | 10 | **Foundations step 11,** then **7g:** framework, Grudge, the Mace, the Unquenchable | 9 | Balanced against a levelled party. The Warden gets his torch. |
 | 11 | **A balance pass and demo v0.8** | 10 | The whole floor, start to stairs, three times: rushing, thorough, careless with light. |
@@ -997,7 +997,7 @@ Run the tests, and show me the room lit, then dark.
 Place the puzzles from docs/design/expansion_design.md section 5.
 - Room 7: braziers at (18,3) and (20,3); the closet door (18,2) is
   warded until both burn. Move key two to (19,4). The closet holds three
-  potions, two flasks of oil and one firewood.
+  potions, two flasks of oil and one bedroll.
 - Room 6: a purge room. Add a plain door at (15,19). A skeleton at
   (17,20), a guard at (16,21), an acid slime at (18,19). The reliquary
   rises at (17,20) with whatever 7g has put in it (a placeholder scroll
@@ -1060,7 +1060,7 @@ tinderbox.
 ```
 Add making camp, following docs/design/expansion_design.md sections 2
 and 3 "7h".
-- Firewood is an item (stacks to 3). Using it (from a hand, a quick slot
+- Bedroll is an item (stacks to 3). Using it (from a hand, a quick slot
   or the inventory) makes camp, if no living monster is within 4 tiles
   or in sight, the party is not in a fight, and no armed ambush trigger
   is within 2 tiles. Otherwise refuse with a line and spend nothing.
@@ -1074,7 +1074,7 @@ and 3 "7h".
   the map once seen. The interruption chances in section 2 depend on it.
 - Making camp saves the game. F5 and the pause menu still save.
 - GameEvents.camp_made and camp_ended(interrupted).
-- The fire from the VFX tool, the firewood and ash from PixelLab; log.
+- The fire from the VFX tool, the bedroll and ash from PixelLab; log.
 - A test-room station replacing the "not built yet" campfire.
 Run the tests.
 ```
@@ -1158,9 +1158,9 @@ Run the tests.
 
 ```
 Place the six remains from docs/design/expansion_design.md section 5:
-1 at (8,13) in the alcove: firewood. 2 at (8,9): nothing. 3 at (16,5):
+1 at (8,13) in the alcove: bedroll. 2 at (8,9): nothing. 3 at (16,5):
 a candle and Bellius's note (ask me for the text). 4 at (20,17):
-firewood, with old ash beside it (a camp spot). 5 at (16,15): it bites;
+bedroll, with old ash beside it (a camp spot). 5 at (16,15): it bites;
 a bear trap and a flask of oil (remove the loose trap at (18,14)). 6 at
 (14,19): it sits up. Run the tests.
 ```

@@ -153,6 +153,8 @@ func add_structures(builder: Node3D) -> void:
 				add_alcove(builder, cell, int(entry.get("side", 1)))
 			"campfire":
 				CampSite.build(builder, cell)
+			"camp_spot":
+				_camp_spot(builder, cell)
 		placed[cell] = true
 	var reserved := {}
 	for t in DungeonMap.TORCHES:
@@ -178,6 +180,29 @@ func add_structures(builder: Node3D) -> void:
 				continue
 			if before > 0 and after > 0 and (before + cfg.arch_offset) % cfg.arch_spacing == 0:
 				_arch(builder, cell, axis)
+
+
+## A camp spot: a patch of old ash and soot on the floor (art/camp/ash.png), where a rest is rarely disturbed. Flat on the floor, lit by
+## whatever light is there, nothing to click.
+func _camp_spot(builder: Node3D, cell: Vector2i) -> void:
+	var path := "res://art/camp/ash.png"
+	if not ResourceLoader.exists(path):
+		return
+	var quad := MeshInstance3D.new()
+	var plane := QuadMesh.new()
+	plane.size = Vector2(1.7, 1.7)
+	quad.mesh = plane
+	var mat := StandardMaterial3D.new()
+	mat.albedo_texture = load(path)
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	mat.roughness = 1.0
+	quad.material_override = mat
+	quad.rotation.x = -PI * 0.5
+	quad.position = DungeonMap.cell_to_world(cell) + Vector3(0, 0.012, 0)
+	quad.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	quad.add_to_group("camp_spot_marks")
+	builder.add_child(quad)
 
 
 ## "x" if this open tile is part of a corridor running east-west (walls north and south), "z" if north-south, else "".

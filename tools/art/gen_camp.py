@@ -1,8 +1,10 @@
-"""The camp: art/camp/{pit,pit_front,spit,quilt,kindling}.png and art/camp/flame_sheet.png (+ .json: one row of 8 frames, 10 fps).
+"""The camp: art/camp/{pit,pit_front,spit,quilt,kindling,ash,bedroll}.png and art/camp/flame_sheet.png (+ .json: one row of 8 frames, 10 fps).
 
 Source pieces are in tools/art/pieces/camp/ (PixelLab, see docs/asset_log.md "Campfire and bedroll"):
     pit_e_nodisc.png  64x56  crossed charred logs on an ember bed, no flame, no stone disc
     bed_d.png         64x40  a dark grey-brown quilted blanket on a pallet (the 3D bedroll's look; the bedroll itself is built in code)
+    ash_raw.png       64x64  a patch of old ash and soot on the floor for a camp spot (it came with a painted flame: the warm pixels are
+                             turned to ash grey here)
     kindling_a.png    48x32  sticks over a bed of glowing coals (its painted flame is removed here: the animated flame stands on it)
     spit_a.png        64x48  two iron-forked posts with a rod and a piece of meat (cropped to its box)
     flame.png         3x3 grid of 8 frames of 48x76, the VFX tool's campfire flame
@@ -82,6 +84,24 @@ def pit_front():
     return img
 
 
+def ash():
+    """The camp spot's floor patch: ash_raw.png with its painted fire turned to ash (every warm or bright pixel becomes a dark grey one)."""
+    img = Image.open(PIECES / "ash_raw.png").convert("RGBA")
+    px = img.load()
+    for y in range(img.height):
+        for x in range(img.width):
+            r, g, b, a = px[x, y]
+            if a and (r > g + 18 and r > 100 or (r + g + b) // 3 > 125):   # warm embers, the pale fire core and the grey wisp of smoke
+                v = max(60, min(100, (r + g + b) // 3 - 40))
+                px[x, y] = (v, v - 2, v + 4, a)
+            if a and y < 26:   # the wisp of smoke rising off the patch
+                px[x, y] = (0, 0, 0, 0)
+    for y in range(26, 38):   # The patch's top half was cut away with the wisp: mirror its lower half up.
+        for x in range(img.width):
+            px[x, y] = px[x, 76 - y]
+    return PAL.snap(img)
+
+
 def quilt():
     """The top of a bedroll's blanket: bone-grey squares (3 x 2) with dark stitching between them and a darker hem, a little worn."""
     w, h = 32, 16
@@ -115,6 +135,8 @@ def build(scale=None):
     written.append(save_png(quilt(), "camp/quilt.png"))
     written.append(save_png(kindling(), "camp/kindling.png"))
     written.append(save_png(pit_front(), "camp/pit_front.png"))
+    written.append(save_png(ash(), "camp/ash.png"))
+    written.append(save_png(PAL.snap(Image.open(PIECES / "bed_d.png").convert("RGBA")), "camp/bedroll.png"))  # The camp screen's bedrolls (2D).
     info = out / "flame_sheet.json"
     info.write_text(json.dumps({"frames": FRAMES, "fps": FPS, "frame_w": FRAME_W, "frame_h": FRAME_H}, indent=2))
     written.append(info)

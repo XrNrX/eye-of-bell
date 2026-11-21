@@ -8,7 +8,7 @@ extends CanvasLayer
 ## list), B banter, N fog, J screen shake, P spell and torch shadows. Monster pacing: O picks a value (step interval, reaction
 ## delay, arrival recovery, flank delay), [ and ] lower or raise it by 0.1 s on every monster kind at once (the loaded
 ## MonsterDefs, so live monsters feel it on their next move; never saved: copy what feels right into data/monsters/*.tres),
-## Y puts the values from the files back, ; spawns a pack of three skeletons ahead. \\ lifts the light room's curse zone or puts it back. Hit effects: - plays the next monster kind's
+## Y puts the values from the files back, ; spawns a pack of three skeletons ahead. \\ lifts the light room's curse zone or puts it back. Camp survival: , wounds, drains and sickens the party, . makes camp without a bedroll. Hit effects: - plays the next monster kind's
 ## hit effect (MonsterDef.hit_effect) across the view, from the front, the left, the right and behind in turn, with no damage. Held monster: 9 holds the monster in front
 ## (Hold Monster's status and time, with no resistance roll and no mana), 0 frees every held monster. X and U wait for an XP system: they call Party.add_xp / Party.level_up_party when
 ## those exist and say so in the log until then. A new system gets a station in levels/test_room.gd and, if it needs one, a key here.
@@ -18,6 +18,7 @@ extends CanvasLayer
 ##
 ## The ambush corridor is a stand-in: stepping on a trigger tile in DungeonMap.AMBUSHES spawns its monsters.
 
+const ItemDef := preload("res://scripts/item_def.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const Settings := preload("res://scripts/settings.gd")
 const SpellEffectsConfigScript := preload("res://scripts/spell_effects_config.gd")
@@ -186,6 +187,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			_burn_lights_down()
 		KEY_BACKSLASH:
 			_toggle_zone()
+		KEY_COMMA:
+			_camp_prep()
+		KEY_PERIOD:
+			_camp_now()
 		KEY_9:
 			_hold_ahead()
 		KEY_0:
@@ -235,6 +240,37 @@ func _refill() -> void:
 		if was_dead:
 			party.revived.emit(m.slot, false)
 	_say("HP and mana refilled.")
+
+
+## Camp survival: hurt everyone to half, drain the mana, make them sick, start a meal, shake the Cleric and put the spells on recast, so a
+## rest has plenty to clear. (Dead heroes stay dead: a camp does not raise them.)
+func _camp_prep() -> void:
+	var party := _party()
+	for m in party.members:
+		if not m.is_alive():
+			continue
+		m.hp = maxi(1, m.def.max_hp / 2)
+		m.mana = 0.0
+		m.sick_left = 8.0
+		m.sick_rate = 0.5
+		m.food_left = 20.0
+		m.food_rate = 0.3
+		if m.def.magic == ItemDef.Magic.DIVINE:
+			m.shaken_left = 20.0
+		party.hp_changed.emit(m.slot)
+	_say("The party is hurt, sick and drained: make camp.")
+
+
+## Make camp without a bedroll (the same refusals apply).
+func _camp_now() -> void:
+	var party := _party()
+	var why: String = party.camp_refusal()
+	if why != "":
+		_say(why)
+		return
+	var camp := get_tree().get_first_node_in_group("camp")
+	if camp == null or not camp.begin():
+		_say("Nowhere to rest.")
 
 
 func _kill_all() -> void:
@@ -521,12 +557,15 @@ func _refresh_help() -> void:
 		";   PACK AHEAD    9 HOLD  0 FREE",
 		"-   SHOW NEXT MONSTER HIT EFFECT",
 		"=   BURN LIGHTS DOWN",
+		",   WOUND AND DRAIN THE PARTY (CAMP TEST)",
+		".   MAKE CAMP WITHOUT A BEDROLL",
 		"\\   LIFT / RESTORE CURSE ZONE",
 		"O   TUNE          %s" % PACING_FIELDS[tune_index][1],
 		"[ ] -/+ 0.1S      Y FROM FILES",
 		_pacing_table(),
 		"",
 		"FIGHT  %s" % _fight_status(),
+		"CAMP   %s" % _camp_status(),
 		"F10 DUNGEON EDITOR",
 		"F12 LEAVE (FLOOR 1)",
 	])
@@ -534,6 +573,14 @@ func _refresh_help() -> void:
 
 
 # --- Helpers -------------------------------------------------------------------------------------
+
+func _camp_status() -> String:
+	var camp := get_tree().get_first_node_in_group("camp")
+	if camp != null and camp.active:
+		return "RESTING %d / %d S" % [int(camp.elapsed), int(camp.REST_SECONDS)]
+	var why: String = _party().camp_refusal()
+	return "MAY CAMP" if why == "" else "NO: %s" % why.to_upper()
+
 
 ## One row per monster kind: step interval, reaction delay, arrival recovery and flank delay, in seconds.
 func _pacing_table() -> String:

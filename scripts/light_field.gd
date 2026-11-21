@@ -80,6 +80,9 @@ func _free(e: Dictionary) -> void:
 
 
 func _process(delta: float) -> void:
+	var resting = get_tree().get_first_node_in_group("party")
+	if resting != null and resting.camping:
+		return  # Lights do not burn down during a rest (camp.gd).
 	time += delta
 	var dungeon := get_parent()
 	for e in burning.duplicate():
