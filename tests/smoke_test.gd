@@ -1366,8 +1366,8 @@ func _check_inventory_quick() -> void:
 ## dictionary, use_level is the thin wrapper. Pure DungeonMap checks, run before the scene is built; ends on floor 1.
 func _check_level_data() -> void:
 	DungeonMap.use_level("")
-	check("floor 1 comes from levels/floor_1.gd with all its data (25 rows, 25 sconces, 17 monsters, start (5,9), the menu camera (6,13))",
-			DungeonMap.MAP.size() == 25 and DungeonMap.TORCHES.size() == 25 and DungeonMap.MONSTERS.size() == 17 and DungeonMap.START_TILE == Vector2i(5, 9)
+	check("floor 1 comes from levels/floor_1.gd with all its data (25 rows, 25 sconces, 18 monsters, start (5,9), the menu camera (6,13))",
+			DungeonMap.MAP.size() == 25 and DungeonMap.TORCHES.size() == 25 and DungeonMap.MONSTERS.size() == 18 and DungeonMap.START_TILE == Vector2i(5, 9)
 			and DungeonMap.MENU_VIEW_CELL == Vector2i(6, 13) and DungeonMap.level_id == DungeonMap.FLOOR_1_ID and DungeonMap.level_path == "")
 	var data := {"MAP": [[1, 1, 1], [1, 0, 1], [1, 1, 1]], "START_TILE": Vector2i(1, 1), "START_FACING": 2,
 			"MONSTERS": [{"cell": Vector2i(1, 1), "def": "res://data/monsters/slime.tres"}]}
@@ -1391,7 +1391,7 @@ func _check_level_data() -> void:
 				and DungeonMap.level_path == DungeonMap.TEST_ROOM_PATH)
 		check("a level file with no menu camera gets its start tile for it", DungeonMap.MENU_VIEW_CELL == DungeonMap.START_TILE)
 	DungeonMap.use_level("")
-	check("and floor 1 comes back whole after any of it", DungeonMap.MAP.size() == 25 and DungeonMap.MAP[4][16] == 7 and DungeonMap.MONSTERS.size() == 17
+	check("and floor 1 comes back whole after any of it", DungeonMap.MAP.size() == 25 and DungeonMap.MAP[4][16] == 7 and DungeonMap.MONSTERS.size() == 18
 			and DungeonMap.MENU_VIEW_CELL == Vector2i(6, 13))
 
 

@@ -109,7 +109,8 @@ the Red Shaman (`data/monsters/red_shaman.tres`, a goblin in a red hood with a s
   (a wall, a closed door) means no shot; a portcullis does not block it.
 - **The bolt:** a crimson orb leaves on the cast animation's hit frame (`attack_hit_frame` 3) and flies 0.07 s a tile; the damage lands when it arrives, rolled like any monster blow (hit chance, crits,
   hit direction, the red flash and a bolt-burst `hit_effect` across the view). A shaman killed while the bolt is in the air takes it with him.
-- **Not built:** he is not on floor 1, has no drop and no banter, and keeps no distance (he does not back off from a party that closes in).
+- **Where:** floor 1, at (18,14) in the long corridor south of door (18,10), four tiles from the door; also the test room arena.
+- **Not built:** he has no drop and no banter, and keeps no distance (he does not back off from a party that closes in).
 - Art: PixelLab (see `docs/asset_log.md` "The Red Shaman").
 
 ## Monster tiers
