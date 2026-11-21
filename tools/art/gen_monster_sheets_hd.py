@@ -29,6 +29,7 @@ SPECS = {
     "slime": {"world_height": 1.42, "fps": {"idle_fps": 8.0, "attack_fps": 14.0, "hurt_fps": 14.0, "walk_fps": 16.0}},
     "plague_rat": {"world_height": 0.60, "fps": {"idle_fps": 6.0, "attack_fps": 14.0, "hurt_fps": 12.0, "walk_fps": 18.0}},
     "zombie": {"world_height": 1.55, "fps": {"idle_fps": 4.0, "attack_fps": 10.0, "hurt_fps": 12.0, "walk_fps": 12.0}},
+    "warden": {"world_height": 1.9, "fps": {"idle_fps": 4.0, "attack_fps": 9.0, "hurt_fps": 12.0, "walk_fps": 10.0}},
     "slime_acid": {"world_height": 1.70, "fps": {"idle_fps": 8.0, "attack_fps": 14.0, "hurt_fps": 14.0, "walk_fps": 16.0}},
 }
 

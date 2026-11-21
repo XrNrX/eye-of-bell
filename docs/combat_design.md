@@ -97,7 +97,7 @@ feels weak, raise his mana from 12 to 14 before touching the rate. Reasons and t
 - **Hold Monster:** 35%, for 2.5 s (the tier table).
 - **Bear trap:** always holds him, for 1.5 s, but **only once a fight** (`MonsterTiers.trap_once_from_tier` 3; `trap_field.gd` forgets when `GameEvents.fight_ended` fires). A second trap in the same fight bites for its damage and he tears free. So two traps in his corridor are not a stun lock.
 - **Banter:** `boss_seen` the first time he sees the party (Thief: "He's bigger than the others." Fighter: "Good."), and a line when he falls (Cleric: "I softened him up." Fighter: "With what?"). Both once a run.
-- **Art:** the older single-pose picture from the parked `wip/boss-ambush` branch (11 frames of 96x128, bent and bobbed by `tools/art/gen_warden.py`), at half the pixel density of the other monsters and far fewer frames. A placeholder until he is redrawn like the others.
+- **Art:** the user's PixelLab "hardcore warden" (21 Nov 2026): a horned warden in spiked red and black plate with a tall axe and chains, animated with PixelLab clips (idle 5, attack 6, walk 8 frames) and a hurt made in code (a lean back and a flash), 128x128 frames (`tools/art/gen_warden_hd.py`). The axe's slam is attack frame 3 (`attack_hit_frame` 3). The old single-pose placeholder (`gen_warden.py`) is no longer built.
 - **Not built yet:** he does not carry the Unquenchable (7g), and his hall's sconces are not special (7l.2).
 
 ## Monster tiers

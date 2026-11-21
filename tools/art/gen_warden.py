@@ -69,10 +69,11 @@ ANIMATIONS = {"idle": ["idle_0", "idle_1"], "attack": ["attack_0", "attack_1", "
               "walk": ["walk_0", "walk_1", "walk_2", "walk_3"]}
 
 
-def build(scale=None):
+def build_placeholder(scale=None):  # Not `build`: build_all.py would run it and overwrite the PixelLab sheet (gen_warden_hd.py) with this old single-pose placeholder.
     """Full resolution, whatever the world scale: the art is already drawn at the in-game size."""
     return save_frames(frames(), ORDER, ANIMATIONS, "warden", scale=1)
 
 
 if __name__ == "__main__":
-    print(build())
+    # (Only for the old placeholder look: the warden's real art is tools/art/gen_warden_hd.py.)
+    print(build_placeholder())
