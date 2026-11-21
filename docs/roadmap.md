@@ -2279,7 +2279,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Zombie death gas: a 1 in 5 chance of a toxic cloud within a tile of the body that stings the party, with a test VFX cloud (`6ec327b`)
 - [x] Design docs and demo READMEs: `docs/design/expansion_design.md` (`9cadb9c`), the classes plan (`69d9eca`), `docs/code_review.md`, `docs/tone.md`, `docs/technical_brief.md`, demo READMEs v0.2 to v0.11
 - [x] Editor: double-click the party start (or Enter with it selected) to build and play the map from there (`d0ddbc9`)
-- [x] Camp art and the test room's campfire station: PixelLab campfire (crossed logs, ember bed, animated VFX flame), cooking spit and one 3D bedroll for each hero, shown as scenery by `scripts/camp_site.gd` (STRUCTURES kind `campfire`); no camping yet, that is 7h.2 (commit pending)
+- [x] Camp art and the test room's campfire station: PixelLab campfire (crossed logs, ember bed, animated VFX flame), cooking spit and one 3D bedroll for each hero, shown as scenery by `scripts/camp_site.gd` (STRUCTURES kind `campfire`); no camping yet, that is 7h.2 (`0585a00`)
 
 ## Ideas inbox
 
