@@ -18,7 +18,12 @@ extends CanvasLayer
 const UiLayout := preload("res://scripts/ui_layout.gd")
 const FeelConfigScript := preload("res://scripts/combat_feel_config.gd")
 
-const MAX_LINES := 40
+const MAX_LINES := 200   # (History you can scroll back through.)
+const BAR_TRACK := Color(0.043, 0.039, 0.063, 0.7)   # Palette ink.
+const BAR_GRAB := Color(0.482, 0.478, 0.533)          # Palette stone_300.
+const BAR_GRAB_HOVER := Color(0.667, 0.663, 0.706)    # Palette stone_100.
+const BAR_WIDTH := 5.0
+const WHEEL_STEP := 24.0   # Two lines of 8 px text and 4 px between.
 const NEWEST := Color("c9c0a4")    # Palette bone_300.
 const RECENT := Color("aaa9b4")    # Palette stone_100.
 const OLD := Color("7b7a88")       # Palette stone_300.
@@ -46,7 +51,37 @@ func _ready() -> void:
 	message.size = Vector2(well.size.x - PADDING.x * 2.0, STATUS_HEIGHT)
 	message.add_theme_color_override("font_color", STATUS)
 	message.text = ""
-	log_text.get_v_scroll_bar().modulate.a = 0.0  # It scrolls itself; no scrollbar needed.
+	_style_scroll_bar()
+
+
+## The log takes the mouse (wheel, or drag the bar) so earlier lines can be read; its bar is a thin iron-grey one that only shows when
+## there is more than fits.
+func _style_scroll_bar() -> void:
+	log_text.mouse_filter = Control.MOUSE_FILTER_STOP
+	log_text.scroll_active = true
+	log_text.gui_input.connect(_on_log_input)
+	var bar := log_text.get_v_scroll_bar()
+	bar.custom_minimum_size.x = BAR_WIDTH
+	bar.add_theme_stylebox_override("scroll", _bar_box(BAR_TRACK))
+	bar.add_theme_stylebox_override("scroll_focus", _bar_box(BAR_TRACK))
+	bar.add_theme_stylebox_override("grabber", _bar_box(BAR_GRAB))
+	bar.add_theme_stylebox_override("grabber_highlight", _bar_box(BAR_GRAB_HOVER))
+	bar.add_theme_stylebox_override("grabber_pressed", _bar_box(BAR_GRAB_HOVER))
+
+
+## One wheel tick is two lines (the engine's own step is too small for 8-pixel text).
+func _on_log_input(event: InputEvent) -> void:
+	if event is InputEventMouseButton and event.pressed and (event.button_index == MOUSE_BUTTON_WHEEL_UP or event.button_index == MOUSE_BUTTON_WHEEL_DOWN):
+		var bar := log_text.get_v_scroll_bar()
+		bar.value += WHEEL_STEP * (-1.0 if event.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0)
+		log_text.accept_event()
+
+
+func _bar_box(colour: Color) -> StyleBoxFlat:
+	var box := StyleBoxFlat.new()
+	box.bg_color = colour
+	box.set_content_margin_all(0)
+	return box
 
 
 ## A line in the log, or (hold) the status row. tone "miss" gives it the miss style.
@@ -105,8 +140,13 @@ func clear_message(only_if := "") -> void:
 		message.text = ""
 
 
-## Rebuild the log: the newest line brightest, the two before it a little dimmer, the rest dim.
+## Rebuild the log: the newest line brightest, the two before it a little dimmer, the rest dim. A reader who has scrolled back up stays
+## where they are (a new line only pulls the view down when it was already at the bottom).
 func _redraw() -> void:
+	var bar := log_text.get_v_scroll_bar()
+	var at_bottom: bool = bar.value >= bar.max_value - bar.page - 2.0
+	var keep: float = bar.value
+	log_text.scroll_following = at_bottom
 	log_text.clear()
 	for i in lines.size():
 		var age: int = lines.size() - 1 - i
@@ -118,3 +158,5 @@ func _redraw() -> void:
 		log_text.pop()
 		if i < lines.size() - 1:
 			log_text.newline()
+	if not at_bottom:
+		bar.set_deferred("value", keep)

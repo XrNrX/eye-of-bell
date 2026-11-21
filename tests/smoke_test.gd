@@ -92,6 +92,7 @@ func _init() -> void:
 	await _check_azure_brand()
 	await _check_red_shaman()
 	await _check_goblin()
+	await _check_log_scroll()
 	await _check_music()
 	await _check_curse_look()
 	_check_death_gas()
@@ -2276,6 +2277,32 @@ func _check_goblin() -> void:
 	check("goblin: ...next to the party it can", goblin._can_strike())
 	dungeon.clear_monsters()
 	DungeonMap.occupied.clear()
+
+
+## The message log can be scrolled back through: it takes the mouse, shows a bar once it overflows, keeps 200 lines, and a new line does not
+## pull a reader who has scrolled up back down.
+func _check_log_scroll() -> void:
+	var hud: Node = get_first_node_in_group("hud")
+	for i in 230:
+		hud.show_message("Scroll test line %d." % i)
+	await create_timer(0.3).timeout
+	var bar: VScrollBar = hud.log_text.get_v_scroll_bar()
+	check("log: it keeps the last 200 lines and takes the mouse so it can be scrolled", hud.lines.size() == 200 and hud.log_text.mouse_filter == Control.MOUSE_FILTER_STOP)
+	check("log: its scroll bar shows (not hidden) once the text overflows", bar.visible and bar.modulate.a > 0.9 and bar.max_value > bar.page)
+	var wheel := InputEventMouseButton.new()
+	wheel.button_index = MOUSE_BUTTON_WHEEL_UP
+	wheel.pressed = true
+	var before: float = bar.value
+	hud.log_text.gui_input.emit(wheel)
+	check("log: a wheel tick up scrolls two lines back", is_equal_approx(before - bar.value, hud.WHEEL_STEP))
+	var kept: float = bar.value
+	hud.show_message("A new line while reading old ones.")
+	await create_timer(0.3).timeout
+	check("log: a new line does not pull a scrolled-back reader down", is_equal_approx(bar.value, kept))
+	bar.value = bar.max_value
+	hud.show_message("And one at the bottom.")
+	await create_timer(0.3).timeout
+	check("log: at the bottom the newest line is followed", bar.value >= bar.max_value - bar.page - 2.0)
 
 
 ## The background music: Walen's "Dark Heart", one looping player under the tree root so it survives scene changes.
