@@ -58,7 +58,7 @@ script = ExtResource("3_torch")
 
 [node name="Audio" type="Node" parent="."]
 script = ExtResource("4_audio")
-music_db = -9.0
+music_db = -10.0
 
 [node name="UI" type="CanvasLayer" parent="."]
 

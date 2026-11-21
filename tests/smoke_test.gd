@@ -87,6 +87,7 @@ func _init() -> void:
 	await _check_curse_zones()
 	await _check_floor_light()
 	await _check_camp()
+	await _check_music()
 	await _check_curse_look()
 	_check_death_gas()
 	_check_inventory_quick()
@@ -1734,6 +1735,21 @@ func _check_camp() -> void:
 	await create_timer(0.1).timeout
 	for name in ["camp_made", "camp_ended", "hero_hurt", "hero_revived", "hero_died"]:
 		events[name].clear()
+
+## The background music: Walen's "Dark Heart", one looping player under the tree root so it survives scene changes.
+func _check_music() -> void:
+	var audio: Node = get_first_node_in_group("audio")
+	await create_timer(0.3).timeout
+	var music = audio.music if audio != null else null
+	check("music: the background track plays on the Music bus from one player under the tree root, looping, and keeps playing while paused",
+			music != null and music.playing and music.get_parent() == root and music.name == "BackgroundMusic" and music.bus == "Music"
+			and music.stream is AudioStreamMP3 and music.stream.loop and music.process_mode == Node.PROCESS_MODE_ALWAYS)
+	var again: Node = load("res://scripts/audio.gd").new()
+	root.add_child(again)  # A second Audio node (the next scene's) must adopt the player, not start another.
+	await create_timer(0.1).timeout
+	check("music: a second scene's Audio node adopts the same player and does not restart it", again.music == music and music.playing and root.get_children().filter(func(n): return n.name == "BackgroundMusic").size() == 1)
+	again.free()
+
 
 
 func _check_curse_look() -> void:

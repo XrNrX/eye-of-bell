@@ -20,7 +20,9 @@ const Settings := preload("res://scripts/settings.gd")
 const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
 
 const SFX_DIR := "res://audio/sfx/"
-const MUSIC_PATH := "res://audio/music/dungeon_drone.wav"
+const MUSIC_PATH := "res://audio/music/dark_heart.mp3"          # Walen, "Dark Heart" (freetouse.com): the background music; see audio/music/CREDITS.md.
+const FALLBACK_MUSIC_PATH := "res://audio/music/dungeon_drone.wav"  # The old synthesised drone, if the track is missing.
+const MUSIC_NODE := "BackgroundMusic"  # The one player, under the tree root, so the track carries on across the menu, a new game and a reload.
 const VOICES := 12  # How many effects can sound at once; a new one takes over the oldest.
 
 ## How each sound behaves, when it differs from the default (0 dB, 4% pitch wobble, no gap):
@@ -58,7 +60,7 @@ const DEFAULT_PITCH_WOBBLE := 0.04
 
 ## Start the ambient loop on _ready. A scene can turn it off (or change its level) in the editor.
 @export var music_on := true
-@export var music_db := -4.0
+@export var music_db := -10.0  # A mastered track is far louder than the old drone: sit it well down (the Options slider and the Music bus do the rest).
 
 var library := {}      # name -> Array of AudioStream (the variants)
 var voices: Array[AudioStreamPlayer] = []
@@ -173,22 +175,49 @@ func _free_voice() -> AudioStreamPlayer:
 
 
 func start_music() -> void:
-	if music != null and music.playing:
+	var root := get_tree().root
+	var shared := root.get_node_or_null(MUSIC_NODE)
+	if shared is AudioStreamPlayer and shared.playing:
+		music = shared  # Already playing (we came from another scene): no restart, no new fade.
 		return
-	if not ResourceLoader.exists(MUSIC_PATH):
+	var stream: AudioStream = _music_stream()
+	if stream == null:
 		return
-	var stream: AudioStreamWAV = (load(MUSIC_PATH) as AudioStreamWAV).duplicate()
+	if shared is AudioStreamPlayer:
+		music = shared
+	else:
+		music = AudioStreamPlayer.new()
+		music.name = MUSIC_NODE
+		music.bus = Settings.MUSIC_BUS
+		music.process_mode = Node.PROCESS_MODE_ALWAYS  # The inventory, the pause menu and the camp pause the game, not the music.
+		root.add_child.call_deferred(music)
+	music.stream = stream
+	_play_music.call_deferred(music, music_db)
+
+
+## The track (looped, a copy so the imported resource is untouched), else the old drone.
+func _music_stream() -> AudioStream:
+	if ResourceLoader.exists(MUSIC_PATH):
+		var track = load(MUSIC_PATH)
+		if track is AudioStreamMP3:
+			var looped: AudioStreamMP3 = track.duplicate()
+			looped.loop = true
+			return looped
+	if not ResourceLoader.exists(FALLBACK_MUSIC_PATH):
+		return null
+	var stream: AudioStreamWAV = (load(FALLBACK_MUSIC_PATH) as AudioStreamWAV).duplicate()
 	stream.loop_mode = AudioStreamWAV.LOOP_FORWARD  # Whatever the import settings say.
 	stream.loop_begin = 0
 	stream.loop_end = roundi(stream.get_length() * stream.mix_rate)  # In samples. (Not data.size(): the import may compress the data.)
-	if music == null:
-		music = AudioStreamPlayer.new()
-		music.bus = Settings.MUSIC_BUS
-		add_child(music)
-	music.stream = stream
-	music.volume_db = -40.0
-	music.play()
-	create_tween().tween_property(music, "volume_db", music_db, 2.0)  # Fade in, so the loop never starts with a bang.
+	return stream
+
+
+func _play_music(player: AudioStreamPlayer, db: float) -> void:
+	if not is_instance_valid(player) or not player.is_inside_tree():
+		return
+	player.volume_db = -40.0
+	player.play()
+	create_tween().tween_property(player, "volume_db", db, 2.0)  # Fade in, so the track never starts with a bang.
 
 
 func stop_music() -> void:
