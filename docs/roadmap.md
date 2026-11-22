@@ -2313,6 +2313,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Character sheet shows gear bonuses in brackets after the total, e.g. Defence 6 (+2), with only the bracket coloured, and damage shows its bonus too (`80edff6`)
 - [x] Camp trip smoke made bigger and more dramatic: a layered eruption from the bottom of the view (PixelLab VFX 'Camp smoke surge', 28 frames, 2.8 s each way) instead of the flat clouds (`f43b254`)
 - [x] Demo level 1 from the user's hand-drawn map (mapBell.png, 35x35): 16 lever-driven portcullises, two locked doors with three keys, about 50 monsters scaled by distance with the Cursed Warden before the stairs, items, a camp and the level's Hearth Coal; a DEMO LEVEL button on the main menu; saving allowed on it; made by `tools/level/gen_demo_1.py` (`bba9ea1`)
+- [x] Demo level intro: a short narrator card (the intro film's last picture, a title, three lines and the goal) when DEMO LEVEL is started from the menu; any key skips it (`87df25a`)
 
 ## Ideas inbox
 
