@@ -2312,6 +2312,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Inventory item pop-up: double-click an item for DROP (the stack onto the floor) and COMBINE (merge the hero's matching stacks in pack and quick slots) (`8abae2e`)
 - [x] Character sheet shows gear bonuses in brackets after the total, e.g. Defence 6 (+2), with only the bracket coloured, and damage shows its bonus too (`80edff6`)
 - [x] Camp trip smoke made bigger and more dramatic: a layered eruption from the bottom of the view (PixelLab VFX 'Camp smoke surge', 28 frames, 2.8 s each way) instead of the flat clouds (`f43b254`)
+- [x] Demo level 1 from the user's hand-drawn map (mapBell.png, 35x35): 16 lever-driven portcullises, two locked doors with three keys, about 50 monsters scaled by distance with the Cursed Warden before the stairs, items, a camp and the level's Hearth Coal; a DEMO LEVEL button on the main menu; saving allowed on it; made by `tools/level/gen_demo_1.py` (`bba9ea1`)
 
 ## Ideas inbox
 
