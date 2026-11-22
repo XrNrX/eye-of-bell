@@ -2316,6 +2316,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Demo level intro: a short narrator card (the intro film's last picture, a title, three lines and the goal) when DEMO LEVEL is started from the menu; any key skips it (`87df25a`)
 - [x] Obvious levers: a wooden lever picture (PixelLab, 64x64 off and on frames, `tools/art/gen_lever.py`), drawn bigger with a warm beacon light and a pulsing halo (a code-drawn placeholder halo) until pulled, then a quiet green (`630b0f4`)
 - [x] Subtler levers: the pulsing halo taken out and the lever's light dimmed to a faint warm glow, so the wooden lever looks natural (`729636d`)
+- [x] Smaller levers: the wooden lever back to the original size (0.8 wide, still crisp at 64 px) with a fainter light (`cd24d9c`)
 
 ## Ideas inbox
 
