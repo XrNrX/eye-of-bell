@@ -285,3 +285,6 @@ None of these were made with the VFX suite, so they should be replaced.
 
 ## Hearth Coal (22 Nov 2026, 2 generations)
 - `tools/art/pieces/items48/hearth_coal.png` (48x48, seed 5301) and `tools/art/pieces/items32/hearth_coal.png` (32x32, seed 5302): `create_image_pixflux`, no background, single colour black outline, medium shading, 1 generation each: a glowing ember coal in a rough iron wire cage on a leather cord. Both came out as a caged egg shape (the ember reads weakly): redo with another prompt if it does not read in play. Installed with `add_item_art.py hearth_coal` (the 32x32 is the hand icon, so the name is in `NATIVE32`) then `regrade_items.py`; files `art/items/hearth_coal{,_floor,_hud}.png`.
+
+## Hearth Coal icon redone (22 Nov 2026, 2 generations)
+- The first pair (caged ember, seeds 5301/5302) read as an egg, so both were redone with `create_image_pixflux` (same settings): 'a single lump of black charcoal with bright glowing orange cracks and a small flame licking from the top, heart of a campfire' (48x48 seed 5311, 32x32 seed 5312). They read as a small fire on a heap of coals. Installed the same way (`add_item_art.py hearth_coal`, then `regrade_items.py` after deleting the old copies in `pieces/regrade_src/items/`). The caveat in the entry above no longer applies.
