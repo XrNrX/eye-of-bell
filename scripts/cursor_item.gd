@@ -72,8 +72,8 @@ func refresh() -> void:
 ## (the whole stack) or a plain ItemDef (a stack of one).
 func hold(item) -> void:
 	held = ItemStack.wrap(item)
-	icon.texture = held.def.icon
-	icon.size = held.def.icon.get_size()
+	icon.texture = held.def.shown_icon()
+	icon.size = icon.texture.get_size()
 	refresh()
 	_follow_mouse()  # Appear at the mouse straight away, not at the old spot for a frame.
 	icon.visible = true

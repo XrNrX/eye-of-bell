@@ -15,7 +15,7 @@ torchlight, and it is weak. Nothing is clean, bright, cute or heroic.
 
 ## Palette
 
-The palette is `tools/art/palette.json` (37 colours, "Cursed Dungeon"; the last four, `arcane_700/500/300/100`, are a cold blue ramp added on 21 Nov 2026 for glowing legendary items only: spell art is still drawn in grey and tinted). Every game image uses
+The palette is `tools/art/palette.json` (33 colours, "Cursed Dungeon"; it has no blue). **Legendaries never add colours. Their glow, shimmer and colour come from light, tint and VFX, like spells.** Every game image uses
 only these colours; the importer snaps anything else to the nearest one (nearest colour, no
 dithering unless asked), so prompt for the *mood* and let the snap do the exact values.
 

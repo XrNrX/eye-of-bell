@@ -27,7 +27,8 @@ func _process(_delta: float) -> void:
 			m.set_light(light_at(m.sprite.global_position, m.cell, lights))
 	for cell in dungeon.items:
 		var sprite: Node3D = dungeon.items[cell].sprite
-		sprite.modulate = light_at(sprite.global_position, cell, lights)
+		var top_def: Resource = dungeon.items[cell].pile.back().def
+		sprite.modulate = light_at(sprite.global_position, cell, lights) * top_def.glow_tint  # (A glowing item's tint: ItemDef.glow_tint.)
 	if dungeon.get("traps") != null:
 		for cell in dungeon.traps.armed:
 			var s: Node3D = dungeon.traps.armed[cell].sprite

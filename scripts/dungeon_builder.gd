@@ -691,6 +691,26 @@ func _show_top(entry: Dictionary) -> void:
 	var def: Resource = entry.pile.back().def
 	entry.sprite.texture = def.floor_icon if def.floor_icon else def.icon  # The small floor version.
 	entry.sprite.pixel_size = def.icon_pixel_size
+	_sync_glow(entry.sprite, def)
+
+
+## A glowing item (ItemDef.glow_light_energy: a legendary's pale light) carries a soft real light while it lies on the floor, in the group
+## "sprite_lights" like the spells' lights; an item that does not glow carries none (the top of a pile may change).
+func _sync_glow(sprite: Node3D, def: Resource) -> void:
+	var light: OmniLight3D = sprite.get_node_or_null("GlowLight")
+	if def.glow_light_energy <= 0.0:
+		if light != null:
+			sprite.remove_child(light)
+			light.queue_free()
+		return
+	if light == null:
+		light = OmniLight3D.new()
+		light.name = "GlowLight"
+		light.add_to_group("sprite_lights")
+		sprite.add_child(light)
+	light.light_color = def.glow_light_color
+	light.light_energy = def.glow_light_energy
+	light.omni_range = def.glow_light_range
 
 
 ## Show a thrown item flying from the party's tile to where it lands (for show only:

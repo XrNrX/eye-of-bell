@@ -90,6 +90,7 @@ func _init() -> void:
 	await _check_cooking()
 	await _check_legendary()
 	await _check_azure_brand()
+	await _check_item_glow()
 	await _check_red_shaman()
 	await _check_goblin()
 	await _check_log_scroll()
@@ -2059,7 +2060,7 @@ func _check_azure_brand() -> void:
 			def.legendary and behaviour != null and def.type == ItemDef.Type.WEAPON and def.attack_bonus == 2 and def.damage_min == 5 and def.damage_max == 11 and def.never_slips
 			and def.legend_text().contains("Power:") and def.legend_text().contains("Price:") and party.can_equip(fighter, def) and party.can_equip(thief, def)
 			and not party.can_equip(cleric, def) and not party.can_equip(mage, def))
-	check("azure brand: its art is there, in the palette's blues (the glowing blade) and never curse green",
+	check("azure brand: its art is there, in steel greys only: no blue (that glow is a run-time tint) and never curse green",
 			def.icon != null and def.hud_icon != null and def.floor_icon != null and _azure_colours_ok(def.icon) and _azure_colours_ok(def.hud_icon))
 
 	# The flame on a landed blow: 2-5 more, fire, a recoil for fire-fearers; a miss is untouched.
@@ -2175,7 +2176,7 @@ func _azure_colours_ok(tex: Texture2D) -> bool:
 					return false
 				if c.b > c.r + 0.2 and c.b > c.g:
 					blue += 1
-	return blue > 20
+	return blue == 0  # (The blue is the run-time tint and light, ItemDef.glow_tint: legendaries never add colours.)
 
 ## The Red Shaman (data/monsters/red_shaman.tres): a goblin caster with a ranged bolt (MonsterDef.ranged_range), built into the monster code.
 func _check_red_shaman() -> void:
@@ -2303,6 +2304,57 @@ func _check_log_scroll() -> void:
 	hud.show_message("And one at the bottom.")
 	await create_timer(0.3).timeout
 	check("log: at the bottom the newest line is followed", bar.value >= bar.max_value - bar.page - 2.0)
+
+
+## Legendaries never add colours (docs/art_style.md): the Azure Brand's art is plain palette greys, and its blue is a run-time tint on its icons
+## and a soft pale light from the item on the floor (ItemDef.glow_tint, glow_light_*).
+func _check_item_glow() -> void:
+	dungeon.clear_monsters()
+	player.restore(SPOT, EAST)
+	var palette = JSON.parse_string(FileAccess.get_file_as_string("res://tools/art/palette.json"))
+	var names := []
+	var allowed := {}
+	for c in palette.colors:
+		names.append(str(c.name))
+		allowed[Color(str(c.hex)).to_html(false)] = true
+	check("glow: the palette has no arcane_* (blue) colours, and mustard stays (%d colours)" % names.size(), not names.any(func(n): return n.begins_with("arcane")) and names.has("mustard_500") and names.size() == 33)
+	var def: Resource = load("res://data/items/azure_brand.tres")
+	var clean := true
+	var bluish := 0
+	for tex in [def.icon, def.floor_icon, def.hud_icon]:
+		var img: Image = tex.get_image()
+		for y in img.get_height():
+			for x in img.get_width():
+				var c: Color = img.get_pixel(x, y)
+				if c.a > 0.5:
+					clean = clean and allowed.has(c.to_html(false))
+					if c.b8 >= c.r8 + 25 and c.b8 >= c.g8 - 20:
+						bluish += 1
+	check("glow: the Azure Brand's three pictures use only palette colours and have no blue pixel in them (%d)" % bluish, clean and bluish == 0)
+	var tinted: Texture2D = def.hud_texture()
+	var timg: Image = tinted.get_image()
+	var blue_sum := 0.0
+	var red_sum := 0.0
+	for y in timg.get_height():
+		for x in timg.get_width():
+			var c: Color = timg.get_pixel(x, y)
+			if c.a > 0.5:
+				blue_sum += c.b
+				red_sum += c.r
+	check("glow: its hand and inventory icons are tinted pale blue at run time (a copy, the file untouched), a plain item's are the art itself",
+			tinted != def.hud_icon and blue_sum > red_sum * 1.2 and def.shown_icon() != def.icon and def.shown_icon() == def.shown_icon()
+			and load("res://data/items/torch.tres").shown_icon() == load("res://data/items/torch.tres").icon)
+	dungeon.set_pile(AHEAD_1, [])
+	dungeon.place_item(AHEAD_1, ItemStack.of(def, 1))
+	var sprite: Node3D = dungeon.items[AHEAD_1].sprite
+	var light: Node = sprite.get_node_or_null("GlowLight")
+	check("glow: lying on the floor it carries a soft pale blue light in sprite_lights", light is OmniLight3D and light.is_in_group("sprite_lights") and light.light_energy > 0.0
+			and light.light_color.b > light.light_color.r)
+	await create_timer(0.3).timeout
+	check("glow: its floor sprite is tinted blue (the lighting times its tint)", sprite.modulate.b > sprite.modulate.r)
+	dungeon.place_item(AHEAD_1, ItemStack.of(load("res://data/items/bread.tres") if ResourceLoader.exists("res://data/items/bread.tres") else load("res://data/items/stale_bread.tres"), 1))
+	check("glow: a plain item on top of it hides the glow", dungeon.items[AHEAD_1].sprite.get_node_or_null("GlowLight") == null)
+	dungeon.set_pile(AHEAD_1, [])
 
 
 ## The background music: Walen's "Dark Heart", one looping player under the tree root so it survives scene changes.

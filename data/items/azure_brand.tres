@@ -24,3 +24,7 @@ legendary = true
 legend_blurb = "A long sword whose edge burns with a cold blue flame."
 legend_power = "Each blow burns for 2-5 more and lights oil."
 legend_price = "A kill singes the wielder for 1."
+glow_tint = Color(0.72, 0.92, 1.35, 1)
+glow_light_color = Color(0.6, 0.8, 1, 1)
+glow_light_energy = 0.7
+glow_light_range = 3.5

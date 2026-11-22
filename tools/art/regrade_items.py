@@ -52,7 +52,8 @@ MANA_POTION = {"curse_300": "bruise_500", "curse_500": "bruise_700", "curse_700"
 COOKED_MEAT = {"blood_500": "leather_400", "blood_700": "wood_500", "bruise_700": "wood_700", "bruise_900": "soil_900", "curse_300": "bone_500", "bone_300": "bone_500"}
 TOASTED = {"torch_300": "torch_500", "torch_500": "leather_400", "torch_700": "wood_500", "bruise_900": "soil_900", "blood_500": "rust_500", "blood_700": "rust_700", "curse_300": "torch_500"}
 
-# The Azure Brand (a legendary with a glowing blue blade): PixelLab left a few curse-green and bruise-purple pixels on its hilt; they become steel greys.
+# The Azure Brand (a legendary with a blue-glowing blade): its blade is steel grey in the art (add_item_art.py --steel-blue turned the blue to greys: legendaries
+# never add colours, its glow is a run-time tint and light); PixelLab also left a few curse-green and bruise-purple pixels on its hilt, which become steel greys.
 AZURE_STEEL = {"curse_300": "stone_300", "curse_500": "stone_500", "curse_700": "stone_700", "bruise_500": "stone_500", "bruise_700": "stone_700", "bruise_900": "stone_900"}
 
 REMAPS = {

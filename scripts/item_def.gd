@@ -73,6 +73,14 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export_multiline var legend_blurb := ""  # What it is, a line or two (narrator voice: docs/tone.md).
 @export var legend_power := ""             # What it does for its owner.
 @export var legend_price := ""             # What it costs them.
+## A glow made at run time, never in the art ("legendaries never add colours", docs/art_style.md; spells get theirs the same way). The art is
+## plain palette greys; `glow_tint` multiplies its colours wherever the item is drawn (white: none; a channel above 1 brightens, up to the
+## pixel's maximum), and a soft real light of `glow_light_color` shines from the item while it lies on the floor (`glow_light_energy` 0: none;
+## the light joins the group "sprite_lights", so it also lights the sprites near it).
+@export var glow_tint := Color(1, 1, 1)
+@export var glow_light_color := Color(0.6, 0.8, 1.0)
+@export var glow_light_energy := 0.0
+@export var glow_light_range := 3.5
 
 @export_group("Camp")
 @export var cooks_into: Resource  # Raw food: the ItemDef it becomes when cooked at a camp fire (camp.gd: the Cook button or clicking it on the fire). Cooking keeps the count.
@@ -131,9 +139,43 @@ static func allowed_in_hand(item_type: Type) -> bool:
 	return item_type in [Type.WEAPON, Type.CONSUMABLE, Type.FOCUS, Type.TRAP, Type.LIGHT]
 
 
-## The icon for the party panel's hand and quick slots.
+## The icon for the party panel's hand and quick slots (with the item's glow tint, if it has one).
 func hud_texture() -> Texture2D:
-	return hud_icon if hud_icon else icon
+	return _tinted(hud_icon if hud_icon else icon)
+
+
+## The inventory icon (with the item's glow tint, if it has one): what the slots, the cursor and the loot pop-up draw.
+func shown_icon() -> Texture2D:
+	return _tinted(icon)
+
+
+## Does this item glow (a tint or a floor light)?
+func glows() -> bool:
+	return glow_tint != Color(1, 1, 1) or glow_light_energy > 0.0
+
+
+var _tint_cache := {}  # Texture -> its tinted copy, made once.
+
+
+## `tex` with every opaque pixel multiplied by `glow_tint`, or `tex` itself when the item has no tint. Run-time only: nothing is saved.
+func _tinted(tex: Texture2D) -> Texture2D:
+	if tex == null or glow_tint == Color(1, 1, 1):
+		return tex
+	if _tint_cache.has(tex):
+		return _tint_cache[tex]
+	var source: Image = tex.get_image()
+	if source == null:
+		return tex
+	var img: Image = source.duplicate()  # (Never edit the texture's own image: that would tint the art itself.)
+	img.convert(Image.FORMAT_RGBA8)
+	for y in img.get_height():
+		for x in img.get_width():
+			var c: Color = img.get_pixel(x, y)
+			if c.a > 0.0:
+				img.set_pixel(x, y, Color(minf(c.r * glow_tint.r, 1.0), minf(c.g * glow_tint.g, 1.0), minf(c.b * glow_tint.b, 1.0), c.a))
+	var out := ImageTexture.create_from_image(img)
+	_tint_cache[tex] = out
+	return out
 
 
 ## The legendary text for a tooltip or the character sheet ("" for an ordinary item): its blurb, then what it gives and what it costs.

@@ -86,7 +86,7 @@ What each does and what it touches. All are listed in the roadmap's "Extra steps
 - **Camp art and 3D camp** (`camp_site.gd`): PixelLab campfire, spit and a bedroll per hero as level scenery. Touches level structures, lighting, sprite lights.
 - **Warden redraw**: new PixelLab art and animations for the mini-boss. Touches art generators only.
 - **Background music**: one persistent player across scenes, credit file kept. Touches `audio.gd`, settings.
-- **Azure Brand**: legendary sword with fire damage, never slips; added a four-colour blue `arcane_*` palette ramp. Touches the legendary framework, palette, art rules.
+- **Azure Brand**: legendary sword with fire damage, never slips; its blue glow is a run-time tint and light (a first version added a blue palette ramp, removed again 22 Nov). Touches the legendary framework, item icons, sprite lighting.
 - **Red Shaman and the ranged attack** (`MonsterDef.ranged_range`, `monster_bolt.gd`): casts a bolt from up to 4 tiles down a clear line; damage lands when the bolt arrives; `Party.side_of` now works for non-adjacent attackers. Touches monster AI, party, VFX, audio.
 - **Trap witness rule** (`TrapField.witness`): a snap the party cannot see (10 tiles with a line) or hear (6) makes no log line, sound or event. Level monsters may carry `"holds": true` to stop wandering. Touches traps, monsters, level data.
 - **Goblin**: tier 1 melee fodder. Touches monsters and floor 1 data.
@@ -119,7 +119,7 @@ The roadmap's own tests rule says "three tests"; there are five.
 - **The Warden.** The design says to bring him back from `wip/boss-ambush`. He was rebuilt fresh with the design's numbers (80 HP, attack 5, defence 4, damage 3-9) and stands in the stairs corridor at (20,22) with no ambush room. A trap holds him 1.5 s once a fight and Hold lands 35% for 2.5 s, as the design says, through the tier table (tier 3 is held half the time). The Unquenchable he should carry does not exist.
 - **Mana 1 per 6 s** is in as designed; the design says it needs a playtest first, and the playtest (Next 10 #2) is still open.
 - **Ranged monsters were not in the plan.** The caster mechanism went straight into `monster.gd` (and `holds_ground`, status effects, pacing) instead of the Step 10 "behaviour script per monster" split, which is still undone. `monster.gd` is the file most at risk of growing too big.
-- **Palette grew from 33 to 37 colours.** `mustard_500` (rot and disease, so gas is never curse green) and an `arcane_*` blue ramp. `art_style.md` still says spells have no blue: spells stay grey and tinted at run time; blue pixels are only for legendary items. The user may want to veto the blue.
+- **Palette grew from 32 to 33 colours:** `mustard_500` (rot and disease, so gas is never curse green). A blue `arcane_*` ramp added on 21 Nov for the Azure Brand was removed again on 22 Nov at the user's instruction: **legendaries never add colours**; the sword's art is steel grey and its blue is a run-time tint and light, like a spell's.
 - **Curse zones:** a zone's reach stops at walls (a sconce two tiles away through a wall stays lit). Added while building; not in the design.
 - **Fighting in the dark** costs -10 to hit for weapons only (design: spells and monsters unaffected, as built).
 - **Traps:** unseen snaps are silent (new rule, not in the design).
@@ -151,7 +151,7 @@ The roadmap's own tests rule says "three tests"; there are five.
 - `docs/design/story_arc.md` (new 20 Nov): "The Prisoner in the Dungeon", acts 1 to 3; a design doc, not a step.
 - `docs/technical_brief.md` (new 13 Nov): compact technical overview for sharing; one line edited 19 Nov.
 - `docs/combat_design.md`: 21 commits; now holds light, oil, traps, status effects, making camp, cooking, the Red Shaman. It is the rules source with the combat blueprint page.
-- `docs/art_style.md`: palette now 37 colours; notes on mustard (gas) and the arcane blue ramp.
+- `docs/art_style.md`: palette now 33 colours; notes on mustard (gas); the rule "legendaries never add colours" (22 Nov).
 - `docs/tone.md`: only small edits (about 20 lines) with the banter engine work on 12 Nov.
 - `docs/game_overview.md`: "Systems built" list updated with each feature.
 - `docs/asset_log.md`: every PixelLab asset since 13 Nov with generation counts.

@@ -141,7 +141,7 @@ func refresh() -> void:
 		tooltip_text = m.name()
 	else:
 		var stack := get_item()
-		icon.texture = stack.def.icon if stack else null
+		icon.texture = stack.def.shown_icon() if stack else null
 		icon.modulate = Color.WHITE
 		icon.flip_h = false
 		if stack == null and (kind == Kind.HAND or kind == Kind.ARMOUR):
