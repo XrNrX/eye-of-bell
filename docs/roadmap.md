@@ -2305,6 +2305,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Campsite livelier: rising embers (PixelLab VFX flipbook) and smoke (both PixelLab VFX flipbooks) and a wide warm glow light (`d185484`, embers `0cce679`)
 - [x] Campfire is solid: the party and monsters cannot walk onto a campfire tile; sight and missiles still pass (`f3613c7`)
 - [x] Campfire pop-up: left-click the campfire in front to make camp (rest, no bedroll used) or cook the raw food the party carries (`b3bec03`)
+- [x] Hearth Coal and the safe campfire zone: one coal a level (floor 1 has one) takes the party to a small monster-free camp room to rest, cook and use packs; BREAK CAMP at its fire returns them to the exact tile with the level as they left it (`7cc6c61`)
 
 ## Ideas inbox
 
