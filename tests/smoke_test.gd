@@ -93,6 +93,7 @@ func _init() -> void:
 	await _check_item_glow()
 	await _check_red_shaman()
 	await _check_goblin()
+	await _check_knight()
 	await _check_log_scroll()
 	_check_tooltip_theme()
 	await _check_music()
@@ -1370,8 +1371,8 @@ func _check_inventory_quick() -> void:
 ## dictionary, use_level is the thin wrapper. Pure DungeonMap checks, run before the scene is built; ends on floor 1.
 func _check_level_data() -> void:
 	DungeonMap.use_level("")
-	check("floor 1 comes from levels/floor_1.gd with all its data (25 rows, 25 sconces, 20 monsters, start (5,9), the menu camera (6,13))",
-			DungeonMap.MAP.size() == 25 and DungeonMap.TORCHES.size() == 25 and DungeonMap.MONSTERS.size() == 20 and DungeonMap.START_TILE == Vector2i(5, 9)
+	check("floor 1 comes from levels/floor_1.gd with all its data (25 rows, 25 sconces, 21 monsters, start (5,9), the menu camera (6,13))",
+			DungeonMap.MAP.size() == 25 and DungeonMap.TORCHES.size() == 25 and DungeonMap.MONSTERS.size() == 21 and DungeonMap.START_TILE == Vector2i(5, 9)
 			and DungeonMap.MENU_VIEW_CELL == Vector2i(6, 13) and DungeonMap.level_id == DungeonMap.FLOOR_1_ID and DungeonMap.level_path == "")
 	var data := {"MAP": [[1, 1, 1], [1, 0, 1], [1, 1, 1]], "START_TILE": Vector2i(1, 1), "START_FACING": 2,
 			"MONSTERS": [{"cell": Vector2i(1, 1), "def": "res://data/monsters/slime.tres"}]}
@@ -1395,7 +1396,7 @@ func _check_level_data() -> void:
 				and DungeonMap.level_path == DungeonMap.TEST_ROOM_PATH)
 		check("a level file with no menu camera gets its start tile for it", DungeonMap.MENU_VIEW_CELL == DungeonMap.START_TILE)
 	DungeonMap.use_level("")
-	check("and floor 1 comes back whole after any of it", DungeonMap.MAP.size() == 25 and DungeonMap.MAP[4][16] == 7 and DungeonMap.MONSTERS.size() == 20
+	check("and floor 1 comes back whole after any of it", DungeonMap.MAP.size() == 25 and DungeonMap.MAP[4][16] == 7 and DungeonMap.MONSTERS.size() == 21
 			and DungeonMap.MENU_VIEW_CELL == Vector2i(6, 13))
 
 
@@ -2366,6 +2367,24 @@ func _check_tooltip_theme() -> void:
 			theme != null and theme.get_font_size("font_size", "TooltipLabel") == 8 and box is StyleBoxFlat and box.border_width_left == 2
 			and box.bg_color.is_equal_approx(Color("14131b")) and box.border_color.is_equal_approx(Color("7c4426"))
 			and theme.get_color("font_color", "TooltipLabel").is_equal_approx(Color("c9c0a4")))
+
+
+## The Horned Knight (data/monsters/knight.tres): a slow, heavily armoured tier 2 melee monster with a greatsword chop.
+func _check_knight() -> void:
+	_rest_everyone()
+	dungeon.clear_monsters()
+	player.restore(SPOT, EAST)
+	await create_timer(0.2).timeout
+	var def: Resource = load("res://data/monsters/knight.tres")
+	var guard: Resource = load("res://data/monsters/skeleton_guard.tres")
+	check("knight: tier 2, 26 HP, defence 5, slower than the skeleton guard, melee only, with idle, attack, walk and hurt frames and a hit frame inside the attack",
+			def.tier == 2 and def.max_hp == 26 and def.defence == 5 and def.step_interval > guard.step_interval and def.attack_interval > guard.attack_interval and def.ranged_range == 0
+			and def.hframes == 24 and def.idle_frames.size() > 0 and def.walk_frames.size() == 8 and def.hurt_frames.size() == 4 and def.attack_frames.size() == 7
+			and def.attack_hit_frame >= 0 and def.attack_hit_frame < def.attack_frames.size())
+	var knight: Node = _monster("knight", AHEAD_1)
+	check("knight: next to the party it can strike", knight._can_strike())
+	dungeon.clear_monsters()
+	DungeonMap.occupied.clear()
 
 
 ## The background music: Walen's "Dark Heart", one looping player under the tree root so it survives scene changes.

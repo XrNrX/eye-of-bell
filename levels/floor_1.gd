@@ -232,6 +232,7 @@ const MONSTERS := [
 	{"cell": Vector2i(16, 21), "def": "res://data/monsters/skeleton_guard.tres"},  # Room 6 (it stood in the cave, but nothing above tier 1 may stand in a curse zone).
 	{"cell": Vector2i(18, 14), "def": "res://data/monsters/red_shaman.tres"},  # The long corridor south of door (18,10): a caster in the firing line, four tiles from the door (tier 2).
 	{"cell": Vector2i(15, 11), "def": "res://data/monsters/zombie.tres"},
+	{"cell": Vector2i(14, 19), "def": "res://data/monsters/knight.tres"},  # The Horned Knight (tier 2, slow, heavily armoured), alone in the corridor between the cave and room 6.
 	# Two goblins (tier 1) in the one-tile west corridor that ends at the cracked wall (2,6): the guards of the loot closet.
 	{"cell": Vector2i(3, 7), "def": "res://data/monsters/goblin.tres"},
 	{"cell": Vector2i(5, 7), "def": "res://data/monsters/goblin.tres"},  # Room 3, far corner: the zombie (slow, tough, tier 2).
