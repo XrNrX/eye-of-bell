@@ -113,6 +113,14 @@ the Red Shaman (`data/monsters/red_shaman.tres`, a goblin in a red hood with a s
 - **Not built:** he has no drop and no banter, and keeps no distance (he does not back off from a party that closes in).
 - Art: PixelLab (see `docs/asset_log.md` "The Red Shaman").
 
+## Reach: the Goblin Halberdier
+
+A monster with `MonsterDef.ranged_range` of 2 and no `bolt_effect` has a **polearm's reach**: it can strike from the next tile or from exactly two tiles away on the party's row or column with a clear line (a wall or closed door stops it; a portcullis does not). The Goblin Halberdier (`data/monsters/halberdier.tres`) is the first: tier 2, 11 HP, attack 4, defence 3, damage 2-5, a stab every 2.0 s.
+
+- **Behaviour:** he heads for a tile two away in line with the party and stops there, stabbing; he does not close in while he can strike. A hero in the front row cannot hit back at two tiles (melee reaches one): the answer is to close in, throw something, shoot or cast.
+- **The blow:** nothing flies; the damage lands a moment after the stab (0.05 s a tile), rolled like any monster blow, with the usual flash, direction and hit effect.
+- **Not built:** he does not keep his distance: a party that closes to the next tile is stabbed from there too.
+
 ## The Bone Spider's web
 
 A monster with `MonsterDef.web_range` above 1 (the Bone Spider, `data/monsters/spider.tres`: range 4) can spit a web. It does so instead of closing in whenever it has a clear straight line (the same row or column, nothing in the way) to the party from 2 to 4 tiles away and its web is ready:

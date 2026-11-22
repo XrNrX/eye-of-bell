@@ -218,6 +218,7 @@ const MONSTERS := [
 	{"cell": Vector2i(11, 5), "def": "res://data/monsters/plague_rat.tres"},
 	{"cell": Vector2i(7, 5), "def": "res://data/monsters/zombie.tres"},
 	{"cell": Vector2i(9, 5), "def": "res://data/monsters/goblin.tres"},  # Fodder: weak, quick, a spear jab.
+	{"cell": Vector2i(6, 8), "def": "res://data/monsters/halberdier.tres"},  # Reach: it stabs from two tiles away down a clear line.
 	{"cell": Vector2i(3, 8), "def": "res://data/monsters/spider.tres"},  # Fast, a venomous bite (the food sickness, 25%).
 	{"cell": Vector2i(10, 3), "def": "res://data/monsters/knight.tres"},  # The heavy one: slow, armoured (defence 5), a greatsword chop.
 	{"cell": Vector2i(7, 3), "def": "res://data/monsters/red_shaman.tres"},  # A caster: a bolt from up to 4 tiles away down a clear line.

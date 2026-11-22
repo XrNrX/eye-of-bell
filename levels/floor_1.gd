@@ -233,6 +233,7 @@ const MONSTERS := [
 	{"cell": Vector2i(16, 21), "def": "res://data/monsters/skeleton_guard.tres"},  # Room 6 (it stood in the cave, but nothing above tier 1 may stand in a curse zone).
 	{"cell": Vector2i(18, 14), "def": "res://data/monsters/red_shaman.tres"},  # The long corridor south of door (18,10): a caster in the firing line, four tiles from the door (tier 2).
 	{"cell": Vector2i(15, 11), "def": "res://data/monsters/zombie.tres"},
+	{"cell": Vector2i(20, 5), "def": "res://data/monsters/halberdier.tres"},  # The Goblin Halberdier (tier 2, reach 2) in the optional north-east room, with its skeleton and acid slime.
 	{"cell": Vector2i(12, 14), "def": "res://data/monsters/spider.tres"},  # The Bone Spider (tier 2, fast, a venomous bite), in the one-tile link between the long corridor and the row-15 corridor.
 	{"cell": Vector2i(14, 19), "def": "res://data/monsters/knight.tres"},  # The Horned Knight (tier 2, slow, heavily armoured), alone in the corridor between the cave and room 6.
 	# Two goblins (tier 1) in the one-tile west corridor that ends at the cracked wall (2,6): the guards of the loot closet.

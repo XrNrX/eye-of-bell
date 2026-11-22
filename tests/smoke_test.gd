@@ -96,6 +96,7 @@ func _init() -> void:
 	await _check_knight()
 	await _check_spider()
 	_check_robes()
+	await _check_halberdier()
 	await _check_log_scroll()
 	_check_tooltip_theme()
 	await _check_music()
@@ -1373,8 +1374,8 @@ func _check_inventory_quick() -> void:
 ## dictionary, use_level is the thin wrapper. Pure DungeonMap checks, run before the scene is built; ends on floor 1.
 func _check_level_data() -> void:
 	DungeonMap.use_level("")
-	check("floor 1 comes from levels/floor_1.gd with all its data (25 rows, 25 sconces, 22 monsters, start (5,9), the menu camera (6,13))",
-			DungeonMap.MAP.size() == 25 and DungeonMap.TORCHES.size() == 25 and DungeonMap.MONSTERS.size() == 22 and DungeonMap.START_TILE == Vector2i(5, 9)
+	check("floor 1 comes from levels/floor_1.gd with all its data (25 rows, 25 sconces, 23 monsters, start (5,9), the menu camera (6,13))",
+			DungeonMap.MAP.size() == 25 and DungeonMap.TORCHES.size() == 25 and DungeonMap.MONSTERS.size() == 23 and DungeonMap.START_TILE == Vector2i(5, 9)
 			and DungeonMap.MENU_VIEW_CELL == Vector2i(6, 13) and DungeonMap.level_id == DungeonMap.FLOOR_1_ID and DungeonMap.level_path == "")
 	var data := {"MAP": [[1, 1, 1], [1, 0, 1], [1, 1, 1]], "START_TILE": Vector2i(1, 1), "START_FACING": 2,
 			"MONSTERS": [{"cell": Vector2i(1, 1), "def": "res://data/monsters/slime.tres"}]}
@@ -1398,7 +1399,7 @@ func _check_level_data() -> void:
 				and DungeonMap.level_path == DungeonMap.TEST_ROOM_PATH)
 		check("a level file with no menu camera gets its start tile for it", DungeonMap.MENU_VIEW_CELL == DungeonMap.START_TILE)
 	DungeonMap.use_level("")
-	check("and floor 1 comes back whole after any of it", DungeonMap.MAP.size() == 25 and DungeonMap.MAP[4][16] == 7 and DungeonMap.MONSTERS.size() == 22
+	check("and floor 1 comes back whole after any of it", DungeonMap.MAP.size() == 25 and DungeonMap.MAP[4][16] == 7 and DungeonMap.MONSTERS.size() == 23
 			and DungeonMap.MENU_VIEW_CELL == Vector2i(6, 13))
 
 
@@ -2497,6 +2498,47 @@ func _check_robes() -> void:
 			worn.done and mage.armour != null and mage.armour.def == robes and not cursor.is_holding() and after == before + 1)
 	mage.armour = null
 	_rest_everyone()
+
+
+## The Goblin Halberdier (data/monsters/halberdier.tres): a tier 2 goblin whose halberd reaches two tiles, built on the ranged-attack mechanism with no projectile.
+func _check_halberdier() -> void:
+	var dice_state: int = CombatRules.rng().state
+	_rest_everyone()
+	dungeon.clear_monsters()
+	party.fight.in_fight = false
+	party.god_mode = false
+	player.restore(SPOT, EAST)
+	await create_timer(0.2).timeout
+	var def: Resource = load("res://data/monsters/halberdier.tres")
+	check("halberdier: tier 2, 11 HP, defence 3, a reach of 2 with no projectile and no cast sound, with idle, attack, walk and hurt frames and a hit frame inside the attack",
+			def.tier == 2 and def.max_hp == 11 and def.defence == 3 and def.ranged_range == 2 and def.bolt_effect == "" and def.cast_sound == "" and def.hframes == 24
+			and def.idle_frames.size() > 0 and def.walk_frames.size() == 8 and def.hurt_frames.size() == 4 and def.attack_frames.size() == 7
+			and def.attack_hit_frame >= 0 and def.attack_hit_frame < def.attack_frames.size())
+	var h: Node = _monster("halberdier", Vector2i(8, 13))
+	var can_at := func(c: Vector2i) -> bool:
+		h.cell = c
+		return h._can_strike()
+	check("halberdier: from exactly two tiles away down a clear line it can strike; next to the party it can too; three tiles away or off the line it cannot",
+			can_at.call(Vector2i(8, 13)) and can_at.call(AHEAD_1) and not can_at.call(Vector2i(9, 13)) and not can_at.call(Vector2i(8, 11)))
+	h.cell = Vector2i(8, 13)
+	CombatRules.seed_rng(97)
+	var struck := []
+	var on_struck := func(monster: Node, side: String, damage: int, crit: bool): struck.append([monster, side])
+	party.monster_struck.connect(on_struck)
+	var bolts_seen := 0
+	for i in 30:
+		h.attack_cooldown = 0.0
+		h._attack()
+		bolts_seen = maxi(bolts_seen, get_nodes_in_group("monster_bolts").size())
+		await create_timer(0.2).timeout
+		if not struck.is_empty():
+			break
+	party.monster_struck.disconnect(on_struck)
+	check("halberdier: its stab from two tiles hurts the party from the front, with nothing flying", not struck.is_empty() and struck[0][0] == h and struck[0][1] == "front" and bolts_seen == 0)
+	dungeon.clear_monsters()
+	DungeonMap.occupied.clear()
+	_rest_everyone()
+	CombatRules.rng().state = dice_state
 
 
 ## The background music: Walen's "Dark Heart", one looping player under the tree root so it survives scene changes.
