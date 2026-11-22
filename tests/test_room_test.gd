@@ -284,6 +284,22 @@ func _check_game() -> void:
 			elif m.class_id() in st.def.cant_use:
 				every_usable = false
 	check("every hero has a stocked pack (%s stacks) of items they can use" % str(packs), packs.min() >= 6 and packs.max() - packs.min() <= 3 and every_usable)
+	# DISCARD in the inventory: a full pack is never a trap. An ordinary stack goes at once; a key or a legendary asks for a second click.
+	var inv := get_first_node_in_group("inventory")
+	var hand_cursor := get_first_node_in_group("cursor")
+	var ItemStackS := load("res://scripts/item_stack.gd")
+	check("the inventory has a DISCARD button and the window stays on screen", inv.discard_button != null and Rect2(0, 0, 640, 360).encloses(inv.window.get_global_rect()))
+	check("DISCARD with an empty hand does nothing", not inv.discard_held())
+	hand_cursor.hold(ItemStackS.of(load("res://data/items/darts.tres"), 3))
+	check("DISCARD destroys an ordinary stack at once", inv.discard_held() and not hand_cursor.is_holding() and "discards 3 darts" in inv.status_label.text)
+	hand_cursor.hold(ItemStackS.of(load("res://data/items/key.tres"), 1))
+	check("a key asks first, and still lies on the cursor", not inv.discard_held() and hand_cursor.is_holding() and inv.discard_pending != null and inv.discard_button.text.begins_with("SURE"))
+	check("the second click throws the key away", inv.discard_held() and not hand_cursor.is_holding() and inv.discard_pending == null)
+	hand_cursor.hold(ItemStackS.of(load("res://data/items/azure_brand.tres"), 1))
+	check("a legendary asks first too", not inv.discard_held() and hand_cursor.is_holding() and inv.discard_pending != null)
+	hand_cursor.release()   # The item is put down: the question lapses.
+	inv.refresh()
+	check("a lapsed question starts again from DISCARD", inv.discard_pending == null and inv.discard_button.text == "DISCARD")
 	# The campfire station: a camp at (21,21) with four bedrolls, an animated flame and a flickering light the dark rules count.
 	var camps := get_nodes_in_group("camp_sites")
 	var camp_ok: bool = camps.size() == 1 and camps[0].cell == Vector2i(21, 21) and camps[0].bedrolls.size() == 4 and camps[0].flame != null and camps[0].light != null
