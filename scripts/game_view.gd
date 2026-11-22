@@ -21,6 +21,7 @@ const EnemyBars := preload("res://scripts/enemy_bars.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const UiScale := preload("res://scripts/ui_scale.gd")
 const Camp := preload("res://scripts/camp.gd")
+const LevelIntro := preload("res://scripts/level_intro.gd")
 
 var player: Node
 
@@ -51,6 +52,8 @@ func _ready() -> void:
 	(owner if owner != null else get_tree().root).add_child.call_deferred(Camp.new())  # The camp screen (a bedroll), over the view and under the frame.
 	(owner if owner != null else get_tree().root).add_child.call_deferred(WebOverlay.new())  # The webbing over the view while the party is stuck in a web.
 	(owner if owner != null else get_tree().root).add_child.call_deferred(CurseVignette.new())  # The curse zone's edge glow (over the view, under the frame).
+	if LevelIntro.take(DungeonMap.level_id):  # A level just started from the menu may open with a short intro card.
+		(owner if owner != null else get_tree().root).add_child.call_deferred(LevelIntro.new())
 	if DungeonMap.test_room_available():
 		var tools: Script = load(DungeonMap.TOOLS_PATH)
 		(owner if owner != null else get_tree().root).add_child.call_deferred(tools.new())

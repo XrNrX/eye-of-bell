@@ -25,6 +25,7 @@ const SaveGame := preload("res://scripts/save_game.gd")
 const Settings := preload("res://scripts/settings.gd")
 const SpellEffectsConfig := preload("res://scripts/spell_effects_config.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
+const LevelIntro := preload("res://scripts/level_intro.gd")
 const FONT := preload("res://art/fonts/PressStart2P-Regular.ttf")
 
 # Palette colours (tools/art/palette.json).
@@ -188,6 +189,7 @@ func _enter_test_room() -> void:
 
 func _on_demo_pressed() -> void:
 	DungeonMap.use_level(DungeonMap.DEMO_1_PATH)
+	LevelIntro.pending_for = DungeonMap.DEMO_1_PATH   # A short intro card when the level opens (level_intro.gd).
 	get_tree().change_scene_to_file(MAIN_SCENE)
 
 

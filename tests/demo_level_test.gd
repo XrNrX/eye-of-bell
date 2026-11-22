@@ -8,6 +8,7 @@ const Settings := preload("res://scripts/settings.gd")
 const SaveGame := preload("res://scripts/save_game.gd")
 const EditorGrid := preload("res://scripts/debug/editor_grid.gd")
 const EditorCheck := preload("res://scripts/debug/editor_check.gd")
+const LevelIntro := preload("res://scripts/level_intro.gd")
 const DIRS := [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0)]
 const TIER_COST := {1: 3.5, 2: 11.0, 3: 30.0}   # % of the party's HP a fair fight costs (docs/design/expansion_design.md, section 2).
 var fails := 0
@@ -140,10 +141,26 @@ func _check_balance() -> void:
 
 
 func _check_game() -> void:
+	LevelIntro.pending_for = DungeonMap.DEMO_1_PATH   # As the menu's DEMO LEVEL button leaves it: the level opens with its intro card.
 	var scene: Node = load("res://scenes/main.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene
 	await create_timer(1.0).timeout
+	var card := get_first_node_in_group("level_intro")
+	check("the demo opens with its intro card, and the game is held still behind it", card != null and paused and LevelIntro.pending_for == "")
+	if card != null:
+		check("the card has a title, three narrator lines and a goal, each short", card.lines.size() == 4 and card.data.title == "DEMO LEVEL 1" and card.data.lines.all(func(l): return l.length() <= 70))
+		await create_timer(card.times[0] + 1.0).timeout
+		check("the first line has appeared by then and the last has not", card.lines[0].modulate.a > 0.0 and card.lines[3].modulate.a == 0.0)
+		var key := InputEventKey.new()
+		key.keycode = KEY_SPACE
+		key.physical_keycode = KEY_SPACE
+		key.pressed = true
+		root.push_input(key, true)
+		check("a key press starts it fading out", card.leaving)
+		await create_timer(LevelIntro.FADE_OUT + 0.4).timeout
+		check("the card is gone and the game runs again", not is_instance_valid(card) and not paused)
+	check("a loaded game or a new floor shows no intro", not LevelIntro.take(DungeonMap.DEMO_1_PATH))
 	var party := get_first_node_in_group("party")
 	var player := get_first_node_in_group("player")
 	check("the demo builds: four heroes, the party on the start, every monster in", party != null and party.members.size() == 4 and player.cell == DungeonMap.START_TILE and get_nodes_in_group("monsters").size() == DungeonMap.MONSTERS.size())
