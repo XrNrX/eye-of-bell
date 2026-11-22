@@ -2306,6 +2306,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Campfire is solid: the party and monsters cannot walk onto a campfire tile; sight and missiles still pass (`f3613c7`)
 - [x] Campfire pop-up: left-click the campfire in front to make camp (rest, no bedroll used) or cook the raw food the party carries (`b3bec03`)
 - [x] Hearth Coal and the safe campfire zone: one coal a level (floor 1 has one) takes the party to a small monster-free camp room to rest, cook and use packs; BREAK CAMP at its fire returns them to the exact tile with the level as they left it (`7cc6c61`)
+- [x] Test room backpacks stocked fairly: every item goes to a hero who can use it, lightest pack first, so each hero gets a near-equal share (about 9 stacks) to try in random play (`852d43b`)
 
 ## Ideas inbox
 
