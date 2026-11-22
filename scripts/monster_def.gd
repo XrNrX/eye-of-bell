@@ -62,6 +62,19 @@ extends Resource
 @export var bolt_effect := ""
 @export var cast_sound := ""
 
+@export_group("Web attack")
+## A spider's web: with `web_range` above 1, while this monster has a clear straight line to the party from 2 to `web_range` tiles away and its web is
+## ready, it spits a web instead of coming closer (its attack animation, then the web flies `web_seconds_per_tile` per tile and lands). A web that
+## lands pins the party in place for `web_seconds`: they can turn, fight and cast but not step (Party.web_party). One web at a time; the next is
+## ready `web_interval` seconds after the last was spat (the first at once). A monster that dies first takes its web with it.
+@export var web_range := 0
+@export var web_interval := 10.0
+@export var web_seconds := 3.0
+@export var web_seconds_per_tile := 0.09
+## The flying web's art (a folder in art/spells/ holding bolt_sheet.png and .json) and the sound as it is spat (a name in audio/sfx).
+@export var web_effect := ""
+@export var web_sound := ""
+
 @export_group("Bite")
 ## A landed blow may leave the hero sick (the food sickness: Member.sick_*: `sick_damage` HP over `sick_seconds`, never kills): the
 ## chance is 0..1. 0 for most monsters. The plague rat's is 0.2.

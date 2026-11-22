@@ -2405,6 +2405,68 @@ func _check_spider() -> void:
 	dungeon.clear_monsters()
 	DungeonMap.occupied.clear()
 
+	# The web: a clear line 2 to 4 tiles away, a web ready; it pins the party (turning free, stepping not) for 3 seconds.
+	check("spider: it has a web (range 4, 3 s) with its flying art, its sound and the overlay picture all present",
+			def.web_range == 4 and is_equal_approx(def.web_seconds, 3.0) and ResourceLoader.exists("res://art/spells/%s/bolt_sheet.png" % def.web_effect)
+			and FileAccess.file_exists("res://audio/sfx/%s.wav" % def.web_sound) and FileAccess.file_exists("res://audio/sfx/web_stick.wav") and ResourceLoader.exists("res://art/ui/web_net.png"))
+	var web_spider: Node = _monster("spider", Vector2i(9, 13))
+	var can_at := func(c: Vector2i) -> bool:
+		web_spider.cell = c
+		return web_spider._can_web()
+	check("spider: three tiles away on its row it may web; next to the party, off the line or five tiles away it may not",
+			can_at.call(Vector2i(9, 13)) and not can_at.call(AHEAD_1) and not can_at.call(Vector2i(8, 11)) and not can_at.call(Vector2i(11, 13)))
+	web_spider.cell = Vector2i(9, 13)
+	web_spider.web_wait = 5.0
+	var cooling: bool = not web_spider._can_web()
+	web_spider.web_wait = 0.0
+	party.webbed_left = 1.0
+	var already: bool = not web_spider._can_web()
+	party.webbed_left = 0.0
+	check("spider: not while its web is cooling, and not on a party already stuck in one", cooling and already and web_spider._can_web())
+	var bus: Node = root.get_node("GameEvents")
+	var webbed_news := []
+	var freed_news := []
+	var on_webbed := func(m: Node): webbed_news.append(m)
+	var on_freed := func(): freed_news.append(1)
+	bus.party_webbed.connect(on_webbed)
+	bus.web_ended.connect(on_freed)
+	web_spider.move_wait = 0.0
+	web_spider._on_tick()
+	check("spider: seeing the party down the corridor it spits instead of stepping closer, and its next web is 10 s away", web_spider.cell == Vector2i(9, 13)
+			and is_equal_approx(web_spider.web_wait, 10.0) and not party.is_webbed())
+	await create_timer(0.9).timeout
+	check("spider: the web lands: the party is stuck for about 3 s, told so once, and the webbing shows over the view",
+			party.is_webbed() and party.webbed_left > 2.0 and party.webbed_left <= 3.0 and webbed_news.size() == 1 and webbed_news[0] == web_spider
+			and get_first_node_in_group("web_overlay") != null and get_first_node_in_group("web_overlay").rect.visible)
+	var stood: Vector2i = player.cell
+	player.command("forward")
+	player.command("back")
+	var faced: int = player.facing
+	player.command("turn_left")
+	check("spider: stuck in the web nobody can step, forward or back, but they can still turn to face it", player.cell == stood and player.facing != faced)
+	player.restore(SPOT, EAST)
+	web_spider.web_wait = 0.0
+	check("spider: a party already in a web is not webbed again", not web_spider._can_web())
+	party._process(3.5)
+	check("spider: the web tears loose after its time, told once, and the party can step again",
+			not party.is_webbed() and freed_news.size() == 1)
+	player.command("forward")
+	check("spider: ...and the party steps forward", player.cell == AHEAD_1)
+	player.restore(SPOT, EAST)
+	dungeon.clear_monsters()
+	DungeonMap.occupied.clear()
+	# A spider killed while its web is in the air takes the web with it.
+	var dying_spider: Node = _monster("spider", Vector2i(9, 13))
+	dying_spider._begin_web()
+	dying_spider.dying = true
+	await create_timer(0.9).timeout
+	check("spider: a spider that dies before its web lands webs nobody", not party.is_webbed() and webbed_news.size() == 1)
+	bus.party_webbed.disconnect(on_webbed)
+	bus.web_ended.disconnect(on_freed)
+	party.webbed_left = 0.0
+	dungeon.clear_monsters()
+	DungeonMap.occupied.clear()
+
 
 ## The background music: Walen's "Dark Heart", one looping player under the tree root so it survives scene changes.
 func _check_music() -> void:

@@ -113,6 +113,17 @@ the Red Shaman (`data/monsters/red_shaman.tres`, a goblin in a red hood with a s
 - **Not built:** he has no drop and no banter, and keeps no distance (he does not back off from a party that closes in).
 - Art: PixelLab (see `docs/asset_log.md` "The Red Shaman").
 
+## The Bone Spider's web
+
+A monster with `MonsterDef.web_range` above 1 (the Bone Spider, `data/monsters/spider.tres`: range 4) can spit a web. It does so instead of closing in whenever it has a clear straight line (the same row or column, nothing in the way) to the party from 2 to 4 tiles away and its web is ready:
+the first web at first sight, then one every 10 seconds (`web_interval`), never while the party is already stuck in one, and never while the spider is held.
+
+- **Spitting:** the spider plays its attack animation and the web leaves on that animation's impact frame, flying 0.09 s a tile. A spider that dies, or a party that steps out of line, before it leaves means no web; a spider that dies while it flies takes it with it.
+- **Landing:** the party is pinned for `web_seconds` (3 s): **no stepping, forward, back or sideways** ("You are stuck fast in the web."), but turning, attacking, throwing and casting work as usual. A web already on the party is not lengthened and does not restart. It is not saved; a camp cannot be made while stuck, and a web never lands on a party that is camping.
+- **Feedback:** "Webbing pins the party in place." and later "The webbing tears loose.", the sounds `web_spit` and `web_stick`, and a web laid over the 3D view that blinks off just before it ends (steady and then gone with Reduce flashing).
+- **Why it matters:** it takes away the step-back dance: the spider webs you down a corridor and closes while you cannot back off. A bear trap set in front of you still works on it.
+- **Not built:** no banter for it yet, no way to cut free early (fire or a weapon), and only the spider uses it.
+
 ## Monster tiers
 
 Every monster has a tier (`MonsterDef.tier`), and every status effect reads one table by it: `data/tiers.tres` (`scripts/monster_tiers.gd`). **Rule of thumb: on tier 1 a spell almost always works; on tier 4 it is a gamble.**

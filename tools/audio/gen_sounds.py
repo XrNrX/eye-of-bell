@@ -248,6 +248,20 @@ def shaman_cast():
     return finish(mix(whine, crackle, (snap, 0.36)), 0.55)
 
 
+def web_spit():
+    """A spider spitting a web: a wet hiss that rises, with a thin falling whistle of silk as it flies."""
+    hiss = gain(swell(bandpass(noise(0.45, 91), 2500, 9000), 0.03, 0.3), 0.55)
+    silk = gain(swell(osc(glide(1800, 700, 0.4), 0.4, "sine"), 0.05, 0.3), 0.1)
+    return finish(mix(hiss, silk), 0.5)
+
+
+def web_stick():
+    """The web landing: a soft sticky thud with a short wet smack on top."""
+    thud = gain(decay(lowpass(noise(0.35, 92), 450), 0.09), 0.9)
+    smack = gain(decay(bandpass(noise(0.1, 93), 900, 3500), 0.025), 0.5)
+    return finish(mix(thud, (smack, 0.015)), 0.6)
+
+
 def pickup():
     return finish(mix(decay(osc(660, 0.1), 0.05), (decay(osc(990, 0.14), 0.07), 0.06)), 0.45)
 
@@ -386,7 +400,7 @@ SOUNDS = {
     "turn": (turn, None), "bump": (bump, None),
     "door_open": (door_open, None), "door_close": (door_close, None), "door_locked": (door_locked, None),
     "unlock": (unlock, None), "lever": (lever, None), "plate": (plate, None),
-    "trap_set": (trap_set, None), "trap_snap": (trap_snap, None), "sizzle": (sizzle, None), "shaman_cast": (shaman_cast, None),
+    "trap_set": (trap_set, None), "trap_snap": (trap_snap, None), "sizzle": (sizzle, None), "shaman_cast": (shaman_cast, None), "web_spit": (web_spit, None), "web_stick": (web_stick, None),
     "pickup": (pickup, None), "drop": (drop, None),
     "swing": (swing, None), "whiff": (whiff, None), "hit": (hit, None), "throw": (throw, None),
     "crit_hit": (crit_hit, None), "crit_hurt": (crit_hurt, None), "fumble": (fumble, None),

@@ -41,6 +41,7 @@ var def: Resource  # The MonsterDef.
 var move_wait := 0.0       # Seconds until its next move, on its own clock.
 var recovery_left := 0.0   # Arrival recovery left: its attack can't start until this runs out.
 var held_back := 0.0       # Seconds it has been queued behind a monster already at the party (flank_after unlocks a pass).
+var web_wait := 0.0        # Seconds until it may spit another web (MonsterDef.web_range).
 var blows_struck := 0      # Attacks it has made (read by tests).
 var _was_in_reach := false
 var _queued := false       # Its last move found it held back (see _chase_dir).
@@ -105,6 +106,7 @@ func _process(delta: float) -> void:
 	_tick_statuses(delta)
 	if dying:
 		return  # (A damage-over-time tick killed it.)
+	web_wait = maxf(0.0, web_wait - delta)
 	# The party slipped out of reach: a beat before it follows. This only ever pushes the next move later.
 	var in_reach := _can_strike()
 	if _was_in_reach and not in_reach:
@@ -426,6 +428,60 @@ func _attack() -> void:
 	get_tree().call_group("party", "take_hit_from", self)
 
 
+## May it spit a web now (MonsterDef.web_range): a web ready, the party 2 to web_range tiles away on its row or column with a clear line, not already
+## stuck in one, and nothing holding the monster still or stopping its attacks.
+func _can_web() -> bool:
+	if def.web_range <= 1 or web_wait > 0.0 or _walking or dying:
+		return false
+	if _status_flag("stops_attacking") or _status_flag("stops_moving"):
+		return false
+	var party := get_tree().get_first_node_in_group("party")
+	if party != null and party.has_method("is_webbed") and party.is_webbed():
+		return false
+	var d := DungeonMap.player_cell - cell
+	if d.x != 0 and d.y != 0:
+		return false
+	var tiles := absi(d.x) + absi(d.y)
+	return tiles >= 2 and tiles <= def.web_range and DungeonMap.has_line_of_sight(cell, DungeonMap.player_cell)
+
+
+## Start a web: the attack animation, and the web leaves on its impact frame (_spit_web). It does not step meanwhile.
+func _begin_web() -> void:
+	web_wait = def.web_interval
+	if not def.attack_frames.is_empty():
+		_play(def.attack_frames, def.attack_fps)
+	var delay := _hit_delay()
+	move_wait = maxf(move_wait, delay + 0.5)
+	get_tree().create_timer(delay).timeout.connect(_spit_web)
+
+
+## The web leaves the monster for the party, if the line is still clear (a party that stepped out of line, or a monster that died, spits nothing).
+func _spit_web() -> void:
+	if dying or not is_inside_tree():
+		return
+	var d := DungeonMap.player_cell - cell
+	if (d.x != 0 and d.y != 0) or not DungeonMap.has_line_of_sight(cell, DungeonMap.player_cell):
+		return
+	var tiles := maxi(1, absi(d.x) + absi(d.y))
+	var travel: float = tiles * def.web_seconds_per_tile
+	if def.web_sound != "":
+		get_tree().call_group("audio", "play", def.web_sound)
+	if def.web_effect != "" and is_instance_valid(get_parent()):
+		var bolt := MonsterBolt.new()
+		get_parent().add_child(bolt)
+		var start: Vector3 = (sprite.global_position if sprite != null else global_position) + Vector3(0, 0.15, 0)
+		var toward := Vector3(-d.x, 0.0, -d.y) * 0.4
+		bolt.launch(def.web_effect, start, DungeonMap.cell_to_world(DungeonMap.player_cell) + Vector3(0, 1.0, 0) + toward, travel, Color(1.0, 1.0, 1.05), Color(0.75, 0.8, 0.95), 0.6)
+	get_tree().create_timer(travel).timeout.connect(_web_lands)
+
+
+## The web arrives (a monster that died while it flew takes it with it): the party is stuck.
+func _web_lands() -> void:
+	if dying or not is_inside_tree():
+		return
+	get_tree().call_group("party", "web_party", self)
+
+
 ## A caster's attack: a bolt leaves now (a picture flying to the party and the cast sound) and does its damage when it arrives. A caster
 ## that dies before it arrives takes the bolt with it.
 func _cast() -> void:
@@ -612,6 +668,9 @@ func _on_tick() -> void:
 		if def.boss and not _boss_seen:  # The party's first look at a boss: one quick exchange before the fight (banter "boss_seen").
 			_boss_seen = true
 			get_tree().call_group("banter", "event", "boss_seen", {"monster": def.display_name})
+		if _can_web():  # A clear line to the party and a web ready: spit it instead of stepping.
+			_begin_web()
+			return
 		dir = _chase_dir()
 	else:
 		_drop_pass()

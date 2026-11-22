@@ -64,6 +64,7 @@ var flames_out := false   # A curse zone has put the party's held flames out (cu
 var sputter_left := 0.0   # Seconds a held flame still has before it goes out in a curse zone (0: not sputtering): the light flickers hard.
 var _behaviours := {}   # ItemDef -> its ItemBehaviour instance, made on first use (behaviour_of).
 var _item_where := {}   # ItemStack -> {"where": "worn" | "pack", "member": Member}: where each behaviour item was last frame (_tick_items).
+var webbed_left := 0.0  # Seconds the party is stuck in a spider's web (web_party): they can turn, fight and cast but not step (Player._try_move). Not saved.
 var camping := false   # The party is resting at a camp (camp.gd): burn timers, meals and slow mana regeneration wait.
 var god_mode := false  # Debug (the test room's G key): monsters' blows land on nobody.
 
@@ -190,6 +191,11 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if webbed_left > 0.0:
+		webbed_left = maxf(0.0, webbed_left - delta)
+		if webbed_left <= 0.0:
+			_say("The webbing tears loose.")
+			Events.send(get_tree(), "web_ended", [])
 	for m in members:
 		m.cooldown_left = maxf(0.0, m.cooldown_left - delta)
 		for spell in m.spell_wait.keys():
@@ -2449,6 +2455,23 @@ func _fx(effect: String, at := Vector2i(-1, -1)) -> void:
 ## Play a sound through the audio node (group "audio"), if the scene has one.
 func _cue(sound: String) -> void:
 	get_tree().call_group("audio", "play", sound)
+
+
+## Is the party stuck in a web?
+func is_webbed() -> bool:
+	return webbed_left > 0.0
+
+
+## A spider's web lands on the party (Monster._web_lands): they cannot step for `seconds` (the monster's MonsterDef.web_seconds). A web already on
+## them is not made longer.
+func web_party(monster: Node, seconds := -1.0) -> void:
+	if webbed_left > 0.0 or camping:
+		return
+	webbed_left = seconds if seconds >= 0.0 else float(monster.def.web_seconds)
+	_say("Webbing pins the party in place.")
+	_cue("web_stick")
+	get_tree().call_group("web_overlay", "show_web", webbed_left)
+	Events.send(get_tree(), "party_webbed", [monster])
 
 
 ## Play a sound from that side of the party (see Audio.play_from).

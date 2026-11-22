@@ -21,6 +21,8 @@ signal monster_killed(def: Resource, cell: Vector2i, killer: int)
 signal monster_held(monster: Node, source: int)
 ## A monster stepped on an armed trap and it went off (trap_field.gd): trap is its ItemDef (the rusty bear trap).
 signal trap_triggered(trap: Resource, monster: Node)
+signal party_webbed(monster: Node)   # Sent by Party.web_party: a spider's web has landed and the party cannot step.
+signal web_ended                       # ...and it has torn loose.
 ## A hero's light burned out in their hand (Party._tick_lights): hero is their hero_index.
 signal light_out(hero: int)
 ## The party's light changed: a light was taken up, put away or burned out (Party.light_level: 0 is dark, else the brightest held

@@ -18,7 +18,7 @@ var effect := ""
 
 
 ## Add to the tree first, then call: flies from `start` to `end` in `time` seconds using art/spells/<effect_name>/bolt_sheet.
-func launch(effect_name: String, start: Vector3, end: Vector3, time: float) -> void:
+func launch(effect_name: String, start: Vector3, end: Vector3, time: float, tint := Color(1.3, 1.0, 0.9), light_colour := LIGHT_COLOUR, light_energy := 1.2) -> void:
 	effect = effect_name
 	from_pos = start
 	to_pos = end
@@ -29,12 +29,12 @@ func launch(effect_name: String, start: Vector3, end: Vector3, time: float) -> v
 	if ResourceLoader.exists(base + ".png") and FileAccess.file_exists(base + ".json"):
 		var info = JSON.parse_string(FileAccess.get_file_as_string(base + ".json"))
 		var flame := FxFlipbook.new()
-		flame.setup(load(base + ".png"), int(info.frames), float(info.fps), true, PIXEL, Color(1.3, 1.0, 0.9), true)
+		flame.setup(load(base + ".png"), int(info.frames), float(info.fps), true, PIXEL, tint, true)
 		add_child(flame)
 	var light := OmniLight3D.new()
 	light.set_script(TorchLight)
-	light.base_energy = 1.2
-	light.light_color = LIGHT_COLOUR
+	light.base_energy = light_energy
+	light.light_color = light_colour
 	light.omni_range = 5.0
 	add_child(light)
 	var tween := create_tween()

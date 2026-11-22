@@ -309,8 +309,18 @@ func command(kind: String) -> void:
 		"turn_right": _turn(-1)
 
 
+var _web_msg_at := -10000   # When "stuck in the web" was last said (so held keys do not fill the log).
+
+
 ## Step one tile in grid direction `dir`, unless a wall is in the way.
 func _try_move(dir: Vector2i) -> void:
+	var party_node := get_tree().get_first_node_in_group("party")
+	if party_node != null and party_node.has_method("is_webbed") and party_node.is_webbed():  # Stuck in a spider's web: no stepping (turning is free).
+		_cue("bump")
+		if Time.get_ticks_msec() - _web_msg_at > 1500:
+			_web_msg_at = Time.get_ticks_msec()
+			_say("You are stuck fast in the web.")
+		return
 	var target := cell + dir
 	if DungeonMap.is_blocked(target) or DungeonMap.is_occupied(target):  # Walls, closed doors, monsters.
 		_cue("bump")  # (audio.gd limits how often, so holding W against a wall isn't a drum roll.)
