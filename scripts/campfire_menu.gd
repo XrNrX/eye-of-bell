@@ -162,7 +162,8 @@ func break_camp() -> bool:
 		camp.end()
 	var tree := get_tree()
 	close()
-	return _zone().leave(tree)
+	_zone().go_back(tree)
+	return true
 
 
 ## The party has not moved or turned since it opened.

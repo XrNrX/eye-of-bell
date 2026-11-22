@@ -2000,7 +2000,7 @@ func _hearth_coal(_m: Member) -> Dictionary:
 	var CampZone = load("res://scripts/camp_zone.gd")   # (Loaded here, not preloaded: it reaches RunState, which preloads this script.)
 	var why: String = CampZone.refusal(get_tree())
 	if why == "":
-		CampZone.enter.call_deferred(get_tree())
+		CampZone.go.call_deferred(get_tree())
 		return {"used": true, "message": "The party finds a safe fire.", "close": true}
 	_say(why)
 	return {"used": false, "message": why, "close": false}

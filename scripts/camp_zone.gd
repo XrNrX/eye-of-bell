@@ -54,6 +54,19 @@ static func enter(tree: SceneTree) -> bool:
 	return true
 
 
+## The Hearth Coal's trip with its show: slow dust builds over the view (camp_transition.gd), then `enter`. Deferred by the caller, so the coal
+## has left its slot first.
+static func go(tree: SceneTree) -> void:
+	var Transition = load("res://scripts/camp_transition.gd")
+	Transition.play(tree, func(): return enter(tree))
+
+
+## BREAK CAMP with the same show: dust builds, then `leave`.
+static func go_back(tree: SceneTree) -> void:
+	var Transition = load("res://scripts/camp_transition.gd")
+	Transition.play(tree, func(): return leave(tree))
+
+
 ## Bring the party back to where they left. False if there is nothing to go back to.
 static func leave(tree: SceneTree) -> bool:
 	if not in_zone() or snapshot.is_empty():

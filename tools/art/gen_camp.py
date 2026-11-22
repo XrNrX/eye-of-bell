@@ -122,6 +122,27 @@ def smoke_sheet():
     return PAL.snap(sheet)
 
 
+def dust_sheet():
+    """art/camp/dust_sheet.png: the VFX tool's 'Camp dust' (slow dust motes and a few embers building up over the whole view, one-shot, 24 frames, 10 fps,
+    208x130 shown at 2x over the 416x260 view) as one row of frames at full canvas size, the blank frames at the end dropped. Played forward when the party
+    leaves for camp (camp_transition.gd) and backward as they arrive. Palette-snapped. Source: pieces/camp/dust.png + .json."""
+    atlas = Image.open(PIECES / "dust.png").convert("RGBA")
+    meta = json.loads((PIECES / "dust.json").read_text())
+    frames = []
+    for f in meta["frames"]:
+        r = f["frame"]
+        frames.append(atlas.crop((r["x"], r["y"], r["x"] + r["w"], r["y"] + r["h"])))
+    while len(frames) > 1 and frames[-1].getchannel("A").getbbox() is None:
+        frames.pop()
+    w, h = frames[0].size
+    sheet = Image.new("RGBA", (w * len(frames), h), (0, 0, 0, 0))
+    for i, f in enumerate(frames):
+        sheet.paste(f, (i * w, 0))
+    fps = round(1000.0 / (sum(f.get("duration", 100) for f in meta["frames"]) / len(meta["frames"])), 2)
+    (ART_DIR / "camp" / "dust_sheet.json").write_text(json.dumps({"frames": len(frames), "fps": fps, "frame_w": w, "frame_h": h}, indent=2))
+    return PAL.snap(sheet)
+
+
 def kindling():
     """kindling_a without its painted flame: the bright yellow-orange flame pixels above the coal bed (the top 16 rows) are cleared, the red
     coals and the sticks stay."""
@@ -197,6 +218,8 @@ def build(scale=None):
         written.append(save_png(embers_sheet(), "camp/embers_sheet.png"))
     if (PIECES / "smoke.png").exists():
         written.append(save_png(smoke_sheet(), "camp/smoke_sheet.png"))
+    if (PIECES / "dust.png").exists():
+        written.append(save_png(dust_sheet(), "camp/dust_sheet.png"))
     written.append(save_png(quilt(), "camp/quilt.png"))
     written.append(save_png(kindling(), "camp/kindling.png"))
     written.append(save_png(pit_front(), "camp/pit_front.png"))
