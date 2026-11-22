@@ -273,3 +273,6 @@ None of these were made with the VFX suite, so they should be replaced.
 
 ## Goblin Halberdier: feet fix (22 Nov 2026, 14 generations)
 - The gallery picture was cropped at the shins (no feet). `tools/art/pieces/halberdier_picture.png` is now that picture shrunk to 78% on a 256 canvas with its lower part drawn by `inpaint_image` (boots and the halberd's shaft, seed 7, 10 generations), then bottom-aligned. The four clips were redone from it with the same seeds (91 to 94, 1 generation each; 4 generations). The thrust now starts at source frame 6 (`gen_halberdier.py` KEEP attack 1-4, 6, 7, 0); `pixel_size` 0.01199. 14 generations. 322 of the cycle's 2000 remain.
+
+## Campsite: embers, smoke and a warm glow (22 Nov 2026, 0 generations)
+- `scripts/camp_site.gd`: rising embers and slow smoke over the fire (`PixelParticles`, palette ramps, no fade) and a second wide, dim, warm `OmniLight3D` so the beds and stone round the camp catch the firelight. **Placeholder: the embers and smoke are code-drawn**; replace them with PixelLab VFX flipbooks (`vfx_workbench`) when convenient.

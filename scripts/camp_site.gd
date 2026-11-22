@@ -9,6 +9,7 @@ extends Node3D
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const FxFlipbook := preload("res://scripts/fx_flipbook.gd")
 const TorchLight := preload("res://scripts/torch.gd")
+const PixelParticles := preload("res://scripts/pixel_particles.gd")
 
 const DIR := "res://art/camp/"
 const PIXEL := 0.022          # World size of one art pixel for the pit (a 64 px picture is 1.4 units wide), times FIRE_SCALE.
@@ -40,6 +41,12 @@ const PATCH_X := [28.5, 71.0, 121.5, 168.0]   # The seams between the patches in
 const PATCH_Y := [0.0, 35.0, 70.0]            # ...and across it (two rows). Each patch swells on its own; the seams stay low.
 const PATCH_PUFF := 0.16      # Each patch swells this share higher at its middle.
 const WRINKLE := 0.014        # Height of the soft cloth wrinkles, in world units.
+## Rising embers and smoke over the fire (pixel particles stepping through palette ramps, never fading: PLACEHOLDER until a PixelLab VFX
+## ember/smoke flipbook replaces them, see docs/asset_log.md).
+const EMBER_RAMP := [Color("f5cf80"), Color("d99a36"), Color("7c4426"), Color("4e2a1a")]
+const SMOKE_RAMP := [Color("7b7a88"), Color("504f5e"), Color("31303c")]
+const EMBERS_PER_SECOND := 5.0
+const SMOKE_PER_SECOND := 1.2
 const PALLET_COLOUR := Color("74553a")   # leather_400
 const PILLOW_COLOUR := Color("9c9278")   # bone_500
 
@@ -50,6 +57,10 @@ var spit: Sprite3D
 var kindling: Sprite3D
 var pit_front: Sprite3D
 var light: OmniLight3D
+var glow: OmniLight3D   # A wider, dimmer warm pool that lights the beds and the stone round the camp.
+var pixels: Node3D
+var _ember_debt := 0.0
+var _smoke_debt := 0.0
 var bedrolls := []   # [Node3D], one per hero position
 
 
@@ -81,11 +92,36 @@ func _ready() -> void:
 	light.omni_range = 9.0
 	light.position = Vector3(0, 0.8, 0)
 	add_child(light)
+	glow = OmniLight3D.new()
+	glow.set_script(TorchLight)
+	glow.base_energy = 0.55
+	glow.light_color = Color(1.0, 0.6, 0.32)
+	glow.omni_range = 15.0
+	glow.position = Vector3(0, 0.35, 0)
+	glow.shadow_enabled = false
+	add_child(glow)
+	pixels = PixelParticles.new()
+	pixels.pixel_size = 0.012
+	add_child(pixels)
 	_face_camera()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	_face_camera()
+	if pixels == null:
+		return
+	_ember_debt += delta * EMBERS_PER_SECOND
+	_smoke_debt += delta * SMOKE_PER_SECOND
+	var n := int(_ember_debt)
+	if n > 0:
+		_ember_debt -= n
+		pixels.emit(Vector3(0, 0.55, 0), n, {"ramp": PackedColorArray(EMBER_RAMP), "speed": Vector2(0.5, 1.1), "spread": 0.35,
+				"gravity": -0.2, "drag": 0.3, "life": Vector2(0.9, 1.9), "size": 2.0, "jitter": Vector3(0.25, 0.05, 0.25)})
+	n = int(_smoke_debt)
+	if n > 0:
+		_smoke_debt -= n
+		pixels.emit(Vector3(0, 1.1, 0), n, {"ramp": PackedColorArray(SMOKE_RAMP), "speed": Vector2(0.25, 0.45), "spread": 0.2,
+				"gravity": -0.1, "drag": 0.4, "life": Vector2(2.0, 3.2), "size": 5.0, "jitter": Vector3(0.2, 0.05, 0.2)})
 
 
 ## Keep the flame and the spit a little toward the camera from the logs, whichever side it is on.
