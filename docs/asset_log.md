@@ -297,3 +297,9 @@ None of these were made with the VFX suite, so they should be replaced.
 
 ## Camp smoke surge (the Hearth Coal's trip, bigger and more dramatic, 22 Nov 2026, 0 generations: the VFX tool is free)
 - Replaces 'Camp smoke cloud' above (same file names, `art/camp/cloud_sheet.png`, now 28 frames of 208x130 at 10 fps): rebuilt in the VFX tool as an eruption: a dark eroded `noise` bank on its own near-black 'deep' ramp, then three `puffs` bursts (`mode burst`, a hot tan flash then masses thrown out, rising and growing) from the bottom centre and both sides, and a big `cloud` of billows over the top, ending as thick layered dark smoke over the whole view. Saved to My effects as 'Camp smoke surge' (id `00a614ca-b304-4882-b3cd-870adba7d64c`). Source atlas `tools/art/pieces/camp/cloud.png` + `.json`. The trip's smoke now takes 2.8 s each way.
+
+
+## Lever beacon (22 Nov 2026, 0 generations)
+- `scripts/dungeon_builder.gd` `_add_lever`: levers are drawn 1.8x bigger and carry a warm `OmniLight3D` beacon and a pulsing halo (a 32x32 three-band glow built in code, additive, stepping through four brightnesses); once pulled they go a quiet green and stop pulsing. **Placeholder: the halo is code-drawn**; replace it with a PixelLab VFX flipbook (`vfx_workbench`) when convenient.
+- `art/sprites/lever.png` redone (22 Nov 2026, 1 generation, `create_image_pixflux` 64x64, job 08a14a8f): a WOODEN lever (dark oak plank backing, nails, wooden handle up; the first, iron version is kept as `lever_off_iron.png`), saved as `tools/art/pieces/lever/lever_off_raw.png`; `tools/art/gen_lever.py` snaps it to the palette and builds the 128x64 sheet (off, on: the plate interior flipped so the handle points down). `LEVER_PIXEL_SIZE` 0.0225 for the 64 px frames.
+- Wooden lever (22 Nov 2026, 1 more generation, job bab7ac1a) replaced the iron one above; ON is the whole picture turned upside down and lifted 4 rows so the plate stays put.

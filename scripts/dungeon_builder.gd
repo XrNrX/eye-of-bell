@@ -67,7 +67,9 @@ const LEVER_SHEET := "res://art/sprites/lever.png"  # 2 frames of 16x16: off, on
 const PLATE_SIZE := 1.1
 const PLATE_UP_Y := 0.05     # Plate centre height when raised...
 const PLATE_DOWN_Y := -0.03  # ...and when pressed (sunk below the floor line).
-const LEVER_PIXEL_SIZE := 0.05
+const LEVER_PIXEL_SIZE := 0.0225   # 64 px frames (gen_lever.py); big, so a lever is seen from down the corridor.
+const LEVER_CALL := Color(1.0, 0.72, 0.28)   # The lever's beacon light and halo while it waits to be pulled.
+const LEVER_DONE := Color(0.45, 0.6, 0.4)    # Once pulled: a quiet glow.
 const LEVER_HEIGHT := 1.0
 
 ## False builds just the architecture, torches, plates and levers: no items, no monsters. The
@@ -536,6 +538,7 @@ func restore_levers(on: Dictionary) -> void:
 	for key in levers:
 		lever_on[key] = on.has(key)
 		levers[key].frame = 1 if on.has(key) else 0
+		_sync_lever(key)
 
 
 ## Replace the whole pile on a cell (bottom first); an empty list clears the cell.
@@ -574,6 +577,7 @@ func pull_lever(cell: Vector2i, side: int) -> void:
 		return
 	lever_on[key] = not lever_on.get(key, false)
 	levers[key].frame = 1 if lever_on[key] else 0
+	_sync_lever(key)
 	get_tree().call_group("audio", "play", "lever")
 	Events.send(get_tree(), "lever_pulled", [cell, side, lever_on[key]])
 	refresh()
@@ -615,6 +619,88 @@ func _add_lever(cell: Vector2i, side: int) -> void:
 	sprite.rotation.y = _face_yaw(side)
 	add_child(sprite)
 	levers[Vector3i(cell.x, cell.y, side)] = sprite
+	# A beacon: a warm light just off the wall (in "sprite_lights", so it also lights the lever) and a pulsing halo behind the handle.
+	# PLACEHOLDER halo (a code-drawn glow, stepped not smooth; to be replaced by a PixelLab VFX flipbook, see docs/asset_log.md).
+	var light := OmniLight3D.new()
+	light.name = "Beacon"
+	light.add_to_group("sprite_lights")
+	light.omni_range = 5.0
+	light.position = Vector3(0, 0, 0.5)
+	sprite.add_child(light)
+	var halo := Sprite3D.new()
+	halo.name = "Halo"
+	halo.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	halo.texture = _halo_texture()
+	halo.pixel_size = 0.03
+	halo.shaded = false
+	halo.transparent = true
+	halo.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	halo.material_override = _halo_material(halo.texture)
+	halo.position = Vector3(0, 0, -0.01)
+	sprite.add_child(halo)
+	_sync_lever(Vector3i(cell.x, cell.y, side))
+	_pulse_halo(halo)
+
+
+## Beacon and halo for a lever's state: bright warm and pulsing until pulled, a quiet green once it is.
+func _sync_lever(key: Vector3i) -> void:
+	var sprite: Sprite3D = levers.get(key)
+	if sprite == null:
+		return
+	var on: bool = lever_on.get(key, false)
+	var light: OmniLight3D = sprite.get_node_or_null("Beacon")
+	if light != null:
+		light.light_color = LEVER_DONE if on else LEVER_CALL
+		light.light_energy = 0.5 if on else 2.2
+	var halo: Sprite3D = sprite.get_node_or_null("Halo")
+	if halo != null:
+		halo.set_meta("on", on)
+		halo.modulate = LEVER_DONE if on else LEVER_CALL
+
+
+## Three hard brightness steps, looping (no smooth alpha). Stops pulsing once the lever is pulled.
+func _pulse_halo(halo: Sprite3D) -> void:
+	var steps := [0.45, 0.75, 1.0, 0.75]
+	var tw := halo.create_tween().set_loops()
+	for v in steps:
+		tw.tween_callback(func():
+			var base: Color = LEVER_DONE if halo.get_meta("on", false) else LEVER_CALL
+			var k: float = 0.35 if halo.get_meta("on", false) else v
+			halo.modulate = Color(base.r * k, base.g * k, base.b * k, 1.0))
+		tw.tween_interval(0.25)
+
+
+func _halo_material(tex: Texture2D) -> StandardMaterial3D:
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+	m.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	m.albedo_texture = tex
+	m.vertex_color_use_as_albedo = true
+	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	m.billboard_mode = BaseMaterial3D.BILLBOARD_DISABLED
+	return m
+
+
+static var _halo_tex: Texture2D
+
+## A 32x32 ring-and-disc glow in three hard bands (no smooth falloff).
+func _halo_texture() -> Texture2D:
+	if _halo_tex == null:
+		var img := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+		for y in 32:
+			for x in 32:
+				var d := Vector2(x - 15.5, y - 15.5).length() / 16.0
+				var a := 0.0
+				if d < 0.35:
+					a = 0.9
+				elif d < 0.65:
+					a = 0.5
+				elif d < 1.0:
+					a = 0.2
+				img.set_pixel(x, y, Color(1, 1, 1, a))
+		_halo_tex = ImageTexture.create_from_image(img)
+	return _halo_tex
 
 
 ## Point on the wall face at `side` of `cell`, at the given height (nudged off the wall).
