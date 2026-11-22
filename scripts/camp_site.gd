@@ -27,9 +27,13 @@ const FLAME_BASE := 0.3 * FIRE_SCALE   # How high the flame's base stands: on th
 ## fire, two in front. Each lies along the line from the fire with its pillow outward and its feet to the flames.
 const BEDROLLS := [Vector2(-2.3, -1.5), Vector2(2.3, -1.5), Vector2(-2.2, 1.9), Vector2(2.2, 1.9)]
 ## Each blanket's tint (a quilt colour multiplied by it), so the four beds can be told apart.
-const BLANKETS := [Color(0.85, 0.9, 1.0), Color(1.0, 0.8, 0.72), Color(0.82, 1.0, 0.82), Color(1.0, 0.95, 0.7)]
+const BLANKETS := [Color(0.84, 0.86, 0.96), Color(1.0, 0.76, 0.66), Color(0.9, 0.88, 0.84), Color(1.0, 0.88, 0.58)]   # Cool grey, rust, bone, ochre: never green (the curse; firelight turns a blue tint olive, so the cool one is faint).
 const BED_SIZE := Vector3(1.7, 0.1, 0.85)      # The straw pallet: length, thickness, width.
 const BLANKET_SIZE := Vector3(1.45, 0.07, 0.8)
+const BED_BRIGHTNESS := 0.78   # The picture is pale; dimmed so the beds sit in the dark room instead of glaring.
+const BED_PIXEL := 0.0205     # World size of one art pixel of the bedroll picture (92 px long: about 1.9 units, 0.75 wide).
+const BED_THICKNESS := 0.09   # How tall each bed's body is (it stands on the floor).
+const BODY_COLOUR := Color("31303c")   # stone_700: the dark body under the picture, seen at its edges.
 const PALLET_COLOUR := Color("74553a")   # leather_400
 const PILLOW_COLOUR := Color("9c9278")   # bone_500
 
@@ -56,7 +60,7 @@ func _ready() -> void:
 	if not ResourceLoader.exists(DIR + "pit.png"):
 		return  # The art is generated: without it there is nothing to show.
 	for i in BEDROLLS.size():
-		bedrolls.append(_bedroll(i))
+		bedrolls.append(_bed_sprite(i) if ResourceLoader.exists(DIR + "bed.png") else _bedroll(i))
 	_sprite("pit", PIXEL * FIRE_SCALE, Vector2.ZERO)
 	kindling = _sprite("kindling", PIXEL * FIRE_SCALE * KINDLING_SCALE, Vector2.ZERO)
 	kindling.position.y = kindling.texture.get_height() * PIXEL * FIRE_SCALE * KINDLING_SCALE * 0.5 + 0.02
@@ -93,6 +97,44 @@ func _face_camera() -> void:
 		kindling.position = Vector3(d.x * KINDLING_TOWARD, kindling.position.y, d.z * KINDLING_TOWARD)
 	if pit_front != null:
 		pit_front.position = Vector3(d.x * PIT_FRONT_TOWARD, pit_front.position.y, d.z * PIT_FRONT_TOWARD)
+
+
+## A bedroll as the PixelLab picture (art/camp/bed.png: a top-down bedroll, from the user's bedroll image), built like a real object lying on the
+## floor and never moving: a thin solid body (a box, BED_THICKNESS high, standing on the stone, so it has a side you can see from low down and
+## casts no gap under it) with the picture laid flat on its top face, the whole bed turned about the vertical so the strapped roll (the left end of
+## the art) points at the fire. Its position and angle are fixed: nothing turns it toward the camera. The picture is tinted with the hero's
+## blanket colour (kept in the "tint" meta: sprite_lighting.gd multiplies it by the fire's light every frame); the body is shaded real 3D.
+## Returns the picture (the list of bedrolls holds it).
+func _bed_sprite(index: int) -> Sprite3D:
+	var spot: Vector2 = BEDROLLS[index]
+	var tint: Color = BLANKETS[index % BLANKETS.size()] * BED_BRIGHTNESS
+	tint.a = 1.0
+	var bed := Node3D.new()
+	bed.position = Vector3(spot.x, 0.0, spot.y)
+	bed.rotation.y = atan2(-spot.y, spot.x)   # Local +x (the blanket end of the art) points away from the fire, the roll toward it.
+	add_child(bed)
+	var tex: Texture2D = load(DIR + "bed.png")
+	var body := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(tex.get_width() * BED_PIXEL - 0.04, BED_THICKNESS, tex.get_height() * BED_PIXEL - 0.04)   # A touch smaller than the picture: its edge never shows past it.
+	body.mesh = box
+	body.material_override = _material(BODY_COLOUR)
+	body.position = Vector3(0, BED_THICKNESS * 0.5, 0)
+	_no_shadow(body)
+	bed.add_child(body)
+	var sprite := Sprite3D.new()
+	sprite.texture = tex
+	sprite.pixel_size = BED_PIXEL
+	sprite.axis = Vector3.AXIS_Y   # Lies in the horizontal plane, face up (the art's top toward -z, its left end toward -x).
+	sprite.shaded = false
+	sprite.modulate = tint
+	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	sprite.position = Vector3(0, BED_THICKNESS + 0.004, 0)   # On the body's top face (a hair above it so the two never fight).
+	sprite.set_meta("tint", tint)
+	bed.add_child(sprite)
+	return sprite
 
 
 ## A bedroll lying on the floor, all soft curves (no straight box edges): a straw mat with rounded ends, a puffy quilted blanket on it, a round

@@ -137,6 +137,10 @@ def build(scale=None):
     written.append(save_png(pit_front(), "camp/pit_front.png"))
     written.append(save_png(ash(), "camp/ash.png"))
     written.append(save_png(PAL.snap(Image.open(PIECES / "bed_d.png").convert("RGBA")), "camp/bedroll.png"))  # The camp screen's bedrolls (2D).
+    # The 3D camp's bedrolls: PixelLab's pixel-art take on the user's clay bedroll picture (bed_reference.png -> image_to_pixelart -> bed_sprite_raw.png;
+    # background cut out and snapped to the warm greys, bones and woods only, so no curse green: bed_sprite.png). One tinted per hero at run time.
+    if (PIECES / "bed_sprite.png").exists():
+        written.append(save_png(Image.open(PIECES / "bed_sprite.png").convert("RGBA"), "camp/bed.png"))
     info = out / "flame_sheet.json"
     info.write_text(json.dumps({"frames": FRAMES, "fps": FPS, "frame_w": FRAME_W, "frame_h": FRAME_H}, indent=2))
     written.append(info)

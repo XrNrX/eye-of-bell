@@ -33,6 +33,10 @@ func _process(_delta: float) -> void:
 		for cell in dungeon.traps.armed:
 			var s: Node3D = dungeon.traps.armed[cell].sprite
 			s.modulate = light_at(s.global_position, cell, lights)
+	for site in get_tree().get_nodes_in_group("camp_sites"):  # The camp's bedroll sprites, lit by the fire and tinted for their hero.
+		for bed in site.bedrolls:
+			if bed is Sprite3D:
+				bed.modulate = light_at(bed.global_position, cell_of(bed.global_position), lights) * bed.get_meta("tint", Color.WHITE)
 	for key in dungeon.levers:
 		var lever: Node3D = dungeon.levers[key]
 		lever.modulate = light_at(lever.global_position, Vector2i(key.x, key.y), lights)
