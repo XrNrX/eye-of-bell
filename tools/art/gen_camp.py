@@ -123,7 +123,7 @@ def smoke_sheet():
 
 
 def cloud_sheet():
-    """art/camp/cloud_sheet.png: the VFX tool's 'Camp smoke cloud' (billows of dark smoke growing across the whole view until it is thick, one-shot, 24
+    """art/camp/cloud_sheet.png: the VFX tool's 'Camp smoke surge' (smoke erupting from the bottom of the view in layers of dark billows until it fills it, one-shot, 28
     frames, 10 fps, 208x130 shown at 2x over the 416x260 view) as one row of frames at full canvas size, blank frames at the end dropped. Played
     forward when the party leaves for camp (camp_transition.gd) and backward as they arrive. Palette-snapped. Source: pieces/camp/cloud.png + .json."""
     atlas = Image.open(PIECES / "cloud.png").convert("RGBA")

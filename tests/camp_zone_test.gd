@@ -116,7 +116,7 @@ func _coals_on_floor_1() -> int:
 
 ## Long enough for smoke to build, the scene to change and the smoke to clear (seconds).
 func layer_wait() -> float:
-	return 2.4 + 0.5 + 2.4 + 1.0
+	return 2.8 + 0.5 + 2.8 + 1.0
 
 
 func _transition_layers() -> int:

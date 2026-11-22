@@ -1,10 +1,10 @@
 extends CanvasLayer
 ## The Hearth Coal's trip to camp, seen (and the way back): billows of dark smoke grow across the 3D view while it darkens in
 ## steps, then the scene changes, and on the other side the same smoke is played backward, thinning away as the view brightens.
-## Art: art/camp/cloud_sheet.png (the VFX tool's 'Camp smoke cloud', tools/art/gen_camp.py: 208x130 frames shown at 2x over the 416x260 view). The
+## Art: art/camp/cloud_sheet.png (the VFX tool's 'Camp smoke surge', tools/art/gen_camp.py: 208x130 frames shown at 2x over the 416x260 view). The
 ## darkening steps through a few flat black levels (never a smooth fade). A node of the tree ROOT, so it outlives the scene change.
 ##
-## `CampTransition.play(tree, on_done)`: smoke builds (about 2.3 s, the game paused), then `on_done` runs (the scene change: it returns false
+## `CampTransition.play(tree, on_done)`: smoke builds (about 2.8 s, the game paused), then `on_done` runs (the scene change: it returns false
 ## if the trip fell through, and the smoke then clears at once); the layer waits for the new scene's player, then plays the smoke back and
 ## frees itself. `CampTransition.skip` (tests) does the change at once, with no show. Reduce flashing changes nothing: it is slow steps.
 

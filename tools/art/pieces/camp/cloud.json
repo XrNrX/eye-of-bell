@@ -1,7 +1,7 @@
 {
  "frames": [
   {
-   "filename": "camp-smoke-cloud 0.png",
+   "filename": "camp-smoke-surge 0.png",
    "frame": {
     "x": 0,
     "y": 0,
@@ -27,7 +27,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 1.png",
+   "filename": "camp-smoke-surge 1.png",
    "frame": {
     "x": 208,
     "y": 0,
@@ -53,7 +53,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 2.png",
+   "filename": "camp-smoke-surge 2.png",
    "frame": {
     "x": 416,
     "y": 0,
@@ -79,7 +79,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 3.png",
+   "filename": "camp-smoke-surge 3.png",
    "frame": {
     "x": 624,
     "y": 0,
@@ -105,7 +105,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 4.png",
+   "filename": "camp-smoke-surge 4.png",
    "frame": {
     "x": 832,
     "y": 0,
@@ -131,7 +131,33 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 5.png",
+   "filename": "camp-smoke-surge 5.png",
+   "frame": {
+    "x": 1040,
+    "y": 0,
+    "w": 208,
+    "h": 130
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 130
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 130
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "camp-smoke-surge 6.png",
    "frame": {
     "x": 0,
     "y": 130,
@@ -157,7 +183,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 6.png",
+   "filename": "camp-smoke-surge 7.png",
    "frame": {
     "x": 208,
     "y": 130,
@@ -183,7 +209,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 7.png",
+   "filename": "camp-smoke-surge 8.png",
    "frame": {
     "x": 416,
     "y": 130,
@@ -209,7 +235,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 8.png",
+   "filename": "camp-smoke-surge 9.png",
    "frame": {
     "x": 624,
     "y": 130,
@@ -235,7 +261,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 9.png",
+   "filename": "camp-smoke-surge 10.png",
    "frame": {
     "x": 832,
     "y": 130,
@@ -261,7 +287,33 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 10.png",
+   "filename": "camp-smoke-surge 11.png",
+   "frame": {
+    "x": 1040,
+    "y": 130,
+    "w": 208,
+    "h": 130
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 130
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 130
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "camp-smoke-surge 12.png",
    "frame": {
     "x": 0,
     "y": 260,
@@ -287,7 +339,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 11.png",
+   "filename": "camp-smoke-surge 13.png",
    "frame": {
     "x": 208,
     "y": 260,
@@ -313,7 +365,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 12.png",
+   "filename": "camp-smoke-surge 14.png",
    "frame": {
     "x": 416,
     "y": 260,
@@ -339,7 +391,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 13.png",
+   "filename": "camp-smoke-surge 15.png",
    "frame": {
     "x": 624,
     "y": 260,
@@ -365,7 +417,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 14.png",
+   "filename": "camp-smoke-surge 16.png",
    "frame": {
     "x": 832,
     "y": 260,
@@ -391,7 +443,33 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 15.png",
+   "filename": "camp-smoke-surge 17.png",
+   "frame": {
+    "x": 1040,
+    "y": 260,
+    "w": 208,
+    "h": 130
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 130
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 130
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "camp-smoke-surge 18.png",
    "frame": {
     "x": 0,
     "y": 390,
@@ -417,7 +495,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 16.png",
+   "filename": "camp-smoke-surge 19.png",
    "frame": {
     "x": 208,
     "y": 390,
@@ -443,7 +521,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 17.png",
+   "filename": "camp-smoke-surge 20.png",
    "frame": {
     "x": 416,
     "y": 390,
@@ -469,7 +547,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 18.png",
+   "filename": "camp-smoke-surge 21.png",
    "frame": {
     "x": 624,
     "y": 390,
@@ -495,7 +573,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 19.png",
+   "filename": "camp-smoke-surge 22.png",
    "frame": {
     "x": 832,
     "y": 390,
@@ -521,7 +599,33 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 20.png",
+   "filename": "camp-smoke-surge 23.png",
+   "frame": {
+    "x": 1040,
+    "y": 390,
+    "w": 208,
+    "h": 130
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 208,
+    "h": 130
+   },
+   "sourceSize": {
+    "w": 208,
+    "h": 130
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.5
+   },
+   "duration": 100
+  },
+  {
+   "filename": "camp-smoke-surge 24.png",
    "frame": {
     "x": 0,
     "y": 520,
@@ -547,7 +651,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 21.png",
+   "filename": "camp-smoke-surge 25.png",
    "frame": {
     "x": 208,
     "y": 520,
@@ -573,7 +677,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 22.png",
+   "filename": "camp-smoke-surge 26.png",
    "frame": {
     "x": 416,
     "y": 520,
@@ -599,7 +703,7 @@
    "duration": 100
   },
   {
-   "filename": "camp-smoke-cloud 23.png",
+   "filename": "camp-smoke-surge 27.png",
    "frame": {
     "x": 624,
     "y": 520,
@@ -627,10 +731,10 @@
  ],
  "meta": {
   "app": "PixelLab VFX Creator",
-  "image": "camp-smoke-cloud.png",
+  "image": "camp-smoke-surge.png",
   "format": "RGBA8888",
   "size": {
-   "w": 1040,
+   "w": 1248,
    "h": 650
   },
   "scale": "1",
@@ -641,9 +745,9 @@
   },
   "frameTags": [
    {
-    "name": "camp-smoke-cloud",
+    "name": "camp-smoke-surge",
     "from": 0,
-    "to": 23,
+    "to": 27,
     "direction": "forward"
    }
   ]
