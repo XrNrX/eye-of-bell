@@ -298,8 +298,28 @@ func _check_game() -> void:
 			var box: AABB = bed.mesh.get_aabb()
 			thick = box.size.y
 			var mat: StandardMaterial3D = bed.material_override
-			bed_ok = bed_ok and box.size.y > 0.2 and box.size.y < 0.3 and absf(box.position.y) < 0.001 and box.size.x > 1.7 and box.size.z > 0.6 					and absf(bed.position.y) < 0.001 and absf(bed.rotation.x) < 0.0001 and absf(bed.rotation.z) < 0.0001 					and mat != null and mat.albedo_texture != null and mat.albedo_texture.resource_path.ends_with("art/camp/bed.png")
+			bed_ok = bed_ok and box.size.y > 0.2 and box.size.y < 0.4 and bed.mesh.surface_get_array_len(0) > 4000 and absf(box.position.y) < 0.001 and box.size.x > 1.7 and box.size.z > 0.6 					and absf(bed.position.y) < 0.001 and absf(bed.rotation.x) < 0.0001 and absf(bed.rotation.z) < 0.0001 					and mat != null and mat.albedo_texture != null and mat.albedo_texture.resource_path.ends_with("art/camp/bed.png")
 			before.append(bed.global_transform)
+		# The cloth detail: the picture is stitched in diamonds (darker stitch lines, lighter puffs) and the mat's geometry swells at the same diamonds.
+		var tex_img: Image = camps[0].bedrolls[0].material_override.albedo_texture.get_image()
+		var stitched := 0
+		var puffed := 0
+		for y in range(5, 31):
+			for x in range(22, 88):
+				var c: Color = tex_img.get_pixel(x, y)
+				if c.is_equal_approx(Color("6b6250")):
+					stitched += 1
+				elif c.is_equal_approx(Color("c9c0a4")):
+					puffed += 1
+		var mid: float = camps[0]._bed_height(-0.3, 0.0)
+		var lows := []
+		var highs := []
+		for k in 40:   # Along the quilt: the height rises and falls with the diamonds, by at least a few centimetres.
+			var h: float = camps[0]._bed_height(-0.3 + 0.02 * k, 0.0)
+			lows.append(h)
+			highs.append(h)
+		check("the bed picture is quilted (%d stitch pixels, %d puff pixels) and the mat swells and dips with the diamonds (%.3f to %.3f), its roll standing taller (%.2f)" % [stitched, puffed, lows.min(), highs.max(), camps[0]._bed_height(-0.95, 0.0)],
+				stitched > 120 and puffed > 40 and highs.max() - lows.min() > 0.02 and camps[0]._bed_height(-0.95, 0.0) > camps[0]._bed_height(0.0, 0.0))
 		get_first_node_in_group("player").restore(Vector2i(21, 17), 2)
 		await create_timer(0.3).timeout
 		get_first_node_in_group("player").restore(Vector2i(17, 21), 3)

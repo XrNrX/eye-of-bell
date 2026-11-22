@@ -120,6 +120,48 @@ def quilt():
     return img
 
 
+# The bedroll's quilting: diagonal stitch lines in a diamond lattice over the blanket (the part of the 92x36 picture right of the roll's seam at x=17),
+# a darker line where the cloth is stitched down and a lighter pad at the middle of each diamond where it puffs. camp_site.gd builds the mat's
+# geometry with the SAME lattice (QUILT_X0, QUILT_Y0, QUILT_PX) so each diamond really swells; keep the numbers in step.
+QUILT_X0, QUILT_Y0 = 20.0, 4.0
+QUILT_PX = (10.0, 9.0)
+QUILT_BOX = (20, 4, 90, 32)      # x0, y0, x1, y1: the stitched area, inside the picture's outline
+_DARKER = {"bone_300": "bone_500", "bone_500": "bone_700", "bone_700": "stone_700", "stone_500": "stone_700", "stone_700": "stone_900"}
+_ROLL_LIFT = {"stone_900": "stone_700", "stone_700": "stone_500", "stone_500": "stone_300", "bone_700": "bone_500", "bone_500": "bone_300"}   # The roll is drawn very dark: one step lighter.
+ROLL_BOX = (0, 0, 17, 36)
+_LIGHTER = {"bone_500": "bone_300", "bone_700": "bone_500", "stone_700": "bone_700", "stone_500": "bone_700"}
+
+
+def quilted_bed(img):
+    """A copy of the bed picture with the diamond stitching and puffs drawn on its blanket (palette colours only)."""
+    out = img.copy()
+    px = out.load()
+    names = {tuple(PAL[n]): n for n in PAL.names}
+    rx0, ry0, rx1, ry1 = ROLL_BOX
+    for y in range(ry0, ry1):
+        for x in range(rx0, rx1):
+            r, g, b, a = px[x, y]
+            new = _ROLL_LIFT.get(names.get((r, g, b))) if a else None
+            if new:
+                px[x, y] = tuple(PAL[new]) + (255,)
+    x0, y0, x1, y1 = QUILT_BOX
+    for y in range(y0, y1):
+        for x in range(x0, x1):
+            r, g, b, a = px[x, y]
+            if not a or (r, g, b) == tuple(PAL["ink"]):
+                continue
+            p = (x - QUILT_X0 + 0.5) / QUILT_PX[0]
+            q = (y - QUILT_Y0 + 0.5) / QUILT_PX[1]
+            fa, fb = (p + q) % 1.0, (p - q) % 1.0
+            line = min(fa, 1 - fa) < 0.085 or min(fb, 1 - fb) < 0.085
+            pad = 0.33 < fa < 0.67 and 0.33 < fb < 0.67
+            name = names.get((r, g, b))
+            new = _DARKER.get(name) if line else (_LIGHTER.get(name) if pad else None)
+            if new:
+                px[x, y] = tuple(PAL[new]) + (255,)
+    return out
+
+
 def build(scale=None):
     out = ART_DIR / "camp"
     out.mkdir(parents=True, exist_ok=True)
@@ -140,7 +182,7 @@ def build(scale=None):
     # The 3D camp's bedrolls: PixelLab's pixel-art take on the user's clay bedroll picture (bed_reference.png -> image_to_pixelart -> bed_sprite_raw.png;
     # background cut out and snapped to the warm greys, bones and woods only, so no curse green: bed_sprite.png). One tinted per hero at run time.
     if (PIECES / "bed_sprite.png").exists():
-        written.append(save_png(Image.open(PIECES / "bed_sprite.png").convert("RGBA"), "camp/bed.png"))
+        written.append(save_png(quilted_bed(Image.open(PIECES / "bed_sprite.png").convert("RGBA")), "camp/bed.png"))
     info = out / "flame_sheet.json"
     info.write_text(json.dumps({"frames": FRAMES, "fps": FPS, "frame_w": FRAME_W, "frame_h": FRAME_H}, indent=2))
     written.append(info)

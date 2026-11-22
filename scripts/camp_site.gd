@@ -33,10 +33,18 @@ const BLANKET_SIZE := Vector3(1.45, 0.07, 0.8)
 const BED_BRIGHTNESS := 1.5   # The picture is dull and real light is dim in the camp: brightened (albedo above 1 is allowed) so the quilt and its tint read.
 const BED_PIXEL := 0.0205     # World size of one art pixel of the bedroll picture (92 px long: about 1.9 units, 0.75 wide).
 const BED_THICKNESS := 0.24   # How tall the plump middle of each bed is (the edges roll down to the floor).
+const ROLL_END := 17.5        # The picture's pixel column where the rolled blanket ends and the quilt begins (its seam is at x=17).
+const ROLL_BULGE := 1.3       # The roll stands this much taller than the quilt's middle.
+const QUILT_X0 := 20.0        # The stitch lattice (the same numbers as gen_camp.py): origin pixel...
+const QUILT_Y0 := 4.0
+const QUILT_PX := Vector2(10.0, 9.0)   # ...and one diamond's size in pixels.
+const QUILT_PUFF := 0.12      # Each diamond swells this share higher at its middle.
+const WRINKLE := 0.014        # Height of the soft cloth wrinkles, in world units.
 const PALLET_COLOUR := Color("74553a")   # leather_400
 const PILLOW_COLOUR := Color("9c9278")   # bone_500
 
 var cell := Vector2i.ZERO
+var _bed_px := Vector2(92, 36)   # The bed picture's size in pixels (set when the beds are built).
 var flame: MeshInstance3D
 var spit: Sprite3D
 var kindling: Sprite3D
@@ -107,7 +115,8 @@ func _bed_sprite(index: int) -> MeshInstance3D:
 	var spot: Vector2 = BEDROLLS[index]
 	var tex: Texture2D = load(DIR + "bed.png")
 	var bed := MeshInstance3D.new()
-	bed.mesh = _bed_mesh(Vector2(tex.get_width(), tex.get_height()) * BED_PIXEL)
+	_bed_px = Vector2(tex.get_width(), tex.get_height())
+	bed.mesh = _bed_mesh(_bed_px * BED_PIXEL)
 	var mat := StandardMaterial3D.new()
 	mat.albedo_texture = tex
 	mat.albedo_color = BLANKETS[index % BLANKETS.size()] * BED_BRIGHTNESS
@@ -124,42 +133,65 @@ func _bed_sprite(index: int) -> MeshInstance3D:
 	return bed
 
 
-## A rounded, plump mat `size` wide (x) and deep (z): a grid whose height is BED_THICKNESS * sqrt(1 - a^4 - b^4) for a, b in -1..1 across the
-## footprint, so the top is nearly flat in the middle and rolls steeply down to the floor at the edges and corners, which stay on the floor.
-## The picture is mapped straight down onto it (its top toward -z, its left end toward -x); normals come from the slope, so the light follows
-## the roundness. Built once per bed.
+## A plump, cloth-detailed mat `size` wide (x) and deep (z), built from a fine grid over the footprint (a, b in -1..1; the picture is mapped
+## straight down onto it, its top toward -z, its left end toward -x). The height (`_bed_height`) is a rounded pillow that rolls down to the floor at
+## the edges and corners, with the cloth on top of it: a rolled blanket bulging at the left end, a crease where it meets the quilt, the quilt's
+## diamonds each puffed (the same lattice as the stitching in the picture, gen_camp.quilted_bed) and a few soft wrinkles. Normals come from the
+## slope, so the light picks out every puff and fold. Built once per bed, from arrays (a few thousand vertices).
 func _bed_mesh(size: Vector2) -> ArrayMesh:
-	var nx := 32
-	var nz := 16
+	var nx := 112
+	var nz := 44
 	var half := size * 0.5
-	var st := SurfaceTool.new()
-	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	var verts := []
+	var verts := PackedVector3Array()
+	var normals := PackedVector3Array()
+	var uvs := PackedVector2Array()
+	var eps_a := 0.35 / nx
+	var eps_b := 0.35 / nz
 	for j in nz + 1:
 		for i in nx + 1:
 			var a := -1.0 + 2.0 * i / nx
 			var b := -1.0 + 2.0 * j / nz
-			var eps_a := 0.5 / nx
-			var eps_b := 0.5 / nz
 			var dhdx := (_bed_height(a + eps_a, b) - _bed_height(a - eps_a, b)) / (2.0 * eps_a * half.x)
 			var dhdz := (_bed_height(a, b + eps_b) - _bed_height(a, b - eps_b)) / (2.0 * eps_b * half.y)
-			verts.append({"p": Vector3(a * half.x, _bed_height(a, b), b * half.y), "n": Vector3(-dhdx, 1.0, -dhdz).normalized(), "uv": Vector2(float(i) / nx, float(j) / nz)})
+			verts.append(Vector3(a * half.x, _bed_height(a, b), b * half.y))
+			normals.append(Vector3(-dhdx, 1.0, -dhdz).normalized())
+			uvs.append(Vector2(float(i) / nx, float(j) / nz))
+	var indices := PackedInt32Array()
 	for j in nz:
 		for i in nx:
-			var v00: Dictionary = verts[j * (nx + 1) + i]
-			var v10: Dictionary = verts[j * (nx + 1) + i + 1]
-			var v01: Dictionary = verts[(j + 1) * (nx + 1) + i]
-			var v11: Dictionary = verts[(j + 1) * (nx + 1) + i + 1]
-			for v in [v00, v10, v11, v00, v11, v01]:   # Clockwise seen from above: Godot's front face.
-				st.set_normal(v.n)
-				st.set_uv(v.uv)
-				st.add_vertex(v.p)
-	return st.commit()
+			var v00 := j * (nx + 1) + i
+			var v10 := v00 + 1
+			var v01 := v00 + nx + 1
+			var v11 := v01 + 1
+			indices.append_array([v00, v10, v11, v00, v11, v01])   # Clockwise seen from above: Godot's front face.
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_TEX_UV] = uvs
+	arrays[Mesh.ARRAY_INDEX] = indices
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	return mesh
 
 
-## The height of the mat at (a, b) in -1..1 across it: BED_THICKNESS at the middle, 0 at the edges and corners.
+## The height of the mat at (a, b) in -1..1 across it (0 at the edges and corners). `px` and `py` are the picture's pixel there, which is how
+## the geometry lines up with the drawn stitching.
 func _bed_height(a: float, b: float) -> float:
-	return BED_THICKNESS * sqrt(maxf(0.0, 1.0 - pow(absf(a), 4.0) - pow(absf(b), 4.0)))
+	var px := (a + 1.0) * 0.5 * _bed_px.x
+	var py := (b + 1.0) * 0.5 * _bed_px.y
+	if px < ROLL_END:   # The rolled blanket at the foot: its own round bulge, taller than the quilt, across the width of the roll.
+		var c := (px - ROLL_END * 0.5) / (ROLL_END * 0.5)
+		return BED_THICKNESS * ROLL_BULGE * sqrt(maxf(0.0, 1.0 - pow(absf(c), 4.0) - pow(absf(b), 4.0)))
+	var base := BED_THICKNESS * sqrt(maxf(0.0, 1.0 - pow(absf(a), 4.0) - pow(absf(b), 4.0)))
+	var crease := smoothstep(ROLL_END, ROLL_END + 5.0, px)   # The quilt dips where it meets the roll.
+	var p := (px - QUILT_X0) / QUILT_PX.x
+	var q := (py - QUILT_Y0) / QUILT_PX.y
+	var ca := 1.0 - absf(2.0 * fposmod(p + q, 1.0) - 1.0)    # 0 on a stitch line, 1 at the middle of a diamond.
+	var cb := 1.0 - absf(2.0 * fposmod(p - q, 1.0) - 1.0)
+	var puff := smoothstep(0.0, 1.0, ca) * smoothstep(0.0, 1.0, cb)
+	var wrinkle := 0.5 * sin(a * 7.0 + b * 2.0) + 0.25 * sin(a * 13.0 - b * 3.0 + 1.0)
+	return base * crease * (1.0 + QUILT_PUFF * puff) + WRINKLE * wrinkle * crease * clampf(base / BED_THICKNESS * 2.0, 0.0, 1.0)
 
 
 ## A bedroll lying on the floor, all soft curves (no straight box edges): a straw mat with rounded ends, a puffy quilted blanket on it, a round
