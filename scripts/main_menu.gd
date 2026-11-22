@@ -120,6 +120,15 @@ func _ready() -> void:
 	intro_button.pressed.connect(func(): get_tree().change_scene_to_file(INTRO_SCENE))
 	intro_button.pressed.connect(_click)
 
+	if ResourceLoader.exists(DungeonMap.DEMO_1_PATH) and not DungeonMap.test_room_only():  # Demo level 1, under New Game.
+		var demo_button: Button = options_button.duplicate()
+		demo_button.unique_name_in_owner = false
+		demo_button.name = "DemoButton"
+		demo_button.text = "DEMO LEVEL"
+		menu_box.add_child(demo_button)
+		menu_box.move_child(demo_button, new_game_button.get_index() + 1)
+		demo_button.pressed.connect(_click)
+		demo_button.pressed.connect(_on_demo_pressed)
 	if DungeonMap.test_room_available():  # Debug builds only (a release export leaves the test room out).
 		DungeonMap.add_editor(get_tree())  # F10: the dungeon editor (at the tree root, once).
 		var room_button: Button = options_button.duplicate()
@@ -174,6 +183,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _enter_test_room() -> void:
 	DungeonMap.use_level(DungeonMap.TEST_ROOM_PATH)
+	get_tree().change_scene_to_file(MAIN_SCENE)
+
+
+func _on_demo_pressed() -> void:
+	DungeonMap.use_level(DungeonMap.DEMO_1_PATH)
 	get_tree().change_scene_to_file(MAIN_SCENE)
 
 

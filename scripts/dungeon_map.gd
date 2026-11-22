@@ -60,6 +60,7 @@ static var level_path := ""
 ## generated one). The save stores it (SaveGame "level_id").
 static var level_id := FLOOR_1_ID
 const TEST_ROOM_PATH := "res://levels/test_room.gd"
+const DEMO_1_PATH := "res://levels/demo_1.gd"  # Demo level 1 (built from mapBell.png by tools/level/gen_demo_1.py): a real level that can be saved, unlike the test room.
 const EDITOR_PATH := "res://scripts/debug/dungeon_editor.gd"  # F10: the dungeon editor (debug builds only, like the tools).
 const EDITOR_PLAY_ID := "editor:play"  # The level id of a level built from the editor's paper (E.4): it cannot be saved.
 const TOOLS_PATH := "res://scripts/debug/test_room_tools.gd"  # F12, the debug keys and the help overlay (debug builds only).
@@ -73,6 +74,11 @@ static func add_editor(tree: SceneTree) -> void:
 	if not test_room_available() or not ResourceLoader.exists(EDITOR_PATH) or tree.get_first_node_in_group("dungeon_editor") != null:
 		return
 	tree.root.add_child.call_deferred(load(EDITOR_PATH).new())
+
+
+## Can the running level be saved? Floor 1 and demo level 1 can; the test room, a level built from the editor and the safe camp zone cannot.
+static func level_saveable() -> bool:
+	return level_path == "" or level_path == DEMO_1_PATH
 
 
 ## True in a debug build that has the test room's level file (a release export leaves it out).
