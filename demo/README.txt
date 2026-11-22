@@ -6,6 +6,20 @@ Starts in borderless fullscreen; Alt+Enter switches to a window.
 Goal: find your way through the dungeon to the stairs down (one of the keys opens the locked
 door in front of them). Levers, a pressure plate and a cracked wall (War Hammer or Fireball) help.
 
+NEW IN v0.12
+  A new, bigger level: press DEMO LEVEL on the main menu (under New Game). It opens with a short
+  intro. Sixteen portcullises, each with a wall lever near it (small wooden levers: look along
+  the walls), two locked doors, three keys, about fifty monsters and the Cursed Warden before the
+  stairs. The start is gentle and it gets harder deeper in. New Game is still the first floor.
+  It can be saved.
+  Campfires: left-click a campfire for MAKE CAMP (rest), COOK or, at the safe camp, BREAK CAMP.
+  The fire is solid. Each level hides a Hearth Coal: use it and the party is taken, through a
+  cloud of smoke, to a safe camp room with no monsters, where they can rest, cook and use packs;
+  BREAK CAMP returns them to the exact tile. The coal is used up.
+  Inventory: double-click an item for DROP or COMBINE (merge stacks of it in this hero's pack).
+  DISCARD under the backpack drops the held item on the floor in front. The character sheet now
+  shows what gear adds in brackets, e.g. 3 (+2).
+
 NEW IN v0.11
   Nothing new to find in the dungeon yet. Behind the scenes, two things are built and will turn up on the
   floor in the next version: curse zones (a green haze where flames die) and the flask of oil (thrown
