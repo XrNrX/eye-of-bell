@@ -32,6 +32,7 @@ window/stretch/scale_mode="integer"
 
 [gui]
 
+theme/custom="res://data/ui_theme.tres"
 theme/custom_font="res://art/fonts/PressStart2P-Regular.ttf"
 
 [physics]

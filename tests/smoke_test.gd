@@ -94,6 +94,7 @@ func _init() -> void:
 	await _check_red_shaman()
 	await _check_goblin()
 	await _check_log_scroll()
+	_check_tooltip_theme()
 	await _check_music()
 	await _check_curse_look()
 	_check_death_gas()
@@ -2355,6 +2356,16 @@ func _check_item_glow() -> void:
 	dungeon.place_item(AHEAD_1, ItemStack.of(load("res://data/items/bread.tres") if ResourceLoader.exists("res://data/items/bread.tres") else load("res://data/items/stale_bread.tres"), 1))
 	check("glow: a plain item on top of it hides the glow", dungeon.items[AHEAD_1].sprite.get_node_or_null("GlowLight") == null)
 	dungeon.set_pile(AHEAD_1, [])
+
+
+## Hover text (Godot's own tooltip) uses the project theme data/ui_theme.tres: 8 px text in the game's font, in a dark box with a rust edge.
+func _check_tooltip_theme() -> void:
+	var theme: Theme = ThemeDB.get_project_theme()
+	var box = theme.get_stylebox("panel", "TooltipPanel") if theme != null else null
+	check("tooltip: hover text is 8 px in the game's own palette-coloured box (theme data/ui_theme.tres)",
+			theme != null and theme.get_font_size("font_size", "TooltipLabel") == 8 and box is StyleBoxFlat and box.border_width_left == 2
+			and box.bg_color.is_equal_approx(Color("14131b")) and box.border_color.is_equal_approx(Color("7c4426"))
+			and theme.get_color("font_color", "TooltipLabel").is_equal_approx(Color("c9c0a4")))
 
 
 ## The background music: Walen's "Dark Heart", one looping player under the tree root so it survives scene changes.
