@@ -3,6 +3,7 @@ extends SceneTree
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const Settings := preload("res://scripts/settings.gd")
+const ItemDef := preload("res://scripts/item_def.gd")
 const DIRS := [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0)]
 var fails := 0
 
@@ -271,6 +272,18 @@ func _check_game() -> void:
 			signs += 1
 	check("signs are built", signs == DungeonMap.SIGNS.size())
 	check("player starts at the hall", player.cell == Vector2i(20, 14))
+	# The test room stocks every hero's pack with things to try: each hero gets a near-equal share of data/items, and what they hold is theirs to use.
+	var packs: Array = []
+	var every_usable := true
+	for m in get_first_node_in_group("party").members:
+		var held: Array = m.backpack.filter(func(st): return st != null)
+		packs.append(held.size())
+		for st in held:
+			if st.def.type == ItemDef.Type.FOCUS and st.def.magic != m.def.magic:
+				every_usable = false
+			elif m.class_id() in st.def.cant_use:
+				every_usable = false
+	check("every hero has a stocked pack (%s stacks) of items they can use" % str(packs), packs.min() >= 6 and packs.max() - packs.min() <= 3 and every_usable)
 	# The campfire station: a camp at (21,21) with four bedrolls, an animated flame and a flickering light the dark rules count.
 	var camps := get_nodes_in_group("camp_sites")
 	var camp_ok: bool = camps.size() == 1 and camps[0].cell == Vector2i(21, 21) and camps[0].bedrolls.size() == 4 and camps[0].flame != null and camps[0].light != null

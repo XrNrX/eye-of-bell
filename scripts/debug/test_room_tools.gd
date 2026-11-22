@@ -204,8 +204,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 # --- Actions -------------------------------------------------------------------------------------
 
-## Every item in data/items into the backpacks: one of each (a full stack of a stackable), handed round the party so each pack gets a
-## share; one that doesn't fit its hero's pack tries the next. Returns how many items found a place.
+## Every item in data/items into the backpacks, one of each (a full stack of a stackable), so each hero has a pack of things to try in
+## random play: an item goes to a hero who can use it (Party.can_equip), the one carrying the fewest so far, so every hero ends with a
+## near-equal share; if that pack is full, the next hero who can use it, then anyone. Returns how many items found a place.
 func _stock_backpacks() -> int:
 	var party := _party()
 	var dir := DirAccess.open(ITEM_DIR)
@@ -214,19 +215,31 @@ func _stock_backpacks() -> int:
 	var names := Array(dir.get_files()).filter(func(f): return f.ends_with(".tres") or f.ends_with(".tres.remap"))
 	names.sort()
 	var placed := 0
-	var turn := 0
 	for f in names:
 		var def: Resource = load("%s/%s" % [ITEM_DIR, f.trim_suffix(".remap")])
 		if def == null:
 			continue
 		var stack: RefCounted = ItemStack.of(def, maxi(1, def.max_stack))
-		for k in party.members.size():
-			if party.add_to_backpack((turn + k) % party.members.size(), stack):
+		var order := range(party.members.size())
+		order.sort_custom(func(a, b):
+			var ua: bool = party.can_equip(party.members[a], def)
+			var ub: bool = party.can_equip(party.members[b], def)
+			if ua != ub:
+				return ua   # Heroes who can use it first,
+			var na: int = _pack_items(party.members[a])
+			var nb: int = _pack_items(party.members[b])
+			return na < nb if na != nb else a < b)   # then the one with the lightest pack.
+		for slot in order:
+			if party.add_to_backpack(slot, stack):
 				placed += 1
 				break
-		turn += 1
 	party.formation_changed.emit()  # (The party panels and an open inventory redraw.)
 	return placed
+
+
+## How many stacks a hero's backpack holds.
+func _pack_items(m) -> int:
+	return m.backpack.filter(func(s): return s != null).size()
 
 
 func _refill() -> void:
