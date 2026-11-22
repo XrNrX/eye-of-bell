@@ -309,6 +309,7 @@ func command(kind: String) -> void:
 		"turn_right": _turn(-1)
 
 
+var _fire_msg_at := -10000   # When "The fire is in the way." was last said.
 var _web_msg_at := -10000   # When "stuck in the web" was last said (so held keys do not fill the log).
 
 
@@ -324,6 +325,12 @@ func _try_move(dir: Vector2i) -> void:
 	var target := cell + dir
 	if DungeonMap.is_blocked(target) or DungeonMap.is_occupied(target):  # Walls, closed doors, monsters.
 		_cue("bump")  # (audio.gd limits how often, so holding W against a wall isn't a drum roll.)
+		return
+	if DungeonMap.is_campfire(target):
+		_cue("bump")
+		if Time.get_ticks_msec() - _fire_msg_at > 1500:
+			_fire_msg_at = Time.get_ticks_msec()
+			_say("The fire is in the way.")
 		return
 	cell = target
 	_cue("step")

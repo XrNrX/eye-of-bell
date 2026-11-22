@@ -275,7 +275,15 @@ func _check_game() -> void:
 	var camps := get_nodes_in_group("camp_sites")
 	var camp_ok: bool = camps.size() == 1 and camps[0].cell == Vector2i(21, 21) and camps[0].bedrolls.size() == 4 and camps[0].flame != null and camps[0].light != null
 	check("the campfire station has a camp with four bedrolls, a flame and a light", camp_ok)
+	check("a campfire tile is not walkable but does not block sight", DungeonMap.is_campfire(Vector2i(21, 21)) and not DungeonMap.is_campfire(Vector2i(20, 21)) and not DungeonMap.is_blocked(Vector2i(21, 21)))
 	if camp_ok:
+		# Walking into the fire: the party stays where it is.
+		player.cell = Vector2i(21, 20)
+		player.position = DungeonMap.cell_to_world(player.cell)
+		player._try_move(Vector2i(0, 1))
+		check("the party cannot step into the campfire", player.cell == Vector2i(21, 20))
+		player.cell = Vector2i(20, 14)
+		player.position = DungeonMap.cell_to_world(player.cell)
 		var flame: Node = camps[0].flame
 		var t0: float = flame.t
 		await create_timer(0.3).timeout
