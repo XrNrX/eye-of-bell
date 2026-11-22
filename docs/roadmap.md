@@ -2296,6 +2296,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Message log scrolls back: mouse wheel or a thin bar, 200 lines of history, your place kept when a new line arrives (`7d784c5`)
 - [x] Hover tooltips restyled: 8 px text in a stone-black box with a rust edge, from one project theme (`12baaf0`)
 - [x] Camp beds made rounded: soft mat, puffy quilt, rounder pillow and a rolled blanket at the foot (`fa43a54`)
+- [x] Camp beds redrawn from the user's own bedroll picture with PixelLab: a top-down bedroll lying flat on a thin solid body on the floor, fixed in place, tinted per hero (`ea32e4e`)
 
 ## Ideas inbox
 
