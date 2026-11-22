@@ -11,8 +11,8 @@ extends CanvasLayer
 ## The clicks live in inventory_slot.gd and inventory_floor_drop.gd; this script
 ## builds the slots once and owns "which member is focused" and the status line.
 ##
-## DISCARD (under the backpack): click it with an item on the cursor to destroy that item, so a full pack is never a trap. Keys and legendary
-## items ask first (the button says "SURE? CLICK AGAIN" and the second click does it); anything else goes at once.
+## DISCARD (under the backpack): click it with an item on the cursor to drop that item on the floor in front of the party (the same as clicking
+## outside the window), so a full pack is never a trap and nothing is lost: it can be picked up again.
 ##
 ## Pure data for now: what's equipped doesn't affect combat yet, the same way
 ## MonsterDef/ItemDef's stat fields existed before anything read them.
@@ -21,7 +21,6 @@ const InventorySlotScript := preload("res://scripts/inventory_slot.gd")
 const PartyScript := preload("res://scripts/party.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const CharacterSheet := preload("res://scripts/character_sheet.gd")
-const ItemDef := preload("res://scripts/item_def.gd")
 const NAME_MAX_WIDTH := 150.0  # The header name wraps beyond this many units (see refresh).
 
 @onready var backdrop: ColorRect = %Backdrop
@@ -45,8 +44,7 @@ var armour_slot: Panel
 var quick_slots := []     # QUICK-kind InventorySlot: the member's two quick slots (the ones under their portrait on the party panel).
 var backpack_slots := []  # BACKPACK-kind InventorySlot, likewise re-pointed.
 var sheet: PanelContainer  # The character sheet beside the window (character_sheet.gd).
-var discard_button: Button  # Under the backpack: destroys the item on the cursor.
-var discard_pending: RefCounted  # The stack waiting for a second click (a key or a legendary), or null.
+var discard_button: Button  # Under the backpack: drops the item on the cursor on the floor in front.
 @onready var window: Control = $Center/Window
 const StonePanel := preload("res://scripts/stone_panel.gd")
 
@@ -195,7 +193,7 @@ func _build_slots() -> void:
 	discard_button.action_mode = BaseButton.ACTION_MODE_BUTTON_PRESS  # Acts on the press, like every other click here.
 	discard_button.add_theme_font_size_override("font_size", 8)
 	discard_button.custom_minimum_size = Vector2(0, 20)
-	discard_button.tooltip_text = "Click with an item on the cursor to throw it away for good"
+	discard_button.tooltip_text = "Click with an item on the cursor to drop it on the floor in front"
 	discard_button.pressed.connect(discard_held)
 	var box := backpack_grid.get_parent()
 	box.add_child(discard_button)
@@ -235,41 +233,26 @@ func refresh() -> void:
 		backpack_slots[i].refresh()
 	for s in strip_slots:
 		s.refresh()
-	if discard_pending != null and (cursor == null or not cursor.is_holding() or cursor.held != discard_pending):
-		discard_pending = null  # The cursor moved on: the question lapses.
-	if discard_button != null:
-		discard_button.text = "SURE? CLICK AGAIN" if discard_pending != null else "DISCARD"
 	if sheet.visible:
 		sheet.refresh(party, focused_slot)
 
 
-## Does throwing this away need a second click? A key (it may be the only way on) or a legendary item.
-func discard_needs_confirm(def: Resource) -> bool:
-	return def.type == ItemDef.Type.KEY or def.legendary
-
-
-## The DISCARD button: destroy the item on the cursor (the whole stack). Keys and legendaries need two clicks. Returns whether something was
-## destroyed.
+## The DISCARD button: drop the item on the cursor (the whole stack) on the tile in front of the party, where it can be picked up again. Says so
+## and keeps it on the cursor if there is nowhere to drop it (a wall, a closed door or a monster in front). Returns whether it was dropped.
 func discard_held() -> bool:
 	if cursor == null or not cursor.is_holding():
-		discard_pending = null
 		say("Pick something up to discard it.")
-		refresh()
+		return false
+	if not can_drop_on_floor():
+		say("There is nowhere to drop it here.")
 		return false
 	var held: RefCounted = cursor.held
-	if discard_needs_confirm(held.def) and discard_pending != held:
-		discard_pending = held
-		say("Throw away the %s for good? Click DISCARD again." % held.def.display_name.to_lower())
-		refresh()
-		return false
-	discard_pending = null
 	var name_text: String = held.def.display_name.to_lower()
 	var what: String = name_text if held.count <= 1 else "%d %s" % [held.count, name_text]
 	var who: String = party.member(focused_slot).name()
-	cursor.release()
+	drop_on_floor(cursor.release())
 	get_tree().call_group("audio", "play", "drop")
-	say("%s discards the %s." % [who, what] if held.count <= 1 else "%s discards %s." % [who, what])
-	refresh()
+	say("%s drops the %s." % [who, what] if held.count <= 1 else "%s drops %s." % [who, what])
 	return true
 
 

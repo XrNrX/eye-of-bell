@@ -284,22 +284,30 @@ func _check_game() -> void:
 			elif m.class_id() in st.def.cant_use:
 				every_usable = false
 	check("every hero has a stocked pack (%s stacks) of items they can use" % str(packs), packs.min() >= 6 and packs.max() - packs.min() <= 3 and every_usable)
-	# DISCARD in the inventory: a full pack is never a trap. An ordinary stack goes at once; a key or a legendary asks for a second click.
+	# DISCARD in the inventory: a full pack is never a trap. The item is dropped on the floor in front, and can be picked up again.
 	var inv := get_first_node_in_group("inventory")
 	var hand_cursor := get_first_node_in_group("cursor")
+	var the_dungeon := get_first_node_in_group("dungeon")
+	var front: Vector2i = player.cell + player.DIRS[player.facing]
+	while the_dungeon.item_at(front) != null:   # (An empty tile: a drop onto a matching stack would merge into it.)
+		the_dungeon.take_item(front)
 	var ItemStackS := load("res://scripts/item_stack.gd")
 	check("the inventory has a DISCARD button and the window stays on screen", inv.discard_button != null and Rect2(0, 0, 640, 360).encloses(inv.window.get_global_rect()))
 	check("DISCARD with an empty hand does nothing", not inv.discard_held())
-	hand_cursor.hold(ItemStackS.of(load("res://data/items/darts.tres"), 3))
-	check("DISCARD destroys an ordinary stack at once", inv.discard_held() and not hand_cursor.is_holding() and "discards 3 darts" in inv.status_label.text)
+	var darts: RefCounted = ItemStackS.of(load("res://data/items/darts.tres"), 3)
+	hand_cursor.hold(darts)
+	check("DISCARD drops the stack on the floor in front", inv.discard_held() and not hand_cursor.is_holding() and the_dungeon.item_at(front) == darts and "drops 3 darts" in inv.status_label.text)
+	the_dungeon.take_item(front)
+	var key: RefCounted = ItemStackS.of(load("res://data/items/key.tres"), 1)
+	hand_cursor.hold(key)
+	check("a key (or any item) is dropped at once, never lost", inv.discard_held() and the_dungeon.item_at(front) == key)
+	the_dungeon.take_item(front)
 	hand_cursor.hold(ItemStackS.of(load("res://data/items/key.tres"), 1))
-	check("a key asks first, and still lies on the cursor", not inv.discard_held() and hand_cursor.is_holding() and inv.discard_pending != null and inv.discard_button.text.begins_with("SURE"))
-	check("the second click throws the key away", inv.discard_held() and not hand_cursor.is_holding() and inv.discard_pending == null)
-	hand_cursor.hold(ItemStackS.of(load("res://data/items/azure_brand.tres"), 1))
-	check("a legendary asks first too", not inv.discard_held() and hand_cursor.is_holding() and inv.discard_pending != null)
-	hand_cursor.release()   # The item is put down: the question lapses.
-	inv.refresh()
-	check("a lapsed question starts again from DISCARD", inv.discard_pending == null and inv.discard_button.text == "DISCARD")
+	var here: Vector2i = player.cell
+	player.cell = Vector2i(0, 0)   # A wall in front: nowhere to drop it.
+	check("with nowhere to drop it the item stays on the cursor", not inv.discard_held() and hand_cursor.is_holding() and "nowhere" in inv.status_label.text)
+	player.cell = here
+	hand_cursor.release()
 	# The campfire station: a camp at (21,21) with four bedrolls, an animated flame and a flickering light the dark rules count.
 	var camps := get_nodes_in_group("camp_sites")
 	var camp_ok: bool = camps.size() == 1 and camps[0].cell == Vector2i(21, 21) and camps[0].bedrolls.size() == 4 and camps[0].flame != null and camps[0].light != null
