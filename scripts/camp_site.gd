@@ -30,15 +30,15 @@ const BEDROLLS := [Vector2(-2.3, -1.5), Vector2(2.3, -1.5), Vector2(-2.2, 1.9), 
 const BLANKETS := [Color(0.84, 0.86, 0.96), Color(1.0, 0.76, 0.66), Color(0.9, 0.88, 0.84), Color(1.0, 0.88, 0.58)]   # Cool grey, rust, bone, ochre: never green (the curse; firelight turns a blue tint olive, so the cool one is faint).
 const BED_SIZE := Vector3(1.7, 0.1, 0.85)      # The straw pallet: length, thickness, width.
 const BLANKET_SIZE := Vector3(1.45, 0.07, 0.8)
-const BED_BRIGHTNESS := 1.5   # The picture is dull and real light is dim in the camp: brightened (albedo above 1 is allowed) so the quilt and its tint read.
-const BED_PIXEL := 0.0205     # World size of one art pixel of the bedroll picture (92 px long: about 1.9 units, 0.75 wide).
+const BED_BRIGHTNESS := 1.05   # The patchwork picture has its own strong colours: close to as drawn (albedo may exceed 1 for a little lift in the dim camp).
+const BED_TINT := 0.45        # How much of the hero's blanket colour tints their bed (0 none, 1 full).
+const BED_PIXEL := 0.011      # World size of one art pixel of the bedroll picture (175 px long: about 1.9 units, 0.77 wide).
 const BED_THICKNESS := 0.24   # How tall the plump middle of each bed is (the edges roll down to the floor).
-const ROLL_END := 17.5        # The picture's pixel column where the rolled blanket ends and the quilt begins (its seam is at x=17).
+const ROLL_END := 27.5        # The picture's pixel column where the strapped roll ends and the patchwork begins.
 const ROLL_BULGE := 1.3       # The roll stands this much taller than the quilt's middle.
-const QUILT_X0 := 20.0        # The stitch lattice (the same numbers as gen_camp.py): origin pixel...
-const QUILT_Y0 := 4.0
-const QUILT_PX := Vector2(10.0, 9.0)   # ...and one diamond's size in pixels.
-const QUILT_PUFF := 0.12      # Each diamond swells this share higher at its middle.
+const PATCH_X := [28.5, 71.0, 121.5, 168.0]   # The seams between the patches in the picture, in its pixels (along it)...
+const PATCH_Y := [0.0, 35.0, 70.0]            # ...and across it (two rows). Each patch swells on its own; the seams stay low.
+const PATCH_PUFF := 0.16      # Each patch swells this share higher at its middle.
 const WRINKLE := 0.014        # Height of the soft cloth wrinkles, in world units.
 const PALLET_COLOUR := Color("74553a")   # leather_400
 const PILLOW_COLOUR := Color("9c9278")   # bone_500
@@ -119,7 +119,7 @@ func _bed_sprite(index: int) -> MeshInstance3D:
 	bed.mesh = _bed_mesh(_bed_px * BED_PIXEL)
 	var mat := StandardMaterial3D.new()
 	mat.albedo_texture = tex
-	mat.albedo_color = BLANKETS[index % BLANKETS.size()] * BED_BRIGHTNESS
+	mat.albedo_color = Color.WHITE.lerp(BLANKETS[index % BLANKETS.size()], BED_TINT) * BED_BRIGHTNESS   # A gentle tint per hero: the patches carry the colour.
 	mat.albedo_color.a = 1.0
 	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
@@ -135,7 +135,7 @@ func _bed_sprite(index: int) -> MeshInstance3D:
 
 ## A plump, cloth-detailed mat `size` wide (x) and deep (z), built from a fine grid over the footprint (a, b in -1..1; the picture is mapped
 ## straight down onto it, its top toward -z, its left end toward -x). The height (`_bed_height`) is a rounded pillow that rolls down to the floor at
-## the edges and corners, with the cloth on top of it: a rolled blanket bulging at the left end, a crease where it meets the quilt, the quilt's
+## the edges and corners, with the cloth on top of it: a rolled blanket bulging at the left end, a crease where it meets the patchwork, the quilt's
 ## diamonds each puffed (the same lattice as the stitching in the picture, gen_camp.quilted_bed) and a few soft wrinkles. Normals come from the
 ## slope, so the light picks out every puff and fold. Built once per bed, from arrays (a few thousand vertices).
 func _bed_mesh(size: Vector2) -> ArrayMesh:
@@ -175,6 +175,16 @@ func _bed_mesh(size: Vector2) -> ArrayMesh:
 	return mesh
 
 
+## How much of a patch's swell there is at `v` (a pixel along an axis) given the seams `edges` on that axis: 0 outside the patches and on a seam,
+## rising to 1 in the middle of a patch, flat on top and steep at the seams (a plump cushion, not a point).
+func _patch_swell(edges: Array, v: float) -> float:
+	for k in edges.size() - 1:
+		if v >= edges[k] and v < edges[k + 1]:
+			var t: float = (v - edges[k]) / (edges[k + 1] - edges[k])
+			return pow(sin(PI * t), 0.5)
+	return 0.0
+
+
 ## The height of the mat at (a, b) in -1..1 across it (0 at the edges and corners). `px` and `py` are the picture's pixel there, which is how
 ## the geometry lines up with the drawn stitching.
 func _bed_height(a: float, b: float) -> float:
@@ -185,13 +195,9 @@ func _bed_height(a: float, b: float) -> float:
 		return BED_THICKNESS * ROLL_BULGE * sqrt(maxf(0.0, 1.0 - pow(absf(c), 4.0) - pow(absf(b), 4.0)))
 	var base := BED_THICKNESS * sqrt(maxf(0.0, 1.0 - pow(absf(a), 4.0) - pow(absf(b), 4.0)))
 	var crease := smoothstep(ROLL_END, ROLL_END + 5.0, px)   # The quilt dips where it meets the roll.
-	var p := (px - QUILT_X0) / QUILT_PX.x
-	var q := (py - QUILT_Y0) / QUILT_PX.y
-	var ca := 1.0 - absf(2.0 * fposmod(p + q, 1.0) - 1.0)    # 0 on a stitch line, 1 at the middle of a diamond.
-	var cb := 1.0 - absf(2.0 * fposmod(p - q, 1.0) - 1.0)
-	var puff := smoothstep(0.0, 1.0, ca) * smoothstep(0.0, 1.0, cb)
+	var puff := _patch_swell(PATCH_X, px) * _patch_swell(PATCH_Y, py)   # 0 on a seam, 1 in the middle of a patch.
 	var wrinkle := 0.5 * sin(a * 7.0 + b * 2.0) + 0.25 * sin(a * 13.0 - b * 3.0 + 1.0)
-	return base * crease * (1.0 + QUILT_PUFF * puff) + WRINKLE * wrinkle * crease * clampf(base / BED_THICKNESS * 2.0, 0.0, 1.0)
+	return base * crease * (1.0 + PATCH_PUFF * puff) + WRINKLE * wrinkle * crease * clampf(base / BED_THICKNESS * 2.0, 0.0, 1.0)
 
 
 ## A bedroll lying on the floor, all soft curves (no straight box edges): a straw mat with rounded ends, a puffy quilted blanket on it, a round
