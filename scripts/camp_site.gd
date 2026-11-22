@@ -4,7 +4,7 @@ extends Node3D
 ## A level places one with a STRUCTURES entry {"cell": Vector2i, "kind": "campfire"}; wall_decor.add_structures builds it. Scenery
 ## for now: nothing blocks movement and nothing can be clicked yet (making camp is roadmap 7h.2, cooking 7h.3).
 ## Art: tools/art/gen_camp.py -> art/camp/ (PixelLab pieces, see docs/asset_log.md): the pit and spit are billboards at PIXEL world units
-## an art pixel, the flame a looping flipbook (fx_flipbook.gd); the bedrolls are small 3D models (boxes and a pillow) with a drawn quilt top.
+## an art pixel, the flame a looping flipbook (fx_flipbook.gd); the bedrolls are small soft-edged 3D models (squashed capsules and spheres: a mat, a quilt, a pillow and a rolled blanket) with a drawn quilt top.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const FxFlipbook := preload("res://scripts/fx_flipbook.gd")
@@ -95,47 +95,73 @@ func _face_camera() -> void:
 		pit_front.position = Vector3(d.x * PIT_FRONT_TOWARD, pit_front.position.y, d.z * PIT_FRONT_TOWARD)
 
 
-## A bedroll lying on the floor: a straw pallet, a quilted blanket on it and a round pillow at the head, real 3D so it sits on the stone
-## and looks right from every side. Shaded, so the fire lights it. The head points away from the fire.
+## A bedroll lying on the floor, all soft curves (no straight box edges): a straw mat with rounded ends, a puffy quilted blanket on it, a round
+## pillow at the head and a rolled blanket at the foot. Real 3D so it sits on the stone and looks right from every side. Shaded, so the fire
+## lights it. The head points away from the fire. (Every body is a capsule or sphere squashed flat: a capsule's axis is mesh Y, so a flat bed
+## is turned a quarter about z and squashed along mesh X, which then is up.)
 func _bedroll(index: int) -> Node3D:
 	var spot: Vector2 = BEDROLLS[index]
 	var bed := Node3D.new()
 	bed.position = Vector3(spot.x, 0.0, spot.y)
 	bed.rotation.y = atan2(-spot.y, spot.x)   # Local +x (the head end) points away from the fire.
 	add_child(bed)
-	var pallet := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = BED_SIZE
-	pallet.mesh = box
-	pallet.material_override = _material(PALLET_COLOUR)
-	pallet.position = Vector3(0, BED_SIZE.y * 0.5, 0)
-	_no_shadow(pallet)
-	bed.add_child(pallet)
-	var blanket := MeshInstance3D.new()
-	var top := BoxMesh.new()
-	top.size = BLANKET_SIZE
-	blanket.mesh = top
-	var quilt := _material(BLANKETS[index % BLANKETS.size()])
+	var tint: Color = BLANKETS[index % BLANKETS.size()]
+	var mat := _soft(_capsule(BED_SIZE.x, BED_SIZE.z * 0.5), Vector3(BED_SIZE.y / BED_SIZE.z, 1.0, 1.0), _material(PALLET_COLOUR))
+	mat.position = Vector3(0, BED_SIZE.y * 0.5, 0)
+	bed.add_child(mat)
+	var quilt := _material(tint)
 	if ResourceLoader.exists(DIR + "quilt.png"):
 		quilt.albedo_texture = load(DIR + "quilt.png")
 		quilt.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
-	blanket.material_override = quilt
-	blanket.position = Vector3(-0.1, BED_SIZE.y + BLANKET_SIZE.y * 0.5, 0)
-	_no_shadow(blanket)
+	var blanket := _soft(_capsule(BLANKET_SIZE.x, BLANKET_SIZE.z * 0.5), Vector3(BLANKET_SIZE.y * 1.9 / BLANKET_SIZE.z, 1.0, 1.0), quilt)
+	blanket.position = Vector3(-0.1, BED_SIZE.y + BLANKET_SIZE.y * 0.55, 0)
 	bed.add_child(blanket)
 	var pillow := MeshInstance3D.new()
 	var ball := SphereMesh.new()
 	ball.radius = 0.3
 	ball.height = 0.6
-	ball.radial_segments = 8
-	ball.rings = 4
+	ball.radial_segments = 16
+	ball.rings = 8
 	pillow.mesh = ball
-	pillow.scale = Vector3(0.9, 0.42, 1.2)
+	pillow.scale = Vector3(0.95, 0.45, 1.25)
 	pillow.material_override = _material(PILLOW_COLOUR)
-	pillow.position = Vector3(BED_SIZE.x * 0.5 - 0.32, BED_SIZE.y + BLANKET_SIZE.y + 0.04, 0)
+	pillow.position = Vector3(BED_SIZE.x * 0.5 - 0.34, BED_SIZE.y + BLANKET_SIZE.y + 0.07, 0)
 	_no_shadow(pillow)
 	bed.add_child(pillow)
+	var roll := MeshInstance3D.new()   # The blanket rolled up and tied at the foot, lying across the bed.
+	var tube := CapsuleMesh.new()
+	tube.radius = 0.13
+	tube.height = BLANKET_SIZE.z * 1.05
+	tube.radial_segments = 12
+	tube.rings = 4
+	roll.mesh = tube
+	roll.rotation.x = PI * 0.5   # Its length across the bed (along z).
+	roll.material_override = _material(tint * 0.8)
+	roll.position = Vector3(-BED_SIZE.x * 0.5 + 0.24, BED_SIZE.y + BLANKET_SIZE.y + 0.1, 0)
+	_no_shadow(roll)
+	bed.add_child(roll)
 	return bed
+
+
+## A capsule `length` long in all and `radius` round, smooth, lying along the bed (x).
+func _capsule(length: float, radius: float) -> CapsuleMesh:
+	var m := CapsuleMesh.new()
+	m.radius = radius
+	m.height = length
+	m.radial_segments = 20
+	m.rings = 6
+	return m
+
+
+## A capsule laid along x and squashed (`squash.x` is the height as a share of the width), with a material and no shadow.
+func _soft(mesh: Mesh, squash: Vector3, material: Material) -> MeshInstance3D:
+	var node := MeshInstance3D.new()
+	node.mesh = mesh
+	node.rotation.z = PI * 0.5
+	node.scale = squash
+	node.material_override = material
+	_no_shadow(node)
+	return node
 
 
 func _material(colour: Color) -> StandardMaterial3D:
