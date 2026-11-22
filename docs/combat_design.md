@@ -8,7 +8,7 @@ See the "Critical hits and fails" and "Hits from behind and the sides" sections.
 
 ## Equipment rules
 
-- **Mages can't wear armour. This is intentional.** It is set per item with `ItemDef.cant_use` (a list of class names); today only Leather Armour lists "Mage", so any armour added later must list it too. The inventory slots and portrait-click equipping both refuse with "The mage can't wear that."
+- **Mages can't wear armour, only robes. This is intentional.** It is set per item with `ItemDef.cant_use` (a list of class ids): Leather Armour lists "mage", so any armour added later must list it too unless it is cloth made for casters. **The Wool Robes** (`data/items/threadbare_robes.tres`, found in room 5 on floor 1: +1 defence, a light armour against the leather's +2) list "fighter" and "thief" instead, so the Mage and the Cleric may wear them and the fighters may not. The inventory slots and portrait-click equipping both refuse with "The mage can't wear that." (and likewise for the fighter and the robes.)
 - **Only a caster holds a spellbook or holy symbol.** A FOCUS goes in a hand only if its `magic` matches the hero's `CharacterDef.magic` (the spellbook the Mage, the holy symbol the Cleric; `Party.can_equip`). The Fighter and the Thief can carry one in a backpack but not hold it: "Brannoc can't make use of the spellbook." The inventory hands, the party panel's hands and the loot pop-up ("can't use") all follow it.
 - Armour or a weapon on the cursor, clicked onto a portrait, equips it (armour slot, or the main hand). Shift-click on floor armour equips it on the hero who gains the most defence.
 

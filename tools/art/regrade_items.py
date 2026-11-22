@@ -56,7 +56,13 @@ TOASTED = {"torch_300": "torch_500", "torch_500": "leather_400", "torch_700": "w
 # never add colours, its glow is a run-time tint and light); PixelLab also left a few curse-green and bruise-purple pixels on its hilt, which become steel greys.
 AZURE_STEEL = {"curse_300": "stone_300", "curse_500": "stone_500", "curse_700": "stone_700", "bruise_500": "stone_500", "bruise_700": "stone_700", "bruise_900": "stone_900"}
 
+# The Wool Robes (the Mage's armour; the files are still named threadbare_robes): dull wool. PixelLab gave the rope belt a mustard-amber colour (warm colours are for torchlight and rot) and left a
+# curse-green pixel or two; they become rope brown and greys.
+ROBES = {"mustard_500": "wood_500", "torch_300": "wood_500", "torch_500": "wood_500", "torch_700": "wood_700", "curse_300": "bone_500", "curse_500": "stone_500",
+         "curse_700": "stone_700", "bruise_500": "stone_500", "bruise_700": "stone_700", "bruise_900": "stone_900"}
+
 REMAPS = {
+    "threadbare_robes": ROBES,
     "azure_brand": AZURE_STEEL,
     "cooked_rat_meat": COOKED_MEAT, "toasted_bread": TOASTED,
     "stale_bread": GRIM_FOOD, "hard_cheese": GRIM_CHEESE,
@@ -68,7 +74,7 @@ REMAPS = {
 # double it. (The skeletons used to be listed here; their untouched copies in pieces/regrade_src/monsters are gone.)
 MONSTERS = {}
 # Hand and quick-slot icons made natively at 32x32 (tools/art/pieces/items32/): already outlined and steel-grey, so left alone.
-NATIVE32 = {"short_sword", "long_sword", "flail", "slingshot", "stone", "bow", "arrow", "war_hammer", "mace", "dagger", "darts", "bear_trap", "torch", "candle", "oil_flask", "mana_potion", "bedroll", "cooked_rat_meat", "toasted_bread", "azure_brand"}
+NATIVE32 = {"short_sword", "long_sword", "flail", "slingshot", "stone", "bow", "arrow", "war_hammer", "mace", "dagger", "darts", "bear_trap", "torch", "candle", "oil_flask", "mana_potion", "bedroll", "threadbare_robes", "cooked_rat_meat", "toasted_bread", "azure_brand"}
 
 
 def source(rel):

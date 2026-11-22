@@ -157,8 +157,9 @@ const STRUCTURES := [
 	{"cell": Vector2i(21, 20), "kind": "camp_spot"},  # Old ash where the party rests: a camp here is rarely disturbed (7h.4 will roll for it).
 ]
 
-# The item table: one of every item in data/items, two rows. (Add new items here when they exist.)
+# The item table: one of every item in data/items, in rows (the third row, y 8, takes what did not fit in two). (Add new items here when they exist.)
 const ITEMS := [
+	{"cell": Vector2i(24, 8), "def": "res://data/items/threadbare_robes.tres"},
 	{"cell": Vector2i(24, 4), "def": "res://data/items/dagger.tres"},
 	{"cell": Vector2i(25, 4), "def": "res://data/items/darts.tres"},
 	{"cell": Vector2i(26, 4), "def": "res://data/items/dried_meat.tres"},

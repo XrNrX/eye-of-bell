@@ -95,6 +95,7 @@ func _init() -> void:
 	await _check_goblin()
 	await _check_knight()
 	await _check_spider()
+	_check_robes()
 	await _check_log_scroll()
 	_check_tooltip_theme()
 	await _check_music()
@@ -2466,6 +2467,36 @@ func _check_spider() -> void:
 	party.webbed_left = 0.0
 	dungeon.clear_monsters()
 	DungeonMap.occupied.clear()
+
+
+## The Wool Robes (data/items/threadbare_robes.tres): the Mage's armour. Dull wool, +1 defence, casters only (Leather Armour is still not for him).
+func _check_robes() -> void:
+	_rest_everyone()
+	var robes: Resource = load("res://data/items/threadbare_robes.tres")
+	var leather: Resource = load("res://data/items/leather_armour.tres")
+	var cursor: Node = get_first_node_in_group("cursor")
+	var mage = party.members.filter(func(m): return m.class_id() == "mage")[0]
+	var fighter = party.members.filter(func(m): return m.class_id() == "fighter")[0]
+	var thief = party.members.filter(func(m): return m.class_id() == "thief")[0]
+	var cleric = party.members.filter(func(m): return m.class_id() == "cleric")[0]
+	check("robes: armour worth +1 defence (the leather is +2), with all three pictures, and for casters only: the mage and the cleric may wear them, the fighter and the thief may not",
+			robes.type == ItemDef.Type.ARMOUR and robes.defence_bonus == 1 and robes.defence_bonus < leather.defence_bonus and robes.icon != null and robes.floor_icon != null and robes.hud_icon != null
+			and party.can_equip(mage, robes) and party.can_equip(cleric, robes) and not party.can_equip(fighter, robes) and not party.can_equip(thief, robes)
+			and not party.can_equip(mage, leather))
+	check("robes: they lie in room 5 on floor 1 and on the test room's item table", DungeonMap.ITEMS.any(func(e): return str(e.def).ends_with("threadbare_robes.tres"))
+			and FileAccess.get_file_as_string("res://levels/test_room.gd").contains("threadbare_robes.tres"))
+	var before: int = party.effective_stats(mage, -1, false).defence
+	mage.armour = null
+	cursor.release()
+	cursor.hold(ItemStack.of(robes, 1))
+	var refused: Dictionary = party.equip_from_cursor(fighter.slot, cursor)
+	check("robes: the fighter's portrait refuses them and they stay on the cursor", not refused.done and cursor.is_holding() and fighter.armour == null)
+	var worn: Dictionary = party.equip_from_cursor(mage.slot, cursor)
+	var after: int = party.effective_stats(mage, -1, false).defence
+	check("robes: put on the mage from the cursor they are worn, the cursor is empty and his defence goes from %d to %d" % [before, after],
+			worn.done and mage.armour != null and mage.armour.def == robes and not cursor.is_holding() and after == before + 1)
+	mage.armour = null
+	_rest_everyone()
 
 
 ## The background music: Walen's "Dark Heart", one looping player under the tree root so it survives scene changes.

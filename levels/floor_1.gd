@@ -156,6 +156,7 @@ const ITEMS := [
 	{"cell": Vector2i(4, 7), "def": "res://data/items/darts.tres", "count": 4},
 	{"cell": Vector2i(10, 10), "def": "res://data/items/key.tres"},  # Room 5: key one (opens the way to the stairs).
 	{"cell": Vector2i(10, 9), "def": "res://data/items/healing_potion.tres"},
+	{"cell": Vector2i(9, 11), "def": "res://data/items/threadbare_robes.tres"},  # Room 5: the Mage's armour (Leather Armour is not for him): dull wool robes, +1 defence, casters only.
 	{"cell": Vector2i(8, 11), "def": "res://data/items/dagger.tres"},
 	{"cell": Vector2i(12, 11), "def": "res://data/items/mace.tres"},  # Room 3.
 	{"cell": Vector2i(14, 7), "def": "res://data/items/scroll.tres"},

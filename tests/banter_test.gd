@@ -202,9 +202,9 @@ func _check_real_lines() -> void:
 	var said_equip := false
 	for i in 40:
 		banter.reset_timers()
-		var l: Array = banter.event("equip", {"actor": "mage", "weapon": "Leather Armour"})
+		var l: Array = banter.event("equip", {"actor": "mage", "weapon": "Wool Robes"})
 		if not l.is_empty():
-			said_equip = "legs" in str(l[0])
+			said_equip = "counts as armour" in str(l[0])
 			break
 	check("existing line: the Mage's remark on armour", said_equip)
 	banter.reset_timers()

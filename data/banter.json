@@ -40,7 +40,7 @@
 			{"speaker": "fighter", "about": "self", "text": "Mine."},
 			{"speaker": "thief", "about": "self", "text": "Finders keepers."},
 			{"speaker": "cleric", "about": "self", "text": "Humble, but fitting."},
-			{"speaker": "mage", "about": "self", "holding": "armour", "text": "I can't feel my legs."}
+			{"speaker": "mage", "about": "self", "holding": "robes", "text": "Technically, this counts as armour."}
 		]
 	},
 	"corruption_bounce": {
