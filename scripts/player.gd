@@ -6,6 +6,7 @@ extends Node3D
 ## Every move/turn is tweened; movement input is ignored while a tween is running.
 
 const LootMenu := preload("res://scripts/loot_menu.gd")
+const CampfireMenu := preload("res://scripts/campfire_menu.gd")
 const SaveData := preload("res://scripts/save_data.gd")
 const Events := preload("res://scripts/game_events.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
@@ -79,7 +80,33 @@ func world_click(shift := false) -> void:
 		return
 	if _click_trap(front):
 		return
+	if _click_campfire(front):
+		return
 	_click_item(shift)
+
+
+## A left click on the campfire on the tile in front opens its pop-up (campfire_menu.gd: make camp, cook). Returns whether there was
+## a fire to answer, and the pop-up through `last_campfire_menu` (tests read it). The pop-up sits in the middle of the 3D view.
+func _click_campfire(front: Vector2i) -> bool:
+	if not DungeonMap.is_campfire(front) or party == null:
+		return false
+	for old in get_tree().get_nodes_in_group("campfire_menu"):
+		old.close()
+	var menu := CampfireMenu.new()
+	menu.setup(party, self)
+	last_campfire_menu = menu
+	var popups := get_tree().get_first_node_in_group("popups")
+	var preferred := func(size: Vector2) -> Vector2:
+		return Vector2(320, 140) - size / 2.0
+	if popups:
+		popups.open_popup(menu, preferred)
+	else:  # No pop-up layer (a bare test scene).
+		var layer := CanvasLayer.new()
+		layer.layer = 16
+		add_child(layer)
+		layer.add_child(menu)
+		menu.position = preferred.call(menu.get_combined_minimum_size())
+	return true
 
 
 ## The wall sconce on the wall in front (docs/design/expansion_design.md 7l.2), clicked on the 3D view. An empty hand takes the torch
@@ -261,7 +288,7 @@ func _process(_delta: float) -> void:
 	interact_was_down = interact_down
 
 	# 1-8: use that quick slot (two per hero, in party order). Real time, so this works mid-move too.
-	var loot_open := get_tree().get_first_node_in_group("loot_menu") != null  # Its 1-4 pick heroes instead (loot_menu.gd).
+	var loot_open := get_tree().get_first_node_in_group("loot_menu") != null or get_tree().get_first_node_in_group("campfire_menu") != null  # Their number keys choose rows instead (loot_menu.gd, campfire_menu.gd).
 	for i in 8:
 		var down := Input.is_physical_key_pressed(KEY_1 + i) and not Input.is_physical_key_pressed(KEY_SHIFT)  # (Shift+1..4 open the character sheets.)
 		if down and not quick_was_down[i] and not loot_open:
@@ -309,6 +336,7 @@ func command(kind: String) -> void:
 		"turn_right": _turn(-1)
 
 
+var last_campfire_menu: Node   # The campfire pop-up opened last (a test reads it).
 var _fire_msg_at := -10000   # When "The fire is in the way." was last said.
 var _web_msg_at := -10000   # When "stuck in the web" was last said (so held keys do not fill the log).
 

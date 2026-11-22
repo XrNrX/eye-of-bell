@@ -282,6 +282,17 @@ func _check_game() -> void:
 		player.position = DungeonMap.cell_to_world(player.cell)
 		player._try_move(Vector2i(0, 1))
 		check("the party cannot step into the campfire", player.cell == Vector2i(21, 20))
+		# Clicking the fire in front opens its pop-up: make camp and cook (greyed with nothing raw).
+		player.facing = 2
+		player.world_click()
+		await process_frame
+		var fire_menu: Node = player.last_campfire_menu
+		check("clicking the campfire opens its pop-up", fire_menu != null and is_instance_valid(fire_menu) and fire_menu.is_in_group("campfire_menu"))
+		if fire_menu != null and is_instance_valid(fire_menu):
+			check("COOK is greyed with nothing raw to cook", fire_menu.cook_button.disabled == (fire_menu.raw_count <= 0))
+			check("MAKE CAMP makes camp at the fire", fire_menu.make_camp() and get_first_node_in_group("camp").active)
+			get_first_node_in_group("camp").end()
+			check("the pop-up closes after a choice", fire_menu.is_queued_for_deletion())
 		player.cell = Vector2i(20, 14)
 		player.position = DungeonMap.cell_to_world(player.cell)
 		var flame: Node = camps[0].flame
