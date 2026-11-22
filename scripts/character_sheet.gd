@@ -5,8 +5,8 @@ extends PanelContainer
 ## the party HUD or the name in the inventory header (a second click on that closes it).
 ##
 ## Stat values come from Party.effective_stats() with buffs left out, so they show what
-## the *gear* does: a stat that gear raises is green with a "+n", one it lowers is red
-## with a "-n" (the base value is in the row's tooltip). Active buffs (Shield, Bless) are
+## the *gear* does: the total is plain and what gear adds follows it in brackets, "(+n)" in green when
+## it raises the stat and "(-n)" in red when it lowers it (the base value is in the row's tooltip). Active buffs (Shield, Bless) are
 ## listed below the equipment, one per line. Plain colours alone would fail a colour-blind player, hence
 ## the signed numbers. The palette has no red or green: better = slime_300, worse =
 ## rust_300, the nearest it has.
@@ -117,10 +117,10 @@ func _heading(text: String) -> Label:
 	return l
 
 
-## One stat row: "Attack   4 +1". The delta label is separate so it takes the colour too.
+## One stat row: "Attack   4 (+1)". The bracket (what gear adds) is a separate label so only it takes the colour.
 func _stat_row(parent: Control, key: String, text: String) -> Control:
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 4)
+	row.add_theme_constant_override("separation", 2)
 	row.mouse_filter = Control.MOUSE_FILTER_PASS
 	var n := _label(text, MUTED)
 	n.custom_minimum_size.x = 64
@@ -157,8 +157,9 @@ func refresh(a_party: Node, slot: int) -> void:
 	var avg_gear: float = (gear.damage_min + gear.damage_max) / 2.0
 	var avg_base: float = (base.damage_min + base.damage_max) / 2.0
 	var dmg := "%d-%d" % [gear.damage_min, gear.damage_max]
-	var dmg_tip := "Base %d-%d" % [base.damage_min, base.damage_max]
-	_show(rows.damage, dmg, "", _colour_for(avg_gear - avg_base), dmg_tip)
+	var dmg_diff := int(round(avg_gear - avg_base))
+	var dmg_tip := "Bare hands %d-%d. Average damage %s from gear" % [base.damage_min, base.damage_max, "%+d" % dmg_diff]
+	_show(rows.damage, dmg, _bonus_text(dmg_diff), _colour_for(avg_gear - avg_base), dmg_tip)
 
 	var swing := CombatRules.hero_cooldown(m.def.speed)
 	_show(rows.swing, "%.2fs" % swing, "", TEXT,
@@ -170,7 +171,7 @@ func refresh(a_party: Node, slot: int) -> void:
 	var right: int = party.crit_in_hand(m, 1)
 	var crit := maxi(left, right)
 	var crit_diff := crit - base_crit
-	_show(rows.crit, "%d%%" % crit, "%+d" % crit_diff if crit_diff != 0 else "", _colour_for(crit_diff),
+	_show(rows.crit, "%d%%" % crit, _bonus_text(crit_diff), _colour_for(crit_diff),
 			"Chance a landed hit is critical. Left hand %d%%, right hand %d%%" % [left, right])
 	spell_crit_row.visible = m.def.spell_crit > 0
 	_show(rows.spell_crit, "%d%%" % m.def.spell_crit, "", TEXT, "Chance a damage spell is critical")
@@ -203,8 +204,14 @@ func _item_name(stack) -> String:
 
 func _numeric(key: String, gear_value: int, base_value: int) -> void:
 	var diff := gear_value - base_value
-	_show(rows[key], str(gear_value), "%+d" % diff if diff != 0 else "", _colour_for(diff),
-			"Base %d" % base_value)
+	_show(rows[key], str(gear_value), _bonus_text(diff), _colour_for(diff),
+			"Base %d, %s from gear" % [base_value, "%+d" % diff] if diff != 0 else "Base %d" % base_value)
+
+
+## What gear adds or takes away, in brackets after the total ("3 (+2)"): the number before it is already the total, the bracket only says how much
+## of it is the gear's. Empty when the gear changes nothing.
+func _bonus_text(diff: int) -> String:
+	return "(%+d)" % diff if diff != 0 else ""
 
 
 func _colour_for(diff: float) -> Color:
@@ -218,6 +225,6 @@ func _colour_for(diff: float) -> Color:
 func _show(row: Dictionary, value: String, delta: String, colour: Color, tip: String) -> void:
 	row.value.text = value
 	row.delta.text = delta
-	row.value.add_theme_color_override("font_color", colour)
+	row.value.add_theme_color_override("font_color", TEXT)   # The total stays plain: only the bracket takes the colour.
 	row.delta.add_theme_color_override("font_color", colour)
 	row.row.tooltip_text = tip
