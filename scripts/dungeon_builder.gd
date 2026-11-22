@@ -67,7 +67,7 @@ const LEVER_SHEET := "res://art/sprites/lever.png"  # 2 frames of 16x16: off, on
 const PLATE_SIZE := 1.1
 const PLATE_UP_Y := 0.05     # Plate centre height when raised...
 const PLATE_DOWN_Y := -0.03  # ...and when pressed (sunk below the floor line).
-const LEVER_PIXEL_SIZE := 0.0225   # 64 px frames (gen_lever.py); big enough to be seen from down the corridor.
+const LEVER_PIXEL_SIZE := 0.0125   # 64 px frames (gen_lever.py): 0.8 world units wide, the size of the original 16 px lever.
 const LEVER_CALL := Color(1.0, 0.8, 0.5)   # The lever's soft warm light.
 const LEVER_HEIGHT := 1.0
 
@@ -622,7 +622,7 @@ func _add_lever(cell: Vector2i, side: int) -> void:
 	var light := OmniLight3D.new()
 	light.name = "Beacon"
 	light.add_to_group("sprite_lights")
-	light.omni_range = 3.0
+	light.omni_range = 2.0
 	light.position = Vector3(0, 0, 0.4)
 	sprite.add_child(light)
 	_sync_lever(Vector3i(cell.x, cell.y, side))
@@ -636,7 +636,7 @@ func _sync_lever(key: Vector3i) -> void:
 	var light: OmniLight3D = sprite.get_node_or_null("Beacon")
 	if light != null:
 		light.light_color = LEVER_CALL
-		light.light_energy = 0.1 if lever_on.get(key, false) else 0.45
+		light.light_energy = 0.05 if lever_on.get(key, false) else 0.2
 
 
 ## Point on the wall face at `side` of `cell`, at the given height (nudged off the wall).
