@@ -2311,6 +2311,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Inventory DISCARD button: drop the item on the cursor on the floor in front of the party (first built to destroy it, `893b4fe`), so a full pack is never a trap (`9fc2133`)
 - [x] Inventory item pop-up: double-click an item for DROP (the stack onto the floor) and COMBINE (merge the hero's matching stacks in pack and quick slots) (`8abae2e`)
 - [x] Character sheet shows gear bonuses in brackets after the total, e.g. Defence 6 (+2), with only the bracket coloured, and damage shows its bonus too (`80edff6`)
+- [x] Camp trip smoke made bigger and more dramatic: a layered eruption from the bottom of the view (PixelLab VFX 'Camp smoke surge', 28 frames, 2.8 s each way) instead of the flat clouds (`f43b254`)
 
 ## Ideas inbox
 
