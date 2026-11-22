@@ -2296,6 +2296,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] The Horned Knight: a heavy tier 2 swordsman (26 HP, defence 5, slow) from the user's PixelLab picture, animated; one on floor 1, one in the test room arena (`bcefa32`)
 - [x] The Bone Spider: a fast tier 2 biter with a venomous bite (25% sickness) from the user's PixelLab picture, animated; one on floor 1, one in the test room arena (`c56f9c9`)
 - [x] The Bone Spider's web attack: from 2 to 4 tiles down a clear line it spits a web that pins the party for 3 s (no stepping; turning, fighting and casting still work), with a web projectile, a webbing overlay and two sounds (`312173b`)
+- [x] Wool Robes: armour the Mage can wear (+1 defence, casters only), PixelLab art, in room 5 on floor 1; the combat rule is now "mages wear robes only" and his armour banter line was rewritten (`5aef8d3`)
 - [x] Message log scrolls back: mouse wheel or a thin bar, 200 lines of history, your place kept when a new line arrives (`7d784c5`)
 - [x] Hover tooltips restyled: 8 px text in a stone-black box with a rust edge, from one project theme (`12baaf0`)
 - [x] Camp beds made rounded: soft mat, puffy quilt, rounder pillow and a rolled blanket at the foot (`fa43a54`)
