@@ -1,0 +1,859 @@
+{
+ "frames": [
+  {
+   "filename": "campfire-embers 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 1.png",
+   "frame": {
+    "x": 160,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 2.png",
+   "frame": {
+    "x": 320,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 3.png",
+   "frame": {
+    "x": 480,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 4.png",
+   "frame": {
+    "x": 640,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 5.png",
+   "frame": {
+    "x": 800,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 6.png",
+   "frame": {
+    "x": 0,
+    "y": 120,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 7.png",
+   "frame": {
+    "x": 160,
+    "y": 120,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 8.png",
+   "frame": {
+    "x": 320,
+    "y": 120,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 9.png",
+   "frame": {
+    "x": 480,
+    "y": 120,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 10.png",
+   "frame": {
+    "x": 640,
+    "y": 120,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 11.png",
+   "frame": {
+    "x": 800,
+    "y": 120,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 12.png",
+   "frame": {
+    "x": 0,
+    "y": 240,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 13.png",
+   "frame": {
+    "x": 160,
+    "y": 240,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 14.png",
+   "frame": {
+    "x": 320,
+    "y": 240,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 15.png",
+   "frame": {
+    "x": 480,
+    "y": 240,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 16.png",
+   "frame": {
+    "x": 640,
+    "y": 240,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 17.png",
+   "frame": {
+    "x": 800,
+    "y": 240,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 18.png",
+   "frame": {
+    "x": 0,
+    "y": 360,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 19.png",
+   "frame": {
+    "x": 160,
+    "y": 360,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 20.png",
+   "frame": {
+    "x": 320,
+    "y": 360,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 21.png",
+   "frame": {
+    "x": 480,
+    "y": 360,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 22.png",
+   "frame": {
+    "x": 640,
+    "y": 360,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 23.png",
+   "frame": {
+    "x": 800,
+    "y": 360,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 24.png",
+   "frame": {
+    "x": 0,
+    "y": 480,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 25.png",
+   "frame": {
+    "x": 160,
+    "y": 480,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 26.png",
+   "frame": {
+    "x": 320,
+    "y": 480,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 27.png",
+   "frame": {
+    "x": 480,
+    "y": 480,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 28.png",
+   "frame": {
+    "x": 640,
+    "y": 480,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 29.png",
+   "frame": {
+    "x": 800,
+    "y": 480,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 30.png",
+   "frame": {
+    "x": 0,
+    "y": 600,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  },
+  {
+   "filename": "campfire-embers 31.png",
+   "frame": {
+    "x": 160,
+    "y": 600,
+    "w": 160,
+    "h": 120
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 120
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 120
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.9916666666666667
+   },
+   "duration": 83
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "campfire-embers.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 960,
+   "h": 720
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 80,
+   "y": 119
+  },
+  "frameTags": [
+   {
+    "name": "campfire-embers",
+    "from": 0,
+    "to": 31,
+    "direction": "forward"
+   }
+  ]
+ }
+}

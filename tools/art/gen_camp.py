@@ -61,6 +61,41 @@ def flame_sheet():
     return PAL.snap(sheet)
 
 
+def embers_sheet():
+    """art/camp/embers_sheet.png: the VFX tool's 'ash_embers' preset (sparks, cinders and ash rising, 32 frames, 12 fps, a loop; heat band removed, a narrow
+    column) as one row of frames, cropped to the box all frames share (its bottom is the fire: the frame's bottom centre is the anchor). Colours
+    go onto the torch and rust ramps by lightness, like the flame. Source: pieces/camp/embers.png + embers.json."""
+    atlas = Image.open(PIECES / "embers.png").convert("RGBA")
+    meta = json.loads((PIECES / "embers.json").read_text())
+    frames = []
+    for f in meta["frames"]:
+        r = f["frame"]
+        frames.append(atlas.crop((r["x"], r["y"], r["x"] + r["w"], r["y"] + r["h"])))
+    box = None
+    for f in frames:
+        b = f.getchannel("A").getbbox()
+        if b:
+            box = b if box is None else (min(box[0], b[0]), min(box[1], b[1]), max(box[2], b[2]), max(box[3], b[3]))
+    x0, x1 = box[0] - box[0] % 2, box[2] + box[2] % 2
+    y0, y1 = box[1] - box[1] % 2, frames[0].height
+    w, h = x1 - x0, y1 - y0
+    sheet = Image.new("RGBA", (w * len(frames), h), (0, 0, 0, 0))
+    for i, f in enumerate(frames):
+        sheet.paste(f.crop((x0, y0, x1, y1)), (i * w, 0))
+    ramp = [(80, "rust_700"), (120, "rust_500"), (160, "rust_300"), (200, "torch_500"), (257, "torch_300")]
+
+    def fire(c):
+        lum = 0.299 * c[0] + 0.587 * c[1] + 0.114 * c[2]
+        for limit, name in ramp:
+            if lum < limit:
+                return PAL[name]
+        return PAL["torch_300"]
+    _recolour(sheet, fire)
+    fps = round(1000.0 / (sum(f.get("duration", 83) for f in meta["frames"]) / len(frames)), 2)
+    (ART_DIR / "camp" / "embers_sheet.json").write_text(json.dumps({"frames": len(frames), "fps": fps, "frame_w": w, "frame_h": h}, indent=2))
+    return PAL.snap(sheet)
+
+
 def kindling():
     """kindling_a without its painted flame: the bright yellow-orange flame pixels above the coal bed (the top 16 rows) are cleared, the red
     coals and the sticks stay."""
@@ -132,6 +167,8 @@ def build(scale=None):
             _recolour(img, _grey)
         written.append(save_png(PAL.snap(img), f"camp/{name}.png"))
     written.append(save_png(flame_sheet(), "camp/flame_sheet.png"))
+    if (PIECES / "embers.png").exists():
+        written.append(save_png(embers_sheet(), "camp/embers_sheet.png"))
     written.append(save_png(quilt(), "camp/quilt.png"))
     written.append(save_png(kindling(), "camp/kindling.png"))
     written.append(save_png(pit_front(), "camp/pit_front.png"))

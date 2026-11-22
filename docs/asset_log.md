@@ -276,3 +276,6 @@ None of these were made with the VFX suite, so they should be replaced.
 
 ## Campsite: embers, smoke and a warm glow (22 Nov 2026, 0 generations)
 - `scripts/camp_site.gd`: rising embers and slow smoke over the fire (`PixelParticles`, palette ramps, no fade) and a second wide, dim, warm `OmniLight3D` so the beds and stone round the camp catch the firelight. **Placeholder: the embers and smoke are code-drawn**; replace them with PixelLab VFX flipbooks (`vfx_workbench`) when convenient.
+
+## Campfire embers (22 Nov 2026, 0 generations: the VFX tool is free)
+- `art/camp/embers_sheet.png` (+ `.json`; 32 frames of 52x74, 12 fps, a loop): the VFX tool's `ash_embers` preset with the heat band removed and the spread narrowed to a column (fewer, slower sparks), saved to My effects as 'Campfire embers' (id `12fb44fd-13c4-4f79-a396-fb39d6e21201`). Source atlas in `tools/art/pieces/camp/embers.png` + `.json`; `gen_camp.embers_sheet` crops it and puts the colours on the torch and rust ramps. Played by `camp_site.gd` as an additive billboard over the flame, replacing the code-drawn embers. **The smoke is still a code-drawn placeholder.**
