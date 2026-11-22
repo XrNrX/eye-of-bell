@@ -1,18 +1,18 @@
 extends CanvasLayer
-## The Hearth Coal's trip to camp, seen (and the way back): slow dust motes and a few embers build up over the 3D view while it darkens in
-## steps, then the scene changes, and on the other side the same dust is played backward, thinning away as the view brightens.
-## Art: art/camp/dust_sheet.png (the VFX tool's 'Camp dust', tools/art/gen_camp.py: 208x130 frames shown at 2x over the 416x260 view). The
+## The Hearth Coal's trip to camp, seen (and the way back): billows of dark smoke grow across the 3D view while it darkens in
+## steps, then the scene changes, and on the other side the same smoke is played backward, thinning away as the view brightens.
+## Art: art/camp/cloud_sheet.png (the VFX tool's 'Camp smoke cloud', tools/art/gen_camp.py: 208x130 frames shown at 2x over the 416x260 view). The
 ## darkening steps through a few flat black levels (never a smooth fade). A node of the tree ROOT, so it outlives the scene change.
 ##
-## `CampTransition.play(tree, on_done)`: dust builds (about 2.3 s, the game paused), then `on_done` runs (the scene change: it returns false
-## if the trip fell through, and the dust then clears at once); the layer waits for the new scene's player, then plays the dust back and
+## `CampTransition.play(tree, on_done)`: smoke builds (about 2.3 s, the game paused), then `on_done` runs (the scene change: it returns false
+## if the trip fell through, and the smoke then clears at once); the layer waits for the new scene's player, then plays the smoke back and
 ## frees itself. `CampTransition.skip` (tests) does the change at once, with no show. Reduce flashing changes nothing: it is slow steps.
 
 const UiLayout := preload("res://scripts/ui_layout.gd")
 const DIR := "res://art/camp/"
-## How dark the view is at each step of the fade, lightest first (the last is fully black behind the thickest dust).
+## How dark the view is at each step of the fade, lightest first (the last is fully black behind the thickest smoke).
 const DARK_STEPS := [0.0, 0.25, 0.5, 0.75, 0.92]
-const DARK_FROM := 0.35   # The share of the dust's time after which the view starts to darken.
+const DARK_FROM := 0.35   # The share of the smoke's time after which the view starts to darken.
 const MAX_WAIT := 6.0     # Give up waiting for the new scene after this long (seconds).
 
 enum Phase { BUILD, WAIT, CLEAR }
@@ -37,7 +37,7 @@ var shown := -1
 
 ## Start the show over the running game. Returns the node (null when `skip` ran `on_done` at once or the art is missing).
 static func play(tree: SceneTree, done: Callable) -> Node:
-	var art := DIR + "dust_sheet.png"
+	var art := DIR + "cloud_sheet.png"
 	if skip or not ResourceLoader.exists(art):
 		done.call()
 		return null
@@ -51,8 +51,8 @@ static func play(tree: SceneTree, done: Callable) -> Node:
 func _ready() -> void:
 	layer = 17   # Over the party panels, the frame and the pop-ups (16), under the full-screen map.
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	sheet = load(DIR + "dust_sheet.png")
-	var info = JSON.parse_string(FileAccess.get_file_as_string(DIR + "dust_sheet.json"))
+	sheet = load(DIR + "cloud_sheet.png")
+	var info = JSON.parse_string(FileAccess.get_file_as_string(DIR + "cloud_sheet.json"))
 	frames = int(info.frames)
 	fps = float(info.fps)
 	frame_w = int(info.frame_w)
@@ -84,7 +84,7 @@ func _exit_tree() -> void:
 		get_tree().paused = false
 
 
-## Seconds the dust takes to build (or to clear): all its frames.
+## Seconds the smoke takes to build (or to clear): all its frames.
 func duration() -> float:
 	return frames / fps
 
@@ -101,7 +101,7 @@ func _process(delta: float) -> void:
 			if (player != null and player != old_player and is_instance_valid(player) and t > 0.3) or t > MAX_WAIT:
 				phase = Phase.CLEAR
 				t = 0.0
-				get_tree().paused = true   # (The change of level gave the pause back: hold the new scene still while the dust clears.)
+				get_tree().paused = true   # (The change of level gave the pause back: hold the new scene still while the smoke clears.)
 				paused_by_us = true
 		Phase.CLEAR:
 			_show(maxf(0.0, 1.0 - t / duration()))
@@ -109,7 +109,7 @@ func _process(delta: float) -> void:
 				_finish()
 
 
-## The dust is thick: do the trip. If it fell through the dust clears where it is.
+## The smoke is thick: do the trip. If it fell through the smoke clears where it is.
 func _arrive() -> void:
 	phase = Phase.WAIT
 	t = 0.0
@@ -125,7 +125,7 @@ func _finish() -> void:
 	queue_free()
 
 
-## Draw the show at `progress` 0 (clear) to 1 (thickest): the dust frame and the stepped darkness.
+## Draw the show at `progress` 0 (clear) to 1 (thickest): the smoke frame and the stepped darkness.
 func _show(progress: float) -> void:
 	var f := clampi(int(progress * frames), 0, frames - 1)
 	if f != shown:

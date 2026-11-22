@@ -72,29 +72,29 @@ func _init() -> void:
 	check("the monsters are as they were", get_nodes_in_group("monsters").size() == monsters_before and get_nodes_in_group("monsters")[0].hp == 2)
 	check("the party comes back as it is now (a hero rested at camp)", party.members[1].hp == 7)
 	check("nothing waits to be applied", SaveGame.pending.is_empty() and CampZone.snapshot.is_empty() and not RunState.has())
-	# The show: dust builds over the view with the game held still, then the change runs; a trip that falls through clears the dust again.
+	# The show: smoke builds over the view with the game held still, then the change runs; a trip that falls through clears the smoke again.
 	CampTransition.skip = false
 	var ran := [false]
 	var layer: Node = CampTransition.play(self, func():
 		ran[0] = true
 		return false)
-	check("the dust show starts, pauses the game and draws the dust", layer != null and paused and layer.picture.visible and layer.frames > 8)
+	check("the smoke show starts, pauses the game and draws the smoke", layer != null and paused and layer.picture.visible and layer.frames > 8)
 	await create_timer(layer.duration() * 0.5).timeout
 	check("half way through the view is not yet dark", layer.dim.color.a < 0.9 and not ran[0])
 	await create_timer(layer.duration() * 0.5 + 0.4).timeout
-	check("when the dust is thick the change runs", ran[0] and layer.dim.color.a >= 0.9 or layer.phase != 0)
+	check("when the smoke is thick the change runs", ran[0] and layer.dim.color.a >= 0.9 or layer.phase != 0)
 	await create_timer(layer.duration() + 1.0).timeout
-	check("a trip that fell through clears the dust, gives the game back and removes the layer", not is_instance_valid(layer) and not paused)
-	# End to end with the show: the coal, the dust, the scene change under it, the dust clearing in the zone, then the same back.
+	check("a trip that fell through clears the smoke, gives the game back and removes the layer", not is_instance_valid(layer) and not paused)
+	# End to end with the show: the coal, the smoke, the scene change under it, the smoke clearing in the zone, then the same back.
 	ran[0] = false
 	party = get_first_node_in_group("party")
 	player = get_first_node_in_group("player")
 	player.restore(Vector2i(6, 7), 3)
 	check("the coal is accepted (with the show)", party.use_item(0, coal).used)
 	await create_timer(1.0).timeout
-	check("the dust is building and the game is held still", paused and get_first_node_in_group("player") == player and not CampZone.in_zone())
+	check("the smoke is building and the game is held still", paused and get_first_node_in_group("player") == player and not CampZone.in_zone())
 	await create_timer(layer_wait()).timeout
-	check("the party is in the zone, the dust cleared and the game running", CampZone.in_zone() and not paused and _transition_layers() == 0)
+	check("the party is in the zone, the smoke cleared and the game running", CampZone.in_zone() and not paused and _transition_layers() == 0)
 	player = get_first_node_in_group("player")
 	player.world_click()
 	await process_frame
@@ -114,7 +114,7 @@ func _coals_on_floor_1() -> int:
 	return n
 
 
-## Long enough for dust to build, the scene to change and the dust to clear (seconds).
+## Long enough for smoke to build, the scene to change and the smoke to clear (seconds).
 func layer_wait() -> float:
 	return 2.4 + 0.5 + 2.4 + 1.0
 
