@@ -30,10 +30,9 @@ const BEDROLLS := [Vector2(-2.3, -1.5), Vector2(2.3, -1.5), Vector2(-2.2, 1.9), 
 const BLANKETS := [Color(0.84, 0.86, 0.96), Color(1.0, 0.76, 0.66), Color(0.9, 0.88, 0.84), Color(1.0, 0.88, 0.58)]   # Cool grey, rust, bone, ochre: never green (the curse; firelight turns a blue tint olive, so the cool one is faint).
 const BED_SIZE := Vector3(1.7, 0.1, 0.85)      # The straw pallet: length, thickness, width.
 const BLANKET_SIZE := Vector3(1.45, 0.07, 0.8)
-const BED_BRIGHTNESS := 0.78   # The picture is pale; dimmed so the beds sit in the dark room instead of glaring.
+const BED_BRIGHTNESS := 1.5   # The picture is dull and real light is dim in the camp: brightened (albedo above 1 is allowed) so the quilt and its tint read.
 const BED_PIXEL := 0.0205     # World size of one art pixel of the bedroll picture (92 px long: about 1.9 units, 0.75 wide).
-const BED_THICKNESS := 0.09   # How tall each bed's body is (it stands on the floor).
-const BODY_COLOUR := Color("31303c")   # stone_700: the dark body under the picture, seen at its edges.
+const BED_THICKNESS := 0.24   # How tall the plump middle of each bed is (the edges roll down to the floor).
 const PALLET_COLOUR := Color("74553a")   # leather_400
 const PILLOW_COLOUR := Color("9c9278")   # bone_500
 
@@ -99,42 +98,68 @@ func _face_camera() -> void:
 		pit_front.position = Vector3(d.x * PIT_FRONT_TOWARD, pit_front.position.y, d.z * PIT_FRONT_TOWARD)
 
 
-## A bedroll as the PixelLab picture (art/camp/bed.png: a top-down bedroll, from the user's bedroll image), built like a real object lying on the
-## floor and never moving: a thin solid body (a box, BED_THICKNESS high, standing on the stone, so it has a side you can see from low down and
-## casts no gap under it) with the picture laid flat on its top face, the whole bed turned about the vertical so the strapped roll (the left end of
-## the art) points at the fire. Its position and angle are fixed: nothing turns it toward the camera. The picture is tinted with the hero's
-## blanket colour (kept in the "tint" meta: sprite_lighting.gd multiplies it by the fire's light every frame); the body is shaded real 3D.
-## Returns the picture (the list of bedrolls holds it).
-func _bed_sprite(index: int) -> Sprite3D:
+## A bedroll as the PixelLab picture (art/camp/bed.png: a top-down bedroll, from the user's bedroll image) wrapped over a plump, rounded mat of real
+## 3D (`_bed_mesh`): its top is a pillow-like swell BED_THICKNESS high that rolls down to the floor round every edge and corner, so it stands on
+## the stone with a thick rounded body, like a real object, and never hovers. It is fixed in place and turned once about the vertical so the strapped
+## roll (the left end of the art) points at the fire: nothing tips or turns it toward the camera (a billboard floated and a camera tilt swung).
+## Shaded, so the fire and the torches light it; tinted with the hero's blanket colour. The list of bedrolls holds the mesh.
+func _bed_sprite(index: int) -> MeshInstance3D:
 	var spot: Vector2 = BEDROLLS[index]
-	var tint: Color = BLANKETS[index % BLANKETS.size()] * BED_BRIGHTNESS
-	tint.a = 1.0
-	var bed := Node3D.new()
+	var tex: Texture2D = load(DIR + "bed.png")
+	var bed := MeshInstance3D.new()
+	bed.mesh = _bed_mesh(Vector2(tex.get_width(), tex.get_height()) * BED_PIXEL)
+	var mat := StandardMaterial3D.new()
+	mat.albedo_texture = tex
+	mat.albedo_color = BLANKETS[index % BLANKETS.size()] * BED_BRIGHTNESS
+	mat.albedo_color.a = 1.0
+	mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA_SCISSOR
+	mat.alpha_scissor_threshold = 0.5
+	mat.roughness = 1.0
+	bed.material_override = mat
 	bed.position = Vector3(spot.x, 0.0, spot.y)
 	bed.rotation.y = atan2(-spot.y, spot.x)   # Local +x (the blanket end of the art) points away from the fire, the roll toward it.
+	_no_shadow(bed)
 	add_child(bed)
-	var tex: Texture2D = load(DIR + "bed.png")
-	var body := MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = Vector3(tex.get_width() * BED_PIXEL - 0.04, BED_THICKNESS, tex.get_height() * BED_PIXEL - 0.04)   # A touch smaller than the picture: its edge never shows past it.
-	body.mesh = box
-	body.material_override = _material(BODY_COLOUR)
-	body.position = Vector3(0, BED_THICKNESS * 0.5, 0)
-	_no_shadow(body)
-	bed.add_child(body)
-	var sprite := Sprite3D.new()
-	sprite.texture = tex
-	sprite.pixel_size = BED_PIXEL
-	sprite.axis = Vector3.AXIS_Y   # Lies in the horizontal plane, face up (the art's top toward -z, its left end toward -x).
-	sprite.shaded = false
-	sprite.modulate = tint
-	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
-	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
-	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	sprite.position = Vector3(0, BED_THICKNESS + 0.004, 0)   # On the body's top face (a hair above it so the two never fight).
-	sprite.set_meta("tint", tint)
-	bed.add_child(sprite)
-	return sprite
+	return bed
+
+
+## A rounded, plump mat `size` wide (x) and deep (z): a grid whose height is BED_THICKNESS * sqrt(1 - a^4 - b^4) for a, b in -1..1 across the
+## footprint, so the top is nearly flat in the middle and rolls steeply down to the floor at the edges and corners, which stay on the floor.
+## The picture is mapped straight down onto it (its top toward -z, its left end toward -x); normals come from the slope, so the light follows
+## the roundness. Built once per bed.
+func _bed_mesh(size: Vector2) -> ArrayMesh:
+	var nx := 32
+	var nz := 16
+	var half := size * 0.5
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var verts := []
+	for j in nz + 1:
+		for i in nx + 1:
+			var a := -1.0 + 2.0 * i / nx
+			var b := -1.0 + 2.0 * j / nz
+			var eps_a := 0.5 / nx
+			var eps_b := 0.5 / nz
+			var dhdx := (_bed_height(a + eps_a, b) - _bed_height(a - eps_a, b)) / (2.0 * eps_a * half.x)
+			var dhdz := (_bed_height(a, b + eps_b) - _bed_height(a, b - eps_b)) / (2.0 * eps_b * half.y)
+			verts.append({"p": Vector3(a * half.x, _bed_height(a, b), b * half.y), "n": Vector3(-dhdx, 1.0, -dhdz).normalized(), "uv": Vector2(float(i) / nx, float(j) / nz)})
+	for j in nz:
+		for i in nx:
+			var v00: Dictionary = verts[j * (nx + 1) + i]
+			var v10: Dictionary = verts[j * (nx + 1) + i + 1]
+			var v01: Dictionary = verts[(j + 1) * (nx + 1) + i]
+			var v11: Dictionary = verts[(j + 1) * (nx + 1) + i + 1]
+			for v in [v00, v10, v11, v00, v11, v01]:   # Clockwise seen from above: Godot's front face.
+				st.set_normal(v.n)
+				st.set_uv(v.uv)
+				st.add_vertex(v.p)
+	return st.commit()
+
+
+## The height of the mat at (a, b) in -1..1 across it: BED_THICKNESS at the middle, 0 at the edges and corners.
+func _bed_height(a: float, b: float) -> float:
+	return BED_THICKNESS * sqrt(maxf(0.0, 1.0 - pow(absf(a), 4.0) - pow(absf(b), 4.0)))
 
 
 ## A bedroll lying on the floor, all soft curves (no straight box edges): a straw mat with rounded ends, a puffy quilted blanket on it, a round

@@ -285,27 +285,29 @@ func _check_game() -> void:
 		for l in get_nodes_in_group("sprite_lights"):
 			lit = lit or (l == camps[0].light and Vector2(l.global_position.x, l.global_position.z).distance_to(ahead) < l.omni_range)
 		check("the fire's light reaches the camp (so the dark penalty does not apply beside it)", lit)
-		# The bedrolls are the PixelLab bed picture on a thin solid body standing on the floor, fixed in place: nothing tips or turns them toward the camera.
+		# The bedrolls are plump rounded 3D mats (the PixelLab bed picture wrapped over them), thick, resting on the floor, fixed in place: nothing tips or
+		# turns them toward the camera.
 		var bed_ok := true
 		var before := []
+		var thick := 0.0
 		for bed in camps[0].bedrolls:
-			var holder: Node3D = bed.get_parent() if bed is Sprite3D else null
-			var body: MeshInstance3D = null
-			if holder != null:
-				for c in holder.get_children():
-					if c is MeshInstance3D:
-						body = c
-			var rests: bool = body != null and body.mesh is BoxMesh and absf(body.position.y - body.mesh.size.y * 0.5) < 0.0001 					and bed.position.y >= body.mesh.size.y and bed.position.y < body.mesh.size.y + 0.01
-			bed_ok = bed_ok and rests and bed.has_meta("tint") and bed.texture.resource_path.ends_with("art/camp/bed.png") 					and absf(holder.rotation.x) < 0.0001 and absf(holder.rotation.z) < 0.0001 and bed.axis == Vector3.AXIS_Y and not bed.billboard == BaseMaterial3D.BILLBOARD_ENABLED
+			var is_mesh: bool = bed is MeshInstance3D and bed.mesh is ArrayMesh
+			bed_ok = bed_ok and is_mesh
+			if not is_mesh:
+				continue
+			var box: AABB = bed.mesh.get_aabb()
+			thick = box.size.y
+			var mat: StandardMaterial3D = bed.material_override
+			bed_ok = bed_ok and box.size.y > 0.2 and box.size.y < 0.3 and absf(box.position.y) < 0.001 and box.size.x > 1.7 and box.size.z > 0.6 					and absf(bed.position.y) < 0.001 and absf(bed.rotation.x) < 0.0001 and absf(bed.rotation.z) < 0.0001 					and mat != null and mat.albedo_texture != null and mat.albedo_texture.resource_path.ends_with("art/camp/bed.png")
 			before.append(bed.global_transform)
 		get_first_node_in_group("player").restore(Vector2i(21, 17), 2)
 		await create_timer(0.3).timeout
 		get_first_node_in_group("player").restore(Vector2i(17, 21), 3)
 		await create_timer(0.3).timeout
 		var still := true
-		for k in camps[0].bedrolls.size():
+		for k in before.size():
 			still = still and camps[0].bedrolls[k].global_transform.is_equal_approx(before[k])
-		check("the four bedrolls each stand on the floor (a solid body, the picture flat on its top) and do not move or turn when the camera does", bed_ok and still)
+		check("the four bedrolls are thick rounded mats (%.2f tall) standing on the floor, and do not move or turn when the camera does" % thick, bed_ok and still and before.size() == 4)
 	check("monsters are in the arena and the held-monster room", get_nodes_in_group("monsters").size() == DungeonMap.MONSTERS.size())
 
 	var press := func(code: Key):
