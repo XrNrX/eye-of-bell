@@ -74,7 +74,7 @@ REMAPS = {
 # double it. (The skeletons used to be listed here; their untouched copies in pieces/regrade_src/monsters are gone.)
 MONSTERS = {}
 # Hand and quick-slot icons made natively at 32x32 (tools/art/pieces/items32/): already outlined and steel-grey, so left alone.
-NATIVE32 = {"short_sword", "long_sword", "flail", "slingshot", "stone", "bow", "arrow", "war_hammer", "mace", "dagger", "darts", "bear_trap", "torch", "candle", "oil_flask", "mana_potion", "bedroll", "threadbare_robes", "cooked_rat_meat", "toasted_bread", "azure_brand"}
+NATIVE32 = {"short_sword", "long_sword", "flail", "slingshot", "stone", "bow", "arrow", "war_hammer", "mace", "dagger", "darts", "bear_trap", "torch", "candle", "oil_flask", "mana_potion", "bedroll", "threadbare_robes", "cooked_rat_meat", "toasted_bread", "azure_brand", "hearth_coal"}
 
 
 def source(rel):

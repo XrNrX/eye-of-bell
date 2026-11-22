@@ -4,6 +4,7 @@ extends PanelContainer
 ##
 ## - MAKE CAMP (key 1): rest at the fire, the same camp as a bedroll makes (Party.camp_refusal says why not; no bedroll is used up).
 ## - COOK (n) (key 2): make camp and cook everything raw the party carries (Camp.cook_all); greyed when nothing is raw.
+## - BREAK CAMP (key 3, only in the safe campfire zone a Hearth Coal opens, camp_zone.gd): back to the exact tile the party left.
 ## Esc or a click outside closes it, and it closes by itself if the party moves or turns.
 
 signal closed
@@ -28,6 +29,7 @@ var from_facing := 0
 var raw_count := 0               # Raw items the party carries (what COOK would cook).
 var camp_button: Button
 var cook_button: Button
+var break_button: Button         # null outside the safe campfire zone.
 
 
 func setup(a_party: Node, a_player: Node) -> void:
@@ -70,6 +72,9 @@ func setup(a_party: Node, a_player: Node) -> void:
 	cook_button = _row(col, "2", "COOK (%d)" % raw_count if raw_count > 0 else "COOK", raw_count > 0)
 	cook_button.disabled = raw_count <= 0
 	cook_button.pressed.connect(cook)
+	if _zone().in_zone():
+		break_button = _row(col, "3", "BREAK CAMP", true)
+		break_button.pressed.connect(break_camp)
 
 
 func _row(col: VBoxContainer, key: String, text: String, on: bool) -> Button:
@@ -144,6 +149,22 @@ func cook() -> int:
 	return camp.cook_all()
 
 
+func _zone() -> GDScript:
+	return load("res://scripts/camp_zone.gd")   # (Loaded when needed: it reaches RunState and the party script.)
+
+
+## Leave the safe campfire zone for the tile the party came from. Returns whether they went.
+func break_camp() -> bool:
+	if break_button == null or not _still_there():
+		return false
+	var camp = get_tree().get_first_node_in_group("camp")
+	if camp != null and camp.active:
+		camp.end()
+	var tree := get_tree()
+	close()
+	return _zone().leave(tree)
+
+
 ## The party has not moved or turned since it opened.
 func _still_there() -> bool:
 	return player.cell == from_cell and int(player.facing) == from_facing
@@ -174,6 +195,9 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 		elif event.physical_keycode == KEY_2 and not event.shift_pressed:
 			cook()
+			get_viewport().set_input_as_handled()
+		elif event.physical_keycode == KEY_3 and not event.shift_pressed and break_button != null:
+			break_camp()
 			get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton and event.pressed and not get_global_rect().has_point(event.position):
 		close()

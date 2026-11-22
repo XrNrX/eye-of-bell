@@ -1853,6 +1853,8 @@ func use_item(slot: int, def: Resource) -> Dictionary:
 		return {"used": false, "message": "", "close": false}
 	if def.makes_camp:  # Makes camp for the whole party, so it needs no living user and no target.
 		return _bedroll(m)
+	if def.opens_camp_zone:  # Takes the whole party to the safe campfire zone: no living user, no target.
+		return _hearth_coal(m)
 	if def.revive_percent > 0:  # A Scroll of Resurrection is read on a fallen hero's portrait, not by its holder.
 		return {"used": false, "close": false, "message": "The scroll needs the fallen." if fallen().is_empty() \
 				else "Click a fallen hero's portrait with it."}
@@ -1990,6 +1992,18 @@ func camp_refusal() -> String:
 	if DungeonMap.ambush_trigger_near(here, CAMP_AMBUSH_REACH):
 		return "Something waits close by."
 	return ""
+
+
+## A Hearth Coal used by `m`: takes the party to the safe campfire zone if they may (CampZone.refusal). The caller takes one away when
+## `used`, and the trip starts at the end of the frame (CampZone.enter), so the coal has left its slot before the party is carried.
+func _hearth_coal(_m: Member) -> Dictionary:
+	var CampZone = load("res://scripts/camp_zone.gd")   # (Loaded here, not preloaded: it reaches RunState, which preloads this script.)
+	var why: String = CampZone.refusal(get_tree())
+	if why == "":
+		CampZone.enter.call_deferred(get_tree())
+		return {"used": true, "message": "The party finds a safe fire.", "close": true}
+	_say(why)
+	return {"used": false, "message": why, "close": false}
 
 
 ## A bedroll used by `m` (from a hand, a quick slot or the pack): makes camp if the party may. Spent only when it does. The caller takes

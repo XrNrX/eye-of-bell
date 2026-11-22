@@ -153,6 +153,7 @@ const ITEMS := [
 	{"cell": Vector2i(6, 10), "def": "res://data/items/short_sword.tres"},  # In front of the start.
 	{"cell": Vector2i(6, 11), "def": "res://data/items/leather_armour.tres"},
 	{"cell": Vector2i(6, 8), "def": "res://data/items/healing_potion.tres"},
+	{"cell": Vector2i(11, 13), "def": "res://data/items/hearth_coal.tres"},  # The level's one Hearth Coal (a trip to the safe campfire zone), in the long corridor south of room 5.
 	{"cell": Vector2i(4, 7), "def": "res://data/items/darts.tres", "count": 4},
 	{"cell": Vector2i(10, 10), "def": "res://data/items/key.tres"},  # Room 5: key one (opens the way to the stairs).
 	{"cell": Vector2i(10, 9), "def": "res://data/items/healing_potion.tres"},

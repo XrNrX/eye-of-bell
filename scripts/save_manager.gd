@@ -14,6 +14,7 @@ extends Node
 
 const SaveGame := preload("res://scripts/save_game.gd")
 const RunState := preload("res://scripts/run_state.gd")
+const DungeonMap := preload("res://scripts/dungeon_map.gd")
 
 
 func _ready() -> void:
@@ -23,6 +24,8 @@ func _ready() -> void:
 		call_deferred("_apply_pending")  # After every sibling's _ready (and its own deferred setup).
 	elif RunState.has():
 		call_deferred("_apply_run_state")  # The party carried from the last level (run_state.gd).
+		if DungeonMap.level_id == "res://levels/camp_zone.gd":
+			call_deferred("_say", "The party finds a safe fire.")  # (The Hearth Coal's trip: camp_zone.gd.)
 
 
 func _apply_run_state() -> void:
@@ -37,6 +40,9 @@ func _apply_pending() -> void:
 	var error := SaveGame.apply(get_tree(), data)
 	if error == "":
 		get_tree().call_group("audio", "play", "load")
+	if error == "" and data.get("from_camp", false):
+		_say("The party breaks camp.")   # Back from the safe campfire zone (camp_zone.gd), not a loaded save.
+		return
 	_say("Game loaded." if error == "" else "Couldn't load: " + error)
 
 

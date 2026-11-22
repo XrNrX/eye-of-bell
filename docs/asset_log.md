@@ -282,3 +282,6 @@ None of these were made with the VFX suite, so they should be replaced.
 
 ## Campfire smoke (22 Nov 2026, 0 generations: the VFX tool is free)
 - `art/camp/smoke_sheet.png` (+ `.json`; 7 frames of 20x30, 7 fps, a one-shot): the VFX tool's `smoke_puff` preset made smaller, darker and outline-free (greys of the palette), saved to My effects as 'Campfire smoke' (id `085a865b-ff67-498d-9962-0c4f679ba875`). Source atlas in `tools/art/pieces/camp/smoke.png` + `.json`; `gen_camp.smoke_sheet` crops it and drops the blank tail. `camp_site.gd` starts a new puff over the flame every 0.9 to 1.5 s (a normal-blend billboard that frees itself). This replaces the code-drawn smoke: **the campsite has no code-drawn effects left.**
+
+## Hearth Coal (22 Nov 2026, 2 generations)
+- `tools/art/pieces/items48/hearth_coal.png` (48x48, seed 5301) and `tools/art/pieces/items32/hearth_coal.png` (32x32, seed 5302): `create_image_pixflux`, no background, single colour black outline, medium shading, 1 generation each: a glowing ember coal in a rough iron wire cage on a leather cord. Both came out as a caged egg shape (the ember reads weakly): redo with another prompt if it does not read in play. Installed with `add_item_art.py hearth_coal` (the 32x32 is the hand icon, so the name is in `NATIVE32`) then `regrade_items.py`; files `art/items/hearth_coal{,_floor,_hud}.png`.

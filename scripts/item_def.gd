@@ -84,6 +84,7 @@ enum Magic { NONE, ARCANE, DIVINE }
 
 @export_group("Camp")
 @export var cooks_into: Resource  # Raw food: the ItemDef it becomes when cooked at a camp fire (camp.gd: the Cook button or clicking it on the fire). Cooking keeps the count.
+@export var opens_camp_zone := false  # A Hearth Coal: using it (from a hand, a quick slot or the pack) takes the party to the safe campfire zone (camp_zone.gd), if they may (Party.camp_refusal), and is spent only then.
 @export var makes_camp := false  # A bedroll: using it (from a hand, a quick slot or the pack) makes camp if the party may (Party.camp_refusal), and is spent only then.
 
 @export_group("Resurrection")

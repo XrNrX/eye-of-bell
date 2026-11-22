@@ -58,6 +58,9 @@ signal oil_ignited(cell: Vector2i)
 ## stopped it or moved (interrupted false), or a fight broke it (interrupted true).
 signal camp_made
 signal camp_ended(interrupted: bool)
+## The party went to the safe campfire zone with a Hearth Coal (camp_zone.gd), and came back from it.
+signal camp_zone_entered
+signal camp_zone_left
 
 ## The party held a legendary item for the first time this run (once per item: the run flag "legendary.found.<item path>", saved).
 ## `item` is its ItemDef, `hero` the hero_index of whoever was holding it. Sent by Party._note_legendaries; 30 XP follows once Party.add_xp exists.
