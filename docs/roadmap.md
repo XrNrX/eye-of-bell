@@ -2302,7 +2302,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Hover tooltips restyled: 8 px text in a stone-black box with a rust edge, from one project theme (`12baaf0`)
 - [x] Camp beds made rounded: soft mat, puffy quilt, rounder pillow and a rolled blanket at the foot (`fa43a54`)
 - [x] Camp beds redrawn from the user's own bedroll picture with PixelLab: a top-down bedroll, first flat on a thin body (`ea32e4e`), then wrapped over a thick rounded 3D mat resting on the floor (`8371c46`), then given cloth detail: stitched quilt diamonds that puff in the mesh, a bulging roll and wrinkles (`68ceb4e`), then redone with the user's patchwork sleeping bag, each patch swelling on its own (`adf6384`)
-- [x] Campsite livelier: rising embers and smoke (code-drawn pixel particles, placeholder for PixelLab VFX) and a wide warm glow light (`d185484`)
+- [x] Campsite livelier: rising embers (PixelLab VFX flipbook) and smoke (code-drawn pixel particles, still a placeholder for PixelLab VFX) and a wide warm glow light (`d185484`, embers `0cce679`)
 
 ## Ideas inbox
 
