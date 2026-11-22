@@ -9,7 +9,6 @@ extends Node3D
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const FxFlipbook := preload("res://scripts/fx_flipbook.gd")
 const TorchLight := preload("res://scripts/torch.gd")
-const PixelParticles := preload("res://scripts/pixel_particles.gd")
 
 const DIR := "res://art/camp/"
 const PIXEL := 0.022          # World size of one art pixel for the pit (a 64 px picture is 1.4 units wide), times FIRE_SCALE.
@@ -41,10 +40,11 @@ const PATCH_X := [28.5, 71.0, 121.5, 168.0]   # The seams between the patches in
 const PATCH_Y := [0.0, 35.0, 70.0]            # ...and across it (two rows). Each patch swells on its own; the seams stay low.
 const PATCH_PUFF := 0.16      # Each patch swells this share higher at its middle.
 const WRINKLE := 0.014        # Height of the soft cloth wrinkles, in world units.
-## Smoke over the fire (code-drawn pixel particles stepping through a palette ramp, never fading: PLACEHOLDER until a PixelLab VFX smoke
-## flipbook replaces it, see docs/asset_log.md). The embers are PixelLab's (art/camp/embers_sheet.png, a looping flipbook).
-const SMOKE_RAMP := [Color("7b7a88"), Color("504f5e"), Color("31303c")]
-const SMOKE_PER_SECOND := 1.2
+## The smoke is PixelLab's too (art/camp/smoke_sheet.png, a one-shot puff that rises inside its own frames): a new one every SMOKE_EVERY seconds.
+const SMOKE_PIXEL := 0.034    # World size of one art pixel of a puff (20x30 px: about 0.7 wide, 1 tall).
+const SMOKE_EVERY := Vector2(0.9, 1.5)
+const SMOKE_BASE := 0.95      # Where a puff's bottom starts above the floor: over the flame's tip.
+const SMOKE_TOWARD := 0.2
 const EMBER_PIXEL := 0.014    # World size of one art pixel of the embers (52x74 px: about 0.7 wide, 1 tall).
 const EMBER_TOWARD := 0.35    # Toward the camera, in front of the flame, so the sparks show over it from every side.
 const EMBER_BASE := 0.5       # Where the embers' bottom starts above the floor.
@@ -59,9 +59,10 @@ var kindling: Sprite3D
 var pit_front: Sprite3D
 var light: OmniLight3D
 var glow: OmniLight3D   # A wider, dimmer warm pool that lights the beds and the stone round the camp.
-var pixels: Node3D
 var embers: MeshInstance3D
-var _smoke_debt := 0.0
+var _smoke_wait := 0.5
+var _smoke_sheet: Texture2D
+var _smoke_info = {}
 var bedrolls := []   # [Node3D], one per hero position
 
 
@@ -107,22 +108,32 @@ func _ready() -> void:
 		embers.setup(load(DIR + "embers_sheet.png"), int(info.frames), float(info.fps), true, EMBER_PIXEL, Color.WHITE, true)
 		embers.position = Vector3(0, EMBER_BASE + float(info.frame_h) * 0.5 * EMBER_PIXEL, 0)
 		add_child(embers)
-	pixels = PixelParticles.new()
-	pixels.pixel_size = 0.012
-	add_child(pixels)
+	if ResourceLoader.exists(DIR + "smoke_sheet.png"):
+		_smoke_sheet = load(DIR + "smoke_sheet.png")
+		_smoke_info = JSON.parse_string(FileAccess.get_file_as_string(DIR + "smoke_sheet.json"))
 	_face_camera()
 
 
 func _process(delta: float) -> void:
 	_face_camera()
-	if pixels == null:
+	if _smoke_sheet == null:
 		return
-	_smoke_debt += delta * SMOKE_PER_SECOND
-	var n := int(_smoke_debt)
-	if n > 0:
-		_smoke_debt -= n
-		pixels.emit(Vector3(0, 1.1, 0), n, {"ramp": PackedColorArray(SMOKE_RAMP), "speed": Vector2(0.25, 0.45), "spread": 0.2,
-				"gravity": -0.1, "drag": 0.4, "life": Vector2(2.0, 3.2), "size": 5.0, "jitter": Vector3(0.2, 0.05, 0.2)})
+	_smoke_wait -= delta
+	if _smoke_wait <= 0.0:
+		_smoke_wait = randf_range(SMOKE_EVERY.x, SMOKE_EVERY.y)
+		_puff()
+
+
+## One puff of smoke over the fire, toward the camera a little like the flame so the logs never hide it; it frees itself when it has played.
+func _puff() -> void:
+	var puff = FxFlipbook.new()
+	puff.setup(_smoke_sheet, int(_smoke_info.frames), float(_smoke_info.fps), false, SMOKE_PIXEL, Color.WHITE, false)
+	var toward := Vector3.ZERO
+	var cam := get_viewport().get_camera_3d()
+	if cam != null:
+		toward = Vector3(cam.global_position.x - global_position.x, 0.0, cam.global_position.z - global_position.z).normalized() * SMOKE_TOWARD
+	puff.position = toward + Vector3(randf_range(-0.12, 0.12), SMOKE_BASE + float(_smoke_info.frame_h) * 0.5 * SMOKE_PIXEL, randf_range(-0.12, 0.12))
+	add_child(puff)
 
 
 ## Keep the flame and the spit a little toward the camera from the logs, whichever side it is on.
