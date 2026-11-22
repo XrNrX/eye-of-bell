@@ -2307,6 +2307,10 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Campfire pop-up: left-click the campfire in front to make camp (rest, no bedroll used) or cook the raw food the party carries (`b3bec03`)
 - [x] Hearth Coal and the safe campfire zone: one coal a level (floor 1 has one) takes the party to a small monster-free camp room to rest, cook and use packs; BREAK CAMP at its fire returns them to the exact tile with the level as they left it (`7cc6c61`)
 - [x] Test room backpacks stocked fairly: every item goes to a hero who can use it, lightest pack first, so each hero gets a near-equal share (about 9 stacks) to try in random play (`852d43b`)
+- [x] Hearth Coal trip has a show: slow billowing smoke clouds (PixelLab VFX 'Camp smoke cloud', first dust motes) build over the 3D view while it darkens in steps, the scene changes under them and they clear on arrival; BREAK CAMP gets the same (`aec3c86`, smoke `0f99686`)
+- [x] Inventory DISCARD button: drop the item on the cursor on the floor in front of the party (first built to destroy it, `893b4fe`), so a full pack is never a trap (`9fc2133`)
+- [x] Inventory item pop-up: double-click an item for DROP (the stack onto the floor) and COMBINE (merge the hero's matching stacks in pack and quick slots) (`8abae2e`)
+- [x] Character sheet shows gear bonuses in brackets after the total, e.g. Defence 6 (+2), with only the bracket coloured, and damage shows its bonus too (`80edff6`)
 
 ## Ideas inbox
 
