@@ -4,7 +4,7 @@ each, kept at their native 256x256 in pieces/monsters_hd/halberdier_256/): idle 
 across his body and stabs it out), walk (the input and 8), hurt (the input and 4: head thrown back, mouth open).
 
 Frames kept (source index -> sheet frame), chosen by eye: idle 0-4; attack 1-6 and then 0 (the halberd comes across and rises, then is thrust out in front
-of him: `attack_hit_frame` 4 names the first thrust frame, source frame 5; source 7 and 8 repeat 6 and are dropped); walk 0-7; hurt 1-4. The picture is
+of him: `attack_hit_frame` 4 names the first thrust frame, source frame 6; source 5 and 8 repeat neighbours and are dropped); walk 0-7; hurt 1-4. The picture is
 painted (no outline), so there is no outline pass. The frames are lifted LIFT times before the palette snap and halved to 128. gen_monster_sheets_hd.py
 (spec "halberdier") writes the sheet and the frame lists, fps and pixel_size into data/monsters/halberdier.tres.
 
@@ -22,7 +22,7 @@ HERE = Path(__file__).resolve().parent
 LIFT = 1.2
 SRC = HERE / "pieces" / "monsters_hd" / "halberdier_256"
 OUT = HERE / "pieces" / "monsters_hd" / "halberdier"
-KEEP = {"idle": [0, 1, 2, 3, 4], "attack": [1, 2, 3, 4, 5, 6, 0], "walk": [0, 1, 2, 3, 4, 5, 6, 7], "hurt": [1, 2, 3, 4]}
+KEEP = {"idle": [0, 1, 2, 3, 4], "attack": [1, 2, 3, 4, 6, 7, 0], "walk": [0, 1, 2, 3, 4, 5, 6, 7], "hurt": [1, 2, 3, 4]}
 
 
 def _frame(im, size):

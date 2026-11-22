@@ -34,4 +34,4 @@ idle_fps = 4.0
 attack_fps = 10.0
 hurt_fps = 12.0
 walk_fps = 12.0
-pixel_size = 0.01033
+pixel_size = 0.01199
