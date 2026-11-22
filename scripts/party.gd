@@ -1323,6 +1323,46 @@ func quick_accepts(item) -> bool:
 ## Put an item stack (or an ItemDef, or null to empty it) in a quick slot, replacing
 ## what's there. Returns false, changing nothing, if the slot doesn't exist or the
 ## item isn't something a quick slot takes (see quick_accepts).
+## The stacks of the same item as `like` that a hero carries in the backpack and the quick slots (a stack that can merge with it: `like` itself
+## counts), as [{"where": "pack"|"quick", "index": i, "stack": ItemStack}] in that order.
+func matching_stacks(slot: int, like: RefCounted) -> Array:
+	var out := []
+	var m := member(slot)
+	if m == null or like == null:
+		return out
+	for i in m.backpack.size():
+		if m.backpack[i] != null and m.backpack[i].can_stack_with(like):
+			out.append({"where": "pack", "index": i, "stack": m.backpack[i]})
+	for i in m.quick.size():
+		if m.quick[i] != null and m.quick[i].can_stack_with(like):
+			out.append({"where": "quick", "index": i, "stack": m.quick[i]})
+	return out
+
+
+## COMBINE: merge every stack of the same item as `like` in this hero's backpack and quick slots into as few as possible (each filled up to the
+## item's stack limit, the earlier ones first); the emptied cells are cleared. Returns how many stacks that freed.
+func combine_stacks(slot: int, like: RefCounted) -> int:
+	var found := matching_stacks(slot, like)
+	var m := member(slot)
+	var freed := 0
+	for i in found.size():
+		var into: RefCounted = found[i].stack
+		for j in range(found.size() - 1, i, -1):
+			var from: RefCounted = found[j].stack
+			if from.count > 0 and into.room() > 0:
+				into.merge_from(from)
+	for e in found:
+		if e.stack.count <= 0:
+			freed += 1
+			if e.where == "pack":
+				m.backpack[e.index] = null
+			else:
+				set_quick(slot, e.index, null)
+		elif e.where == "quick":
+			quick_changed.emit(slot)
+	return freed
+
+
 func set_quick(slot: int, index: int, item) -> bool:
 	var m := member(slot)
 	if m == null or index < 0 or index >= QUICK_SLOTS:

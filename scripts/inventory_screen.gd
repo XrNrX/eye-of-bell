@@ -21,6 +21,7 @@ const InventorySlotScript := preload("res://scripts/inventory_slot.gd")
 const PartyScript := preload("res://scripts/party.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const CharacterSheet := preload("res://scripts/character_sheet.gd")
+const ItemMenu := preload("res://scripts/item_menu.gd")
 const NAME_MAX_WIDTH := 150.0  # The header name wraps beyond this many units (see refresh).
 
 @onready var backdrop: ColorRect = %Backdrop
@@ -44,6 +45,8 @@ var armour_slot: Panel
 var quick_slots := []     # QUICK-kind InventorySlot: the member's two quick slots (the ones under their portrait on the party panel).
 var backpack_slots := []  # BACKPACK-kind InventorySlot, likewise re-pointed.
 var sheet: PanelContainer  # The character sheet beside the window (character_sheet.gd).
+var last_pick_slot: Control    # The slot the cursor last picked an item up from, and what it picked (for a double-click: inventory_slot._open_menu).
+var last_pick_stack: RefCounted
 var discard_button: Button  # Under the backpack: drops the item on the cursor on the floor in front.
 @onready var window: Control = $Center/Window
 const StonePanel := preload("res://scripts/stone_panel.gd")
@@ -235,6 +238,29 @@ func refresh() -> void:
 		s.refresh()
 	if sheet.visible:
 		sheet.refresh(party, focused_slot)
+
+
+## The item pop-up (item_menu.gd: DROP, COMBINE) for the item in `slot`, beside it. Returns the menu (null if the slot is empty).
+func open_item_menu(slot: Control) -> Node:
+	if slot.get_item() == null:
+		return null
+	for old in get_tree().get_nodes_in_group("item_menu"):
+		old.close()
+	var menu := ItemMenu.new()
+	menu.setup(self, slot)
+	var popups := get_tree().get_first_node_in_group("popups")
+	var rect := slot.get_global_rect()
+	var preferred := func(size: Vector2) -> Vector2:
+		return Vector2(rect.end.x + 4.0, rect.position.y)
+	if popups:
+		popups.open_popup(menu, preferred)
+	else:  # No pop-up layer (a bare test scene).
+		var layer := CanvasLayer.new()
+		layer.layer = 16
+		add_child(layer)
+		layer.add_child(menu)
+		menu.position = preferred.call(menu.get_combined_minimum_size())
+	return menu
 
 
 ## The DISCARD button: drop the item on the cursor (the whole stack) on the tile in front of the party, where it can be picked up again. Says so

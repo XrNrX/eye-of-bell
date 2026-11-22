@@ -308,6 +308,64 @@ func _check_game() -> void:
 	check("with nowhere to drop it the item stays on the cursor", not inv.discard_held() and hand_cursor.is_holding() and "nowhere" in inv.status_label.text)
 	player.cell = here
 	hand_cursor.release()
+	# Double-clicking an item in the inventory opens its pop-up (DROP, COMBINE), through real input routing: the first click picks the item up, the
+	# second puts it back and opens the menu.
+	var dm := get_first_node_in_group("party")
+	var bread: Resource = load("res://data/items/stale_bread.tres")
+	var hero0 = dm.members[0]
+	for i in hero0.backpack.size():
+		hero0.backpack[i] = null
+	hero0.backpack[0] = ItemStackS.of(bread, 3)
+	hero0.backpack[2] = ItemStackS.of(bread, 4)
+	hero0.backpack[5] = ItemStackS.of(bread, 2)
+	inv.show_screen(0)
+	await process_frame
+	await process_frame
+	var cell_a: Control = inv.backpack_slots[0]
+	var at: Vector2 = cell_a.get_global_rect().get_center()
+	var click_at := func(double: bool):
+		var ev := InputEventMouseButton.new()
+		ev.button_index = MOUSE_BUTTON_LEFT
+		ev.pressed = true
+		ev.position = at
+		ev.global_position = at
+		ev.double_click = double
+		root.push_input(ev, true)
+	click_at.call(false)
+	check("one click picks the stack up", hand_cursor.is_holding() and hand_cursor.held.count == 3)
+	click_at.call(true)
+	await process_frame
+	var item_menu := get_first_node_in_group("item_menu")
+	check("the second click puts it back and opens the item pop-up", not hand_cursor.is_holding() and hero0.backpack[0] != null and item_menu != null)
+	check("the pop-up offers DROP and COMBINE (3 stacks of bread)", item_menu != null and not item_menu.drop_button.disabled and item_menu.combinable == 3 and not item_menu.combine_button.disabled)
+	if item_menu != null:
+		check("COMBINE merges the pack's bread into full stacks", item_menu.combine() >= 1)
+		var total := 0
+		var stacks := 0
+		for st in hero0.backpack:
+			if st != null and st.def == bread:
+				total += st.count
+				stacks += 1
+		check("nine bread now lie in two stacks (5 and 4), none lost", total == 9 and stacks == 2)
+		inv.refresh()
+		at = inv.backpack_slots[0].get_global_rect().get_center()
+		click_at.call(false)
+		click_at.call(true)
+		await process_frame
+		item_menu = get_first_node_in_group("item_menu")
+		check("combining again changes nothing (5 and 4 cannot merge)", item_menu != null and item_menu.combine() == 0 and "already" in inv.status_label.text)
+		inv.refresh()
+		click_at.call(false)
+		click_at.call(true)
+		await process_frame
+		item_menu = get_first_node_in_group("item_menu")
+		var front_cell: Vector2i = player.cell + player.DIRS[player.facing]
+		while the_dungeon.item_at(front_cell) != null:
+			the_dungeon.take_item(front_cell)
+		if item_menu != null:
+			var dropped_count: int = hero0.backpack[0].count
+			check("DROP puts the whole stack on the floor in front", item_menu.drop() and hero0.backpack[0] == null and the_dungeon.item_at(front_cell) != null and the_dungeon.item_at(front_cell).count == dropped_count)
+	inv.hide_screen()
 	# The campfire station: a camp at (21,21) with four bedrolls, an animated flame and a flickering light the dark rules count.
 	var camps := get_nodes_in_group("camp_sites")
 	var camp_ok: bool = camps.size() == 1 and camps[0].cell == Vector2i(21, 21) and camps[0].bedrolls.size() == 4 and camps[0].flame != null and camps[0].light != null

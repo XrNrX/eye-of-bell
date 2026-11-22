@@ -158,7 +158,8 @@ func refresh() -> void:
 		elif stack == null and kind == Kind.QUICK:
 			tooltip_text = "Quick slot (key %d): a potion, food, a scroll, a trap, a light or something to throw" % (member_slot * 2 + index + 1)
 		if stack:
-			tooltip_text = stack.label()
+			tooltip_text = stack.label() + "
+Double-click: drop or combine"
 			if stack.count > 1:
 				tooltip_text += "\nRight-click to take one"
 				if stack.def.type == ItemDef.Type.CONSUMABLE:
@@ -185,6 +186,8 @@ func _gui_input(event: InputEvent) -> void:
 		accept_event()
 		if kind == Kind.CHARACTER:
 			_click_portrait()
+		elif event.double_click and _open_menu():
+			return
 		else:
 			_click_slot()
 	elif event.button_index == MOUSE_BUTTON_RIGHT:
@@ -238,6 +241,20 @@ func _changed() -> void:
 		screen.party.quick_changed.emit(member_slot)
 
 
+## Double-click: the first click of the pair picked this slot's item up, so put it back and open the item pop-up (drop, combine) beside the
+## slot. Returns false (and the click goes on as a plain click) if this is not the second click on an item that was just picked up here.
+func _open_menu() -> bool:
+	var cursor = screen.cursor
+	if cursor.is_holding() and get_item() == null and screen.last_pick_slot == self and screen.last_pick_stack == cursor.held:
+		set_item(cursor.release())   # (The first click's pick-up, undone.)
+		_changed()
+		screen.refresh()
+	elif get_item() == null or cursor.is_holding():
+		return false
+	screen.open_item_menu(self)
+	return true
+
+
 ## Pick up (the whole stack), put down, merge into a matching stack, or swap.
 func _click_slot() -> void:
 	var cursor = screen.cursor
@@ -247,6 +264,8 @@ func _click_slot() -> void:
 			return
 		set_item(null)
 		cursor.hold(here)
+		screen.last_pick_slot = self   # (A second click right after this opens the item pop-up: _open_menu.)
+		screen.last_pick_stack = here
 		get_tree().call_group("audio", "play", "pickup")
 		screen.say("")
 	else:
