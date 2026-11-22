@@ -41,7 +41,7 @@ const PATCH_Y := [0.0, 35.0, 70.0]            # ...and across it (two rows). Eac
 const PATCH_PUFF := 0.16      # Each patch swells this share higher at its middle.
 const WRINKLE := 0.014        # Height of the soft cloth wrinkles, in world units.
 ## The smoke is PixelLab's too (art/camp/smoke_sheet.png, a one-shot puff that rises inside its own frames): a new one every SMOKE_EVERY seconds.
-const SMOKE_PIXEL := 0.034    # World size of one art pixel of a puff (20x30 px: about 0.7 wide, 1 tall).
+const SMOKE_PIXEL := 0.055    # World size of one art pixel of a puff (20x30 px: about 1.1 wide, 1.65 tall).
 const SMOKE_EVERY := Vector2(0.9, 1.5)
 const SMOKE_BASE := 0.95      # Where a puff's bottom starts above the floor: over the flame's tip.
 const SMOKE_TOWARD := 0.2
