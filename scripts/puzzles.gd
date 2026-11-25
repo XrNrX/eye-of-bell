@@ -18,10 +18,12 @@ const DungeonMap := preload("res://scripts/dungeon_map.gd")
 
 var dungeon: Node
 var _links := []  # [{signal, callable}] connected to the bus, dropped when this node leaves the tree
+var _serial := 0  # DungeonMap.level_serial when this dungeon was built.
 
 
 func _ready() -> void:
 	dungeon = get_parent()
+	_serial = DungeonMap.level_serial
 	var bus := get_node_or_null("/root/GameEvents")
 	if bus == null:
 		return  # A bare test scene: no news, so no puzzles stir.
@@ -29,6 +31,8 @@ func _ready() -> void:
 		var event: String = info.name
 		var count: int = info.args.size()
 		var heard := func(a = null, b = null, c = null, d = null):
+			if _serial != DungeonMap.level_serial:
+				return  # Another level is in place and this dungeon is about to go: its monsters and levers are not that level's.
 			check(dungeon, event, [a, b, c, d].slice(0, count))
 		bus.connect(event, heard)
 		_links.append({"signal": event, "callable": heard})

@@ -47,6 +47,8 @@ func _init() -> void:
 	check("the party may rest here", party.camp_refusal() == "")
 	var monsters_before := get_nodes_in_group("monsters").size()
 	party.members[1].hp = 3
+	var solved := []   # Every puzzle that fires during the trips: none should (the camp room has no rats, floor 1 still places three).
+	root.get_node("GameEvents").puzzle_solved.connect(func(id): solved.append(id))
 
 	var result: Dictionary = party.use_item(0, coal)
 	check("using the coal is accepted and closes the inventory", result.used and result.close)
@@ -71,6 +73,7 @@ func _init() -> void:
 	check("the party is on the exact tile, facing as before", player.cell == spot and player.facing == 3)
 	check("the monsters are as they were", get_nodes_in_group("monsters").size() == monsters_before and get_nodes_in_group("monsters")[0].hp == 2)
 	check("the party comes back as it is now (a hero rested at camp)", party.members[1].hp == 7)
+	check("breaking camp solves no puzzle on the way back (%s)" % str(solved), solved.is_empty() and DungeonMap.puzzles_done.is_empty() and DungeonMap.curse_zone_at(Vector2i(8, 17)) == "cave")
 	check("nothing waits to be applied", SaveGame.pending.is_empty() and CampZone.snapshot.is_empty() and not RunState.has())
 	# The show: smoke builds over the view with the game held still, then the change runs; a trip that falls through clears the smoke again.
 	CampTransition.skip = false

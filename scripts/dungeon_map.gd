@@ -59,6 +59,7 @@ static var level_path := ""
 ## The identity of the level now in use: FLOOR_1_ID, a level script's path, or the id given to use_level_data ("seed:123" for a
 ## generated one). The save stores it (SaveGame "level_id").
 static var level_id := FLOOR_1_ID
+static var level_serial := 0  # Goes up each time a level is put in place: a node built for an earlier one (still in the tree until the scene reloads) can tell.
 const TEST_ROOM_PATH := "res://levels/test_room.gd"
 const DEMO_1_PATH := "res://levels/demo_1.gd"  # Demo level 1 (built from mapBell.png by tools/level/gen_demo_1.py): a real level that can be saved, unlike the test room.
 const EDITOR_PATH := "res://scripts/debug/dungeon_editor.gd"  # F10: the dungeon editor (debug builds only, like the tools).
@@ -103,6 +104,7 @@ static func use_level(path: String) -> void:
 ## generated one): it is stored in the save and tells use_level_id how to build it again. The data is copied, so the caller's
 ## dictionary is never changed by the run. Starts a run (reset_run). Call before the dungeon is built.
 static func use_level_data(data: Dictionary, id := FLOOR_1_ID) -> void:
+	level_serial += 1
 	level_id = id
 	level_path = "" if id == FLOOR_1_ID else id
 	var floor_one: Dictionary = load(FLOOR_1_PATH).get_script_constant_map()
