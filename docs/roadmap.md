@@ -15,12 +15,12 @@ The goal is one finished dungeon floor: walk in from a main menu, solve a door p
 - **One prompt, one feature.** Paste a prompt, run the game in Godot, test it, then commit before moving on.
 - **Commit after every step.** Use git so a bad prompt is a 10-second undo, not a lost evening.
 - **Sonnet by default.** Switch to Opus when Sonnet loops on the same bug twice, or for the design steps marked below.
-- **Placeholders first, art second.** Grey cubes are fine until Phase 2. Never block on art. Until you have PixelLab credit, all art comes from Python scripts in tools/art/, saved under the file names PixelLab art would use, so real art can be swapped in later without code changes.
-- **Keep a parking lot.** New ideas go in Phase 8's list, not into the current step.
+- **Art from PixelLab.** Art and animated effects come from PixelLab (the VFX suite for effects), follow docs/art_style.md, go in through tools/art/ and are logged in docs/asset_log.md. Never block a step on art: a placeholder is fine if it is flagged as one there.
+- **Keep a parking lot.** New ideas go in the Ideas inbox at the foot of this file, not into the current step.
 
 First floor is done when: a stranger can start from the menu, reach the stairs, and either win or die without you explaining anything.
 
-Finished phases (1 to 8 and the test room), with every prompt, now live in the Done tab: Done
+Finished phases are kept in `docs/roadmap_done.md`, not here (the file is created when the next finished phase is moved out; phases 1 to 8 and the test room were finished before this file became the master copy).
 
 ## Next 10 steps (start here)
 
@@ -211,7 +211,7 @@ Any time: 7b.8 (Dead weight), 7f.3 to 7f.5 (more banter), 7k.3 (Bear trap: what 
 
 ## Leftovers from finished phases
 
-Loose ends from phases that are otherwise done, plus things the 13 Nov tech brief showed don't match the roadmap. Their phases moved to the Done tab; the steps and prompts live here until they're ticked.
+Loose ends from phases that are otherwise done, plus things the 13 Nov tech brief showed don't match the roadmap. Their phases are finished (see `docs/roadmap_done.md`); the steps and prompts live here until they're ticked.
 
 - [x] 5.7 Enemy health bars (Phase 5)
 - [ ] 7b.8 Dead weight: the party slows while carrying a dead character (Phase 7b)
@@ -2277,7 +2277,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Curse zone look pass: murky fog creeping from the edges, sputtering flame with a wisp, slow edge-glow vignette, Bless pocket recoil, Reduce flashing (`5a81a22`)
 - [x] Zombie: a PixelLab-styled, animated tier 2 monster in the test room and on floor 1, room 3 at (15,11) (`64d971b`)
 - [x] Zombie death gas: a 1 in 5 chance of a toxic cloud within a tile of the body that stings the party, with a test VFX cloud (`6ec327b`)
-- [x] Design docs and demo READMEs: `docs/design/expansion_design.md` (`9cadb9c`), the classes plan (`69d9eca`), `docs/code_review.md`, `docs/tone.md`, `docs/technical_brief.md`, demo READMEs v0.2 to v0.11
+- [x] Design docs and demo READMEs: `docs/design/expansion_design.md` (`9cadb9c`), the classes plan (`69d9eca`), `docs/code_review.md`, `docs/tone.md`, `docs/technical_brief.md`, demo READMEs v0.2 to v0.12 (v0.12: `8f75298`)
 - [x] Editor: double-click the party start (or Enter with it selected) to build and play the map from there (`d0ddbc9`)
 - [x] Zombie gas gets its own palette colour, `mustard_500` for rot and disease, and a smoke-puff VFX cloud with dark flies (`f0ecca9`)
 - [x] Minimap moved to the top-right corner of the 3D view and made slightly translucent (`e69ac12`)
