@@ -816,7 +816,7 @@ func _wander_dir() -> Vector2i:
 ## Monsters stop at walls and closed doors, and at other monsters and the player.
 func _can_enter(target: Vector2i) -> bool:
 	return not DungeonMap.is_blocked(target) and not DungeonMap.is_campfire(target) and not DungeonMap.is_occupied(target) \
-			and target != DungeonMap.player_cell and not (def.fears_fire and _fire_at(target))
+			and target != DungeonMap.player_cell and not DungeonMap.is_sealed(target) and not (def.fears_fire and _fire_at(target))
 
 
 ## Is there fire on this tile (burning oil, a burning torch lying there)? A monster that fears fire will not step onto it.

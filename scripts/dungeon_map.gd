@@ -41,6 +41,8 @@ const SCONCE_EMPTY := 2
 static var TORCHES: Array = Floor1.TORCHES.duplicate(true)
 static var CORRUPTION: Dictionary = Floor1.CORRUPTION.duplicate(true)
 static var PUZZLES: Array = Floor1.PUZZLES.duplicate(true)
+static var AREAS: Array = Floor1.AREAS.duplicate(true)       # Named parts of the level (puzzles and seals use them).
+static var BRAZIERS: Array = Floor1.BRAZIERS.duplicate(true)
 static var DOOR_IDS: Dictionary = Floor1.DOOR_IDS.duplicate(true)
 static var PLATES: Array = Floor1.PLATES.duplicate(true)
 static var STRUCTURES: Array = Floor1.STRUCTURES.duplicate(true)
@@ -66,7 +68,7 @@ const EDITOR_PATH := "res://scripts/debug/dungeon_editor.gd"  # F10: the dungeon
 const EDITOR_PLAY_ID := "editor:play"  # The level id of a level built from the editor's paper (E.4): it cannot be saved.
 const TOOLS_PATH := "res://scripts/debug/test_room_tools.gd"  # F12, the debug keys and the help overlay (debug builds only).
 const LEVEL_FIELDS := ["MAP", "START_TILE", "START_FACING", "MENU_VIEW_CELL", "TORCHES", "CORRUPTION", "PUZZLES", "DOOR_IDS", "PLATES",
-		"STRUCTURES", "LEVERS", "ITEMS", "MONSTERS", "SIGNS", "ARMED_TRAPS", "AMBUSHES", "STATIONS", "CURSE_ZONES"]
+		"STRUCTURES", "LEVERS", "ITEMS", "MONSTERS", "SIGNS", "ARMED_TRAPS", "AMBUSHES", "STATIONS", "CURSE_ZONES", "AREAS", "BRAZIERS"]
 
 
 ## Add the dungeon editor to the tree root, once (it lives there so it survives a Build changing the scene). Debug builds only: quiet if
@@ -166,6 +168,10 @@ static func _set_field(f: String, v) -> void:
 			STATIONS = v
 		"CURSE_ZONES":
 			CURSE_ZONES = v
+		"AREAS":
+			AREAS = v
+		"BRAZIERS":
+			BRAZIERS = v
 
 
 static func _empty_like(v):
@@ -186,6 +192,10 @@ static var purified := {}        # Corrupted walls that have been burned away (c
 static var purify_pending := {}  # Walls whose purifying show is still running: they stay solid until it ends (cell -> true).
 static var puzzles_done := {}    # Puzzles that have fired (id -> true); saved.
 static var puzzle_doors := {}    # DOOR_IDS doors a puzzle holds open (id -> true); saved.
+static var seals := {}           # Sealed areas: area id -> {owner -> is it saved?}. Changed by Dungeon.seal_area / unseal_area only.
+static var sealed_doors := {}    # The doors those seals hold shut (cell -> true), worked out from `seals`.
+static var reliquaries := {}     # Reliquaries a puzzle has raised (cell -> true); saved.
+static var brazier_lit := {}     # BRAZIERS: cell -> is it burning? Changed by Dungeon.set_brazier; saved.
 ## Sconces (TORCHES): what each holds now, keyed by Vector3i(x, z, side): SCONCE_LIT, SCONCE_UNLIT or SCONCE_EMPTY. Filled from TORCHES by the
 ## builder (`init_sconces`), cleared by reset_run, saved. `sconce_seconds` is the burn time of the torch in each one that holds a
 ## torch (a torch costs nothing while it hangs there); `sconce_seen` the ones the party has seen (the map shows those).
@@ -214,6 +224,70 @@ static func flag(name: String, default = false):
 
 static func has_flag(name: String) -> bool:
 	return flags.has(name)
+
+
+# --- Areas and seals (AREAS: [{"id": String, "rect": Rect2i} or {"id": String, "tiles": [Vector2i, ...]}]) ---
+
+## Is this tile part of the area? A door never is (it is the way in or out), nor is a wall.
+static func area_has(id: String, cell: Vector2i) -> bool:
+	if cell.y < 0 or cell.y >= MAP.size() or cell.x < 0 or cell.x >= MAP[cell.y].size() or is_door(cell) or is_wall(cell):
+		return false
+	for area in AREAS:
+		if area.id == id:
+			return (area.has("rect") and area.rect.has_point(cell)) or area.get("tiles", []).has(cell)
+	return false
+
+
+## Every tile of the area.
+static func area_tiles(id: String) -> Array:
+	var out := []
+	for y in MAP.size():
+		for x in MAP[y].size():
+			if area_has(id, Vector2i(x, y)):
+				out.append(Vector2i(x, y))
+	return out
+
+
+## The area's ways out: the doors and portcullises with the area on one side and somewhere else on another.
+static func area_exits(id: String) -> Array:
+	var out := []
+	for cell in area_tiles(id):
+		for d in [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0)]:
+			var door: Vector2i = cell + d
+			if not is_door(door) or out.has(door):
+				continue
+			for e in [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0)]:
+				var beyond: Vector2i = door + e
+				if not is_wall(beyond) and not area_has(id, beyond):
+					out.append(door)
+					break
+	return out
+
+
+## Open tiles that lead out of the area with no door between: a seal cannot close these (the level warns when it loads).
+static func area_openings(id: String) -> Array:
+	var out := []
+	for cell in area_tiles(id):
+		for d in [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0)]:
+			var n: Vector2i = cell + d
+			if not is_wall(n) and not is_door(n) and not area_has(id, n) and not out.has(n):
+				out.append(n)
+	return out
+
+
+## Is this door held shut by a seal? (It may still stand open while somebody is in it: nobody new may step in.)
+static func is_sealed(cell: Vector2i) -> bool:
+	return sealed_doors.has(cell)
+
+
+## Is a party standing here shut in by a seal (inside a sealed area, or in one of its doorways)?
+static func sealed_in(cell: Vector2i) -> bool:
+	if sealed_doors.has(cell):
+		return true
+	for id in seals:
+		if area_has(id, cell):
+			return true
+	return false
 
 
 ## The ID of a switch-controlled door, or "" for an ordinary door.
@@ -256,6 +330,12 @@ static func reset_run() -> void:
 	purify_pending.clear()
 	puzzles_done.clear()
 	puzzle_doors.clear()
+	seals.clear()
+	sealed_doors.clear()
+	reliquaries.clear()
+	brazier_lit.clear()
+	for brazier in BRAZIERS:
+		brazier_lit[brazier.cell] = bool(brazier.get("lit", false))
 	sconce_state.clear()
 	sconce_seconds.clear()
 	sconce_seen.clear()

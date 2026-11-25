@@ -337,7 +337,7 @@ Roadmap 7h.2 (the numbers are in `docs/design/expansion_design.md` section 2 "Re
 - **Making camp.** One **Bedroll** (`data/items/bedroll.tres`, `ItemDef.makes_camp`, a consumable that stacks to 3) used from a hand, a quick slot or the
   pack, if `Party.camp_refusal()` says "" (the log says why not and nothing is spent): not in a fight (`Party.fight.in_fight`), no living monster within
   4 tiles (a square, `CAMP_MONSTER_REACH`) or in sight within 12 (`CAMP_SIGHT_REACH`), no armed ambush trigger within 2 (`CAMP_AMBUSH_REACH`;
-  `DungeonMap.ambush_trigger_near`). There is no tinderbox.
+  `DungeonMap.ambush_trigger_near`), and not shut in by a seal (a sealed room or its doorway: "The doors are sealed."). There is no tinderbox.
 - **The rest** (`scripts/camp.gd`, group `camp`, canvas layer 3 over the 3D view): the view is covered by a near-black camp screen round a small fire with
   a bedroll for each hero (portrait on the pillow, name, HP and mana bars). For 30 s (`REST_SECONDS`) every living hero's HP (whole points) and mana climb
   evenly from where they began to full. The dead are not raised. The corner map is hidden meanwhile.

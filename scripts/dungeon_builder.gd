@@ -101,11 +101,19 @@ var levers := {}      # Vector3i (x, z, side) -> lever Sprite3D
 var lever_on := {}    # Vector3i (x, z, side) -> true if switched on
 
 
+## False while the level is being built or a save is being put on it: no puzzle is checked and no puzzle news is sent.
+var settled := false
+## DungeonMap.level_serial when this dungeon was built: a dungeon left behind by a change of level checks no puzzles.
+var level_serial := 0
+var _plate_was_held := {}  # Plate cell -> was somebody on it at the last refresh.
+
+
 func _ready() -> void:
 	add_to_group("dungeon")  # Lets the player find us (see player.gd _interact).
 	if not populate and DungeonMap.level_path != "":
 		DungeonMap.use_level("")  # The main menu's backdrop is floor 1's corridor, whatever level was played last.
 	DungeonMap.reset_run()
+	level_serial = DungeonMap.level_serial
 	DungeonMap.init_sconces(LightConfig.get_config().sconce_torch_seconds)
 
 	var s := DungeonMap.TILE_SIZE
@@ -213,6 +221,82 @@ func _ready() -> void:
 	for lever in DungeonMap.LEVERS:
 		_add_lever(lever.cell, lever.side)
 	refresh()
+	_warn_unsealable()
+	settled = true
+
+
+## A puzzle that seals an area with a way out that has no door cannot keep anyone in: say so when the level loads.
+func _warn_unsealable() -> void:
+	for puzzle in DungeonMap.PUZZLES:
+		for effect in puzzle.then:
+			if effect.kind == "seal_area" and (DungeonMap.area_exits(effect.area).is_empty() or not DungeonMap.area_openings(effect.area).is_empty()):
+				push_warning("area '%s': a seal cannot close it (open ways out: %s)" % [effect.area, str(DungeonMap.area_openings(effect.area))])
+
+
+# --------------------------------------------------------------------------
+# Seals, braziers, reliquaries, plates (puzzles use them; 7d's lock-in will use the seals)
+# --------------------------------------------------------------------------
+
+## Seal every way out of an area (DungeonMap.AREAS): its doors shut and cannot be opened by hand, key, lever, plate or puzzle until
+## unsealed. A door never closes on the party or a monster standing in it: it shuts when they leave, and nobody new may step in.
+## `owner` says who sealed it, so one sealer's unseal never undoes another's. A `saved` seal goes into the save file; one that is
+## not is for a lock-in that works itself out again after a load (7d.4). Returns how many doors the area's seals hold.
+func seal_area(id: String, owner := "puzzle", saved := true) -> int:
+	if not DungeonMap.seals.has(id):
+		DungeonMap.seals[id] = {}
+	DungeonMap.seals[id][owner] = saved
+	_sync_seals()
+	return DungeonMap.area_exits(id).size()
+
+
+## Take this owner's seal off the area. Switch doors then follow their switches; plain doors stay shut but open by hand.
+func unseal_area(id: String, owner := "puzzle") -> void:
+	if not DungeonMap.seals.has(id):
+		return
+	DungeonMap.seals[id].erase(owner)
+	if DungeonMap.seals[id].is_empty():
+		DungeonMap.seals.erase(id)
+	_sync_seals()
+
+
+## Work out which doors the seals hold and move the ones that changed.
+func _sync_seals() -> void:
+	var held := {}
+	for id in DungeonMap.seals:
+		for cell in DungeonMap.area_exits(id):
+			held[cell] = true
+	var released := DungeonMap.sealed_doors.keys().filter(func(c): return not held.has(c))
+	DungeonMap.sealed_doors.clear()
+	DungeonMap.sealed_doors.merge(held)
+	for cell in held:
+		_drive_door(cell, false)
+	for cell in released:
+		if DungeonMap.door_id(cell) != "":
+			_drive_door(cell, _linked_open(DungeonMap.door_id(cell)))
+
+
+## Light or snuff a brazier (DungeonMap.BRAZIERS). Returns whether anything changed. (The prop and the ways to light it are 7e.3.)
+func set_brazier(cell: Vector2i, lit: bool) -> bool:
+	if not DungeonMap.brazier_lit.has(cell) or DungeonMap.brazier_lit[cell] == lit:
+		return false
+	DungeonMap.brazier_lit[cell] = lit
+	if settled:
+		Events.send(get_tree(), "brazier_changed", [cell, lit])
+	return true
+
+
+## A reliquary rises on this tile with these items ([{"def": path, "count": n}]). Once per tile. (The chest and its show are 7e.2.)
+func raise_reliquary(cell: Vector2i, contents: Array) -> void:
+	if DungeonMap.reliquaries.has(cell):
+		return
+	DungeonMap.reliquaries[cell] = true
+	for entry in contents:
+		place_item(cell, ItemStack.of(load(entry.def), int(entry.get("count", 1))))
+
+
+## Is somebody holding down the plate on this tile: the party or a monster? (7e.6 adds the weight of items here.)
+func plate_held(cell: Vector2i) -> bool:
+	return DungeonMap.player_cell == cell or DungeonMap.is_occupied(cell)
 
 
 ## Add a monster (a MonsterDef at a cell). hp and attack_cooldown override its starting
@@ -401,7 +485,19 @@ func save_state() -> Dictionary:
 			"purified_walls": purified, "corruption": corruption,
 			"puzzles_done": DungeonMap.puzzles_done.keys(), "puzzle_doors": DungeonMap.puzzle_doors.keys(),
 			"armed_traps": traps.serialize() if traps != null else [],
+			"seals": _saved_seals(),
+			"reliquaries": DungeonMap.reliquaries.keys().map(SaveData.cell_to_data),
+			"braziers": DungeonMap.brazier_lit.keys().map(func(c): return {"cell": SaveData.cell_to_data(c), "lit": DungeonMap.brazier_lit[c]}),
 			"oil": oil.save_state() if oil != null else {"slicks": [], "burning": []}}
+
+
+func _saved_seals() -> Array:
+	var out := []
+	for id in DungeonMap.seals:
+		for owner in DungeonMap.seals[id]:
+			if DungeonMap.seals[id][owner]:
+				out.append({"area": id, "owner": owner})
+	return out
 
 
 ## Is this saved level state usable? "" if so, else why not. Static and node-free (see Party.validate_state). Lists an older
@@ -417,7 +513,7 @@ static func validate_state(d) -> String:
 		var oil_problem: String = OilField.validate_state(d.oil)
 		if oil_problem != "":
 			return oil_problem
-	for key in ["broken_walls", "purified_walls", "corruption", "puzzles_done", "puzzle_doors", "armed_traps", "sconces"]:
+	for key in ["broken_walls", "purified_walls", "corruption", "puzzles_done", "puzzle_doors", "armed_traps", "sconces", "seals", "reliquaries", "braziers"]:
 		var problem: String = SaveData.maybe(d, key, "array", "saved dungeon")
 		if problem != "":
 			return problem
@@ -435,6 +531,12 @@ static func validate_state(d) -> String:
 		problem = SaveData.each(d.get("sconces", []), func(e): return "" if e is Dictionary and SaveData.is_cell(e.get("cell")) and SaveData.is_number(e.get("side")) and SaveData.is_number(e.get("state")) and int(e.state) >= 0 and int(e.state) <= 2 and SaveData.is_number(e.get("seconds")) else "The saved sconces are damaged.")
 	if problem == "":
 		problem = SaveData.each(d.get("armed_traps", []), func(t): return "" if t is Dictionary and SaveData.is_cell(t.get("cell")) and t.get("def") is String else "The saved traps are damaged.")
+	if problem == "":
+		problem = SaveData.each(d.get("seals", []), func(e): return "" if e is Dictionary and e.get("area") is String and e.get("owner") is String else "The saved seals are damaged.")
+	if problem == "":
+		problem = SaveData.each(d.get("reliquaries", []), func(c): return "" if SaveData.is_cell(c) else "The saved reliquaries are damaged.")
+	if problem == "":
+		problem = SaveData.each(d.get("braziers", []), func(e): return "" if e is Dictionary and SaveData.is_cell(e.get("cell")) and e.get("lit") is bool else "The saved braziers are damaged.")
 	if problem == "":
 		problem = SaveData.each(d.monsters, func(m):
 			if not (m is Dictionary and m.get("def") is String and SaveData.is_cell(m.get("cell")) and SaveData.is_number(m.get("hp")) and SaveData.is_number(m.get("attack_cooldown"))):
@@ -476,6 +578,22 @@ func load_state(d: Dictionary) -> void:
 	for l in d.levers:
 		on[Vector3i(int(l[0]), int(l[1]), int(l[2]))] = true
 	restore_levers(on)
+
+	DungeonMap.reliquaries.clear()  # (An older save has no seals, reliquaries or braziers.)
+	for c in d.get("reliquaries", []):
+		DungeonMap.reliquaries[SaveData.data_to_cell(c)] = true
+	for e in d.get("braziers", []):
+		var at := SaveData.data_to_cell(e.cell)
+		if DungeonMap.brazier_lit.has(at):
+			DungeonMap.brazier_lit[at] = e.lit
+	DungeonMap.seals.clear()
+	DungeonMap.sealed_doors.clear()
+	for e in d.get("seals", []):
+		if not DungeonMap.seals.has(e.area):
+			DungeonMap.seals[e.area] = {}
+		DungeonMap.seals[e.area][e.owner] = true
+		for cell in DungeonMap.area_exits(e.area):
+			DungeonMap.sealed_doors[cell] = true  # The doors are already as saved; one left open for whoever stands in it shuts on the next refresh.
 
 	for cell in items.keys():
 		set_pile(cell, [])
@@ -565,8 +683,19 @@ func refresh() -> void:
 			get_tree().call_group("audio", "play", "plate")
 	for cell in doors:
 		var id := DungeonMap.door_id(cell)
-		if id != "":
+		if DungeonMap.is_sealed(cell):
+			_drive_door(cell, false)  # (Waits while somebody stands in it.)
+		elif id != "":
 			_drive_door(cell, _linked_open(id))
+	var changed := []
+	for cell in plates:
+		var held := plate_held(cell)
+		if _plate_was_held.get(cell, false) != held:
+			_plate_was_held[cell] = held
+			changed.append([cell, held])
+	if settled:
+		for news in changed:  # (Sent after the doors have moved: a puzzle it wakes may move them again.)
+			Events.send(get_tree(), "plate_changed", news)
 
 
 ## Toggle a lever and its sprite, then update the doors. Called by the player.
@@ -676,6 +805,7 @@ func take_item(cell: Vector2i) -> RefCounted:
 		items.erase(cell)
 	else:
 		_show_top(entry)
+	_pile_news(cell)
 	return stack
 
 
@@ -691,6 +821,7 @@ func place_item(cell: Vector2i, item) -> void:
 		if stack.count > 0:
 			entry.pile.append(stack)
 		_show_top(entry)
+		_pile_news(cell)
 		return
 	var sprite := Sprite3D.new()
 	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -707,6 +838,12 @@ func place_item(cell: Vector2i, item) -> void:
 	var bob := sprite.create_tween().set_loops()
 	bob.tween_property(sprite, "position:y", ITEM_HEIGHT + ITEM_BOB, 0.9).set_trans(Tween.TRANS_SINE)
 	bob.tween_property(sprite, "position:y", ITEM_HEIGHT - ITEM_BOB, 0.9).set_trans(Tween.TRANS_SINE)
+	_pile_news(cell)
+
+
+func _pile_news(cell: Vector2i) -> void:
+	if settled:
+		Events.send(get_tree(), "pile_changed", [cell])
 
 
 func _show_top(entry: Dictionary) -> void:
@@ -917,7 +1054,7 @@ func _add_rubble(cell: Vector2i) -> Node3D:
 
 ## Open an ordinary door (F). Called by the player via the "dungeon" group.
 func open_door(cell: Vector2i) -> void:
-	if not DungeonMap.is_locked(cell) and not DungeonMap.is_portcullis(cell):  # (A portcullis only opens through its switches.)
+	if not DungeonMap.is_locked(cell) and not DungeonMap.is_portcullis(cell) and not DungeonMap.is_sealed(cell):  # (A portcullis only opens through its switches.)
 		_drive_door(cell, true)
 
 
@@ -926,7 +1063,7 @@ func open_door(cell: Vector2i) -> void:
 ## them solid immediately. A door never closes on the player standing in it: it
 ## (or a monster) stays open until they leave and the next refresh() shuts it.
 func _drive_door(cell: Vector2i, open: bool) -> void:
-	if not doors.has(cell) or door_want.get(cell, false) == open:
+	if not doors.has(cell) or door_want.get(cell, false) == open or (open and DungeonMap.is_sealed(cell)):
 		return
 	if not open and (DungeonMap.player_cell == cell or DungeonMap.is_occupied(cell)):
 		return

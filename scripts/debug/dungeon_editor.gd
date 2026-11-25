@@ -1799,7 +1799,7 @@ func _kept_at(cell: Vector2i) -> Array:
 ## What the editor is holding untouched, as short lines (for the panel).
 func _kept_summary() -> Array:
 	var out := []
-	var counts := [["PUZZLES", "PUZZLES"], ["PLATES", "PLATES"], ["CURSE_ZONES", "CURSE ZONES"], ["AMBUSHES", "AMBUSHES"], ["SIGNS", "SIGNS"],
+	var counts := [["PUZZLES", "PUZZLES"], ["PLATES", "PLATES"], ["CURSE_ZONES", "CURSE ZONES"], ["AREAS", "AREAS"], ["BRAZIERS", "BRAZIERS"], ["AMBUSHES", "AMBUSHES"], ["SIGNS", "SIGNS"],
 			["ARMED_TRAPS", "ARMED TRAPS"], ["STRUCTURES", "STRUCTURES"]]
 	for c in counts:
 		var n: int = grid.extras.get(c[0], []).size()

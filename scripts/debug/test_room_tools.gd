@@ -18,6 +18,7 @@ extends CanvasLayer
 ##
 ## The ambush corridor is a stand-in: stepping on a trigger tile in DungeonMap.AMBUSHES spawns its monsters.
 
+const Puzzles := preload("res://scripts/puzzles.gd")
 const ItemDef := preload("res://scripts/item_def.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const Settings := preload("res://scripts/settings.gd")
@@ -43,6 +44,8 @@ const TORCH_300 := Color("f5cf80")
 var in_room := false
 var help: PanelContainer
 var help_label: Label
+var puzzle_panel: PanelContainer
+var puzzle_label: Label
 var menu: Control
 var god := false
 var help_clock := 0.0
@@ -543,6 +546,13 @@ func _build_help() -> void:
 	help_label.add_theme_constant_override("line_spacing", 3)
 	help.add_child(help_label)
 	add_child(help)
+	puzzle_panel = PanelContainer.new()  # The level's puzzles, to the right of the keys, shown with them.
+	puzzle_panel.add_theme_stylebox_override("panel", _box(Color(STONE_900, 0.94), RUST_500))
+	puzzle_panel.visible = false
+	puzzle_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	puzzle_label = help_label.duplicate()
+	puzzle_panel.add_child(puzzle_label)
+	add_child(puzzle_panel)
 	_refresh_help()
 
 
@@ -583,9 +593,30 @@ func _refresh_help() -> void:
 		"F12 LEAVE (FLOOR 1)",
 	])
 	help.reset_size()
+	puzzle_label.text = _puzzle_list()
+	puzzle_panel.visible = help.visible
+	puzzle_panel.reset_size()
+	puzzle_panel.position = Vector2(624.0 - puzzle_panel.size.x, 16)
 
 
 # --- Helpers -------------------------------------------------------------------------------------
+
+## Every puzzle of the level, whether it has fired, and which of its conditions hold now (asked with no event, so a condition with
+## memory is only read).
+func _puzzle_list() -> String:
+	var dungeon := get_tree().get_first_node_in_group("dungeon")
+	var rows := ["PUZZLES"]
+	if dungeon == null or DungeonMap.PUZZLES.is_empty():
+		rows.append("NONE")
+		return "\n".join(rows)
+	for puzzle in DungeonMap.PUZZLES:
+		rows.append("")
+		rows.append("%s  %s" % [str(puzzle.id).to_upper(), "SOLVED" if DungeonMap.puzzles_done.has(puzzle.id) else "OPEN"])
+		for condition in puzzle.when:
+			var what := str(condition.get("area", condition.get("group", condition.get("name", condition.get("cell", "")))))
+			rows.append(" %s %s %s" % ["+" if Puzzles.met(dungeon, condition, puzzle) else "-", str(condition.kind).to_upper(), what.to_upper()])
+	return "\n".join(rows)
+
 
 func _camp_status() -> String:
 	var camp := get_tree().get_first_node_in_group("camp")

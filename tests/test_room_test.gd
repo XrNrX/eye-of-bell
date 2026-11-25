@@ -87,6 +87,39 @@ func _check_data() -> void:
 	check("puzzle door has a plate and a lever", DungeonMap.DOOR_IDS.values().has("puzzle_door") and DungeonMap.PLATES.size() == 1 and DungeonMap.LEVERS.size() == 1)
 
 
+## The sealed pen: walking in seals both doors, killing what is inside opens them and raises a reliquary, and H lists the puzzles.
+func _check_pen(tools: Node, player: Node) -> void:
+	var dungeon: Node = get_first_node_in_group("dungeon")
+	var west := Vector2i(29, 26)
+	var north := Vector2i(33, 25)
+	var exits: Array = DungeonMap.area_exits("pen")
+	check("the pen has two doors and no other way out", exits.size() == 2 and exits.has(west) and exits.has(north) and DungeonMap.area_openings("pen").is_empty())
+	var station: Dictionary = DungeonMap.STATIONS.filter(func(s): return s.name == "Sealed pen")[0]
+	for n in get_nodes_in_group("monsters"):
+		n.free()   # (The pacing checks before this one cleared the room: put the pen's skeleton back.)
+	dungeon.spawn_monster(load("res://data/monsters/skeleton.tres"), Vector2i(34, 27)).holds_ground = true
+	tools._teleport(station)
+	tools._refresh_help()
+	check("the help lists the puzzles and which conditions hold (%s)" % tools.puzzle_label.text.replace("\n", " / "), tools.puzzle_label.text.contains("PEN_SEAL  OPEN") and tools.puzzle_label.text.contains("- PARTY_IN PEN"))
+	player._interact()
+	await create_timer(1.0).timeout
+	for i in 2:
+		player._try_move(Vector2i(1, 0))
+		await create_timer(0.5).timeout
+	await create_timer(1.0).timeout
+	check("stepping into the pen seals both doors", DungeonMap.puzzles_done.has("pen_seal") and DungeonMap.is_sealed(west) and DungeonMap.is_sealed(north) and not DungeonMap.open_doors.has(west))
+	check("and not solved while its skeleton lives", not DungeonMap.puzzles_done.has("pen_purged"))
+	for m in get_nodes_in_group("monsters"):
+		if DungeonMap.area_has("pen", m.cell):
+			m.take_hit({"hit": true, "damage": 999, "chance": 100, "crit": false, "by": 0})
+	await create_timer(0.5).timeout
+	tools._refresh_help()
+	check("killing it opens the seals and raises the reliquary", DungeonMap.puzzles_done.has("pen_purged") and not DungeonMap.is_sealed(west) and not DungeonMap.is_sealed(north)
+			and DungeonMap.reliquaries.has(Vector2i(31, 27)) and dungeon.item_at(Vector2i(31, 27)) != null and tools.puzzle_label.text.contains("PEN_PURGED  SOLVED"))
+	get_first_node_in_group("fight_tracker").in_fight = false   # Leave things quiet for the checks after this one.
+	get_first_node_in_group("banter").reset_timers()
+
+
 ## The monster pacing station: its tuning keys, the pack, and flanking (one monster at a time, only after being held back).
 func _check_pacing(tools: Node, press: Callable, player: Node) -> void:
 	for n in get_nodes_in_group("monsters"):
@@ -538,6 +571,7 @@ func _check_game() -> void:
 	press.call(KEY_N)
 	check("N toggles fog without touching the saved setting", tools.fog_on != fog_before and Settings.fog == fog_before)
 	await _check_pacing(tools, press, player)
+	await _check_pen(tools, player)
 	press.call(KEY_X)
 	press.call(KEY_U)
 	# The ambush: walk onto the trigger.

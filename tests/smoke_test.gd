@@ -117,6 +117,7 @@ func _init() -> void:
 	await _check_hurt_and_heal()
 	await _check_fight()
 	_check_names()
+	await _check_seals()   # (Last: it reloads the scene with made-up areas and puzzles.)
 	_finish()
 
 
@@ -2807,6 +2808,192 @@ func _check_puzzles() -> void:
 	for flag_name in ["puzzle.smoke_order.step", "smoke.order", "smoke.chain", "smoke.go", "smoke.went"]:
 		DungeonMap.flags.erase(flag_name)
 	check("puzzles: the real puzzle is back in place and still done", DungeonMap.PUZZLES.size() == 2 and DungeonMap.puzzles_done.has("nook_blessing"))
+
+
+## Reload floor 1 afresh (the areas, braziers and puzzles now in DungeonMap stay: only use_level changes them).
+func _rebuild() -> void:
+	paused = false
+	await create_timer(1.5).timeout   # Let the old scene's deferred calls and short timers finish first.
+	reload_current_scene()
+	await create_timer(0.8).timeout
+	_find_nodes()
+	dungeon.clear_monsters()
+	party.fight.in_fight = false
+
+
+## 7e.1: the seal (Dungeon.seal_area / unseal_area), the new puzzle conditions and effects, saving while sealed, and no puzzle checked
+## while a level is being built or after another has been put in place.
+func _check_seals() -> void:
+	DungeonMap.use_level("")
+	var door := PLAIN_DOOR
+	var inside := Vector2i(-1, -1)
+	for d in [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0)]:
+		if inside.x < 0 and not DungeonMap.is_wall(door + d) and not DungeonMap.is_door(door + d) and not DungeonMap.is_wall(door - d):
+			inside = door + d
+	var outside: Vector2i = door * 2 - inside
+	var gate := Vector2i(20, 6)
+	var by_gate := Vector2i(20, 7)
+	DungeonMap.AREAS = [{"id": "smoke_room", "tiles": [inside, by_gate, door]}]
+	DungeonMap.BRAZIERS = [{"cell": inside, "group": "pair", "lit": false}, {"cell": by_gate, "group": "pair", "lit": false}]
+	DungeonMap.PUZZLES = []
+	await _rebuild()
+	var Puzzles := preload("res://scripts/puzzles.gd")
+	var wait := func(): await create_timer(2.0).timeout
+	check("seal: an area's exits are its doors and portcullises, and a door is never part of the area", DungeonMap.area_exits("smoke_room").has(door)
+			and DungeonMap.area_exits("smoke_room").has(gate) and DungeonMap.area_has("smoke_room", inside) and not DungeonMap.area_has("smoke_room", door))
+
+	player.restore(inside, 0)
+	dungeon.open_door(door)
+	dungeon.pull_lever(Vector2i(LEVER.x, LEVER.y), LEVER.z)
+	await wait.call()
+	check("seal: both ways out stand open first", DungeonMap.open_doors.has(door) and DungeonMap.open_doors.has(gate))
+	dungeon.seal_area("smoke_room")
+	await wait.call()
+	check("seal: sealing shuts the door and drops the portcullis", not DungeonMap.open_doors.has(door) and not DungeonMap.open_doors.has(gate) and DungeonMap.is_sealed(door) and DungeonMap.is_sealed(gate))
+	dungeon.open_door(door)
+	dungeon.pull_lever(Vector2i(LEVER.x, LEVER.y), LEVER.z)
+	dungeon.pull_lever(Vector2i(LEVER.x, LEVER.y), LEVER.z)
+	Puzzles.run(dungeon, {"kind": "open_door", "id": "gate_n"})
+	for facing in 4:
+		if inside + player.DIRS[facing] == door:
+			player.restore(inside, facing)
+	player._interact()
+	await wait.call()
+	check("seal: no hand, lever or puzzle opens it, and the log says so", not DungeonMap.open_doors.has(door) and not DungeonMap.open_doors.has(gate)
+			and get_first_node_in_group("hud").last_message == "The seal holds the door.")
+	check("seal: no camp inside it, by bedroll, coal or fire", party.camp_refusal() == "The doors are sealed."
+			and not party.use_item(0, load("res://data/items/hearth_coal.tres")).used)
+	dungeon.seal_area("smoke_room", "ambush", false)
+	dungeon.unseal_area("smoke_room", "puzzle")
+	check("seal: one owner's unseal leaves the other's seal on", DungeonMap.is_sealed(door) and DungeonMap.is_sealed(gate))
+	dungeon.unseal_area("smoke_room", "ambush")
+	await wait.call()
+	check("seal: unsealed, the switch door follows its switches again and the plain door stays shut", not DungeonMap.is_sealed(door) and DungeonMap.open_doors.has(gate) and not DungeonMap.open_doors.has(door))
+	dungeon.open_door(door)
+	await wait.call()
+	check("seal: and the plain door opens by hand", DungeonMap.open_doors.has(door))
+
+	# Nobody is crushed: a door waits for the party, or a monster, standing in it.
+	player.restore(door, 0)
+	dungeon.seal_area("smoke_room")
+	await wait.call()
+	check("seal: it never closes on the party standing in it", DungeonMap.open_doors.has(door) and DungeonMap.is_sealed(door))
+	player.restore(inside, 0)
+	await wait.call()
+	check("seal: and shuts when they step out", not DungeonMap.open_doors.has(door))
+	dungeon.unseal_area("smoke_room")
+	dungeon.open_door(door)
+	await wait.call()
+	player.restore(SPOT, EAST)
+	var guard := _monster("skeleton", door, 20)
+	guard.move_wait = 999.0
+	dungeon.seal_area("smoke_room")
+	await wait.call()
+	check("seal: it never closes on a monster standing in it", DungeonMap.open_doors.has(door))
+	check("seal: nobody new steps into a sealed doorway", not guard._can_enter(gate))
+	guard._step(outside - door)
+	await wait.call()
+	check("seal: and shuts when the monster walks out", not DungeonMap.open_doors.has(door) and guard.cell == outside)
+	dungeon.unseal_area("smoke_room")
+	dungeon.clear_monsters()
+
+	# The new conditions.
+	var pair := {"kind": "braziers", "group": "pair", "lit": true}
+	var dark := {"kind": "braziers", "group": "pair", "lit": false}
+	check("puzzle conditions: braziers all dark", Puzzles.met(dungeon, dark) and not Puzzles.met(dungeon, pair))
+	dungeon.set_brazier(inside, true)
+	check("puzzle conditions: one lit is neither", not Puzzles.met(dungeon, dark) and not Puzzles.met(dungeon, pair))
+	dungeon.set_brazier(by_gate, true)
+	check("puzzle conditions: all lit, and a group with none is never met", Puzzles.met(dungeon, pair) and not Puzzles.met(dungeon, {"kind": "braziers", "group": "nobody", "lit": false}))
+	var potion := "res://data/items/healing_potion.tres"
+	var on_altar := {"kind": "item_on_altar", "cell": outside, "def": potion}
+	var tagged := {"kind": "item_on_altar", "cell": outside, "tag": "smoke_tag"}
+	check("puzzle conditions: an empty altar", not Puzzles.met(dungeon, on_altar) and not Puzzles.met(dungeon, tagged))
+	dungeon.set_pile(outside, [])
+	dungeon.place_item(outside, load(potion))
+	check("puzzle conditions: an item on it by file, not by a tag it lacks", Puzzles.met(dungeon, on_altar) and not Puzzles.met(dungeon, tagged))
+	var def: Resource = load(potion)
+	def.tags = PackedStringArray(["smoke_tag"])
+	check("puzzle conditions: and by tag", Puzzles.met(dungeon, tagged))
+	def.tags = PackedStringArray()
+	var plate := Vector2i(18, 21)
+	check("puzzle conditions: a plate nobody is on", not Puzzles.met(dungeon, {"kind": "plate_held", "cell": plate}))
+	var sitter := _monster("skeleton", plate, 20)
+	sitter.move_wait = 999.0
+	check("puzzle conditions: a monster holds a plate (the plate's door still answers only to the party)", Puzzles.met(dungeon, {"kind": "plate_held", "cell": plate}) and not DungeonMap.open_doors.has(Vector2i(19, 21)))
+	dungeon.clear_monsters()
+	DungeonMap.MONSTERS = DungeonMap.MONSTERS + [{"cell": inside, "def": "res://data/monsters/skeleton.tres"}]
+	var cleared := {"kind": "monsters_dead", "area": "smoke_room"}
+	var held := _monster("skeleton", inside, 20)
+	held.move_wait = 999.0
+	check("puzzle conditions: an area with a monster in it is not clear", not Puzzles.met(dungeon, cleared))
+	dungeon.clear_monsters()
+	check("puzzle conditions: and is once it is dead", Puzzles.met(dungeon, cleared))
+
+	# A room that seals on the way in, saved and loaded while sealed.
+	DungeonMap.PUZZLES = [{"id": "smoke_seal", "when": [{"kind": "party_in", "area": "smoke_room"}], "then": [
+		{"kind": "seal_area", "area": "smoke_room"},
+		{"kind": "raise_reliquary", "cell": by_gate, "items": [{"def": potion, "count": 2}]},
+		{"kind": "sound", "name": "rumble"},
+	]}]
+	await _rebuild()
+	dungeon.set_pile(by_gate, [])
+	var step: Vector2i = inside - door
+	player.restore(outside, player.DIRS.find(step))
+	dungeon.open_door(door)
+	await wait.call()
+	check("seal: standing outside solves nothing", not DungeonMap.puzzles_done.has("smoke_seal"))
+	for i in 2:
+		player._try_move(step)
+		await create_timer(0.5).timeout
+	await wait.call()
+	check("seal: walking in solves it from the step alone, the door shuts behind and the reliquary rises", player.cell == inside and DungeonMap.puzzles_done.has("smoke_seal")
+			and DungeonMap.is_sealed(door) and not DungeonMap.open_doors.has(door) and DungeonMap.reliquaries.has(by_gate) and dungeon.item_at(by_gate).count == 2)
+	dungeon.set_brazier(inside, true)
+	dungeon.seal_area("smoke_room", "ambush", false)
+	check("save: a sealed room can be saved", SaveGame.save(self) == "")
+	var data := SaveGame.read_file()
+	await _rebuild()
+	check("save: a fresh level has no seal", not DungeonMap.is_sealed(door) and DungeonMap.reliquaries.is_empty())
+	var news := []
+	var bus := root.get_node("GameEvents")
+	var heard := func(a = null, b = null): news.append(a)
+	for name in ["party_moved", "brazier_changed", "pile_changed", "plate_changed", "puzzle_solved"]:
+		bus.connect(name, heard)
+	var problem: String = SaveGame.apply(self, data)
+	check("save: loading sends no puzzle news and leaves the dungeon settled (%s)" % str(news), problem == "" and news.is_empty() and dungeon.settled)
+	for name in ["party_moved", "brazier_changed", "pile_changed", "plate_changed", "puzzle_solved"]:
+		bus.disconnect(name, heard)
+	await wait.call()
+	check("save: loaded inside, the room is still sealed and shut", player.cell == inside and DungeonMap.is_sealed(door) and DungeonMap.is_sealed(gate) and not DungeonMap.open_doors.has(door) and not DungeonMap.open_doors.has(gate))
+	dungeon.open_door(door)
+	check("save: the saved seal came back, the unsaved one did not", DungeonMap.seals.smoke_room.has("puzzle") and not DungeonMap.seals.smoke_room.has("ambush") and not DungeonMap.open_doors.has(door))
+	check("save: the puzzle stays solved, the reliquary raised with its items once, the brazier lit", DungeonMap.puzzles_done.has("smoke_seal")
+			and DungeonMap.reliquaries.has(by_gate) and dungeon.pile_at(by_gate).size() == 1 and dungeon.item_at(by_gate).count == 2 and DungeonMap.brazier_lit[inside] and not DungeonMap.brazier_lit[by_gate])
+	dungeon.unseal_area("smoke_room")
+	dungeon.open_door(door)
+	await wait.call()
+	check("save: and unsealing works after the load", DungeonMap.open_doors.has(door))
+	var bad: Dictionary = data.duplicate(true)
+	bad.dungeon["seals"] = [5]
+	check("save: damaged seals are refused", SaveGame.apply(self, bad) != "")
+
+	# Level changes: neither a dungeon being built nor one left behind checks a puzzle.
+	var waiting := [{"id": "smoke_stale", "when": [{"kind": "flag", "name": "smoke.stale"}], "then": [{"kind": "set_flag", "name": "smoke.fired"}]}]
+	DungeonMap.PUZZLES = waiting
+	DungeonMap.set_flag("smoke.stale", true)
+	dungeon.settled = false
+	check("level: a dungeon being built or loaded checks nothing", Puzzles.check(dungeon).is_empty())
+	dungeon.settled = true
+	DungeonMap.use_level("")  # Another level is put in place; the old dungeon is still in the tree.
+	DungeonMap.PUZZLES = waiting
+	DungeonMap.set_flag("smoke.stale", true)
+	bus.fight_ended.emit()
+	check("level: a dungeon left behind checks nothing, from news or a direct call", Puzzles.check(dungeon).is_empty() and not DungeonMap.puzzles_done.has("smoke_stale"))
+	await _rebuild()
+	DungeonMap.set_flag("smoke.stale", true)
+	check("level: the new dungeon does", Puzzles.check(dungeon) == ["smoke_stale"])
+	DungeonMap.use_level("")
 
 
 ## The shockwave: a Fireball explosion starts a ring (a Magic Missile impact a smaller one) that is gone after shock_seconds; Reduce flashing (with

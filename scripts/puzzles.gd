@@ -17,13 +17,13 @@ const Events := preload("res://scripts/game_events.gd")
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 
 var dungeon: Node
+const PUZZLE_XP := 50  # Paid for each puzzle solved, when the party has an XP system (Party.add_xp).
+
 var _links := []  # [{signal, callable}] connected to the bus, dropped when this node leaves the tree
-var _serial := 0  # DungeonMap.level_serial when this dungeon was built.
 
 
 func _ready() -> void:
 	dungeon = get_parent()
-	_serial = DungeonMap.level_serial
 	var bus := get_node_or_null("/root/GameEvents")
 	if bus == null:
 		return  # A bare test scene: no news, so no puzzles stir.
@@ -31,8 +31,6 @@ func _ready() -> void:
 		var event: String = info.name
 		var count: int = info.args.size()
 		var heard := func(a = null, b = null, c = null, d = null):
-			if _serial != DungeonMap.level_serial:
-				return  # Another level is in place and this dungeon is about to go: its monsters and levers are not that level's.
 			check(dungeon, event, [a, b, c, d].slice(0, count))
 		bus.connect(event, heard)
 		_links.append({"signal": event, "callable": heard})
@@ -49,9 +47,12 @@ func _exit_tree() -> void:
 
 ## Fire every puzzle whose conditions now hold and that has not fired yet, and go round again if one did (its effects may have made
 ## another true). `event` and `args` are the news that woke it (conditions with memory read them; "" for a plain re-check). Returns
-## the ids that fired.
+## the ids that fired. Nothing is checked while the dungeon is being built or loaded (its monsters and doors are not all there yet),
+## or once another level has been put in place (the old dungeon is about to go: its monsters and levers are not that level's).
 static func check(dungeon: Node, event := "", args := []) -> Array:
 	var fired := []
+	if not dungeon.settled or dungeon.level_serial != DungeonMap.level_serial:
+		return fired
 	var again := true
 	while again:
 		again = false
@@ -71,6 +72,9 @@ static func check(dungeon: Node, event := "", args := []) -> Array:
 				run(dungeon, effect)
 			fired.append(id)
 			again = true
+			var party: Node = dungeon.get_tree().get_first_node_in_group("party")
+			if party != null and party.has_method("add_xp"):
+				party.call("add_xp", PUZZLE_XP)
 			Events.send(dungeon.get_tree(), "puzzle_solved", [id])
 	return fired
 
@@ -87,20 +91,31 @@ static func met(dungeon: Node, condition: Dictionary, puzzle := {}, event := "",
 			return _lever_order(condition, puzzle, event, args)
 		"monsters_dead":
 			return _monsters_dead(dungeon, condition)
+		"braziers":
+			return _braziers(condition)
+		"item_on_altar":
+			return _item_on(dungeon, condition)
+		"plate_held":
+			return dungeon.plate_held(condition.cell)
+		"party_in":
+			return DungeonMap.area_has(condition.area, DungeonMap.player_cell)
 	push_warning("puzzles: unknown condition kind '%s'" % condition.kind)
 	return false
 
 
-## Every monster the level placed that matches (`def`: a MonsterDef path, `area`: a Rect2i of tiles; either or both) is dead. Needs at
-## least one placed (DungeonMap.MONSTERS), so a level without any never fires it. A monster still dying counts as dead. (7e.1's
-## "every monster in an area dead", so far only this one: the cave's plague rats.)
+## Every monster that matches (`def`: a MonsterDef path; `area`: a Rect2i of tiles or an AREAS id; either or both) is dead. Needs at
+## least one of them placed by the level (DungeonMap.MONSTERS), so a level without any never fires it. With an area it counts who is
+## in the area NOW: one that has wandered out does not hold the puzzle up. A monster still dying counts as dead.
 static func _monsters_dead(dungeon: Node, condition: Dictionary) -> bool:
 	var def_path: String = condition.get("def", "")
-	var has_area: bool = condition.has("area")
-	var area: Rect2i = condition.get("area", Rect2i())
+	var area = condition.get("area")
+	var inside := func(cell: Vector2i) -> bool:
+		if area == null:
+			return true
+		return DungeonMap.area_has(area, cell) if area is String else area.has_point(cell)
 	var placed := 0
 	for entry in DungeonMap.MONSTERS:
-		if (def_path == "" or entry.def == def_path) and (not has_area or area.has_point(entry.cell)):
+		if (def_path == "" or entry.def == def_path) and inside.call(entry.cell):
 			placed += 1
 	if placed == 0:
 		return false
@@ -109,11 +124,33 @@ static func _monsters_dead(dungeon: Node, condition: Dictionary) -> bool:
 			continue
 		if def_path != "" and m.def.resource_path != def_path:
 			continue
-		if has_area and not area.has_point(m.cell):
+		if not inside.call(m.cell):
 			continue
 		if m.hp > 0 and not m.dying:
 			return false
 	return true
+
+
+## Every brazier of the group is burning (`lit` true) or every one is dark (false). A group with no brazier is never met.
+static func _braziers(condition: Dictionary) -> bool:
+	var found := false
+	for brazier in DungeonMap.BRAZIERS:
+		if brazier.group != condition.group:
+			continue
+		found = true
+		if DungeonMap.brazier_lit.get(brazier.cell, false) != condition.get("lit", true):
+			return false
+	return found
+
+
+## An item lies on the altar's tile: that one (`def`, its file) or any with the `tag` (ItemDef.tags).
+static func _item_on(dungeon: Node, condition: Dictionary) -> bool:
+	for stack in dungeon.pile_at(condition.cell):
+		if condition.has("def") and stack.def.resource_path == condition.def:
+			return true
+		if condition.has("tag") and stack.def.tags.has(condition.tag):
+			return true
+	return false
 
 
 ## The levers in `condition.levers` ({"cell", "side"} each) pulled one after another in that order. Progress is the run flag
@@ -151,6 +188,14 @@ static func run(dungeon: Node, effect: Dictionary) -> void:
 			dungeon.purify_wall(effect.cell)
 		"set_flag":
 			DungeonMap.set_flag(effect.name, effect.get("value", true))
+		"seal_area":
+			dungeon.seal_area(effect.area, effect.get("owner", "puzzle"))
+		"unseal_area":
+			dungeon.unseal_area(effect.area, effect.get("owner", "puzzle"))
+		"raise_reliquary":
+			dungeon.raise_reliquary(effect.cell, effect.get("items", []))
+		"sound":
+			dungeon.get_tree().call_group("audio", "play", effect.name)
 		"clear_curse_zone":
 			DungeonMap.clear_zone(effect.id)
 			dungeon.get_tree().call_group("curse_zones", "zones_changed")

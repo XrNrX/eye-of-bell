@@ -28,11 +28,11 @@ Do these first, in this order, ticking each one off. Each prompt sits right unde
 
 - [x] 1. BREAK CAMP fix: returning from the safe camp no longer solves floor 1's cave puzzle (`9a7d1ae`)
 
-- [ ] 2. Saturday playtest: normal mode first, then god mode. Post-its in three colours: bugs, confusion, fun. First run before the booze
+- [x] 2. Saturday playtest: normal mode first, then god mode. Post-its in three colours: bugs, confusion, fun. First run before the booze
 
-- [ ] 3. Sort the Saturday Post-its with Claude: bugs into fixes, confusion onto the roadmap, nat 20s into the Ideas inbox. Big bugs may jump ahead of steps 4 to 10
+- [x] 3. Sort the Saturday Post-its with Claude: bugs into fixes, confusion onto the roadmap, nat 20s into the Ideas inbox. Big bugs may jump ahead of steps 4 to 10
 
-- [ ] 4. 7e.1 (Puzzle framework)
+- [x] 4. 7e.1 (Puzzle framework)
 
 **7e.1 prompt (Puzzle framework)**
 
@@ -865,7 +865,7 @@ Old-school dungeon puzzles dressed in the cursed theme. Rewards are always somet
 
 Updated 18 Nov from docs/design/expansion\_design.md (section 3 "7e" and section 5): the brazier closet in room 7, the purge room in room 6 and the darkness runes in room 4. Offering altars go in the test room only. Do Foundations Step 9 first.
 
-- [ ] 7e.1 Puzzle framework (conditions and effects as data)
+- [x] 7e.1 Puzzle framework (conditions and effects as data)
 - [ ] 7e.2 Purge the room: the curse loosens its grip
 - [ ] 7e.3 Braziers that push back the curse
 - [ ] 7e.4 Paths that only appear in darkness

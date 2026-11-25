@@ -2021,6 +2021,8 @@ func camp_refusal() -> String:
 	if player == null:
 		return ""
 	var here: Vector2i = player.cell
+	if DungeonMap.sealed_in(here):
+		return "The doors are sealed."  # No bedroll, coal or campfire gets the party out of a sealed room.
 	for monster in get_tree().get_nodes_in_group("monsters"):
 		if not is_instance_valid(monster) or monster.dying or monster.hp <= 0:
 			continue

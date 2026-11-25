@@ -24,6 +24,7 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export var floor_icon: Texture2D    # Sprite in the 3D world (NOT enlarged: that view is shown at 2x); falls back to icon.
 @export var icon_pixel_size := 0.03  # World units per pixel of the floor sprite.
 @export var max_stack := 1          # How many identical items share one backpack or quick slot (1 = never stacks).
+@export var tags: PackedStringArray = []  # Words a puzzle can ask for on an altar ("bone", "cursed"): the item_on_altar condition.
 
 @export_group("Stats")
 @export var attack_bonus := 0        # Weapon: added to the wielder's attack.

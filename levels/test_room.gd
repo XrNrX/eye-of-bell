@@ -43,9 +43,9 @@ const MAP := [
 	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1],  # 22
 	[1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 2, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1],  # 23
 	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1],  # 24
-	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 25
-	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 26
-	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 27
+	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1],  # 25
+	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 26
+	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 27
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 28
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 29
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 30
@@ -97,6 +97,7 @@ const TORCHES := [
 	Vector4i(18, 22, 1, 0),
 	Vector4i(24, 22, 3, 0),
 	Vector4i(30, 20, 3, 0),
+	Vector4i(31, 26, 0, 0),    # The sealed pen.
 	Vector4i(26, 20, 1, 0),
 	Vector4i(32, 20, 1, 0),
 	Vector4i(36, 20, 3, 0),
@@ -131,7 +132,24 @@ const CORRUPTION := {
 	Vector2i(18, 1): 1,
 }
 
-const PUZZLES := []
+# The sealed pen (T: Sealed pen): step in and both doors seal; kill what is inside and they open, and a reliquary rises.
+const AREAS := [
+	{"id": "pen", "rect": Rect2i(30, 26, 5, 2)},
+]
+const BRAZIERS := []
+const PUZZLES := [
+	{"id": "pen_seal", "when": [{"kind": "party_in", "area": "pen"}], "then": [
+		{"kind": "seal_area", "area": "pen"},
+		{"kind": "set_flag", "name": "puzzle.pen.sealed"},
+		{"kind": "message", "text": "The doors slam and seal."},
+	]},
+	{"id": "pen_purged", "when": [{"kind": "flag", "name": "puzzle.pen.sealed"}, {"kind": "monsters_dead", "area": "pen"}], "then": [
+		{"kind": "unseal_area", "area": "pen"},
+		{"kind": "raise_reliquary", "cell": Vector2i(31, 27), "items": [{"def": "res://data/items/healing_potion.tres", "count": 2}]},
+		{"kind": "sound", "name": "rumble"},
+		{"kind": "message", "text": "The seals crumble. Stone grinds up."},
+	]},
+]
 
 # The traps station: one bear trap already armed, and a skeleton at the far end to lure onto it (T: Traps, then step back).
 const ARMED_TRAPS := [
@@ -228,6 +246,7 @@ const MONSTERS := [
 	{"cell": Vector2i(28, 39), "def": "res://data/monsters/skeleton_guard.tres"},
 	{"cell": Vector2i(31, 39), "def": "res://data/monsters/slime.tres"},
 	{"cell": Vector2i(34, 24), "def": "res://data/monsters/skeleton.tres", "holds": true},  # The traps station: lure it onto the armed trap. (It holds its ground: left to wander it walked onto the trap by itself.)
+	{"cell": Vector2i(34, 27), "def": "res://data/monsters/skeleton.tres", "holds": true},  # The sealed pen.
 	{"cell": Vector2i(18, 38), "def": "res://data/monsters/slime.tres"},  # The light room: it fears fire (a torch's hit makes it recoil).
 ]
 
@@ -292,6 +311,9 @@ CAMP SCREEN: ITS PACK"},
 	{"cell": Vector2i(33, 18), "side": 0, "text": "BEAR TRAP: SET
 IT FROM A HAND.
 LURE ONE ON."},
+	{"cell": Vector2i(28, 27), "side": 3, "text": "SEALED PEN
+STEP IN: IT SEALS
+KILL TO GET OUT"},
 	{"cell": Vector2i(4, 31), "side": 1, "text": "MONSTER PACING
 ; = PACK AHEAD
 O [ ] Y = TUNE"},
@@ -338,4 +360,5 @@ const STATIONS := [
 	{"name": "Monster pacing", "cell": Vector2i(10, 31), "facing": 3},
 	{"name": "Held monster", "cell": Vector2i(28, 36), "facing": 2},
 	{"name": "Light and dark", "cell": Vector2i(12, 33), "facing": 2},
+	{"name": "Sealed pen", "cell": Vector2i(28, 26), "facing": 3},
 ]

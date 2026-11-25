@@ -32,7 +32,7 @@ const SCONCE_LIT := 0
 const SCONCE_UNLIT := 1
 const SCONCE_EMPTY := 2
 ## The fields of a level the editor does not edit yet: kept untouched (see load_level).
-const KEPT := ["CORRUPTION", "PUZZLES", "PLATES", "STRUCTURES", "SIGNS", "ARMED_TRAPS", "AMBUSHES", "STATIONS", "CURSE_ZONES", "MENU_VIEW_CELL"]
+const KEPT := ["CORRUPTION", "PUZZLES", "PLATES", "STRUCTURES", "SIGNS", "ARMED_TRAPS", "AMBUSHES", "STATIONS", "CURSE_ZONES", "AREAS", "BRAZIERS", "MENU_VIEW_CELL"]
 
 var width := 0
 var height := 0

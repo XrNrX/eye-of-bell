@@ -210,6 +210,7 @@ static func apply(tree: SceneTree, data: Dictionary) -> String:
 	if problem != "":
 		return problem
 
+	dungeon.settled = false  # No puzzle news while the save goes back on.
 	party.load_state(data.party)
 	dungeon.load_state(data.dungeon)
 	DungeonMap.flags.clear()  # (An older save has none: the run starts with no flags set.)
@@ -226,4 +227,5 @@ static func apply(tree: SceneTree, data: Dictionary) -> String:
 	if cursor:
 		cursor.load_state(data.cursor)
 	tree.call_group("curse_zones", "sync_silently")  # Standing in a curse zone after loading is not news.
+	dungeon.settled = true
 	return ""

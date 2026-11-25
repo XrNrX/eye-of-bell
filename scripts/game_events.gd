@@ -46,6 +46,14 @@ signal wall_broken(cell: Vector2i)
 signal wall_purified(cell: Vector2i)
 ## A puzzle's conditions were met and its effects have run (DungeonMap.PUZZLES id).
 signal puzzle_solved(id: String)
+## The party stepped onto a new tile (a step in play, not a load or a teleport).
+signal party_moved(cell: Vector2i)
+## A brazier was lit or snuffed (Dungeon.set_brazier).
+signal brazier_changed(cell: Vector2i, lit: bool)
+## The pile of items on a floor tile changed (something put down, dropped or taken).
+signal pile_changed(cell: Vector2i)
+## The party or a monster stepped onto or off a pressure plate (Dungeon.plate_held).
+signal plate_changed(cell: Vector2i, held: bool)
 ## The party took the stairs.
 signal level_completed
 ## The party stepped into a curse zone (DungeonMap.CURSE_ZONES id) / out of it. Not sent while a save loads.

@@ -38,7 +38,7 @@ Dark, desaturated, cursed (`docs/art_style.md`). Sickly green means the curse an
 - Inventory, stacks, equipping, character sheet, food and sickness, potions, scrolls, resurrection. A right-click loot pop-up on floor items: choose which hero's backpack takes it (room and "can't use" shown, the dead listed last), or Take all to share a pile out.
 - Spells (Magic Missile, Fireball, Hold Monster, Heal, Bless, Shield) with synced lighting and pixel particles, holy light, and a pixel-exact shockwave ripple on Fireball and Magic Missile impacts.
 - Banter system (crit, fail, hit from behind, eat, equip events).
-- Corrupted walls that only a cleric's Bless can burn away (two on floor 1), and a small data-driven puzzle system.
+- Corrupted walls that only a cleric's Bless can burn away (two on floor 1), and a data-driven puzzle system: conditions (levers, dead monsters, braziers, altars, plates, areas) and effects (open or seal doors, raise a reliquary, lift a curse zone). A sealed room in the test room shows the seal.
 - Intro cutscene: 14 painted shots with fog, rain, lightning and thunder, played once on first launch and from the menu.
 - Ancient walls (stone variants, decals, structures), menus, pause, save and load, audio, display modes, options.
 - Art pipeline: Python generators plus PixelLab imports (`tools/art/`).

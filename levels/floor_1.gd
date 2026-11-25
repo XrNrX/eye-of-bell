@@ -96,6 +96,11 @@ const CORRUPTION := {
 #                                                    in that area) the level placed is dead; needs at least one placed, so an empty level never fires it
 #               {"kind": "flag", "name": String, "value": true}   a run flag has this value (memory: see below)
 #               {"kind": "lever_order", "levers": [{"cell": Vector2i, "side": int}, ...]}   those levers pulled one after another
+#               {"kind": "braziers", "group": String, "lit": bool}   every BRAZIERS entry of the group burning (true) or dark (false)
+#               {"kind": "item_on_altar", "cell": Vector2i, "def": path | "tag": String}   such an item lies on that tile
+#               {"kind": "plate_held", "cell": Vector2i}   the party or a monster is on that tile
+#               {"kind": "party_in", "area": String}      the party is in that AREAS area
+#   (monsters_dead's "area" may also be an AREAS id; it counts who is in the area now.)
 #   Puzzles listen to the event bus and are re-checked on ANY event (scripts/puzzles.gd), so a condition needs no call site.
 #   A condition that needs memory keeps it in the run flags (DungeonMap.flags, saved), "puzzle.<id>.<what>": lever_order keeps
 #   its progress in "puzzle.<id>.step".
@@ -105,6 +110,15 @@ const CORRUPTION := {
 #               {"kind": "purify_wall", "cell": Vector2i}     a corrupted wall is purified (a lever or plate can do it)
 #               {"kind": "set_flag", "name": String, "value": true}   set a run flag (another puzzle can wait on it)
 #               {"kind": "clear_curse_zone", "id": String}    a curse zone is lifted for good (CURSE_ZONES; the flag "curse_zone.<id>.cleared")
+#               {"kind": "seal_area", "area": String}         every door out of the area shuts and holds (Dungeon.seal_area)
+#               {"kind": "unseal_area", "area": String}       that seal is taken off
+#               {"kind": "raise_reliquary", "cell": Vector2i, "items": [{"def": path, "count": int}]}   a reliquary rises with them
+#               {"kind": "sound", "name": String}             a sound
+# AREAS: named parts of the level, {"id": String, "rect": Rect2i} or {"id": String, "tiles": [Vector2i, ...]} (doors and walls in it
+# do not count). BRAZIERS: {"cell": Vector2i, "group": String, "lit": bool (how it starts)}.
+const AREAS := []
+const BRAZIERS := []
+
 const PUZZLES := [
 	{"id": "nook_blessing", "when": [{"kind": "wall_purified", "cell": Vector2i(16, 4)}], "then": [
 		{"kind": "message", "text": "The curse bleeds out of the stone. Somewhere in the dark, a latch gives way."},

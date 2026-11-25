@@ -69,6 +69,9 @@ func world_click(shift := false) -> void:
 	var front := cell + DIRS[facing]
 	if _click_sconce():
 		return
+	if DungeonMap.is_sealed(front) and not DungeonMap.open_doors.has(front):
+		_say("The seal holds the door.")
+		return
 	if DungeonMap.is_portcullis(front) and not DungeonMap.open_doors.has(front):
 		_say("The portcullis won't budge.")  # Clicking the grate: it only answers to its switch.
 		return
@@ -354,6 +357,10 @@ func _try_move(dir: Vector2i) -> void:
 	if DungeonMap.is_blocked(target) or DungeonMap.is_occupied(target):  # Walls, closed doors, monsters.
 		_cue("bump")  # (audio.gd limits how often, so holding W against a wall isn't a drum roll.)
 		return
+	if DungeonMap.is_sealed(target):  # A sealed door still open for whoever stood in it: nobody new steps in.
+		_cue("bump")
+		_say("The seal holds the door.")
+		return
 	if DungeonMap.is_campfire(target):
 		_cue("bump")
 		if Time.get_ticks_msec() - _fire_msg_at > 1500:
@@ -363,6 +370,7 @@ func _try_move(dir: Vector2i) -> void:
 	cell = target
 	_cue("step")
 	_report_position()
+	Events.send(get_tree(), "party_moved", [cell])
 	get_tree().call_group("traps", "party_entered", cell)  # The party steps over its own armed traps (trap_field.gd).
 	tween = create_tween()
 	tween.tween_property(self, "position", DungeonMap.cell_to_world(cell), MOVE_TIME)
@@ -432,6 +440,9 @@ func _interact() -> void:
 		_say("The stone is alive with pulsing green veins.")
 		return
 	if not DungeonMap.is_door(front) or DungeonMap.open_doors.has(front):
+		return
+	if DungeonMap.is_sealed(front):
+		_say("The seal holds the door.")  # Before anything else: no key is spent on it.
 		return
 	if DungeonMap.is_portcullis(front):
 		_say("The portcullis won't budge.")  # Never by hand: only its linked lever or plate.
