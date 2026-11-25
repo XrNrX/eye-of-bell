@@ -179,22 +179,22 @@ Five-minute jobs for any time: decide VFX.10 (Palette filter), and check whether
 
 Work down this list. It comes from Fable's expansion design (docs/design/expansion\_design.md, section 6) and the classes plan (docs/design/new\_classes\_plan.md). Each phase ends by placing its own things on floor 1 and playing it, so the floor is never half-furnished.
 
-1. Foundations Step 7 (Tolerant saves)
-2. Mana prompt (Slower mana) and Mini-boss prompt (The Cursed Warden), both in Leftovers. Playtest before going on.
-3. 7l.2 (Wall sconces) and 7l.4 (Throwing torches)
-4. Foundations Step 12 (Levels as data), then Phase E (Dungeon editor) E.1 to E.5. Moved up on 19 Nov: Bell's pick for what to build next.
-5. Foundations Step 9, then 7e.1 (Puzzle framework). 7l.6 needs its "every monster in an area dead" condition for the cave's curse zone.
-6. 7l.3 (Curse zones), 7l.5 (Flask of oil), Plague rat prompt (in Leftovers), 7l.6 (Light on floor 1), then the rest of Phase 7e (7e.2 to 7e.7)
+1. ~~Foundations Step 7 (Tolerant saves)~~ (done)
+2. ~~Mana prompt (Slower mana) and Mini-boss prompt (The Cursed Warden), both in Leftovers. Playtest before going on.~~ (done)
+3. ~~7l.2 (Wall sconces) and 7l.4 (Throwing torches)~~ (done)
+4. ~~Foundations Step 12 (Levels as data), then Phase E (Dungeon editor) E.1 to E.5. Moved up on 19 Nov: Bell's pick for what to build next.~~ (done)
+5. ~~Foundations Step 9, 7l.3 (Curse zones), 7l.5 (Flask of oil), Plague rat prompt, 7l.6 (Light on floor 1)~~ (done)
+6. Phase 7e (Puzzles), 7e.1 to 7e.7, plus 7k.3 - see Next 10 steps.
 7. Foundations Step 10, then Phase 7d (Ambushes)
 8. Phase 7j (Fallen adventurers)
-9. Phase 7h (Resting)
+9. Phase 7h (Resting): 7h.1, 7h.4, 7h.5 and 7h.6 are left. 7h.2 and 7h.3 are done (the campfire pop-up and the Hearth Coal came in as Extra steps)
 10. Foundations Step 8, then Phase 7i (Levelling)
-11. Foundations Step 11, then Phase 7g (Legendaries)
+11. ~~Foundations Step 11~~ (done), then Phase 7g (Legendaries; 7g.1 is done)
 12. A balance pass and demo v0.8: the whole floor three times (rushing, thorough, careless with light)
 13. Phase 8b (Party screen)
 14. Phase C (New classes)
 
-Any time: 7b.8 (Dead weight), 7f.3 to 7f.5 (more banter), 7k.3 (Bear trap: what is left), VFX.10 and VFX.11, E.6 (Editor: curse zones, puzzles and ambushes, once 7e and 7d exist), E.7 (donjon import). Later: Phase 9.
+Any time: 7b.8 (Dead weight), the webbed camp check (in Leftovers), 7f.3 to 7f.5 (more banter), VFX.10 and VFX.11, E.6 (Editor: curse zones, puzzles and ambushes, once 7e and 7d exist), E.7 (donjon import). Later: Phase 9.
 
 ## Leftovers from finished phases
 
@@ -1337,6 +1337,7 @@ party keeps what it healed and any level it gained. A short sting, not
 the ambush build-up. One groggy line once the fight is over.
 Run the tests, with a smoke check that seeds the dice for an
 interruption and for none.
+Interruptions never happen in the Hearth Coal's safe camp room.
 ```
 
 **7h.5 prompt (Campfire banter)**
