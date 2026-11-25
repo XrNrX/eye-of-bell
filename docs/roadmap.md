@@ -190,7 +190,7 @@ Work down this list. It comes from Fable's expansion design (docs/design/expansi
 9. Phase 7h (Resting): 7h.1, 7h.4, 7h.5 and 7h.6 are left. 7h.2 and 7h.3 are done (the campfire pop-up and the Hearth Coal came in as Extra steps)
 10. Foundations Step 8, then Phase 7i (Levelling)
 11. ~~Foundations Step 11~~ (done), then Phase 7g (Legendaries; 7g.1 is done)
-12. A balance pass and demo v0.8: the whole floor three times (rushing, thorough, careless with light)
+12. A balance pass and the next demo: the whole floor three times (rushing, thorough, careless with light)
 13. Phase 8b (Party screen)
 14. Phase C (New classes)
 
