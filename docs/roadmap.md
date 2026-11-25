@@ -26,147 +26,15 @@ Finished phases are kept in `docs/roadmap_done.md`, not here (the file is create
 
 Do these first, in this order, ticking each one off. Each prompt sits right under its step. When all ten are ticked, carry on from the Build order below.
 
-- [x] 1. Zombie gas prompt (Brown death): a quick fix before Saturday
-
-```
-Recolour the zombie's death gas so it reads as rot and disease, not
-the curse. Read docs/art_style.md first: green is reserved for the
-curse, so no green anywhere in the cloud.
-- Colour: a sickly mustard-yellow core fading to murky brown at the
-  edges, using palette colours only.
-- Add a few dark specks drifting slowly inside it (flies or spores),
-  so it says "plague cloud", not "fart".
-- Replace the test VFX cloud with a proper one from PixelLab's VFX
-  tool, palette-stepped like the other effects, no smooth alpha fade.
-  Log it in docs/asset_log.md.
-- If the cloud has a light or tint on nearby walls, make that
-  yellow-brown too.
-- Keep the colours and timings in the config.
-- Banter (read docs/tone.md first; show me the lines before they go
-  in): a couple of lines when the cloud appears, e.g. thief: "Was
-  that the zombie or the fighter?" fighter: "Don't look at me."
-Show me a screenshot of the cloud in the test room next to a curse
-zone, so I can check the two never get mixed up. Run the tests and
-commit.
-```
+- [x] 1. BREAK CAMP fix: returning from the safe camp no longer solves floor 1's cave puzzle (`9a7d1ae`)
 
 - [ ] 2. Saturday playtest: normal mode first, then god mode. Post-its in three colours: bugs, confusion, fun. First run before the booze
 
 - [ ] 3. Sort the Saturday Post-its with Claude: bugs into fixes, confusion onto the roadmap, nat 20s into the Ideas inbox. Big bugs may jump ahead of steps 4 to 10
 
-- [x] 4. Foundations Step 12 (Levels as data)
+- [ ] 4. 7e.1 (Puzzle framework)
 
-```
-Make levels loadable as data and let the party survive a change of level
-(S6 in docs/code_review.md): add DungeonMap.use_level_data(dict) with
-use_level(path) as a thin wrapper; move floor 1 out of dungeon_map.gd
-into levels/floor_1.gd; add a RunState that carries the party between
-floors using the save_state / load_state from Step 7; store a level id
-(or seed) in the save; remove the main menu's hard-coded camera cell. No
-behaviour change. Run the tests.
-```
-
-Check: F12 into the test room and back, New Game, and Continue all still start in the right place. Do this carefully: the editor relies on it.
-
-- [x] 5. E.1 (Squared paper and drawing)
-
-```
-Do Foundations step 12 first if it is not ticked.
-
-Add a dungeon editor, opened with a debug key from the main menu and the
-test room (like F12). Follow docs/art_style.md: squared paper on
-parchment, in the style of the full-screen map on M, inked lines, no
-smooth gradients.
-- A grid of squares the size of a level (new level: 32x32, set in the
-  config). Each square is wall (filled, cross-hatched) or floor (blank).
-- Left-click or drag paints floor; right-click or drag rubs back to
-  wall. The outer edge always stays wall.
-- Pan with the middle mouse or WASD, zoom with the wheel, coordinates of
-  the square under the mouse in a corner (matching the (x,y) the
-  roadmap uses).
-- Undo and redo (Ctrl+Z, Ctrl+Y), at least 50 steps.
-- A New button (asks for width and height) and a Close button.
-No saving yet. Show me a screenshot of a small dungeon drawn in it, and
-run the tests.
-```
-
-- [x] 6. E.2 (Doors, gates, levers, stairs and sconces)
-
-```
-Add a toolbar to the editor. Each tool places a thing the game already
-has, using the same data floor 1 uses (read levels/floor_1.gd for the
-shapes; add no new kinds of thing):
-- Plain door, locked door, gate (portcullis), cracked wall, lever
-  (linked to a door or gate: click the lever, then the door; draw a thin
-  ink line between them while either is selected).
-- Stairs down, and the party start (one only, with the direction the
-  party faces, shown as an arrow).
-- Sconce on a wall face (lit, unlit or empty), placed by clicking the
-  edge of a square.
-- Each thing is a small inked icon on the paper (PixelLab or by script,
-  following docs/art_style.md; log them).
-- Click a placed thing to select it; Delete removes it; R turns it.
-- Things only go where the game allows them (a door between two walls, a
-  sconce on a wall face): refuse anything else with a short message.
-Run the tests and show me a screenshot.
-```
-
-- [x] 7. E.3 (Items and monsters)
-
-```
-Add items and monsters to the editor.
-- A side panel listing every ItemDef in data/items and every MonsterDef
-  in data/monsters, read from the folders, so new ones appear without
-  touching the editor. Each shows its own icon or sprite, small.
-- Click one, then a floor square, to place it. Items stack in a floor
-  pile like the game's; monsters take the square and face a direction.
-- Hover a square to see what's on it; click to select, Delete to remove.
-- Keys: a placed key can be linked to a locked door, like levers.
-- Keep the curse-zone rule: warn if anything above tier 1 is placed in a
-  curse zone (once E.6 exists).
-Run the tests and show me a screenshot with a few monsters and items.
-```
-
-- [x] 8. E.4 (Build and play): switch to Opus if Sonnet loops
-
-```
-Add Build to the editor: it turns the paper into a level and drops the
-party into it in the 3D view, using DungeonMap.use_level_data and the
-same building code as floor 1.
-- Before building, check: there is a party start and stairs down; every
-  floor square, item and monster can be reached from the start
-  (flood-fill through doors, counting keys and levers like a player
-  would); every lever and key is linked. Show problems as a list, with
-  the squares marked in red ink. Missing start or stairs refuse the
-  build; the rest are warnings.
-- The party starts as the ready-made four with full HP and mana and
-  their starting gear.
-- A key (Tab) goes back to the paper with the party's square marked, and
-  Build again puts the party back where it was.
-- Nothing from a build-and-play is saved to the real save slot.
-Run the tests, then build a small dungeon with a door, a lever, a gate,
-two monsters and stairs, and show me a clip of walking it.
-```
-
-- [x] 9. E.5 (Save, load and the round-trip test)
-
-```
-Add Save and Open to the editor.
-- Save writes levels/<name>.gd in the exact shape of levels/floor_1.gd
-  (ask before overwriting). Open lists the files in levels/.
-- Opening levels/floor_1.gd shows floor 1 on the paper with everything
-  the editor knows about. Things it doesn't edit yet (puzzles, curse
-  zones, ambushes, remains) are kept untouched when saving, and shown as
-  grey "not editable yet" marks.
-- Add tests/editor_test.gd: open floor 1, save it under a new name
-  without changing anything, and check the saved data is identical to
-  floor 1. Then draw a small level by script, save, open, and check it
-  matches.
-- Add the editor to CLAUDE.md (how to open it, what it can edit).
-Run all the tests, then open floor 1, build it and walk a few squares.
-```
-
-- [ ] 10. 7e.1 (Puzzle framework)
+**7e.1 prompt (Puzzle framework)**
 
 ```
 Do Foundations step 9 first if it is not ticked.
@@ -184,6 +52,125 @@ docs/design/expansion_design.md section 3 "7e".
 - A list in the test room's H overlay: each puzzle, its conditions, and
   which are met.
 Keep every existing puzzle working. Run the tests.
+```
+
+- [ ] 5. 7e.2 (Purge the room)
+
+**7e.2 prompt (Purge the room)**
+
+```
+Add a "purge the room" puzzle: entering a marked area seals its doors
+with glowing green curse seals (overlays on the doors). When every
+monster in the area is dead, the curse loosens its grip: the green glow
+in the room's mortar fades out, the door seals crumble to dust, and a
+sealed reliquary chest grinds up out of the floor with a low rumble and
+dust particles. The reliquary holds items set in the level data. No
+jingle or sparkle: just the sound of stone and the curse retreating.
+Generate the seals and reliquary following docs/art_style.md; log it.
+Run the tests.
+```
+
+- [ ] 6. 7e.3 (Braziers)
+
+**7e.3 prompt (Braziers)**
+
+```
+Add braziers, following docs/design/expansion_design.md sections 2 and 3.
+- A prop on a floor tile that does not block it, lit or dark, in a named
+  group. Saved.
+- Lit by: clicking it with a lit torch or candle in a hand; a Fireball
+  that passes or lands within a tile; a thrown torch landing on its
+  tile; burning oil beside it. Snuffed by clicking with empty hands.
+- A lit brazier is a light (energy 1.4, range 7) in the sprite_lights
+  group, so monsters and items beside it are lit. It will not light
+  inside a curse zone.
+- Art and flames from PixelLab (the flames from the VFX tool), following
+  docs/art_style.md; log it. One picture first for my OK.
+- A test-room station: two braziers and a warded door.
+Run the tests.
+```
+
+- [ ] 7. 7e.4 (Darkness runes)
+
+**7e.4 prompt (Paths that only appear in darkness)**
+
+```
+Add darkness runes, following docs/design/expansion_design.md section 3.
+- A decal on a wall face that shows only when the light reaching the
+  floor tile in front of it is no more than the ambient. Use
+  sprite_lighting.gd's light_at for this; do not write a second light
+  query. The party's own held light counts.
+- It fades in over a second in palette steps, never a smooth fade.
+- While the runes show, clicking the wall (or F) opens it, as a purified
+  wall opens. A puzzle condition "runes_read".
+- Art from the VFX tool, in the curse greens; log it.
+- A test-room station: a room with two lit braziers and a sign.
+Run the tests, and show me the room lit, then dark.
+```
+
+- [ ] 8. 7e.5 + 7e.6 (Altars and heavy plates), then 7k.3 (Bear trap leftovers)
+
+**7e.5 prompt (Offering altars)**
+
+```
+Add offering altars: a wall or floor altar that accepts items placed
+with the click-to-place system. The level data says what it wants
+(a specific item, or any item with a tag such as "bone" or "cursed").
+The right offering triggers its puzzle; a wrong one is rejected with a
+message like "The altar ignores your offering." Add a carved hint near
+each altar (wall text overlay). Add a bone and a skull item to use as
+offerings, following docs/art_style.md; log it.
+Run the tests.
+```
+
+**7e.6 prompt (Weighted pressure plates)**
+
+```
+Extend pressure plates so items dropped on them can hold them down:
+each item has a weight, and each plate a required weight. Show a subtle
+click and the plate sinking when it's held. Make sure monsters standing
+on plates also count. Build a test where the party drops a heavy item
+on a plate to keep a door open, then walks through.
+Run the tests.
+```
+
+**7k.3 prompt (Bear trap: what is left)**
+
+```
+The bear trap is built. Finish it from docs/design/expansion_design.md
+section 3 "7k.2". The tier 3 "once per fight" rule came in with the
+Cursed Warden: check it works and has its smoke check, don't rebuild
+it. Check a plague rat is caught like any tier 1 monster. Give the trap
+a weight of 3 for plates (only if 7e.6 weighted plates exist; otherwise
+leave it for 7e.6). Update docs/combat_design.md. Run the tests.
+```
+
+- [ ] 9. 7e.7 (Puzzles on floor 1)
+
+**7e.7 prompt (Puzzles on floor 1)**
+
+```
+Place the puzzles from docs/design/expansion_design.md section 5.
+- Room 7: braziers at (18,3) and (20,3); the closet door (18,2) is
+  warded until both burn. Move key two to (19,4). The closet holds three
+  potions, two flasks of oil and one bedroll.
+- Room 6: a purge room. Add a plain door at (15,19). A skeleton at
+  (17,20), a guard at (16,21), an acid slime at (18,19). The reliquary
+  rises at (17,20) with whatever 7g has put in it (a placeholder scroll
+  until then). The plate at (18,21) needs weight 3.
+- Room 4: lit braziers at (12,19) and (14,17), runes on the north wall
+  (13,16), which opens onto (13,15). A sign: "What the light hides."
+Redo the walk-through check and run the tests.
+```
+
+- [ ] 10. 7h.1 (Resting rules into the combat page)
+
+**7h.1 prompt (Resting rules into the combat page)**
+
+```
+Copy the resting rules and numbers from docs/design/expansion_design.md
+(sections 2 and 3 "7h") into docs/combat_design.md. No code. There is no
+tinderbox.
 ```
 
 Five-minute jobs for any time: decide VFX.10 (Palette filter), and check whether the zombie at (15,11) needs a banter line when first seen.
@@ -220,6 +207,7 @@ Loose ends from phases that are otherwise done, plus things the 13 Nov tech brie
 - [x] Slower mana: 1 point per 6 s instead of 2.5 s (prompt below)
 - [x] Zombie gas: recolour the death gas to rot and disease, not the curse (prompt below)
 - [x] Parked work: turn the git stashes (boss-room ambush, fog of war) into named branches, e.g. wip/boss-ambush and wip/fog-of-war, and list them in CLAUDE.md under "Parked work". Do this before Step 7, so the refactors don't make them harder to apply.
+- [ ] Webbed camp check: add it to Party.camp_refusal(), which does not check is_webbed() though docs/combat_design.md says a camp cannot be made while stuck in a web (add a smoke check)
 
 **5.7 prompt (Enemy health bars)**
 
@@ -758,6 +746,7 @@ second set.
 - 60 XP when the last ambush monster dies, if Party.add_xp exists.
 - A debug key in the test room that springs the nearest ambush.
 Sounds can be placeholders, listed in docs/asset_log.md. Run the tests.
+The camp check counts only ambush triggers that are still armed.
 ```
 
 **7d.3 prompt (The giant hand and the tentacles)**
@@ -803,6 +792,9 @@ Add the two lock-ins from docs/design/expansion_design.md section 3 "7d".
 - The inventory, the map and the loot pop-up still open while locked in.
 Run the tests, and add a smoke check that saving and loading inside a
 trap-shut room leaves the doors shut.
+Party.camp_refusal() refuses while the party is locked in, so the
+bedroll, Hearth Coal and campfire can't escape a sealed room. Add a
+smoke check.
 ```
 
 **7d.5 prompt (Clues and tuning)**
@@ -911,7 +903,8 @@ in the room's mortar fades out, the door seals crumble to dust, and a
 sealed reliquary chest grinds up out of the floor with a low rumble and
 dust particles. The reliquary holds items set in the level data. No
 jingle or sparkle: just the sound of stone and the curse retreating.
-Generate the seals and reliquary following docs/art_style.md.
+Generate the seals and reliquary following docs/art_style.md; log it.
+Run the tests.
 ```
 
 **7e.3 prompt (Braziers)**
@@ -957,7 +950,8 @@ with the click-to-place system. The level data says what it wants
 The right offering triggers its puzzle; a wrong one is rejected with a
 message like "The altar ignores your offering." Add a carved hint near
 each altar (wall text overlay). Add a bone and a skull item to use as
-offerings, following docs/art_style.md.
+offerings, following docs/art_style.md; log it.
+Run the tests.
 ```
 
 **7e.6 prompt (Weighted pressure plates)**
@@ -968,6 +962,7 @@ each item has a weight, and each plate a required weight. Show a subtle
 click and the plate sinking when it's held. Make sure monsters standing
 on plates also count. Build a test where the party drops a heavy item
 on a plate to keep a door open, then walks through.
+Run the tests.
 ```
 
 **7e.7 prompt (Puzzles on floor 1)**
