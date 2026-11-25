@@ -2970,6 +2970,9 @@ func _check_seals() -> void:
 	check("save: the saved seal came back, the unsaved one did not", DungeonMap.seals.smoke_room.has("puzzle") and not DungeonMap.seals.smoke_room.has("ambush") and not DungeonMap.open_doors.has(door))
 	check("save: the puzzle stays solved, the reliquary raised with its items once, the brazier lit", DungeonMap.puzzles_done.has("smoke_seal")
 			and DungeonMap.reliquaries.has(by_gate) and dungeon.pile_at(by_gate).size() == 1 and dungeon.item_at(by_gate).count == 2 and DungeonMap.brazier_lit[inside] and not DungeonMap.brazier_lit[by_gate])
+	var show: Node = dungeon.seal_show
+	check("save: the seals, the glow and an open chest are there at once, with no show", show.door_seals.size() == DungeonMap.sealed_doors.size() and show.glows.has("smoke_room")
+			and show.chests.has(by_gate) and show.chests[by_gate].sprite.frame == 1 and not dungeon.reliquary_rising(by_gate) and dungeon.items[by_gate].sprite.visible and show.effects.is_empty())
 	dungeon.unseal_area("smoke_room")
 	dungeon.open_door(door)
 	await wait.call()

@@ -109,10 +109,30 @@ func _check_pen(tools: Node, player: Node) -> void:
 	await create_timer(1.0).timeout
 	check("stepping into the pen seals both doors", DungeonMap.puzzles_done.has("pen_seal") and DungeonMap.is_sealed(west) and DungeonMap.is_sealed(north) and not DungeonMap.open_doors.has(west))
 	check("and not solved while its skeleton lives", not DungeonMap.puzzles_done.has("pen_purged"))
+	var show: Node = dungeon.seal_show
+	var on_door: Array = show.door_seals.get(west, [])
+	check("show: a seal on both faces of each sealed door, riding on the door, and the mortar glows", show.door_seals.size() == 2 and on_door.size() == 3
+			and on_door[0].get_parent() == dungeon.doors[west] and show.glows.has("pen") and show.glows.pen.size() > 6)
+	var first: int = on_door[0].frame
+	await create_timer(0.4).timeout
+	check("show: the seal is alive (its frames turn)", on_door[0].frame != first)
 	for m in get_nodes_in_group("monsters"):
 		if DungeonMap.area_has("pen", m.cell):
 			m.take_hit({"hit": true, "damage": 999, "chance": 100, "crit": false, "by": 0})
-	await create_timer(0.5).timeout
+	await create_timer(0.4).timeout
+	var chest_at := Vector2i(31, 27)
+	check("show: the seals crumble and the glow dissolves", show.door_seals.is_empty() and show.glows.is_empty() and show.effects.size() >= 4)
+	check("show: the chest is still coming up, its items hidden and out of reach", dungeon.reliquary_rising(chest_at) and show.chests[chest_at].sprite.frame == 0
+			and not dungeon.items[chest_at].sprite.visible and show.chests[chest_at].sprite.position.y < 0.45)
+	player.restore(Vector2i(30, 27), 3)
+	player.world_click()
+	check("show: a click takes nothing from a rising chest", not get_first_node_in_group("cursor").is_holding() and dungeon.item_at(chest_at) != null)
+	await create_timer(2.6).timeout
+	check("show: it stands, opens by itself and shows its items; the one-shots are gone", not dungeon.reliquary_rising(chest_at) and show.chests[chest_at].sprite.frame == 1
+			and dungeon.items[chest_at].sprite.visible and is_equal_approx(show.chests[chest_at].sprite.position.y, 0.5) and show.effects.is_empty())
+	player.world_click()
+	check("show: and the items can be taken from it", get_first_node_in_group("cursor").is_holding())
+	dungeon.place_item(chest_at, get_first_node_in_group("cursor").release())
 	tools._refresh_help()
 	check("killing it opens the seals and raises the reliquary", DungeonMap.puzzles_done.has("pen_purged") and not DungeonMap.is_sealed(west) and not DungeonMap.is_sealed(north)
 			and DungeonMap.reliquaries.has(Vector2i(31, 27)) and dungeon.item_at(Vector2i(31, 27)) != null and tools.puzzle_label.text.contains("PEN_PURGED  SOLVED"))

@@ -304,3 +304,11 @@ None of these were made with the VFX suite, so they should be replaced.
 
 - `art/sprites/lever.png` redone (22 Nov 2026, 1 generation, `create_image_pixflux` 64x64, job 08a14a8f): a WOODEN lever (dark oak plank backing, nails, wooden handle up; the first, iron version is kept as `lever_off_iron.png`), saved as `tools/art/pieces/lever/lever_off_raw.png`; `tools/art/gen_lever.py` snaps it to the palette and builds the 128x64 sheet (off, on: the plate interior flipped so the handle points down). `LEVER_PIXEL_SIZE` 0.0225 for the 64 px frames.
 - Wooden lever (22 Nov 2026, 1 more generation, job bab7ac1a) replaced the iron one above; ON is the whole picture turned upside down and lifted 4 rows so the plate stays put.
+
+## 7e.2 curse seal and reliquary chest (25 Nov 2026, 8 generations; the VFX tool is free)
+- In the game: seal 1 ('eye') and `chest_c`, chosen by the user; `tools/art/gen_seal.py` builds `art/seal/*_sheet.png` + `.json`, shown by `scripts/seal_show.gd`. No code-drawn effect (the mortar's dissolve drops pixels of the VFX frame in a Bayer pattern).
+- More VFX-tool pieces (free): `pieces/seal/crumble` ('Curse seal crumble', `54212a71-969d-4123-982e-d90ecbb9e871`, 160x208, 16 frames), `pieces/seal/mortar` ('Mortar curse glow', `700eae89-4384-4f83-a462-708755cbf725`, 128x128 loop), `pieces/reliquary/dust` ('Reliquary dust', `3d70ede9-25c7-45b9-964f-84640a2d39f1`, 128x64).
+- The open chest: `pieces/reliquary/chest_open.png` (`edit_image_pixen` of `chest_c`, seed 7320, job 322f51db, 1 generation; shown to the user in game and committed on their say-so).
+- Seal candidates from the VFX tool, 160x160, 12 frames at 8 fps, looping, curse greens: `tools/art/pieces/seal/eye.png` + `.json` ('Curse seal eye', effect `b6aa35aa-a9e1-4eff-91ba-349b3ecea6ec`) and `tools/art/pieces/seal/binding.png` + `.json` ('Curse seal binding', effect `9e12a96a-04c4-478c-b9f7-edd000640b24`).
+- Chest candidate: `tools/art/pieces/reliquary/chest_c.png` (96x80, `create_image_pixflux`, seed 7313, job 86bf8f9c): grey iron-bound chest seen from the front, skull clasp.
+- Rejected (7 generations): `seal_a..d.png` (128x128 stills, seeds 7201, 7202, 7213, 7214: a shield, a glowing cross, a stone portal, an anarchy-like sign) and `chest_a`, `chest_b`, `chest_d.png` (seeds 7301, 7302, 7314: angled views, gold).

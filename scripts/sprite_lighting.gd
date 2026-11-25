@@ -29,6 +29,10 @@ func _process(_delta: float) -> void:
 		var sprite: Node3D = dungeon.items[cell].sprite
 		var top_def: Resource = dungeon.items[cell].pile.back().def
 		sprite.modulate = light_at(sprite.global_position, cell, lights) * top_def.glow_tint  # (A glowing item's tint: ItemDef.glow_tint.)
+	if dungeon.get("seal_show") != null:
+		for cell in dungeon.seal_show.chests:
+			var chest: Node3D = dungeon.seal_show.chests[cell].sprite
+			chest.modulate = light_at(chest.global_position + Vector3(0, 0.3, 0), cell, lights)
 	if dungeon.get("traps") != null:
 		for cell in dungeon.traps.armed:
 			var s: Node3D = dungeon.traps.armed[cell].sprite

@@ -1,0 +1,443 @@
+{
+ "frames": [
+  {
+   "filename": "curse-seal-crumble 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 1.png",
+   "frame": {
+    "x": 160,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 2.png",
+   "frame": {
+    "x": 320,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 3.png",
+   "frame": {
+    "x": 480,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 4.png",
+   "frame": {
+    "x": 0,
+    "y": 208,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 5.png",
+   "frame": {
+    "x": 160,
+    "y": 208,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 6.png",
+   "frame": {
+    "x": 320,
+    "y": 208,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 7.png",
+   "frame": {
+    "x": 480,
+    "y": 208,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 8.png",
+   "frame": {
+    "x": 0,
+    "y": 416,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 9.png",
+   "frame": {
+    "x": 160,
+    "y": 416,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 10.png",
+   "frame": {
+    "x": 320,
+    "y": 416,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 11.png",
+   "frame": {
+    "x": 480,
+    "y": 416,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 12.png",
+   "frame": {
+    "x": 0,
+    "y": 624,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 13.png",
+   "frame": {
+    "x": 160,
+    "y": 624,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 14.png",
+   "frame": {
+    "x": 320,
+    "y": 624,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  },
+  {
+   "filename": "curse-seal-crumble 15.png",
+   "frame": {
+    "x": 480,
+    "y": 624,
+    "w": 160,
+    "h": 208
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 208
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 208
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.38461538461538464
+   },
+   "duration": 83
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "curse-seal-crumble.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 640,
+   "h": 832
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 80,
+   "y": 80
+  },
+  "frameTags": [
+   {
+    "name": "curse-seal-crumble",
+    "from": 0,
+    "to": 15,
+    "direction": "forward"
+   }
+  ]
+ }
+}

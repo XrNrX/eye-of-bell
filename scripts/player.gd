@@ -190,7 +190,7 @@ func _click_item(shift := false) -> void:
 	if dungeon == null or cursor == null:
 		return
 	var front := cell + DIRS[facing]
-	if DungeonMap.is_blocked(front) or DungeonMap.is_occupied(front):
+	if DungeonMap.is_blocked(front) or DungeonMap.is_occupied(front) or dungeon.reliquary_rising(front):
 		return
 	if cursor.is_holding() and cursor.held.def.type == ItemDef.Type.TRAP:  # A trap put down in front is set there (the Thief, fastest).
 		var party_node := get_tree().get_first_node_in_group("party")
@@ -239,7 +239,7 @@ func world_right_click(at := Vector2(320, 140)) -> Node:
 	if _light_sconce():
 		return null
 	var front := cell + DIRS[facing]
-	if DungeonMap.is_blocked(front) or DungeonMap.is_occupied(front) or dungeon.item_at(front) == null:
+	if DungeonMap.is_blocked(front) or DungeonMap.is_occupied(front) or dungeon.item_at(front) == null or dungeon.reliquary_rising(front):
 		return null
 	for old in get_tree().get_nodes_in_group("loot_menu"):
 		old.close()

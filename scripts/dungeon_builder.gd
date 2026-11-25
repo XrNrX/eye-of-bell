@@ -17,6 +17,7 @@ const WallDebris := preload("res://scripts/wall_debris.gd")
 const ItemStack := preload("res://scripts/item_stack.gd")
 const CorruptWall := preload("res://scripts/corrupt_wall.gd")
 const Puzzles := preload("res://scripts/puzzles.gd")
+const SealShow := preload("res://scripts/seal_show.gd")
 const SaveData := preload("res://scripts/save_data.gd")
 const LightConfig := preload("res://scripts/light_config.gd")
 const CurseZones := preload("res://scripts/curse_zones.gd")
@@ -103,6 +104,8 @@ var lever_on := {}    # Vector3i (x, z, side) -> true if switched on
 
 ## False while the level is being built or a save is being put on it: no puzzle is checked and no puzzle news is sent.
 var settled := false
+var seal_show: Node3D  # What seals and reliquaries look like (seal_show.gd, "SealShow").
+const RELIQUARY_ITEM_HEIGHT := 0.55  # Items on a reliquary's tile rest at its open mouth.
 ## DungeonMap.level_serial when this dungeon was built: a dungeon left behind by a change of level checks no puzzles.
 var level_serial := 0
 var _plate_was_held := {}  # Plate cell -> was somebody on it at the last refresh.
@@ -201,6 +204,9 @@ func _ready() -> void:
 	curse = CurseZones.new()
 	curse.name = "CurseZones"
 	add_child(curse)
+	seal_show = SealShow.new()
+	seal_show.name = "SealShow"
+	add_child(seal_show)
 	var puzzles := Puzzles.new()  # Listens to the event bus and re-checks every puzzle on any news (S7).
 	puzzles.name = "Puzzles"
 	add_child(puzzles)
@@ -273,6 +279,7 @@ func _sync_seals() -> void:
 	for cell in released:
 		if DungeonMap.door_id(cell) != "":
 			_drive_door(cell, _linked_open(DungeonMap.door_id(cell)))
+	seal_show.sync(settled)
 
 
 ## Light or snuff a brazier (DungeonMap.BRAZIERS). Returns whether anything changed. (The prop and the ways to light it are 7e.3.)
@@ -285,13 +292,23 @@ func set_brazier(cell: Vector2i, lit: bool) -> bool:
 	return true
 
 
-## A reliquary rises on this tile with these items ([{"def": path, "count": n}]). Once per tile. (The chest and its show are 7e.2.)
+## A reliquary rises on this tile with these items ([{"def": path, "count": n}]). Once per tile. The items are in the pile (and so in
+## a save) at once; seal_show.gd hides them until the chest has come up and opened.
 func raise_reliquary(cell: Vector2i, contents: Array) -> void:
 	if DungeonMap.reliquaries.has(cell):
 		return
+	var lying := pile_at(cell)  # What was there already comes up with the chest.
 	DungeonMap.reliquaries[cell] = true
+	if not lying.is_empty():
+		set_pile(cell, lying)
 	for entry in contents:
 		place_item(cell, ItemStack.of(load(entry.def), int(entry.get("count", 1))))
+	seal_show.sync(settled)
+
+
+## Is a reliquary still rising here? Its items cannot be touched until it has opened.
+func reliquary_rising(cell: Vector2i) -> bool:
+	return seal_show.rising(cell)
 
 
 ## Is somebody holding down the plate on this tile: the party or a monster? (7e.6 adds the weight of items here.)
@@ -604,6 +621,7 @@ func load_state(d: Dictionary) -> void:
 			if stack != null:
 				stacks.append(stack)
 		set_pile(SaveData.data_to_cell(entry.cell), stacks)
+	seal_show.sync(false)  # Seals, glowing mortar and open reliquaries as saved, with no show.
 
 	DungeonMap.sconce_seen.clear()
 	if d.has("sconces"):
@@ -829,15 +847,16 @@ func place_item(cell: Vector2i, item) -> void:
 	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	sprite.shaded = false  # Tinted by the light that reaches it instead (sprite_lighting.gd).
 	sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
-	sprite.position = DungeonMap.cell_to_world(cell) + Vector3(0, ITEM_HEIGHT, 0)
+	var height := RELIQUARY_ITEM_HEIGHT if DungeonMap.reliquaries.has(cell) else ITEM_HEIGHT
+	sprite.position = DungeonMap.cell_to_world(cell) + Vector3(0, height, 0)
 	add_child(sprite)
 	var new_entry := {"sprite": sprite, "pile": [stack]}
 	items[cell] = new_entry
 	_show_top(new_entry)
 	# Bob up and down forever (the tween is owned by the sprite, so it dies with it).
 	var bob := sprite.create_tween().set_loops()
-	bob.tween_property(sprite, "position:y", ITEM_HEIGHT + ITEM_BOB, 0.9).set_trans(Tween.TRANS_SINE)
-	bob.tween_property(sprite, "position:y", ITEM_HEIGHT - ITEM_BOB, 0.9).set_trans(Tween.TRANS_SINE)
+	bob.tween_property(sprite, "position:y", height + ITEM_BOB, 0.9).set_trans(Tween.TRANS_SINE)
+	bob.tween_property(sprite, "position:y", height - ITEM_BOB, 0.9).set_trans(Tween.TRANS_SINE)
 	_pile_news(cell)
 
 
