@@ -2834,7 +2834,9 @@ func _check_seals() -> void:
 	var gate := Vector2i(20, 6)
 	var by_gate := Vector2i(20, 7)
 	DungeonMap.AREAS = [{"id": "smoke_room", "tiles": [inside, by_gate, door]}]
-	DungeonMap.BRAZIERS = [{"cell": inside, "group": "pair", "lit": false}, {"cell": by_gate, "group": "pair", "lit": false}]
+	var bowl_a := Vector2i(10, 13)   # Two braziers out of the way of the walking (they are solid).
+	var bowl_b := Vector2i(11, 13)
+	DungeonMap.BRAZIERS = [{"cell": bowl_a, "group": "pair", "lit": false}, {"cell": bowl_b, "group": "pair", "lit": false}]
 	DungeonMap.PUZZLES = []
 	await _rebuild()
 	var Puzzles := preload("res://scripts/puzzles.gd")
@@ -2901,9 +2903,9 @@ func _check_seals() -> void:
 	var pair := {"kind": "braziers", "group": "pair", "lit": true}
 	var dark := {"kind": "braziers", "group": "pair", "lit": false}
 	check("puzzle conditions: braziers all dark", Puzzles.met(dungeon, dark) and not Puzzles.met(dungeon, pair))
-	dungeon.set_brazier(inside, true)
+	dungeon.set_brazier(bowl_a, true)
 	check("puzzle conditions: one lit is neither", not Puzzles.met(dungeon, dark) and not Puzzles.met(dungeon, pair))
-	dungeon.set_brazier(by_gate, true)
+	dungeon.set_brazier(bowl_b, true)
 	check("puzzle conditions: all lit, and a group with none is never met", Puzzles.met(dungeon, pair) and not Puzzles.met(dungeon, {"kind": "braziers", "group": "nobody", "lit": false}))
 	var potion := "res://data/items/healing_potion.tres"
 	var on_altar := {"kind": "item_on_altar", "cell": outside, "def": potion}
@@ -2949,7 +2951,7 @@ func _check_seals() -> void:
 	await wait.call()
 	check("seal: walking in solves it from the step alone, the door shuts behind and the reliquary rises", player.cell == inside and DungeonMap.puzzles_done.has("smoke_seal")
 			and DungeonMap.is_sealed(door) and not DungeonMap.open_doors.has(door) and DungeonMap.reliquaries.has(by_gate) and dungeon.item_at(by_gate).count == 2)
-	dungeon.set_brazier(inside, true)
+	dungeon.set_brazier(bowl_a, true)
 	dungeon.seal_area("smoke_room", "ambush", false)
 	check("save: a sealed room can be saved", SaveGame.save(self) == "")
 	var data := SaveGame.read_file()
@@ -2969,7 +2971,7 @@ func _check_seals() -> void:
 	dungeon.open_door(door)
 	check("save: the saved seal came back, the unsaved one did not", DungeonMap.seals.smoke_room.has("puzzle") and not DungeonMap.seals.smoke_room.has("ambush") and not DungeonMap.open_doors.has(door))
 	check("save: the puzzle stays solved, the reliquary raised with its items once, the brazier lit", DungeonMap.puzzles_done.has("smoke_seal")
-			and DungeonMap.reliquaries.has(by_gate) and dungeon.pile_at(by_gate).size() == 1 and dungeon.item_at(by_gate).count == 2 and DungeonMap.brazier_lit[inside] and not DungeonMap.brazier_lit[by_gate])
+			and DungeonMap.reliquaries.has(by_gate) and dungeon.pile_at(by_gate).size() == 1 and dungeon.item_at(by_gate).count == 2 and DungeonMap.brazier_lit[bowl_a] and not DungeonMap.brazier_lit[bowl_b])
 	var show: Node = dungeon.seal_show
 	check("save: the seals, the glow and an open chest are there at once, with no show", show.door_seals.size() == DungeonMap.sealed_doors.size() and show.glows.has("smoke_room")
 			and show.chests.has(by_gate) and show.chests[by_gate].sprite.frame == 1 and not dungeon.reliquary_rising(by_gate) and dungeon.items[by_gate].sprite.visible and show.effects.is_empty())

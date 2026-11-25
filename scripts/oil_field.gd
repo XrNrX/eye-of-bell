@@ -92,6 +92,7 @@ func ignite(cell: Vector2i) -> bool:
 	_burn(cell, cfg.burn_seconds, false)
 	ignited += 1
 	Events.send(get_tree(), "oil_ignited", [cell])
+	dungeon.ignite_braziers_beside(cell)
 	get_tree().call_group("audio", "play", "fireball", -10.0, 1.3)  # (A placeholder whoosh: no oil sound exists yet.)
 	if _sees(cell):
 		get_tree().call_group("hud", "show_message", "The oil catches!")

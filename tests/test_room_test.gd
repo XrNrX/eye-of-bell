@@ -140,6 +140,102 @@ func _check_pen(tools: Node, player: Node) -> void:
 	get_first_node_in_group("banter").reset_timers()
 
 
+## The braziers: lit from a flame in a hand, snuffed bare-handed, and lit by a Fireball, a thrown torch and burning oil; both
+## burning break the ward on the closet door; a curse zone refuses them.
+func _check_braziers(tools: Node, player: Node) -> void:
+	var dungeon: Node = get_first_node_in_group("dungeon")
+	var party: Node = get_first_node_in_group("party")
+	var cursor: Node = get_first_node_in_group("cursor")
+	var hud: Node = get_first_node_in_group("hud")
+	var north := Vector2i(15, 25)
+	var south := Vector2i(15, 27)
+	var door := Vector2i(17, 26)
+	for n in get_nodes_in_group("monsters"):
+		n.free()
+	if cursor.is_holding():
+		cursor.release()
+	var field: Node = dungeon.braziers
+	check("two braziers stand dark, each with a bowl, no flame and no light", field.braziers.size() == 2 and field.braziers[north].prop.visible
+			and not field.braziers[north].flame.visible and not field.braziers[north].light.visible and not DungeonMap.brazier_lit[north])
+	var station: Dictionary = DungeonMap.STATIONS.filter(func(s): return s.name == "Braziers")[0]
+	tools._teleport(station)
+	var keep := []
+	for m in party.members:
+		keep.append(m.hands.duplicate())
+		m.hands = [null, null]
+	await create_timer(0.3).timeout
+	player.restore(north - Vector2i(1, 0), 3)
+	player._try_move(Vector2i(1, 0))
+	await create_timer(0.4).timeout
+	var walker: Node = dungeon.spawn_monster(load("res://data/monsters/skeleton.tres"), north + Vector2i(1, 0))
+	check("a brazier is solid: neither the party nor a monster steps onto it, but sight passes (%s)" % hud.last_message, player.cell == north - Vector2i(1, 0)
+			and hud.last_message == "The brazier is in the way." and not walker._can_enter(north) and not DungeonMap.is_blocked(north)
+			and not get_first_node_in_group("traps").can_set(north).is_empty())
+	walker.free()
+	player.world_click()
+	check("with no flame the coals stay cold (%s)" % hud.last_message, not DungeonMap.brazier_lit[north] and hud.last_message == "The coals are cold.")
+	var torch: Resource = load("res://data/items/torch.tres")
+	party.members[0].hands = [load("res://scripts/item_stack.gd").of(torch, 1), null]
+	await create_timer(0.3).timeout
+	player.world_click()
+	await create_timer(0.2).timeout
+	var light: OmniLight3D = field.braziers[north].light
+	check("a torch in a hand lights it: the flame shows and its light is a sprite light", DungeonMap.brazier_lit[north] and field.braziers[north].flame.visible
+			and light.visible and light.is_in_group("sprite_lights") and absf(light.base_energy - 1.4) < 0.01 and light.omni_range == 7.0)
+	party.members[0].hands = [null, null]
+	await create_timer(0.3).timeout
+	check("and it lights the party's way with nothing in their hands", party.tile_is_lit())
+	player.world_click()
+	check("an empty-handed click snuffs it", not DungeonMap.brazier_lit[north] and hud.last_message == "You snuff the brazier.")
+	cursor.hold(torch)
+	dungeon.set_brazier(north, true)
+	player.world_click()
+	check("with something on the cursor the click puts it down and leaves the fire alone", DungeonMap.brazier_lit[north] and not cursor.is_holding() and dungeon.item_at(north) != null)
+	player.world_click()
+	check("an item lying there is picked up before the brazier is touched", DungeonMap.brazier_lit[north] and cursor.is_holding())
+	cursor.release()
+	dungeon.set_brazier(north, false)
+	# A Fireball: down the row the north brazier stands in.
+	player.restore(Vector2i(12, 25), 3)
+	var mage: Variant = party.members.filter(func(m): return m.class_id() == "mage")[0]
+	mage.mana = float(mage.def.max_mana)
+	mage.cooldown_left = 0.0
+	var fireball: Resource = load("res://data/spells/fireball.tres")
+	mage.hands = [load("res://scripts/item_stack.gd").of(load("res://data/items/spellbook.tres"), 1), null]
+	var cast: bool = party.cast(mage.slot, 0, fireball)
+	await create_timer(2.0).timeout
+	check("a Fireball can be aimed at a dark brazier and lights it", cast and DungeonMap.brazier_lit[north])
+	check("one brazier does not break the ward", not DungeonMap.puzzles_done.has("brazier_ward") and not DungeonMap.open_doors.has(door))
+	dungeon.set_brazier(north, false)
+	dungeon.ignite_braziers_along(Vector2i(10, 26), Vector2i(16, 26))
+	check("a Fireball passing within a tile lights both", DungeonMap.brazier_lit[north] and DungeonMap.brazier_lit[south])
+	await create_timer(1.0).timeout
+	check("both burning break the ward and the door opens", DungeonMap.puzzles_done.has("brazier_ward") and DungeonMap.open_doors.has(door))
+	dungeon.set_brazier(north, false)
+	check("and it stays open when one is snuffed", DungeonMap.puzzle_doors.has("brazier_door"))
+	var thrown: RefCounted = load("res://scripts/item_stack.gd").of(torch, 1)
+	dungeon.set_pile(north, [])
+	dungeon.place_item(north, thrown)
+	dungeon.lights.drop(north, thrown)
+	check("a burning torch landing on its tile lights it", DungeonMap.brazier_lit[north])
+	dungeon.set_pile(north, [])
+	dungeon.set_brazier(north, false)
+	dungeon.oil.add_slick(north + Vector2i(-1, 0))
+	dungeon.oil.ignite(north + Vector2i(-1, 0))
+	check("burning oil beside it lights it", DungeonMap.brazier_lit[north])
+	# A curse zone: it will not light, and one burning goes out.
+	var real_zones: Array = DungeonMap.CURSE_ZONES
+	DungeonMap.CURSE_ZONES = [{"id": "test_brazier", "tiles": [south]}]
+	await create_timer(0.3).timeout
+	check("a brazier a curse zone covers goes out", not DungeonMap.brazier_lit[south])
+	check("and will not light there", not dungeon.ignite_brazier(south) and not DungeonMap.brazier_lit[south])
+	DungeonMap.CURSE_ZONES = real_zones
+	for i in party.members.size():
+		party.members[i].hands = keep[i]
+	get_first_node_in_group("fight_tracker").in_fight = false
+	get_first_node_in_group("banter").reset_timers()
+
+
 ## The monster pacing station: its tuning keys, the pack, and flanking (one monster at a time, only after being held back).
 func _check_pacing(tools: Node, press: Callable, player: Node) -> void:
 	for n in get_nodes_in_group("monsters"):
@@ -592,6 +688,7 @@ func _check_game() -> void:
 	check("N toggles fog without touching the saved setting", tools.fog_on != fog_before and Settings.fog == fog_before)
 	await _check_pacing(tools, press, player)
 	await _check_pen(tools, player)
+	await _check_braziers(tools, player)
 	press.call(KEY_X)
 	press.call(KEY_U)
 	# The ambush: walk onto the trigger.

@@ -191,6 +191,13 @@ func _floor_flames() -> void:
 				_wisp(DungeonMap.cell_to_world(a.cell) + Vector3(0, 0.9, 0))
 				if _sees(a.cell):
 					_announce(DungeonMap.curse_zone_near(a.cell, cfg.sconce_reach), "")
+	for cell in DungeonMap.brazier_lit.keys():  # A burning brazier inside a zone goes out (it needs lighting again afterwards).
+		if DungeonMap.brazier_lit[cell] and blocks_flame(cell):
+			dungeon.set_brazier(cell, false)
+			flames_died += 1
+			_wisp(DungeonMap.cell_to_world(cell) + Vector3(0, 0.5, 0))
+			if _sees(cell):
+				_announce(DungeonMap.curse_zone_at(cell), "")
 	var lights: Node = dungeon.get("lights")
 	if lights != null:
 		for e in lights.burning.duplicate():

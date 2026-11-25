@@ -44,7 +44,7 @@ const MAP := [
 	[1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 2, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1],  # 23
 	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1],  # 24
 	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1],  # 25
-	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 26
+	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 2, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 26
 	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 27
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 28
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 29
@@ -136,8 +136,16 @@ const CORRUPTION := {
 const AREAS := [
 	{"id": "pen", "rect": Rect2i(30, 26, 5, 2)},
 ]
-const BRAZIERS := []
+# The brazier station (T: Braziers): light both and the ward on the closet door east of them breaks.
+const BRAZIERS := [
+	{"cell": Vector2i(15, 25), "group": "ward", "lit": false},
+	{"cell": Vector2i(15, 27), "group": "ward", "lit": false},
+]
 const PUZZLES := [
+	{"id": "brazier_ward", "when": [{"kind": "braziers", "group": "ward", "lit": true}], "then": [
+		{"kind": "open_door", "id": "brazier_door"},
+		{"kind": "message", "text": "The ward on the door breaks."},
+	]},
 	{"id": "pen_seal", "when": [{"kind": "party_in", "area": "pen"}], "then": [
 		{"kind": "seal_area", "area": "pen"},
 		{"kind": "set_flag", "name": "puzzle.pen.sealed"},
@@ -159,6 +167,7 @@ const ARMED_TRAPS := [
 # The puzzle room: the plate and the lever both hold this door open.
 const DOOR_IDS := {
 	Vector2i(11, 23): "puzzle_door",
+	Vector2i(17, 26): "brazier_door",
 }
 
 const PLATES := [
@@ -207,6 +216,7 @@ const ITEMS := [
 	{"cell": Vector2i(26, 2), "def": "res://data/items/mana_potion.tres", "count": 3},
 	{"cell": Vector2i(33, 22), "def": "res://data/items/bear_trap.tres", "count": 2},  # The traps station.
 	{"cell": Vector2i(11, 26), "def": "res://data/items/healing_potion.tres"},
+	{"cell": Vector2i(19, 26), "def": "res://data/items/mana_potion.tres"},  # The warded closet.
 	{"cell": Vector2i(23, 2), "def": "res://data/items/torch.tres"},
 	{"cell": Vector2i(23, 3), "def": "res://data/items/candle.tres"},
 	# A pile right in front of the Item table station (T), for the loot pop-up's "Take all" (right-click it).
@@ -297,8 +307,9 @@ AHEAD"},
 	{"cell": Vector2i(8, 18), "side": 0, "text": "PLATE OPENS THE
 DOOR. SO DOES
 THE LEVER."},
-	{"cell": Vector2i(9, 22), "side": 2, "text": "BRAZIERS
-!NOT BUILT YET"},
+	{"cell": Vector2i(9, 22), "side": 2, "text": "BRAZIERS: LIGHT
+BOTH TO BREAK THE
+WARD ON THE DOOR"},
 	{"cell": Vector2i(11, 27), "side": 2, "text": "ALTAR
 !NOT BUILT YET"},
 	{"cell": Vector2i(19, 18), "side": 0, "text": "CAMPFIRE SPOT"},
@@ -361,4 +372,5 @@ const STATIONS := [
 	{"name": "Held monster", "cell": Vector2i(28, 36), "facing": 2},
 	{"name": "Light and dark", "cell": Vector2i(12, 33), "facing": 2},
 	{"name": "Sealed pen", "cell": Vector2i(28, 26), "facing": 3},
+	{"name": "Braziers", "cell": Vector2i(13, 26), "facing": 3},
 ]

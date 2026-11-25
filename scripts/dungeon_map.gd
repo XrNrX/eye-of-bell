@@ -407,6 +407,12 @@ static func is_campfire(cell: Vector2i) -> bool:
 	return false
 
 
+## Is there a brazier on this tile, burning or not? Like a campfire, nobody walks through it, but sight and missiles pass (so it is
+## not part of is_blocked).
+static func is_brazier(cell: Vector2i) -> bool:
+	return brazier_lit.has(cell)
+
+
 ## Is an ambush trigger tile within `reach` tiles of this one (a square)? The party may not make camp beside one. (AMBUSHES is the test
 ## room's stand-in; the real ambush system will list its triggers the same way.)
 static func ambush_trigger_near(cell: Vector2i, reach: int) -> bool:

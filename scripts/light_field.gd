@@ -25,6 +25,7 @@ func _ready() -> void:
 ## A lit light was just put on this tile (dungeon.place_item has already put it in the pile): keep it burning there.
 func drop(cell: Vector2i, stack: RefCounted) -> void:
 	var dungeon := get_parent()
+	dungeon.ignite_brazier(cell)  # A torch landing in a brazier's tile lights it (refused in a curse zone, like the torch itself).
 	if dungeon.light_blocked(cell):  # A curse zone (or within 2 tiles of one): it fizzles where it lands, and can be picked up cold.
 		stack.burning = false
 		get_tree().call_group("curse_zones", "flame_died", cell)

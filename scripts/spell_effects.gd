@@ -348,6 +348,7 @@ func _status_scale(monster: Node3D) -> float:
 
 ## The Fireball. If its flipbooks are missing the old square-orb version plays instead.
 func fireball(from_cell: Vector2i, to_cell: Vector2i) -> void:
+	_flight_from = from_cell
 	var proj := _sheet("fireball", "projectile")
 	if proj.is_empty():
 		_fireball_basic(from_cell, to_cell)
@@ -401,6 +402,16 @@ func _cast_flash(from_cell: Vector2i, forward: Vector3) -> void:
 
 ## The fireball bursts: a flipbook explosion with a light that spikes with it and fades over about half a second, a
 ## spray of pixel embers and sparks, a boom and a screen shake, then the aftermath on the floor and walls.
+## The braziers a Fireball lights: those within a tile of the way it flew and of where it burst.
+func _light_braziers(cell: Vector2i) -> void:
+	get_tree().call_group("dungeon", "ignite_braziers_along", cell if _flight_from == NO_FLIGHT else _flight_from, cell)
+	_flight_from = NO_FLIGHT
+
+
+const NO_FLIGHT := Vector2i(-999, -999)
+var _flight_from := NO_FLIGHT  # Where the Fireball now in the air was cast from.
+
+
 func explosion(cell: Vector2i) -> void:
 	var sheet := _sheet("fireball", "impact")
 	if sheet.is_empty():
@@ -410,6 +421,7 @@ func explosion(cell: Vector2i) -> void:
 	_ensure_pixels()
 	live += 1
 	var at := _cell_pos(cell, c.bolt_height)
+	_light_braziers(cell)
 	get_tree().call_group("dungeon", "ignite_near", cell, 1)  # Unlit sconces on the walls beside the blast catch.
 	get_tree().call_group("oil", "ignite_near", cell, 1)      # ...and so does any oil on the floor there.
 	get_tree().call_group("audio", "play", "explosion")
@@ -557,6 +569,7 @@ func _explosion_basic(cell: Vector2i) -> void:
 	var c := Config.get_config()
 	live += 1
 	var at := _cell_pos(cell, c.bolt_height)
+	_light_braziers(cell)
 	get_tree().call_group("dungeon", "ignite_near", cell, 1)
 	get_tree().call_group("oil", "ignite_near", cell, 1)
 	get_tree().call_group("audio", "play", "explosion")

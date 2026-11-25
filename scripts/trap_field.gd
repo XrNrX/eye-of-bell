@@ -47,7 +47,7 @@ func place_level_traps() -> void:
 ## Why a trap can't be set on this tile, or "" if it can: only an empty floor tile (not a wall or door, the stairs, a pressure
 ## plate, a monster, a pile of items or another trap).
 func can_set(cell: Vector2i) -> String:
-	if DungeonMap.is_wall(cell) or DungeonMap.is_door(cell):
+	if DungeonMap.is_wall(cell) or DungeonMap.is_door(cell) or DungeonMap.is_brazier(cell):
 		return "There's no room for a trap there."
 	if DungeonMap.is_stairs(cell) or DungeonMap.PLATES.any(func(p): return p.cell == cell):
 		return "The trap won't sit flat there."

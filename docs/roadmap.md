@@ -70,7 +70,7 @@ Generate the seals and reliquary following docs/art_style.md; log it.
 Run the tests.
 ```
 
-- [ ] 6. 7e.3 (Braziers)
+- [x] 6. 7e.3 (Braziers)
 
 **7e.3 prompt (Braziers)**
 
@@ -867,7 +867,7 @@ Updated 18 Nov from docs/design/expansion\_design.md (section 3 "7e" and section
 
 - [x] 7e.1 Puzzle framework (conditions and effects as data)
 - [x] 7e.2 Purge the room: the curse loosens its grip
-- [ ] 7e.3 Braziers that push back the curse
+- [x] 7e.3 Braziers that push back the curse
 - [ ] 7e.4 Paths that only appear in darkness
 - [ ] 7e.5 Offering altars
 - [ ] 7e.6 Weighted pressure plates

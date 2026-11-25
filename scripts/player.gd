@@ -85,6 +85,8 @@ func world_click(shift := false) -> void:
 		return
 	if _click_campfire(front):
 		return
+	if _click_brazier(front):
+		return
 	_click_item(shift)
 
 
@@ -171,6 +173,31 @@ func _light_sconce() -> bool:
 			_say("The air here hates fire.")
 		elif dungeon.light_sconce(key):
 			_say("%s lights the sconce." % holder.name())
+	return true
+
+
+## A brazier on the tile in front, clicked with an empty hand (and nothing lying there to pick up): a burning one is snuffed; a dark
+## one is lit from a torch or candle burning in a living hero's hand. Returns whether there was a brazier to answer.
+func _click_brazier(front: Vector2i) -> bool:
+	if dungeon == null or party == null or cursor == null or cursor.is_holding() or not DungeonMap.brazier_lit.has(front):
+		return false
+	if DungeonMap.is_blocked(front) or DungeonMap.is_occupied(front) or dungeon.item_at(front) != null:
+		return false
+	if DungeonMap.brazier_lit[front]:
+		dungeon.set_brazier(front, false)
+		_cue("sizzle")
+		_say("You snuff the brazier.")
+		return true
+	var holder = null
+	for m in party.members:
+		if holder == null and m.is_alive() and m.hands.any(func(h): return h != null and h.def.is_light() and not party.snuffed(h)):
+			holder = m
+	if dungeon.flame_blocked(front):
+		_say("The air here hates fire.")
+	elif holder == null:
+		_say("The coals are cold.")
+	elif dungeon.ignite_brazier(front):
+		_say("%s lights the brazier." % holder.name())
 	return true
 
 
@@ -360,6 +387,12 @@ func _try_move(dir: Vector2i) -> void:
 	if DungeonMap.is_sealed(target):  # A sealed door still open for whoever stood in it: nobody new steps in.
 		_cue("bump")
 		_say("The seal holds the door.")
+		return
+	if DungeonMap.is_brazier(target):
+		_cue("bump")
+		if Time.get_ticks_msec() - _fire_msg_at > 1500:
+			_fire_msg_at = Time.get_ticks_msec()
+			_say("The brazier is in the way.")
 		return
 	if DungeonMap.is_campfire(target):
 		_cue("bump")

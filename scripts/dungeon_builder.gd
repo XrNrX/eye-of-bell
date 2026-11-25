@@ -18,6 +18,7 @@ const ItemStack := preload("res://scripts/item_stack.gd")
 const CorruptWall := preload("res://scripts/corrupt_wall.gd")
 const Puzzles := preload("res://scripts/puzzles.gd")
 const SealShow := preload("res://scripts/seal_show.gd")
+const BrazierField := preload("res://scripts/brazier_field.gd")
 const SaveData := preload("res://scripts/save_data.gd")
 const LightConfig := preload("res://scripts/light_config.gd")
 const CurseZones := preload("res://scripts/curse_zones.gd")
@@ -104,6 +105,7 @@ var lever_on := {}    # Vector3i (x, z, side) -> true if switched on
 
 ## False while the level is being built or a save is being put on it: no puzzle is checked and no puzzle news is sent.
 var settled := false
+var braziers: Node3D   # The braziers' bowls, flames and lights (brazier_field.gd, "Braziers").
 var seal_show: Node3D  # What seals and reliquaries look like (seal_show.gd, "SealShow").
 const RELIQUARY_ITEM_HEIGHT := 0.55  # Items on a reliquary's tile rest at its open mouth.
 ## DungeonMap.level_serial when this dungeon was built: a dungeon left behind by a change of level checks no puzzles.
@@ -204,6 +206,9 @@ func _ready() -> void:
 	curse = CurseZones.new()
 	curse.name = "CurseZones"
 	add_child(curse)
+	braziers = BrazierField.new()
+	braziers.name = "Braziers"
+	add_child(braziers)
 	seal_show = SealShow.new()
 	seal_show.name = "SealShow"
 	add_child(seal_show)
@@ -282,7 +287,42 @@ func _sync_seals() -> void:
 	seal_show.sync(settled)
 
 
-## Light or snuff a brazier (DungeonMap.BRAZIERS). Returns whether anything changed. (The prop and the ways to light it are 7e.3.)
+## Fire touches the brazier on this tile (a flame in a hand, a thrown torch, a Fireball, burning oil): it catches unless there is
+## none, it burns already, or a curse zone's air will not have it. Returns whether it caught.
+func ignite_brazier(cell: Vector2i) -> bool:
+	if not DungeonMap.brazier_lit.has(cell) or DungeonMap.brazier_lit[cell] or flame_blocked(cell):
+		return false
+	set_brazier(cell, true)
+	get_tree().call_group("audio", "play", "fireball", -14.0, 1.5)  # (A placeholder whoosh: no lighting sound exists yet.)
+	return true
+
+
+## A Fireball flew from one tile to another and burst there: every brazier within a tile of its path (not counting the caster's own
+## tile) or of the blast catches. Returns how many did.
+func ignite_braziers_along(from_cell: Vector2i, to_cell: Vector2i) -> int:
+	var step := (to_cell - from_cell).sign()
+	var path: Array[Vector2i] = [to_cell]
+	var c := from_cell + step
+	while c != to_cell and step != Vector2i.ZERO and path.size() <= 16:
+		path.append(c)
+		c += step
+	var count := 0
+	for brazier in DungeonMap.brazier_lit.keys():
+		for at in path:
+			var d: Vector2i = (brazier - at).abs()
+			if maxi(d.x, d.y) <= 1:
+				count += 1 if ignite_brazier(brazier) else 0
+				break
+	return count
+
+
+## Oil burning on this tile: a brazier on it or on one of the four beside it catches.
+func ignite_braziers_beside(cell: Vector2i) -> void:
+	for d in [Vector2i.ZERO, Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0)]:
+		ignite_brazier(cell + d)
+
+
+## Light or snuff a brazier (DungeonMap.BRAZIERS). Returns whether anything changed.
 func set_brazier(cell: Vector2i, lit: bool) -> bool:
 	if not DungeonMap.brazier_lit.has(cell) or DungeonMap.brazier_lit[cell] == lit:
 		return false
