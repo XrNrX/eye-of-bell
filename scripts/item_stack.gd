@@ -19,6 +19,8 @@ var origin := {}
 var burn_left := -1.0
 ## A light lying lit on a floor tile (it slipped from a hand): light_field.gd keeps it burning there until it is picked up.
 var burning := false
+## A torch taken out of a wall sconce (Dungeon.take_sconce_torch). With a Fireball, the only flame that lights a brazier. Saved.
+var from_wall := false
 
 
 static func of(item_def: Resource, n := 1) -> RefCounted:
@@ -64,12 +66,18 @@ func merge_from(other: RefCounted) -> int:
 	return moved
 
 
+## A new stack of `n` of these, with the light's time and where it came from (not `origin`: that is for a piece lying thrown).
+func copy(n: int) -> RefCounted:
+	var s := of(def, n)
+	s.burn_left = burn_left
+	s.from_wall = from_wall
+	return s
+
+
 ## Split one item off into a new stack of 1. The caller empties its slot if count hits 0.
 func take_one() -> RefCounted:
 	count -= 1
-	var one := of(def, 1)
-	one.burn_left = burn_left  # A used torch keeps the time it has left when it is thrown.
-	return one
+	return copy(1)  # A used torch keeps the time it has left (and its wall mark) when it is thrown.
 
 
 func label() -> String:

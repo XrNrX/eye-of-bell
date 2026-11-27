@@ -613,7 +613,7 @@ func _puzzle_list() -> String:
 		rows.append("")
 		rows.append("%s  %s" % [str(puzzle.id).to_upper(), "SOLVED" if DungeonMap.puzzles_done.has(puzzle.id) else "OPEN"])
 		for condition in puzzle.when:
-			var what := str(condition.get("area", condition.get("group", condition.get("name", condition.get("cell", "")))))
+			var what := str(condition.get("area", condition.get("group", condition.get("name", condition.get("id", condition.get("cell", ""))))))
 			rows.append(" %s %s %s" % ["+" if Puzzles.met(dungeon, condition, puzzle) else "-", str(condition.kind).to_upper(), what.to_upper()])
 	return "\n".join(rows)
 

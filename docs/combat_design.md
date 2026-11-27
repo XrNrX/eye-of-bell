@@ -294,10 +294,14 @@ behind, so a lit sprite in front of a torch-bearing party came out a silhouette 
   tile, so a party in a hurry burns torches and a careful one walks by candle. The fire is a nudge (a slime backs off, it doesn't run).
 - **Not built yet:** wall sconces, curse zones that snuff flames, throwing torches, oil, monsters that avoid fire (roadmap 7l.2-7l.6).
 - **Braziers** (7e.3): an iron bowl on a floor tile, dark or burning. **Solid:** neither the party nor a monster can step onto it, but sight and missiles pass; a burning one is a light of energy 1.4, range 7,
-  until snuffed. **Lit by:** a click on the tile in front with an empty cursor while a living hero holds a burning torch or candle, a
-  Fireball aimed at it or passing or bursting within a tile, a torch thrown or dropped onto its tile, or burning oil on or beside it.
+  until snuffed. **Lit only by** a torch taken from a wall sconce, held burning in a living hero's hand (a click on the tile in front with an empty
+  cursor), or a Fireball aimed at it or passing or bursting within a tile. The party's own torches and candles, a thrown torch and
+  burning oil do not light it.
   **Snuffed by** an empty-handed click (an item lying on the tile is picked up first). It will not light in a curse zone, and one a zone
   covers goes out. Saved.
+- **Darkness runes** (7e.4): a ring of runes on a wall that shows only while no light reaches the floor tile in front of it beyond the
+  dark's own: no held torch or candle in reach, no lit sconce or brazier, no spell in flight. It comes in over a second. Once fully
+  shown, a click or F opens the wall, for good. Saved.
 
 ## Oil and fire
 

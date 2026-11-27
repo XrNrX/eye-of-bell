@@ -17,11 +17,7 @@ var cfg: Resource = LightConfig.get_config()
 
 func _process(_delta: float) -> void:
 	var dungeon := get_parent()
-	var lights := []
-	for l in get_tree().get_nodes_in_group("sprite_lights"):
-		if l is OmniLight3D and l.is_visible_in_tree() and l.light_energy > 0.0:
-			var at: Vector3 = l.global_position
-			lights.append({"pos": at, "cell": cell_of(at), "range": l.omni_range, "att": l.omni_attenuation, "colour": l.light_color * l.light_energy})
+	var lights := gather_lights()
 	for m in get_tree().get_nodes_in_group("monsters"):
 		if m.sprite != null:
 			m.set_light(light_at(m.sprite.global_position, m.cell, lights))
@@ -44,6 +40,16 @@ func _process(_delta: float) -> void:
 	for key in dungeon.levers:
 		var lever: Node3D = dungeon.levers[key]
 		lever.modulate = light_at(lever.global_position, Vector2i(key.x, key.y), lights)
+
+
+## Every light that is shining now, as light_at wants them.
+func gather_lights() -> Array:
+	var lights := []
+	for l in get_tree().get_nodes_in_group("sprite_lights"):
+		if l is OmniLight3D and l.is_visible_in_tree() and l.light_energy > 0.0:
+			var at: Vector3 = l.global_position
+			lights.append({"pos": at, "cell": cell_of(at), "range": l.omni_range, "att": l.omni_attenuation, "colour": l.light_color * l.light_energy})
+	return lights
 
 
 ## The tint for a sprite at `pos` standing on `cell`: the cold floor plus every light that reaches it, each channel at most 1.

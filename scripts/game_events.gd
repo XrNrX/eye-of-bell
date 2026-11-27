@@ -54,6 +54,8 @@ signal brazier_changed(cell: Vector2i, lit: bool)
 signal pile_changed(cell: Vector2i)
 ## The party or a monster stepped onto or off a pressure plate (Dungeon.plate_held).
 signal plate_changed(cell: Vector2i, held: bool)
+## The party touched darkness runes and their wall began to open (Dungeon.read_runes; DungeonMap.RUNES id).
+signal runes_read(id: String)
 ## The party took the stairs.
 signal level_completed
 ## The party stepped into a curse zone (DungeonMap.CURSE_ZONES id) / out of it. Not sent while a save loads.

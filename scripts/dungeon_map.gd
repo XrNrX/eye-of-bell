@@ -43,6 +43,7 @@ static var CORRUPTION: Dictionary = Floor1.CORRUPTION.duplicate(true)
 static var PUZZLES: Array = Floor1.PUZZLES.duplicate(true)
 static var AREAS: Array = Floor1.AREAS.duplicate(true)       # Named parts of the level (puzzles and seals use them).
 static var BRAZIERS: Array = Floor1.BRAZIERS.duplicate(true)
+static var RUNES: Array = Floor1.RUNES.duplicate(true)       # Darkness runes (rune_field.gd).
 static var DOOR_IDS: Dictionary = Floor1.DOOR_IDS.duplicate(true)
 static var PLATES: Array = Floor1.PLATES.duplicate(true)
 static var STRUCTURES: Array = Floor1.STRUCTURES.duplicate(true)
@@ -68,7 +69,7 @@ const EDITOR_PATH := "res://scripts/debug/dungeon_editor.gd"  # F10: the dungeon
 const EDITOR_PLAY_ID := "editor:play"  # The level id of a level built from the editor's paper (E.4): it cannot be saved.
 const TOOLS_PATH := "res://scripts/debug/test_room_tools.gd"  # F12, the debug keys and the help overlay (debug builds only).
 const LEVEL_FIELDS := ["MAP", "START_TILE", "START_FACING", "MENU_VIEW_CELL", "TORCHES", "CORRUPTION", "PUZZLES", "DOOR_IDS", "PLATES",
-		"STRUCTURES", "LEVERS", "ITEMS", "MONSTERS", "SIGNS", "ARMED_TRAPS", "AMBUSHES", "STATIONS", "CURSE_ZONES", "AREAS", "BRAZIERS"]
+		"STRUCTURES", "LEVERS", "ITEMS", "MONSTERS", "SIGNS", "ARMED_TRAPS", "AMBUSHES", "STATIONS", "CURSE_ZONES", "AREAS", "BRAZIERS", "RUNES"]
 
 
 ## Add the dungeon editor to the tree root, once (it lives there so it survives a Build changing the scene). Debug builds only: quiet if
@@ -172,6 +173,8 @@ static func _set_field(f: String, v) -> void:
 			AREAS = v
 		"BRAZIERS":
 			BRAZIERS = v
+		"RUNES":
+			RUNES = v
 
 
 static func _empty_like(v):
@@ -196,6 +199,8 @@ static var seals := {}           # Sealed areas: area id -> {owner -> is it save
 static var sealed_doors := {}    # The doors those seals hold shut (cell -> true), worked out from `seals`.
 static var reliquaries := {}     # Reliquaries a puzzle has raised (cell -> true); saved.
 static var brazier_lit := {}     # BRAZIERS: cell -> is it burning? Changed by Dungeon.set_brazier; saved.
+static var runes_read := {}      # RUNES the party has read (id -> true); saved. Changed by Dungeon.read_runes.
+static var runes_open := {}      # Their walls, once the show of opening is over (cell -> true).
 ## Sconces (TORCHES): what each holds now, keyed by Vector3i(x, z, side): SCONCE_LIT, SCONCE_UNLIT or SCONCE_EMPTY. Filled from TORCHES by the
 ## builder (`init_sconces`), cleared by reset_run, saved. `sconce_seconds` is the burn time of the torch in each one that holds a
 ## torch (a torch costs nothing while it hangs there); `sconce_seen` the ones the party has seen (the map shows those).
@@ -333,6 +338,8 @@ static func reset_run() -> void:
 	seals.clear()
 	sealed_doors.clear()
 	reliquaries.clear()
+	runes_read.clear()
+	runes_open.clear()
 	brazier_lit.clear()
 	for brazier in BRAZIERS:
 		brazier_lit[brazier.cell] = bool(brazier.get("lit", false))
@@ -405,6 +412,15 @@ static func is_campfire(cell: Vector2i) -> bool:
 		if entry.get("kind", "") == "campfire" and entry.cell == cell:
 			return true
 	return false
+
+
+## The wall a RUNES entry is written on: the one on `side` (0 north, 1 west, 2 south, 3 east) of the tile in front of it.
+static func rune_wall(entry: Dictionary) -> Vector2i:
+	return entry.cell + [Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0)][int(entry.side)]
+
+
+static func is_rune_wall(cell: Vector2i) -> bool:
+	return RUNES.any(func(e): return rune_wall(e) == cell)
 
 
 ## Is there a brazier on this tile, burning or not? Like a campfire, nobody walks through it, but sight and missiles pass (so it is
@@ -484,6 +500,8 @@ static func is_wall(cell: Vector2i) -> bool:
 		return true
 	if cell.x < 0 or cell.x >= MAP[cell.y].size():
 		return true
+	if runes_open.has(cell):  # A rune wall that has opened is floor.
+		return false
 	var tile: int = MAP[cell.y][cell.x]
 	return tile == 1 or (tile == 6 and not broken_walls.has(cell)) or (tile == 7 and (not purified.has(cell) or purify_pending.has(cell)))
 

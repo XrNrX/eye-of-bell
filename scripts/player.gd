@@ -67,6 +67,8 @@ func _find_singletons() -> void:
 ## it). Shift+click sends a floor item to the party instead of the cursor.
 func world_click(shift := false) -> void:
 	var front := cell + DIRS[facing]
+	if _touch_runes():
+		return
 	if _click_sconce():
 		return
 	if DungeonMap.is_sealed(front) and not DungeonMap.open_doors.has(front):
@@ -176,8 +178,16 @@ func _light_sconce() -> bool:
 	return true
 
 
+## Runes showing in the dark on the wall in front: touching them (a click or F) opens it. Returns whether there were any.
+func _touch_runes() -> bool:
+	if dungeon == null or not dungeon.read_runes(cell, facing):
+		return false
+	_say("The stone gives way.")
+	return true
+
+
 ## A brazier on the tile in front, clicked with an empty hand (and nothing lying there to pick up): a burning one is snuffed; a dark
-## one is lit from a torch or candle burning in a living hero's hand. Returns whether there was a brazier to answer.
+## one is lit only by a torch taken from a wall, burning in a living hero's hand. Returns whether there was a brazier to answer.
 func _click_brazier(front: Vector2i) -> bool:
 	if dungeon == null or party == null or cursor == null or cursor.is_holding() or not DungeonMap.brazier_lit.has(front):
 		return false
@@ -190,12 +200,12 @@ func _click_brazier(front: Vector2i) -> bool:
 		return true
 	var holder = null
 	for m in party.members:
-		if holder == null and m.is_alive() and m.hands.any(func(h): return h != null and h.def.is_light() and not party.snuffed(h)):
+		if holder == null and m.is_alive() and m.hands.any(func(h): return h != null and h.def.is_light() and h.from_wall and not party.snuffed(h)):
 			holder = m
 	if dungeon.flame_blocked(front):
 		_say("The air here hates fire.")
 	elif holder == null:
-		_say("The coals are cold.")
+		_say("It needs a torch from the wall.")
 	elif dungeon.ignite_brazier(front):
 		_say("%s lights the brazier." % holder.name())
 	return true
@@ -463,6 +473,8 @@ func _interact() -> void:
 	if not DungeonMap.lever_at(cell, facing).is_empty():
 		get_tree().call_group("dungeon", "pull_lever", cell, facing)
 		_say("You pull the lever.")
+		return
+	if _touch_runes():
 		return
 
 	var front := cell + DIRS[facing]

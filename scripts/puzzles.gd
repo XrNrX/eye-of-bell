@@ -97,6 +97,8 @@ static func met(dungeon: Node, condition: Dictionary, puzzle := {}, event := "",
 			return _item_on(dungeon, condition)
 		"plate_held":
 			return dungeon.plate_held(condition.cell)
+		"runes_read":
+			return DungeonMap.runes_read.has(condition.id)
 		"party_in":
 			return DungeonMap.area_has(condition.area, DungeonMap.player_cell)
 	push_warning("puzzles: unknown condition kind '%s'" % condition.kind)

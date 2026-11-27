@@ -54,6 +54,8 @@ func add_face(builder: Node3D, cell: Vector2i, side: int) -> void:
 	builder._add_mesh(_quad(Vector2(s, h), texture, false), base, rot)
 	if cfg.grime_enabled:
 		_overlay(builder, _quad(Vector2(s, h), cfg.grime_texture, true), base + out * cfg.grime_offset, rot)
+	if DungeonMap.is_rune_wall(cell):
+		return  # Bare stone: the runes are its only mark, and a niche's candle would hide them for ever.
 	if cfg.alcove_texture != "" and rng.randf() < cfg.alcove_chance:
 		add_alcove(builder, cell + dir, (side + 2) % 4)  # From the open tile's side: the wall faces back at it.
 		return  # The niche is the feature of this face.

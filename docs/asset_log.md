@@ -315,3 +315,6 @@ None of these were made with the VFX suite, so they should be replaced.
 
 ## 7e.3 brazier (25 Nov 2026, 2 generations)
 - Approved by the user and in the game (`tools/art/gen_brazier.py` builds `art/brazier/`). The flames: the VFX tool (free), 'Brazier flame', effect `a67a6aa0-232c-48a5-ac16-6193db91b593`, 48x56, 8 frames at 10 fps, torch and rust ramps (`tools/art/pieces/brazier/flame.png` + `.json`). `tools/art/pieces/brazier/brazier.png` (64x80, unlit iron bowl on bent legs, a skull on the rim): `create_image_pixflux` seed 7401 (`brazier_a.png`, job 72189fda, came with a floor slab), then `edit_image_pixen` seed 7402 (job 1e561bc7) to remove the slab.
+
+## 7e.4 darkness runes (27 Nov 2026, 0 generations: the VFX tool is free)
+- `art/runes/rune_sheet.png` (+ `.json`; 12 frames of 160x160, 8 fps, looping) and `rune_fade_sheet.png` (3 frames): the VFX tool's 'Darkness runes' (effect `6e1baa55-c90a-4d06-8d76-9c0caf753425`: a ring of runes round three linked circles, no start or end, curse greens), atlas in `tools/art/pieces/runes/runes.png` + `.json`; `tools/art/gen_runes.py` makes the fade frames by moving the greens to darker palette steps. The opening reuses the corrupted wall's rot and ash.

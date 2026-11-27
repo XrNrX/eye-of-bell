@@ -25,6 +25,8 @@ static func stack_to_data(stack):
 		d["burn"] = stack.burn_left
 	if stack.burning:
 		d["burning"] = true      # Lying lit on the floor (light_field.gd lights it again).
+	if stack.from_wall:
+		d["wall"] = true         # Taken from a wall sconce: it can light a brazier.
 	return d
 
 
@@ -38,6 +40,7 @@ static func data_to_stack(data) -> RefCounted:
 		stack.origin = {"hero": int(o.hero), "where": str(o.where), "index": int(o.index)}
 	stack.burn_left = float(data.get("burn", -1.0))
 	stack.burning = bool(data.get("burning", false))
+	stack.from_wall = bool(data.get("wall", false))
 	return stack
 
 

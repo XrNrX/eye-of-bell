@@ -1269,9 +1269,7 @@ func pack_into(m: Member, stack: RefCounted) -> int:
 	var i: int = m.backpack.find(null)
 	if i < 0:
 		return moved
-	var put := ItemStack.of(stack.def, stack.count)
-	put.burn_left = stack.burn_left
-	m.backpack[i] = put
+	m.backpack[i] = stack.copy(stack.count)
 	moved += stack.count
 	stack.count = 0
 	return moved
@@ -1619,7 +1617,7 @@ func stow(stack: RefCounted) -> String:
 				var here = m.quick[i]
 				var moved := 0
 				if here == null:
-					m.quick[i] = ItemStack.of(stack.def, stack.count)
+					m.quick[i] = stack.copy(stack.count)
 					moved = stack.count
 					stack.count = 0
 				elif here.can_stack_with(stack) and here.room() > 0:
@@ -1646,7 +1644,7 @@ func stow_in_backpack(stack: RefCounted) -> String:
 		if not m.is_alive() or stack.count <= 0:
 			continue
 		var before: int = stack.count
-		var copy := ItemStack.of(stack.def, stack.count)
+		var copy: RefCounted = stack.copy(stack.count)
 		if add_to_backpack(m.slot, copy):
 			stack.count = 0
 		else:

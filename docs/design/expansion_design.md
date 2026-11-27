@@ -282,9 +282,9 @@ cannot walk away from.
   held. New effects: raise a reliquary, clear a curse zone, seal and unseal an area's doors.
 - **Purge room.** Entering the area seals its exits with green curse seals. When the last monster inside dies the
   seals crumble and a reliquary grinds up out of the floor. No jingle.
-- **Braziers** are props that do not block a tile. Lit by: clicking with a lit torch or candle in hand, a Fireball
-  that passes or lands within a tile, a thrown torch landing on its tile, or burning oil beside it. Snuffed by an
-  empty-handed click. A lit brazier lights 7 units and cannot be lit inside a curse zone.
+- **Braziers** are solid iron bowls. Lit only by a torch taken from a wall sconce (held in a hand, clicked onto it) or by a
+  Fireball that passes or lands within a tile (changed on 27 Nov: a candle, the party's own torch, a thrown torch and oil no
+  longer light one). Snuffed by an empty-handed click. A lit brazier lights 7 units and cannot be lit inside a curse zone.
 - **Darkness runes** are on a wall face. They show only when the light reaching the tile in front of them is no
   more than the ambient: no held light, no lit sconce or brazier in reach, no spell mid-flight. Clicking the wall
   while they show opens it.
@@ -302,7 +302,7 @@ cannot walk away from.
   (`light_at`). Use it; do not write a second light query.
 - 7e.4's puzzle (snuff the braziers) breaks if the player simply holds a torch. The runes must check the party's
   light too, and a wall sign should hint at it.
-- 7e.7 wants a brazier door "Fireball can solve early". Good, and oil and a thrown torch should solve it too.
+- 7e.7 wants a brazier door "Fireball can solve early". Good, a torch from a wall solves it too (oil and thrown torches do not, since 27 Nov).
 
 ### 7g. Legendaries
 
@@ -680,7 +680,7 @@ weapons are. Act three is the Warden, and after him the south-west, which most p
 | 15 | Room 2 after | The bow, arrows, a torch. The lever for the north gate. | Reward |
 | 16 | Room 3 by the west door | A guard and an acid slime among the weapons: long sword, mace, war hammer, a candle. | Fight, big reward |
 | 17 | Room 7 | A skeleton and an acid slime. Key two. Two cold braziers in the corners (18,3) and (20,3). | Fight |
-| 18 | Closet door (18,2) | Warded until both braziers burn. Torch, candle, Fireball, oil or a thrown torch. Inside: three potions, two oil, bedroll. | **Puzzle one**, reward |
+| 18 | Closet door (18,2) | Warded until both braziers burn. A wall torch or a Fireball. Inside: three potions, two oil, bedroll. | **Puzzle one**, reward |
 | 19 | Nook (16,5) | **Camp spot**, two doors to shut. Remains 3: a candle and Bellius's note. | **Relief.** Level 2 or 3. |
 | 20 | Thick corrupted wall (16,4) | Two Blesses. Behind it: **Grudge**. The north gate unlatches (the puzzle that exists today). | Secret, legendary |
 | 21 | Back west: the cracked wall (2,6) | The war hammer or a Fireball. The closet behind: the safest camp on the floor, and a Scroll of Resurrection. | Secret |

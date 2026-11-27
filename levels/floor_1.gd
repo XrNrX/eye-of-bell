@@ -100,6 +100,7 @@ const CORRUPTION := {
 #               {"kind": "item_on_altar", "cell": Vector2i, "def": path | "tag": String}   such an item lies on that tile
 #               {"kind": "plate_held", "cell": Vector2i}   the party or a monster is on that tile
 #               {"kind": "party_in", "area": String}      the party is in that AREAS area
+#               {"kind": "runes_read", "id": String}      those darkness runes (RUNES) have been touched
 #   (monsters_dead's "area" may also be an AREAS id; it counts who is in the area now.)
 #   Puzzles listen to the event bus and are re-checked on ANY event (scripts/puzzles.gd), so a condition needs no call site.
 #   A condition that needs memory keeps it in the run flags (DungeonMap.flags, saved), "puzzle.<id>.<what>": lever_order keeps
@@ -118,6 +119,9 @@ const CORRUPTION := {
 # do not count). BRAZIERS: {"cell": Vector2i, "group": String, "lit": bool (how it starts)}.
 const AREAS := []
 const BRAZIERS := []
+# Darkness runes: {"id": String, "cell": the floor tile in front, "side": 0 north, 1 west, 2 south, 3 east}. The wall on that side
+# (a plain wall tile) shows them while no light reaches the tile; touched, it opens.
+const RUNES := []
 
 const PUZZLES := [
 	{"id": "nook_blessing", "when": [{"kind": "wall_purified", "cell": Vector2i(16, 4)}], "then": [

@@ -50,12 +50,12 @@ const MAP := [
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 29
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 30
 	[1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 31
-	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 32
-	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 33
-	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 34
-	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 35
+	[1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 32
+	[1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 33
+	[1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 34
+	[1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 35
 	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 36
-	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 37
+	[1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 37
 	[1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 38
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1],  # 39
 	[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],  # 40
@@ -140,8 +140,17 @@ const AREAS := [
 const BRAZIERS := [
 	{"cell": Vector2i(15, 25), "group": "ward", "lit": false},
 	{"cell": Vector2i(15, 27), "group": "ward", "lit": false},
+	{"cell": Vector2i(2, 33), "group": "rune_room", "lit": true},    # The rune room: snuff both...
+	{"cell": Vector2i(4, 35), "group": "rune_room", "lit": true},
+]
+# ...and put every light away: runes show on the south wall (T: Runes). Touch them and it opens onto a closet.
+const RUNES := [
+	{"id": "test_runes", "cell": Vector2i(3, 35), "side": 2},
 ]
 const PUZZLES := [
+	{"id": "rune_reading", "when": [{"kind": "runes_read", "id": "test_runes"}], "then": [
+		{"kind": "set_flag", "name": "puzzle.runes.read"},
+	]},
 	{"id": "brazier_ward", "when": [{"kind": "braziers", "group": "ward", "lit": true}], "then": [
 		{"kind": "open_door", "id": "brazier_door"},
 		{"kind": "message", "text": "The ward on the door breaks."},
@@ -217,6 +226,7 @@ const ITEMS := [
 	{"cell": Vector2i(33, 22), "def": "res://data/items/bear_trap.tres", "count": 2},  # The traps station.
 	{"cell": Vector2i(11, 26), "def": "res://data/items/healing_potion.tres"},
 	{"cell": Vector2i(19, 26), "def": "res://data/items/mana_potion.tres"},  # The warded closet.
+	{"cell": Vector2i(3, 37), "def": "res://data/items/healing_potion.tres"},  # Behind the rune wall.
 	{"cell": Vector2i(23, 2), "def": "res://data/items/torch.tres"},
 	{"cell": Vector2i(23, 3), "def": "res://data/items/candle.tres"},
 	# A pile right in front of the Item table station (T), for the loot pop-up's "Take all" (right-click it).
@@ -308,8 +318,8 @@ AHEAD"},
 DOOR. SO DOES
 THE LEVER."},
 	{"cell": Vector2i(9, 22), "side": 2, "text": "BRAZIERS: LIGHT
-BOTH TO BREAK THE
-WARD ON THE DOOR"},
+BOTH WITH FIRE OR
+A WALL TORCH"},
 	{"cell": Vector2i(11, 27), "side": 2, "text": "ALTAR
 !NOT BUILT YET"},
 	{"cell": Vector2i(19, 18), "side": 0, "text": "CAMPFIRE SPOT"},
@@ -325,6 +335,8 @@ LURE ONE ON."},
 	{"cell": Vector2i(28, 27), "side": 3, "text": "SEALED PEN
 STEP IN: IT SEALS
 KILL TO GET OUT"},
+	{"cell": Vector2i(2, 34), "side": 1, "text": "WHAT THE LIGHT
+HIDES."},
 	{"cell": Vector2i(4, 31), "side": 1, "text": "MONSTER PACING
 ; = PACK AHEAD
 O [ ] Y = TUNE"},
@@ -373,4 +385,5 @@ const STATIONS := [
 	{"name": "Light and dark", "cell": Vector2i(12, 33), "facing": 2},
 	{"name": "Sealed pen", "cell": Vector2i(28, 26), "facing": 3},
 	{"name": "Braziers", "cell": Vector2i(13, 26), "facing": 3},
+	{"name": "Runes", "cell": Vector2i(3, 34), "facing": 2},
 ]

@@ -90,7 +90,7 @@ Add braziers, following docs/design/expansion_design.md sections 2 and 3.
 Run the tests.
 ```
 
-- [ ] 7. 7e.4 (Darkness runes)
+- [x] 7. 7e.4 (Darkness runes)
 
 **7e.4 prompt (Paths that only appear in darkness)**
 
@@ -158,6 +158,8 @@ Place the puzzles from docs/design/expansion_design.md section 5.
   (17,20), a guard at (16,21), an acid slime at (18,19). The reliquary
   rises at (17,20) with whatever 7g has put in it (a placeholder scroll
   until then). The plate at (18,21) needs weight 3.
+- Braziers light only from a wall torch or a Fireball: check a sconce
+  with a torch can be reached before the room 7 closet.
 - Room 4: lit braziers at (12,19) and (14,17), runes on the north wall
   (13,16), which opens onto (13,15). A sign: "What the light hides."
 Redo the walk-through check and run the tests.
@@ -868,7 +870,7 @@ Updated 18 Nov from docs/design/expansion\_design.md (section 3 "7e" and section
 - [x] 7e.1 Puzzle framework (conditions and effects as data)
 - [x] 7e.2 Purge the room: the curse loosens its grip
 - [x] 7e.3 Braziers that push back the curse
-- [ ] 7e.4 Paths that only appear in darkness
+- [x] 7e.4 Paths that only appear in darkness
 - [ ] 7e.5 Offering altars
 - [ ] 7e.6 Weighted pressure plates
 - [ ] 7e.7 Place puzzles in the floor 1 map
@@ -976,6 +978,8 @@ Place the puzzles from docs/design/expansion_design.md section 5.
   (17,20), a guard at (16,21), an acid slime at (18,19). The reliquary
   rises at (17,20) with whatever 7g has put in it (a placeholder scroll
   until then). The plate at (18,21) needs weight 3.
+- Braziers light only from a wall torch or a Fireball: check a sconce
+  with a torch can be reached before the room 7 closet.
 - Room 4: lit braziers at (12,19) and (14,17), runes on the north wall
   (13,16), which opens onto (13,15). A sign: "What the light hides."
 Redo the walk-through check and run the tests.

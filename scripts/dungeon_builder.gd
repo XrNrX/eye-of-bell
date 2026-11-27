@@ -19,6 +19,7 @@ const CorruptWall := preload("res://scripts/corrupt_wall.gd")
 const Puzzles := preload("res://scripts/puzzles.gd")
 const SealShow := preload("res://scripts/seal_show.gd")
 const BrazierField := preload("res://scripts/brazier_field.gd")
+const RuneField := preload("res://scripts/rune_field.gd")
 const SaveData := preload("res://scripts/save_data.gd")
 const LightConfig := preload("res://scripts/light_config.gd")
 const CurseZones := preload("res://scripts/curse_zones.gd")
@@ -105,6 +106,8 @@ var lever_on := {}    # Vector3i (x, z, side) -> true if switched on
 
 ## False while the level is being built or a save is being put on it: no puzzle is checked and no puzzle news is sent.
 var settled := false
+var rune_field: Node3D  # The darkness runes (rune_field.gd, "Runes").
+var _rune_faces := {}   # Rune wall cell -> the nodes that draw it: they go when it opens.
 var braziers: Node3D   # The braziers' bowls, flames and lights (brazier_field.gd, "Braziers").
 var seal_show: Node3D  # What seals and reliquaries look like (seal_show.gd, "SealShow").
 const RELIQUARY_ITEM_HEIGHT := 0.55  # Items on a reliquary's tile rest at its open mouth.
@@ -168,6 +171,7 @@ func _ready() -> void:
 			var cell := Vector2i(x, z)
 			var pos := DungeonMap.cell_to_world(cell)
 			if DungeonMap.is_wall(cell):
+				var before := get_child_count()
 				if DungeonMap.is_corrupted(cell):  # Overgrown with the curse: its own block, veins and glow.
 					corrupt[cell] = _add_corrupt_wall(cell)
 				elif DungeonMap.is_destructible(cell):  # The crack is the tell.
@@ -176,6 +180,8 @@ func _ready() -> void:
 					decor.add_faces(self, cell)  # Stone, grime and decals on every face that can be seen.
 				else:
 					_add_mesh(wall_meshes[_wall_variant(cell)], pos + Vector3(0, h / 2.0, 0))
+				if DungeonMap.is_rune_wall(cell):
+					_rune_faces[cell] = get_children().slice(before)
 				continue
 			# Everything that isn't a wall (floor and doors) gets a floor and ceiling.
 			_add_mesh(stairs_mesh if DungeonMap.is_stairs(cell) else floor_mesh, pos)
@@ -206,6 +212,9 @@ func _ready() -> void:
 	curse = CurseZones.new()
 	curse.name = "CurseZones"
 	add_child(curse)
+	rune_field = RuneField.new()
+	rune_field.name = "Runes"
+	add_child(rune_field)
 	braziers = BrazierField.new()
 	braziers.name = "Braziers"
 	add_child(braziers)
@@ -287,8 +296,54 @@ func _sync_seals() -> void:
 	seal_show.sync(settled)
 
 
-## Fire touches the brazier on this tile (a flame in a hand, a thrown torch, a Fireball, burning oil): it catches unless there is
-## none, it burns already, or a curse zone's air will not have it. Returns whether it caught.
+## The id of the runes fully showing on this wall of this tile, "" if none.
+func runes_shown(cell: Vector2i, side: int) -> String:
+	return rune_field.shown(cell, side)
+
+
+## The party touches the runes showing on this wall: they are read, and the wall opens as a purified wall does (black rot, ash, a
+## rumble), staying solid until the show is over. Returns whether there were runes to read.
+func read_runes(cell: Vector2i, side: int) -> bool:
+	var id := runes_shown(cell, side)
+	if id == "":
+		return false
+	_open_runes(id, true)
+	return true
+
+
+func _open_runes(id: String, show: bool) -> void:
+	for entry in DungeonMap.RUNES:
+		if entry.id != id:
+			continue
+		var wall := DungeonMap.rune_wall(entry)
+		DungeonMap.runes_read[id] = true
+		if DungeonMap.runes_open.has(wall):
+			return
+		var clear := func():
+			for node in _rune_faces.get(wall, []):
+				if is_instance_valid(node):
+					node.queue_free()
+			_rune_faces.erase(wall)
+			_open_cell(wall)
+		var finish := func():
+			DungeonMap.runes_open[wall] = true
+			refresh()
+		if show:
+			var rot: Node3D = CorruptWall.new()
+			rot.plain = true  # No veins and no holy light: only the rot, the ash and the rumble.
+			add_child(rot)
+			rot.setup(wall, null, 1)
+			rot.purify(clear, finish)
+			if settled:
+				Events.send(get_tree(), "runes_read", [id])
+		else:  # A loaded save: it is simply open.
+			clear.call()
+			finish.call()
+
+
+## Fire that a brazier will take touches the one on this tile: a Fireball, or a torch from a wall sconce held to it (nothing else:
+## not the party's own torches or candles, not a thrown torch, not burning oil). It catches unless there is none, it burns already,
+## or a curse zone's air will not have it. Returns whether it caught.
 func ignite_brazier(cell: Vector2i) -> bool:
 	if not DungeonMap.brazier_lit.has(cell) or DungeonMap.brazier_lit[cell] or flame_blocked(cell):
 		return false
@@ -314,12 +369,6 @@ func ignite_braziers_along(from_cell: Vector2i, to_cell: Vector2i) -> int:
 				count += 1 if ignite_brazier(brazier) else 0
 				break
 	return count
-
-
-## Oil burning on this tile: a brazier on it or on one of the four beside it catches.
-func ignite_braziers_beside(cell: Vector2i) -> void:
-	for d in [Vector2i.ZERO, Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(1, 0)]:
-		ignite_brazier(cell + d)
 
 
 ## Light or snuff a brazier (DungeonMap.BRAZIERS). Returns whether anything changed.
@@ -458,6 +507,7 @@ func take_sconce_torch(key: Vector3i, torch_def: Resource) -> RefCounted:
 		return null
 	var stack: RefCounted = ItemStack.of(torch_def, 1)
 	stack.burn_left = sconce_time(key)
+	stack.from_wall = true
 	_set_sconce(key, DungeonMap.SCONCE_EMPTY, 0.0)
 	return stack
 
@@ -544,6 +594,7 @@ func save_state() -> Dictionary:
 			"armed_traps": traps.serialize() if traps != null else [],
 			"seals": _saved_seals(),
 			"reliquaries": DungeonMap.reliquaries.keys().map(SaveData.cell_to_data),
+			"runes_read": DungeonMap.runes_read.keys(),
 			"braziers": DungeonMap.brazier_lit.keys().map(func(c): return {"cell": SaveData.cell_to_data(c), "lit": DungeonMap.brazier_lit[c]}),
 			"oil": oil.save_state() if oil != null else {"slicks": [], "burning": []}}
 
@@ -570,7 +621,7 @@ static func validate_state(d) -> String:
 		var oil_problem: String = OilField.validate_state(d.oil)
 		if oil_problem != "":
 			return oil_problem
-	for key in ["broken_walls", "purified_walls", "corruption", "puzzles_done", "puzzle_doors", "armed_traps", "sconces", "seals", "reliquaries", "braziers"]:
+	for key in ["broken_walls", "purified_walls", "corruption", "puzzles_done", "puzzle_doors", "armed_traps", "sconces", "seals", "reliquaries", "braziers", "runes_read"]:
 		var problem: String = SaveData.maybe(d, key, "array", "saved dungeon")
 		if problem != "":
 			return problem
@@ -590,6 +641,8 @@ static func validate_state(d) -> String:
 		problem = SaveData.each(d.get("armed_traps", []), func(t): return "" if t is Dictionary and SaveData.is_cell(t.get("cell")) and t.get("def") is String else "The saved traps are damaged.")
 	if problem == "":
 		problem = SaveData.each(d.get("seals", []), func(e): return "" if e is Dictionary and e.get("area") is String and e.get("owner") is String else "The saved seals are damaged.")
+	if problem == "":
+		problem = SaveData.each(d.get("runes_read", []), func(id): return "" if id is String else "The saved runes are damaged.")
 	if problem == "":
 		problem = SaveData.each(d.get("reliquaries", []), func(c): return "" if SaveData.is_cell(c) else "The saved reliquaries are damaged.")
 	if problem == "":
@@ -636,6 +689,8 @@ func load_state(d: Dictionary) -> void:
 		on[Vector3i(int(l[0]), int(l[1]), int(l[2]))] = true
 	restore_levers(on)
 
+	for id in d.get("runes_read", []):  # (An older save has read none.)
+		_open_runes(str(id), false)
 	DungeonMap.reliquaries.clear()  # (An older save has no seals, reliquaries or braziers.)
 	for c in d.get("reliquaries", []):
 		DungeonMap.reliquaries[SaveData.data_to_cell(c)] = true
@@ -1032,7 +1087,10 @@ func _open_cell(cell: Vector2i) -> void:
 	for side in 4:
 		var near: Vector2i = cell + SIDE_DIRS[side]
 		if DungeonMap.is_wall(near) and not DungeonMap.is_corrupted(near) and not DungeonMap.is_destructible(near):
+			var before := get_child_count()
 			_decor.add_face(self, near, (side + 2) % 4)
+			if _rune_faces.has(near):
+				_rune_faces[near].append_array(get_children().slice(before))
 
 
 ## A Bless is sent into the wall in `cell`. Returns {"ok": false} if it is not a corrupted wall that can be blessed, else

@@ -36,7 +36,7 @@ func _check_data() -> void:
 		var c: Vector2i = todo.pop_back()
 		for d in DIRS:
 			var n: Vector2i = c + d
-			if not seen.has(n) and not DungeonMap.is_wall(n):
+			if not seen.has(n) and (not DungeonMap.is_wall(n) or DungeonMap.is_rune_wall(n)):  # (A rune wall opens.)
 				seen[n] = true
 				todo.append(n)
 	var stations_ok := DungeonMap.STATIONS.size() >= 9
@@ -140,7 +140,7 @@ func _check_pen(tools: Node, player: Node) -> void:
 	get_first_node_in_group("banter").reset_timers()
 
 
-## The braziers: lit from a flame in a hand, snuffed bare-handed, and lit by a Fireball, a thrown torch and burning oil; both
+## The braziers: lit only by a Fireball or a torch taken from a wall, snuffed bare-handed; both
 ## burning break the ward on the closet door; a curse zone refuses them.
 func _check_braziers(tools: Node, player: Node) -> void:
 	var dungeon: Node = get_first_node_in_group("dungeon")
@@ -155,7 +155,7 @@ func _check_braziers(tools: Node, player: Node) -> void:
 	if cursor.is_holding():
 		cursor.release()
 	var field: Node = dungeon.braziers
-	check("two braziers stand dark, each with a bowl, no flame and no light", field.braziers.size() == 2 and field.braziers[north].prop.visible
+	check("two braziers stand dark, each with a bowl, no flame and no light", field.braziers.size() == 4 and field.braziers[north].prop.visible
 			and not field.braziers[north].flame.visible and not field.braziers[north].light.visible and not DungeonMap.brazier_lit[north])
 	var station: Dictionary = DungeonMap.STATIONS.filter(func(s): return s.name == "Braziers")[0]
 	tools._teleport(station)
@@ -173,14 +173,27 @@ func _check_braziers(tools: Node, player: Node) -> void:
 			and not get_first_node_in_group("traps").can_set(north).is_empty())
 	walker.free()
 	player.world_click()
-	check("with no flame the coals stay cold (%s)" % hud.last_message, not DungeonMap.brazier_lit[north] and hud.last_message == "The coals are cold.")
+	var needs := "It needs a torch from the wall."
+	check("with no flame the coals stay cold (%s)" % hud.last_message, not DungeonMap.brazier_lit[north] and hud.last_message == needs)
 	var torch: Resource = load("res://data/items/torch.tres")
-	party.members[0].hands = [load("res://scripts/item_stack.gd").of(torch, 1), null]
+	for own in [torch, load("res://data/items/candle.tres")]:
+		party.members[0].hands = [load("res://scripts/item_stack.gd").of(own, 1), null]
+		await create_timer(0.3).timeout
+		player.world_click()
+		check("the party's own %s does not light it" % own.display_name.to_lower(), not DungeonMap.brazier_lit[north] and hud.last_message == needs)
+	var sconce := Vector3i(16, 25, 3)
+	var taken: RefCounted = dungeon.take_sconce_torch(sconce, torch)
+	check("a torch taken from a wall sconce carries the mark", taken != null and taken.from_wall and taken.take_one().from_wall)
+	taken.count = 1
+	var SaveData := preload("res://scripts/save_data.gd")
+	check("and keeps it, with its time, through a save and a stow into a backpack", SaveData.data_to_stack(SaveData.stack_to_data(taken)).from_wall
+			and taken.copy(1).from_wall and is_equal_approx(taken.copy(1).burn_left, taken.burn_left))
+	party.members[0].hands = [taken, null]
 	await create_timer(0.3).timeout
 	player.world_click()
 	await create_timer(0.2).timeout
 	var light: OmniLight3D = field.braziers[north].light
-	check("a torch in a hand lights it: the flame shows and its light is a sprite light", DungeonMap.brazier_lit[north] and field.braziers[north].flame.visible
+	check("a wall torch in a hand lights it: the flame shows and its light is a sprite light", DungeonMap.brazier_lit[north] and field.braziers[north].flame.visible
 			and light.visible and light.is_in_group("sprite_lights") and absf(light.base_energy - 1.4) < 0.01 and light.omni_range == 7.0)
 	party.members[0].hands = [null, null]
 	await create_timer(0.3).timeout
@@ -213,16 +226,16 @@ func _check_braziers(tools: Node, player: Node) -> void:
 	check("both burning break the ward and the door opens", DungeonMap.puzzles_done.has("brazier_ward") and DungeonMap.open_doors.has(door))
 	dungeon.set_brazier(north, false)
 	check("and it stays open when one is snuffed", DungeonMap.puzzle_doors.has("brazier_door"))
-	var thrown: RefCounted = load("res://scripts/item_stack.gd").of(torch, 1)
+	var thrown: RefCounted = taken.copy(1)
 	dungeon.set_pile(north, [])
 	dungeon.place_item(north, thrown)
 	dungeon.lights.drop(north, thrown)
-	check("a burning torch landing on its tile lights it", DungeonMap.brazier_lit[north])
+	check("a torch thrown onto its tile does not light it", not DungeonMap.brazier_lit[north])
 	dungeon.set_pile(north, [])
-	dungeon.set_brazier(north, false)
 	dungeon.oil.add_slick(north + Vector2i(-1, 0))
 	dungeon.oil.ignite(north + Vector2i(-1, 0))
-	check("burning oil beside it lights it", DungeonMap.brazier_lit[north])
+	check("nor does burning oil beside it", not DungeonMap.brazier_lit[north])
+	dungeon.set_brazier(north, true)
 	# A curse zone: it will not light, and one burning goes out.
 	var real_zones: Array = DungeonMap.CURSE_ZONES
 	DungeonMap.CURSE_ZONES = [{"id": "test_brazier", "tiles": [south]}]
@@ -232,6 +245,75 @@ func _check_braziers(tools: Node, player: Node) -> void:
 	DungeonMap.CURSE_ZONES = real_zones
 	for i in party.members.size():
 		party.members[i].hands = keep[i]
+	get_first_node_in_group("fight_tracker").in_fight = false
+	get_first_node_in_group("banter").reset_timers()
+
+
+## The rune room: the runes show only in the dark (braziers snuffed, no flame in a hand), come in by steps, go when light returns, and
+## touching them opens the wall.
+func _check_runes(tools: Node, player: Node) -> void:
+	var dungeon: Node = get_first_node_in_group("dungeon")
+	var party: Node = get_first_node_in_group("party")
+	var hud: Node = get_first_node_in_group("hud")
+	for n in get_nodes_in_group("monsters"):
+		n.free()
+	if get_first_node_in_group("cursor").is_holding():
+		get_first_node_in_group("cursor").release()
+	var wall := Vector2i(3, 36)
+	var front := Vector2i(3, 35)
+	var near := Vector2i(2, 33)
+	var far := Vector2i(4, 35)
+	var r: Dictionary = dungeon.rune_field.runes.test_runes
+	var station: Dictionary = DungeonMap.STATIONS.filter(func(s): return s.name == "Runes")[0]
+	var keep := []
+	for m in party.members:
+		keep.append(m.hands.duplicate())
+		m.hands = [null, null]
+	tools._teleport(station)
+	await create_timer(1.5).timeout
+	check("the rune room starts lit by its two braziers, and no rune shows", DungeonMap.brazier_lit[near] and DungeonMap.brazier_lit[far]
+			and not dungeon.rune_field.is_dark(r.entry) and r.level == 0.0 and not r.sprite.visible and not r.fade.visible and DungeonMap.is_wall(wall))
+	dungeon.set_brazier(far, false)
+	await create_timer(1.3).timeout
+	check("one brazier still burning is enough to hide them", r.level == 0.0)
+	dungeon.set_brazier(near, false)
+	await create_timer(0.5).timeout
+	check("both snuffed and no flame held: they come in by dim steps (%.2f)" % r.level, dungeon.rune_field.is_dark(r.entry) and r.fade.visible and not r.sprite.visible
+			and r.level > 0.2 and r.level < 1.0)
+	check("and cannot be touched yet", dungeon.runes_shown(front, 2) == "" and not dungeon.read_runes(front, 2))
+	await create_timer(1.0).timeout
+	check("after a second they are alive on the wall", r.sprite.visible and not r.fade.visible and dungeon.runes_shown(front, 2) == "test_runes")
+	var torch: Resource = load("res://data/items/torch.tres")
+	party.members[0].hands = [load("res://scripts/item_stack.gd").of(torch, 1), null]
+	await create_timer(0.8).timeout
+	check("a torch in a hand hides them again", r.level == 0.0 and not r.sprite.visible and dungeon.runes_shown(front, 2) == "")
+	party.members[0].hands = [load("res://scripts/item_stack.gd").of(load("res://data/items/candle.tres"), 1), null]
+	await create_timer(1.3).timeout
+	check("so does a candle", r.level == 0.0)
+	party.members[0].hands = [null, null]
+	await create_timer(1.3).timeout
+	player.restore(front, 1)
+	player.world_click()
+	check("facing another wall, a click reads nothing", not DungeonMap.runes_read.has("test_runes"))
+	player.restore(front, 2)
+	await create_timer(0.2).timeout
+	player._interact()
+	check("F at the shown runes reads them (%s)" % hud.last_message, DungeonMap.runes_read.has("test_runes") and hud.last_message == "The stone gives way.")
+	check("the puzzle condition is met at once, and the wall is still solid while it opens", DungeonMap.puzzles_done.has("rune_reading") and DungeonMap.is_wall(wall))
+	await create_timer(3.5).timeout
+	check("then it is floor, the runes are gone and the closet is open", not DungeonMap.is_wall(wall) and not DungeonMap.is_blocked(wall) and not r.sprite.visible and not r.fade.visible)
+	for i in 2:
+		player._try_move(Vector2i(0, 1))
+		await create_timer(0.5).timeout
+	check("and the party can walk through", player.cell == Vector2i(3, 37))
+	var saved: Dictionary = dungeon.save_state()
+	check("the read runes are in the save, and a damaged list is refused", saved.runes_read == ["test_runes"] and dungeon.validate_state(saved) == "")
+	var bad: Dictionary = saved.duplicate(true)
+	bad.runes_read = [3]
+	check("...refused", dungeon.validate_state(bad) != "")
+	for i in party.members.size():
+		party.members[i].hands = keep[i]
+	await create_timer(0.5).timeout   # (Hands full again: let any remark about a light be said before the quiet is reset.)
 	get_first_node_in_group("fight_tracker").in_fight = false
 	get_first_node_in_group("banter").reset_timers()
 
@@ -689,6 +771,7 @@ func _check_game() -> void:
 	await _check_pacing(tools, press, player)
 	await _check_pen(tools, player)
 	await _check_braziers(tools, player)
+	await _check_runes(tools, player)
 	press.call(KEY_X)
 	press.call(KEY_U)
 	# The ambush: walk onto the trigger.

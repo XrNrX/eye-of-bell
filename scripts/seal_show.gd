@@ -186,11 +186,7 @@ func _dust(cell: Vector2i) -> void:
 	s.position = DungeonMap.cell_to_world(cell) + Vector3(0, _sheet("dust").height * CHEST_PIXEL * 0.45, 0)
 	var lighting := get_parent().get_node_or_null("SpriteLighting")
 	if lighting != null:
-		var lights := []
-		for l in get_tree().get_nodes_in_group("sprite_lights"):
-			if l is OmniLight3D and l.is_visible_in_tree():
-				lights.append({"pos": l.global_position, "cell": lighting.cell_of(l.global_position), "range": l.omni_range, "att": l.omni_attenuation, "colour": l.light_color * l.light_energy})
-		s.modulate = lighting.light_at(s.position, cell, lights)
+		s.modulate = lighting.light_at(s.position, cell, lighting.gather_lights())
 	add_child(s)
 	effects.append({"sprite": s, "t": 0.0, "fps": _sheet("dust").fps, "frames": s.hframes})
 

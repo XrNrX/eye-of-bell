@@ -19,6 +19,7 @@ const PATH := "res://data/light.tres"
 
 @export_group("Fighting in the dark")
 @export var dark_hit_penalty := 10     # A hero whose tile gets no light beyond the ambient: -10 to hit with weapons (never spells, never monsters).
+@export var rune_dark_max := 0.04      # Darkness runes show while the lights add no more than this to any colour of the floor tile in front.
 @export var dark_light_min := 0.08     # A light "reaches" the tile when its share there (energy x (1 - distance / range) ^ attenuation) is at least this.
 
 @export_group("The party's light")

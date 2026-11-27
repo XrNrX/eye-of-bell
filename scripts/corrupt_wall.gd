@@ -42,6 +42,7 @@ const LIGHT_RANGE := 3.2
 static var _sheets := {}   # name -> {texture, frames, fps}
 static var _beat := []     # The halo sheet's brightness on each frame, 0..1, read from the art itself (see beat_curve)
 
+var plain := false      # Only the show of opening (a rune wall): no block of its own, no veins, halo, glow or holy light.
 var cell := Vector2i.ZERO
 var strength := 1
 var block: MeshInstance3D
@@ -112,11 +113,11 @@ func setup(owner_cell: Vector2i, box: Mesh, blessings: int) -> void:
 	block = MeshInstance3D.new()
 	block.mesh = box
 	block.position = Vector3(0, h / 2.0, 0)
-	block_material = box.surface_get_material(0)
+	block_material = box.surface_get_material(0) if box != null else null
 	add_child(block)
 	var veins := sheet("veins")
 	vein_material = null
-	if not veins.is_empty():
+	if not veins.is_empty() and not plain:
 		vein_material = ShaderMaterial.new()
 		vein_material.shader = ADD_SHADER
 		vein_material.set_shader_parameter("sheet", veins.texture)
@@ -124,7 +125,7 @@ func setup(owner_cell: Vector2i, box: Mesh, blessings: int) -> void:
 		vein_material.set_shader_parameter("gain", VEIN_GAIN)
 	var halo := sheet("halo")
 	halo_material = null
-	if not halo.is_empty():
+	if not halo.is_empty() and not plain:
 		halo_material = ShaderMaterial.new()
 		halo_material.shader = ADD_SHADER
 		halo_material.set_shader_parameter("sheet", halo.texture)
@@ -145,7 +146,7 @@ func setup(owner_cell: Vector2i, box: Mesh, blessings: int) -> void:
 		if vein_material != null:
 			face.veins = _quad(vein_material, out * (s / 2.0 + VEIN_OFFSET), rot)
 		faces.append(face)
-	if first_open != Vector2i.ZERO:
+	if first_open != Vector2i.ZERO and not plain:
 		light = OmniLight3D.new()
 		light.light_color = LIGHT_COLOUR
 		light.omni_range = LIGHT_RANGE
@@ -243,8 +244,9 @@ func bless_partial() -> void:
 ## The Bless that finishes it. Calls `done` when the wall is gone, so the cell can become floor. `open_cell` makes the floor and
 ## ceiling as the ash starts (so no void shows through).
 func purify(open_cell: Callable, done: Callable) -> void:
-	_play("purge", true, PURGE_OFFSET, -1, _purge_gain())
-	_burn_to(FULL_BURN, BURN_SECONDS)
+	if not plain:
+		_play("purge", true, PURGE_OFFSET, -1, _purge_gain())
+		_burn_to(FULL_BURN, BURN_SECONDS)
 	var rot := sheet("rot")
 	var rot_fps: float = float(rot.fps) if not rot.is_empty() else 12.0
 	var rot_seconds: float = float(rot.frames) / rot_fps if not rot.is_empty() else 1.9
