@@ -2320,6 +2320,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] BREAK CAMP fix: returning from the safe camp zone no longer fires floor 1's cave puzzle with the three rats alive (the reload hid it); a dungeon that has been left ignores the news (`9a7d1ae`)
 - [x] Braziers light only from a torch taken out of a wall sconce or from a Fireball: no more candles, the party's own torches, thrown torches or burning oil; and a torch keeps its burn time when stowed by Shift+click (`d46ae81`)
 - [x] Editor: Esc in a built level asks "BACK TO THE EDITOR?" (Back to Editor, Keep Playing, Quit to Desktop) instead of offering the main menu (`a647f05`)
+- [x] Darts: a single dart is shown as one dart (new PixelLab art) on the floor, in the pack, hands, quick slots and in flight; two or more show the bundle (`a04b8c4`)
 
 ## Ideas inbox
 
