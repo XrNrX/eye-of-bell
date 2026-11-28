@@ -2392,6 +2392,7 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Darts: a single dart is shown as one dart (new PixelLab art) on the floor, in the pack, hands, quick slots and in flight; two or more show the bundle (`a04b8c4`)
 - [x] Chain Lightning: a new Mage spell (5 mana, 4-9 damage, leaps to two more monsters), PixelLab bolt and icon; numbers not yet on the combat design page (`673cbd2`)
 - [x] Main menu buttons moved higher and toward the middle, in the Godot editor (`294acb6`)
+- [x] Chain Lightning made to hit harder: bigger forked bolt, flash, shake and a synthesised thunder (`1f973ed`)
 
 ## Ideas inbox
 
