@@ -195,6 +195,18 @@ def thunder():
     return finish(mix(gain(crack, 0.8), (gain(body, 0.9), 0.04), (gain(roll, 1.0), 0.25)), 0.85)
 
 
+def lightning():
+    """Chain Lightning: a tearing crack, a thunderclap that shakes the floor, then a long roll echoing off the stone. Driven hard
+    (a soft clip) so it is the loudest thing in the dungeon."""
+    cracks = [(decay(bandpass(noise(0.3, 311 + i), 700, 7000), 0.05 + 0.02 * i), at) for i, at in enumerate((0.0, 0.045, 0.11))]
+    boom = decay(osc(glide(110, 28, 0.5), 2.2), 0.55)
+    clap = decay(lowpass(noise(1.4, 321), 600), 0.4)
+    roll = tremolo(decay(lowpass(noise(2.8, 322), 130), 1.3), 7.0, 0.5)
+    echoes = [(gain(decay(lowpass(noise(0.9, 330 + i), 420 - 90 * i), 0.28), 0.8 - 0.2 * i), at) for i, at in enumerate((0.45, 0.85, 1.35))]
+    whole = mix(*cracks, (gain(boom, 1.4), 0.02), (gain(clap, 1.5), 0.03), (gain(roll, 2.2), 0.2), *echoes)
+    return finish([math.tanh(1.5 * s) for s in whole], 0.97)
+
+
 def door_close():
     return finish(thud(80, 38, 0.12, 0.38, 6, 0.6, 700), 0.7)
 
@@ -406,7 +418,7 @@ SOUNDS = {
     "crit_hit": (crit_hit, None), "crit_hurt": (crit_hurt, None), "fumble": (fumble, None),
     "monster_attack": (monster_attack, None), "monster_hurt": (monster_hurt, None), "monster_die": (monster_die, None),
     "hero_hurt": (hero_hurt, None), "hero_die": (hero_die, None),
-    "potion": (potion, None), "zap": (zap, None), "heal": (heal, None), "shield": (shield, None), "bless": (bless, None), "rumble": (rumble, None), "thunder": (thunder, None),"portcullis": (portcullis, None), "fireball": (fireball, None), "explosion": (explosion, None),
+    "potion": (potion, None), "zap": (zap, None), "heal": (heal, None), "shield": (shield, None), "bless": (bless, None), "rumble": (rumble, None), "thunder": (thunder, None), "lightning": (lightning, None),"portcullis": (portcullis, None), "fireball": (fireball, None), "explosion": (explosion, None),
     "ui_click": (ui_click, None), "ui_swap": (ui_swap, None), "save": (save, None), "load": (load, None),
     "level_complete": (level_complete, None), "game_over": (game_over, None),
 }

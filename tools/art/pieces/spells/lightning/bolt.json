@@ -5,102 +5,102 @@
    "frame": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "sourceSize": {
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "pivot": {
-    "x": 0.494949494949495,
-    "y": 0.9583333333333334
+    "x": 0.44545454545454544,
+    "y": 0.9517241379310345
    },
    "duration": 50
   },
   {
    "filename": "chain-lightning-strike 1.png",
    "frame": {
-    "x": 99,
+    "x": 110,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "sourceSize": {
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "pivot": {
-    "x": 0.494949494949495,
-    "y": 0.9583333333333334
+    "x": 0.44545454545454544,
+    "y": 0.9517241379310345
    },
    "duration": 50
   },
   {
    "filename": "chain-lightning-strike 2.png",
    "frame": {
-    "x": 198,
+    "x": 220,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "sourceSize": {
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "pivot": {
-    "x": 0.494949494949495,
-    "y": 0.9583333333333334
+    "x": 0.44545454545454544,
+    "y": 0.9517241379310345
    },
    "duration": 50
   },
   {
    "filename": "chain-lightning-strike 3.png",
    "frame": {
-    "x": 297,
+    "x": 330,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "sourceSize": {
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "pivot": {
-    "x": 0.494949494949495,
-    "y": 0.9583333333333334
+    "x": 0.44545454545454544,
+    "y": 0.9517241379310345
    },
    "duration": 50
   },
@@ -108,103 +108,103 @@
    "filename": "chain-lightning-strike 4.png",
    "frame": {
     "x": 0,
-    "y": 144,
-    "w": 99,
-    "h": 144
+    "y": 145,
+    "w": 110,
+    "h": 145
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "sourceSize": {
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "pivot": {
-    "x": 0.494949494949495,
-    "y": 0.9583333333333334
+    "x": 0.44545454545454544,
+    "y": 0.9517241379310345
    },
    "duration": 50
   },
   {
    "filename": "chain-lightning-strike 5.png",
    "frame": {
-    "x": 99,
-    "y": 144,
-    "w": 99,
-    "h": 144
+    "x": 110,
+    "y": 145,
+    "w": 110,
+    "h": 145
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "sourceSize": {
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "pivot": {
-    "x": 0.494949494949495,
-    "y": 0.9583333333333334
+    "x": 0.44545454545454544,
+    "y": 0.9517241379310345
    },
    "duration": 50
   },
   {
    "filename": "chain-lightning-strike 6.png",
    "frame": {
-    "x": 198,
-    "y": 144,
-    "w": 99,
-    "h": 144
+    "x": 220,
+    "y": 145,
+    "w": 110,
+    "h": 145
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "sourceSize": {
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "pivot": {
-    "x": 0.494949494949495,
-    "y": 0.9583333333333334
+    "x": 0.44545454545454544,
+    "y": 0.9517241379310345
    },
    "duration": 50
   },
   {
    "filename": "chain-lightning-strike 7.png",
    "frame": {
-    "x": 297,
-    "y": 144,
-    "w": 99,
-    "h": 144
+    "x": 330,
+    "y": 145,
+    "w": 110,
+    "h": 145
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "sourceSize": {
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "pivot": {
-    "x": 0.494949494949495,
-    "y": 0.9583333333333334
+    "x": 0.44545454545454544,
+    "y": 0.9517241379310345
    },
    "duration": 50
   },
@@ -212,103 +212,103 @@
    "filename": "chain-lightning-strike 8.png",
    "frame": {
     "x": 0,
-    "y": 288,
-    "w": 99,
-    "h": 144
+    "y": 290,
+    "w": 110,
+    "h": 145
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "sourceSize": {
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "pivot": {
-    "x": 0.494949494949495,
-    "y": 0.9583333333333334
+    "x": 0.44545454545454544,
+    "y": 0.9517241379310345
    },
    "duration": 50
   },
   {
    "filename": "chain-lightning-strike 9.png",
    "frame": {
-    "x": 99,
-    "y": 288,
-    "w": 99,
-    "h": 144
+    "x": 110,
+    "y": 290,
+    "w": 110,
+    "h": 145
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "sourceSize": {
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "pivot": {
-    "x": 0.494949494949495,
-    "y": 0.9583333333333334
+    "x": 0.44545454545454544,
+    "y": 0.9517241379310345
    },
    "duration": 50
   },
   {
    "filename": "chain-lightning-strike 10.png",
    "frame": {
-    "x": 198,
-    "y": 288,
-    "w": 99,
-    "h": 144
+    "x": 220,
+    "y": 290,
+    "w": 110,
+    "h": 145
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "sourceSize": {
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "pivot": {
-    "x": 0.494949494949495,
-    "y": 0.9583333333333334
+    "x": 0.44545454545454544,
+    "y": 0.9517241379310345
    },
    "duration": 50
   },
   {
    "filename": "chain-lightning-strike 11.png",
    "frame": {
-    "x": 297,
-    "y": 288,
-    "w": 99,
-    "h": 144
+    "x": 330,
+    "y": 290,
+    "w": 110,
+    "h": 145
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "sourceSize": {
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "pivot": {
-    "x": 0.494949494949495,
-    "y": 0.9583333333333334
+    "x": 0.44545454545454544,
+    "y": 0.9517241379310345
    },
    "duration": 50
   },
@@ -316,51 +316,51 @@
    "filename": "chain-lightning-strike 12.png",
    "frame": {
     "x": 0,
-    "y": 432,
-    "w": 99,
-    "h": 144
+    "y": 435,
+    "w": 110,
+    "h": 145
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "sourceSize": {
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "pivot": {
-    "x": 0.494949494949495,
-    "y": 0.9583333333333334
+    "x": 0.44545454545454544,
+    "y": 0.9517241379310345
    },
    "duration": 50
   },
   {
    "filename": "chain-lightning-strike 13.png",
    "frame": {
-    "x": 99,
-    "y": 432,
-    "w": 99,
-    "h": 144
+    "x": 110,
+    "y": 435,
+    "w": 110,
+    "h": 145
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "sourceSize": {
-    "w": 99,
-    "h": 144
+    "w": 110,
+    "h": 145
    },
    "pivot": {
-    "x": 0.494949494949495,
-    "y": 0.9583333333333334
+    "x": 0.44545454545454544,
+    "y": 0.9517241379310345
    },
    "duration": 50
   }
@@ -370,8 +370,8 @@
   "image": "chain-lightning-strike.png",
   "format": "RGBA8888",
   "size": {
-   "w": 396,
-   "h": 576
+   "w": 440,
+   "h": 580
   },
   "scale": "1",
   "anchor": {

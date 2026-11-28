@@ -37,6 +37,7 @@ const CUES := {
 	"portcullis": {"db": -2.0, "pitch": 0.05},
 	"rumble": {"db": -1.0, "pitch": 0.05},
 	"thunder": {"db": -2.0, "pitch": 0.08},
+	"lightning": {"db": 0.0, "pitch": 0.05},  # Chain Lightning: the loudest cast.
 	"door_open": {"db": -3.0},
 	"door_close": {"db": -4.0},
 	"hit": {"db": -2.0, "pitch": 0.1},

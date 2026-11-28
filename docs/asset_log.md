@@ -324,5 +324,6 @@ None of these were made with the VFX suite, so they should be replaced.
 - Rewind prototype (test room only): the grey, scanlined view is a shader written in code (`scripts/debug/rewind.gd`).
 
 ## Chain Lightning (28 Nov 2026, 1 generation)
-- `art/spells/lightning/bolt_sheet.png`: `vfx_workbench` `bolt_strike` in greys and white (effect `0ac6714d`, 99x144, 14 frames at 20 fps, free). Pieces `tools/art/pieces/spells/lightning/`, sliced by `gen_spell_fx.py`, tinted cold blue in the game.
+- `art/spells/lightning/bolt_sheet.png`: `vfx_workbench` `bolt_strike` in greys and white, thickness 2 and 6 branches, with `zap_hit` and `lightning_arcs` (effect `0ac6714d`, 110x145, 14 frames at 20 fps, free). Pieces `tools/art/pieces/spells/lightning/`, sliced by `gen_spell_fx.py`, tinted cold blue in the game.
 - `art/spells/icons/chain_lightning.png`: `create_image_pixflux` 32x32, no background (`chain_lightning_raw.png`), shrunk nearest-neighbour to 16x16, built by `gen_spell_menu.py`.
+- `audio/sfx/lightning.wav`: synthesised (`tools/audio/gen_sounds.py`), not PixelLab: its sound tool needs a higher tier.

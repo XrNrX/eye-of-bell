@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_def")
-sound = "zap"
+sound = "lightning"
 effect = "lightning"
 display_name = "Chain Lightning"
 mana_cost = 5

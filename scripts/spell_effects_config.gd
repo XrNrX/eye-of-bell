@@ -268,14 +268,24 @@ func glow(kind: String) -> Dictionary:
 @export var mm_scorch_strength := 0.45
 
 @export_group("Chain lightning")
+@export var ltn_tint := Color(1.6, 2.4, 4.2)  # Far over-bright, so it blooms white-blue.
 @export var ltn_scale := 1.0                  # The bolt sheet is 144 art pixels tall: about floor to ceiling.
 @export var ltn_height := 0.92                # Its middle above the floor, so its foot (row 138) stands on the floor.
 @export var ltn_toward_party := 0.2           # Drawn this far in front of the struck tile's middle.
 @export var ltn_leap_seconds := 0.12          # Between one strike and the next.
 @export var ltn_leap_light := 0.7             # A leap's light and shake, as a share of the first strike's.
-@export var ltn_light_energy := PackedFloat32Array([1.0, 1.4, 2.0, 3.0, 12.0, 10.0, 3.0, 9.0, 4.0, 2.5, 1.5, 0.8, 0.2, 0.0])  # One value a frame.
-@export var ltn_light_range := 10.0
-@export var ltn_sparks := 12
+@export var ltn_light_energy := PackedFloat32Array([2.0, 3.0, 4.0, 6.0, 28.0, 24.0, 8.0, 22.0, 10.0, 6.0, 4.0, 2.0, 0.8, 0.0])  # One value a frame.
+@export var ltn_light_range := 18.0
+@export var ltn_sparks := 36
+@export var ltn_fork_offset := 0.45           # The first strike is a fork: a second, smaller bolt this far to one side...
+@export var ltn_fork_scale := 0.75            # ...this big...
+@export var ltn_fork_seconds := 0.07          # ...this long after.
+@export var ltn_flash_light := 0.5            # A flash at the party as it is cast: this share of the strike's light.
+@export var ltn_shake_strength := 0.09
+@export var ltn_shake_seconds := 0.5
+@export var ltn_kick_distance := 0.12         # The camera is knocked back this far.
+@export var ltn_kick_seconds := 0.2
+@export var ltn_pause_seconds := 0.1          # The game freezes this long on the first strike.
 
 @export_group("Fireball light (synced to the animation)")
 ## One value for each animation frame (the light is blended between frames), so the walls catch what the sprite is doing.

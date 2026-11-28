@@ -200,6 +200,7 @@ func lightning(from_cell: Vector2i, cells: Array) -> void:
 		var cell: Vector2i = cells[i]
 		if i == 0:
 			_lightning_strike(from_cell, cell, sheet, 1.0)
+			_lightning_cast(from_cell, cell, sheet)
 		else:
 			var wait := create_tween()
 			wait.tween_interval(c.ltn_leap_seconds * i)
@@ -209,7 +210,7 @@ func lightning(from_cell: Vector2i, cells: Array) -> void:
 func _lightning_strike(from_cell: Vector2i, cell: Vector2i, sheet: Dictionary, strength: float) -> void:
 	var c := Config.get_config()
 	var toward := Vector3(from_cell.x - cell.x, 0, from_cell.y - cell.y).normalized()
-	var flip := _flipbook(sheet, false, c.ltn_scale, c.mm_tint)
+	var flip := _flipbook(sheet, false, c.ltn_scale, c.ltn_tint)
 	flip.position = _cell_pos(cell, c.ltn_height) + toward * c.ltn_toward_party  # In front of the monster's sprite.
 	add_child(flip)
 	flip.finished.connect(func():
@@ -217,11 +218,34 @@ func _lightning_strike(from_cell: Vector2i, cell: Vector2i, sheet: Dictionary, s
 	var light := _fx_light(flip, c.ltn_light_energy, c.mm_impact_light_colors, c.ltn_light_range, false, 0.0, strength)
 	light.position = _cell_pos(cell, c.bolt_height) + toward * 0.4
 	add_child(light)
-	get_tree().call_group("combat_feel", "shake_by", c.mm_impact_shake_strength * strength, c.mm_impact_shake_seconds, Vector2.UP)
-	get_tree().call_group("shockwave", "burst", _cell_pos(cell, c.bolt_height), c.mm_shock_power * strength, c.mm_shock_size)
+	var calm := _light_strength() if Settings.reduce_flashing else 1.0
+	get_tree().call_group("combat_feel", "shake_by", c.ltn_shake_strength * strength * calm, c.ltn_shake_seconds)
+	get_tree().call_group("shockwave", "burst", _cell_pos(cell, c.bolt_height), strength, 1.0)
 	_ensure_pixels()
 	pixels.emit(_cell_pos(cell, 0.15) + toward * 0.2, c.ltn_sparks, {"ramp": c.px_arcane_ramp, "speed": Vector2(0.8, 3.0), "spread": 1.0,
 			"gravity": 3.0, "drag": 0.5, "life": Vector2(0.3, 0.7), "size": c.mm_trail_size, "jitter": Vector3(0.1, 0.05, 0.1)})
+
+
+## What only the first strike does: a second fork of the bolt beside it, a flash that lights the party's end of the corridor,
+## the camera knocked back and a moment's freeze.
+func _lightning_cast(from_cell: Vector2i, cell: Vector2i, sheet: Dictionary) -> void:
+	var c := Config.get_config()
+	var forward := Vector3(cell.x - from_cell.x, 0, cell.y - from_cell.y).normalized()
+	live += 1
+	var wait := create_tween()
+	wait.tween_interval(c.ltn_fork_seconds)
+	wait.tween_callback(func():
+		var fork := _flipbook(sheet, false, c.ltn_fork_scale, c.ltn_tint)
+		# Its foot stays on the floor; set to the side the party sees it on.
+		fork.position = _cell_pos(cell, c.ltn_height * c.ltn_fork_scale) + forward.cross(Vector3.UP) * c.ltn_fork_offset - forward * c.ltn_toward_party
+		add_child(fork)
+		fork.finished.connect(func():
+			live -= 1)
+		var light := _fx_light(fork, c.ltn_light_energy, c.mm_impact_light_colors, c.ltn_light_range, false, 0.0, c.ltn_flash_light)
+		light.position = _cell_pos(from_cell, c.bolt_height) + forward * 0.5
+		add_child(light))
+	get_tree().call_group("combat_feel", "jolt", Vector3(0, 0, c.ltn_kick_distance), c.ltn_kick_seconds)
+	get_tree().call_group("combat_feel", "hit_pause", c.ltn_pause_seconds)
 
 
 # --------------------------------------------------------------------------
