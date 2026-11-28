@@ -1,6 +1,8 @@
 extends CanvasLayer
 ## The pause menu: Escape in play opens it (and the game freezes), Escape again or Resume closes it.
 ##   Resume / Save Game / Load Game / Quit to Menu / Quit to Desktop
+## In a level built from the dungeon editor (F10, Build) it asks instead "BACK TO THE EDITOR?": Back to Editor / Keep Playing /
+## Quit to Desktop. (No save, load or main menu there: a built level cannot be saved, and the paper is where it came from.)
 ## Escape belongs first to whatever is already open (the inventory, spell pop-up, a formation drag,
 ## target mode: they handle it and mark it used), so this only opens when none of those did, and
 ## never over Level complete / Game over (the game is already paused then). Self-contained: delete
@@ -8,6 +10,7 @@ extends CanvasLayer
 ## overlays; it runs while the game is paused.
 
 const SaveGame := preload("res://scripts/save_game.gd")
+const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const MAIN_MENU := "res://scenes/main_menu.tscn"
 
 const INK := Color("0b0a10")
@@ -18,7 +21,7 @@ const BUTTON_WIDTH := 224.0
 var dim: ColorRect
 var title: Label
 var status: Label
-var buttons := {}  # "resume" | "save" | "load" | "menu" | "desktop" -> Button
+var buttons := {}  # "editor" | "resume" | "save" | "load" | "menu" | "desktop" -> Button
 
 
 func _ready() -> void:
@@ -47,7 +50,7 @@ func _build() -> void:
 	title.add_theme_font_size_override("font_size", 16)
 	title.add_theme_color_override("font_color", TORCH_500)
 	box.add_child(title)
-	for entry in [["resume", "RESUME"], ["save", "SAVE GAME"], ["load", "LOAD GAME"], ["menu", "QUIT TO MENU"], ["desktop", "QUIT TO DESKTOP"]]:
+	for entry in [["editor", "BACK TO EDITOR"], ["resume", "RESUME"], ["save", "SAVE GAME"], ["load", "LOAD GAME"], ["menu", "QUIT TO MENU"], ["desktop", "QUIT TO DESKTOP"]]:
 		var b := Button.new()
 		b.text = entry[1]
 		b.custom_minimum_size = Vector2(BUTTON_WIDTH, 0)
@@ -78,10 +81,21 @@ func _unhandled_input(event: InputEvent) -> void:
 func open() -> void:
 	status.text = ""
 	buttons.load.disabled = not SaveGame.has_save()
+	var built := _in_built_level()
+	title.text = "BACK TO THE EDITOR?" if built else "PAUSED"
+	buttons.editor.visible = built
+	buttons.resume.text = "KEEP PLAYING" if built else "RESUME"
+	for which in ["save", "load", "menu"]:
+		buttons[which].visible = not built
 	visible = true
 	get_tree().paused = true
 	get_tree().call_group("audio", "play", "ui_click")
-	buttons.resume.grab_focus()  # Enter / Space work straight away.
+	buttons["editor" if built else "resume"].grab_focus()  # Enter / Space work straight away.
+
+
+## Is this a level built from the editor's paper, with the editor there to go back to?
+func _in_built_level() -> bool:
+	return DungeonMap.level_id == DungeonMap.EDITOR_PLAY_ID and get_tree().get_first_node_in_group("dungeon_editor") != null
 
 
 func close() -> void:
@@ -92,6 +106,11 @@ func close() -> void:
 
 func _pressed(which: String) -> void:
 	match which:
+		"editor":
+			var editor := get_tree().get_first_node_in_group("dungeon_editor")
+			close()  # The editor will not open over another screen's pause.
+			if editor != null:
+				editor.open()
 		"resume":
 			close()
 		"save":

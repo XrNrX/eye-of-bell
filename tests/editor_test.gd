@@ -757,6 +757,21 @@ func _check_build() -> void:
 	check("Tab again goes back to the game", not ed.is_open() and not paused)
 	_key(KEY_F10)
 	check("F10 in the built game also opens the paper (the marker follows the party)", ed.is_open() and ed.play_marker.get("cell") == Vector2i(6, 5))
+	# Esc in the built game asks whether to go back to the paper, not to the main menu.
+	_key(KEY_TAB)
+	var pause: Node = get_first_node_in_group("pause_menu")
+	_key(KEY_ESCAPE)
+	check("Esc in the built game asks BACK TO THE EDITOR?, with no save, load or main menu (%s)" % pause.title.text, pause.visible and paused and pause.title.text == "BACK TO THE EDITOR?"
+			and pause.buttons.editor.visible and pause.buttons.resume.text == "KEEP PLAYING" and pause.buttons.desktop.visible
+			and not pause.buttons.menu.visible and not pause.buttons.save.visible and not pause.buttons.load.visible)
+	_key(KEY_ESCAPE)
+	check("Esc again keeps playing", not pause.visible and not paused and not ed.is_open())
+	_key(KEY_ESCAPE)
+	pause.buttons.resume.pressed.emit()
+	check("so does KEEP PLAYING", not pause.visible and not paused and not ed.is_open())
+	_key(KEY_ESCAPE)
+	pause.buttons.editor.pressed.emit()
+	check("BACK TO EDITOR opens the paper, the game waiting and the party marked", not pause.visible and ed.is_open() and paused and ed.play_marker.get("cell") == Vector2i(6, 5))
 	# Edit, then build again: the party goes back where it was.
 	ed.grid.place_item(7, 5, "res://data/items/dagger.tres")
 	ed.request_build()
@@ -765,6 +780,13 @@ func _check_build() -> void:
 	player = get_first_node_in_group("player")
 	check("the party stands where it was left (6,5), facing the same way", player != null and player.cell == Vector2i(6, 5) and player.facing == 3 and ed.play_marker.is_empty())
 	check("the game after a rebuild is still fresh: full HP", get_first_node_in_group("party").members.all(func(m): return m.hp == m.def.max_hp))
+	# On an ordinary level the pause menu is as it always was.
+	ed.close()
+	DungeonMap.level_id = DungeonMap.FLOOR_1_ID
+	pause = get_first_node_in_group("pause_menu")
+	_key(KEY_ESCAPE)
+	check("on any other level Esc is the ordinary pause menu", pause.visible and pause.title.text == "PAUSED" and pause.buttons.menu.visible and not pause.buttons.editor.visible and pause.buttons.resume.text == "RESUME")
+	_key(KEY_ESCAPE)
 	# Out of play: the menu's level reset and the editor's marker are gone with it.
 	DungeonMap.use_level("")
 	current_scene.queue_free()
