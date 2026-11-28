@@ -5,6 +5,6 @@
 [resource]
 script = ExtResource("1_def")
 display_name = "Rewind"
-mana_cost = 4
+mana_cost = 1
 target = 2
 rewinds_time = true

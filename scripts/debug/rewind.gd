@@ -11,26 +11,28 @@ extends Node
 ## cost. It is refused if a sealed room, a shut door or another body stands between the party and where it was.
 ## Two ways in:
 ## - the spell: while this node is there, Rewind (data/debug/rewind.tres) is added to the spellbook. Cast, the world waits and a
-##   pop-up asks how far (CHOICES: 5, 10 or 30 s), greying what he can't pay for (or what isn't remembered yet); picking a grey one
-##   is refused with the reason and the list stays. A good pick goes straight there, shows the grey view for a moment and starts his
-##   action cooldown. Cancel, Escape or a right-click costs nothing.
+##   pop-up lets the player step back and forth in STEP_SECONDS (or BIG_STEP_SECONDS) steps, the party and monsters shown as they
+##   were at the moment picked, with its price (cost_of, through PRICES). Nothing is spent until TURN BACK; Cancel, Escape or a
+##   right-click puts the present back. A step he can't pay for, or further than is remembered, is refused with the reason.
 ## - holding Backspace: STEP_SECONDS back for every STEP_SECONDS held, STEP_COST each, up to HOLD_MAX_STEPS, until released.
 
 const DungeonMap := preload("res://scripts/dungeon_map.gd")
 const SaveData := preload("res://scripts/save_data.gd")
 const FONT := preload("res://art/fonts/PressStart2P-Regular.ttf")
 
-## What the spell offers: how far back and what it costs. Change them here.
-const CHOICES := [
+## The spell's price: what going back this many seconds costs. In between, it is worked out along the line (rounded up).
+const PRICES := [
+	{"seconds": 0.0, "mana": 0.0},
 	{"seconds": 5.0, "mana": 4.0},
 	{"seconds": 10.0, "mana": 7.0},
 	{"seconds": 30.0, "mana": 12.0},
 ]
+const BIG_STEP_SECONDS := 5.0 # The pop-up's long step (and Shift with an arrow key).
 const STEP_SECONDS := 0.5     # A held key's step.
 const STEP_COST := 2.0
 const HOLD_MAX_STEPS := 6     # A hold goes 3 seconds at most.
 const SNAPSHOT_SECONDS := 0.5
-const MEMORY_SECONDS := 30.0  # The longest choice.
+const MEMORY_SECONDS := 30.0  # The furthest back.
 const SHOW_SECONDS := 0.6     # How long the grey view stays after a cast.
 const RADIUS := 20.0          # Tiles from the party within which monsters are turned back too.
 const ID := "rewind_id"       # Metadata naming a monster, so the same one can be found again.
@@ -64,7 +66,12 @@ var snapshots: Array[Dictionary] = []  # Oldest first: {"at": `clock` when taken
 var clock := 0.0             # Seconds of play (not counting pauses or camps); going back puts it back too.
 var holding := false         # Backspace is being held.
 var picker: Control          # The "how far?" pop-up, while it is open.
-var picker_rows: Array[Button] = []  # Its choices, in CHOICES order.
+var picker_buttons := {}     # Its buttons: "back_big", "back", "on", "on_big", "confirm", "cancel".
+var offset := 0.0            # Seconds back the pop-up is showing (0: the present).
+var _picker_text: Label
+var _present := {}           # The moment of the cast, to come back to.
+var _cast_cell := Vector2i.ZERO
+var _cast_mana := 0.0
 var show_left := 0.0         # The grey view after a cast.
 var steps := 0               # Steps taken in this hold.
 var _record_clock := 0.0
@@ -126,11 +133,27 @@ func _process(delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if picker == null:
 		return
-	var cancelled: bool = (event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE) \
-			or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT)
-	if cancelled:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		get_viewport().set_input_as_handled()
 		cancel()
+		return
+	if not (event is InputEventKey) or not event.pressed:
+		return
+	var by: float = BIG_STEP_SECONDS if event.shift_pressed else STEP_SECONDS
+	match event.keycode:
+		KEY_LEFT:
+			step_picker(by)
+		KEY_RIGHT:
+			step_picker(-by)
+		KEY_ENTER, KEY_KP_ENTER:
+			if not event.echo:
+				confirm()
+		KEY_ESCAPE:
+			if not event.echo:
+				cancel()
+		_:
+			return
+	get_viewport().set_input_as_handled()
 
 
 ## Keep the party and the monsters as they are now.
@@ -139,6 +162,15 @@ func record() -> void:
 	var player := get_tree().get_first_node_in_group("player")
 	if party == null or player == null or party.is_wiped():
 		return
+	snapshots.append({"at": clock, "data": _snapshot()})
+	while snapshots.size() > 1 and float(snapshots[1].at) <= clock - MEMORY_SECONDS:
+		snapshots.pop_front()  # Keep one at least as old as the furthest step.
+
+
+## The party and the monsters as they are now, in memory.
+func _snapshot() -> Dictionary:
+	var party := get_tree().get_first_node_in_group("party")
+	var player := get_tree().get_first_node_in_group("player")
 	var monsters := []
 	for m in get_tree().get_nodes_in_group("monsters"):
 		if m.dying or m.is_queued_for_deletion():
@@ -149,9 +181,7 @@ func record() -> void:
 		monsters.append({"id": m.get_meta(ID), "state": m.save_state()})
 	var data := {"player": player.save_state(), "party": party.save_state(), "webbed": party.webbed_left, "monsters": monsters}
 	# Through JSON, as a real save goes: an independent copy, and load_state sees just what it would from a file.
-	snapshots.append({"at": clock, "data": JSON.parse_string(JSON.stringify(data))})
-	while snapshots.size() > 1 and float(snapshots[1].at) <= clock - MEMORY_SECONDS:
-		snapshots.pop_front()  # Keep one at least as old as the longest choice.
+	return JSON.parse_string(JSON.stringify(data))
 
 
 ## How far back the memory goes, in seconds.
@@ -184,7 +214,7 @@ func go_back(seconds: float, cost: float) -> bool:
 	if barred != "":
 		_say(barred)
 		return false
-	_restore(data)
+	_restore(data, get_tree().get_first_node_in_group("player").cell)
 	clock = float(snapshots[index].at)  # That moment is now.
 	_record_clock = 0.0
 	snapshots.resize(index + 1)
@@ -232,13 +262,12 @@ func _near(a: Vector2i, b: Vector2i) -> bool:
 	return Vector2(a - b).length() <= RADIUS
 
 
-## Put the party and the nearby monsters back. Nothing else is touched, and nothing here counts as news (no plate or puzzle hears
+## Put the party and the monsters near `centre` (where the spell is cast) back. Nothing else is touched, and nothing here counts as news (no plate or puzzle hears
 ## of it: dungeon.settled is false while it happens).
-func _restore(data: Dictionary) -> void:
+func _restore(data: Dictionary, centre: Vector2i) -> void:
 	var dungeon := get_tree().get_first_node_in_group("dungeon")
 	var party := get_tree().get_first_node_in_group("party")
 	var player := get_tree().get_first_node_in_group("player")
-	var centre: Vector2i = player.cell  # "Near" is measured from where the spell is cast.
 	var live := {}
 	for m in get_tree().get_nodes_in_group("monsters"):
 		if m.has_meta(ID) and not m.is_queued_for_deletion():
@@ -325,11 +354,23 @@ func step_back() -> bool:
 
 # --- The spell ------------------------------------------------------------------------------------
 
-## Cast: ask how far. False (nothing spent) if not even one step can be taken.
+## What going back this many seconds costs.
+func cost_of(seconds: float) -> float:
+	if seconds <= 0.0:
+		return 0.0
+	for i in range(1, PRICES.size()):
+		var a: Dictionary = PRICES[i - 1]
+		var b: Dictionary = PRICES[i]
+		if seconds <= b.seconds or i == PRICES.size() - 1:
+			return ceilf(lerpf(a.mana, b.mana, (seconds - a.seconds) / (b.seconds - a.seconds)) - 0.001)
+	return 0.0
+
+
+## Cast: open the pop-up on the present. False (nothing spent) if not even one step can be taken.
 func cast() -> bool:
 	if holding or picker != null or get_tree().paused:
 		return false
-	var why := refusal(CHOICES[0].seconds, CHOICES[0].mana)  # Not even the shortest: no list.
+	var why := refusal(STEP_SECONDS, cost_of(STEP_SECONDS))  # Not even one step: no pop-up.
 	if why != "":
 		_say(why)
 		return false
@@ -337,28 +378,98 @@ func cast() -> bool:
 	if popups == null:
 		return false
 	get_tree().paused = true
+	offset = 0.0
+	_present = _snapshot()
+	_cast_cell = get_tree().get_first_node_in_group("player").cell
+	_cast_mana = _caster().mana
 	picker = _build_picker()
-	popups.open_popup(picker, func(size: Vector2): return Vector2((640.0 - size.x) / 2.0, (276.0 - size.y) / 2.0))
+	_refresh_picker()
+	# Low in the view, so the moment being picked can be seen above it.
+	popups.open_popup(picker, func(size: Vector2): return Vector2(320.0 - size.x / 2.0, 266.0 - size.y))
 	return true
 
 
-## A choice in the pop-up: CHOICES[index].
-func choose(index: int) -> void:
+## Why the pop-up can't show `seconds` back, or "" if it can (judged on Fennick as he cast).
+func _limit(seconds: float) -> String:
+	if seconds > MEMORY_SECONDS + 0.001 or remembered() < seconds - SNAPSHOT_SECONDS * 0.5:
+		return "Time will go no further back."
+	if _cast_mana < cost_of(seconds) - 0.001:
+		return "Fennick has no mana left for it."
+	return ""
+
+
+## Step the pop-up `by` seconds further back (negative: towards the present). A long step goes as far as it may. Moments the
+## party can't be put back into are passed over. False if it can't move at all.
+func step_picker(by: float) -> bool:
+	if picker == null:
+		return false
+	var way := signf(by)
+	var target := maxf(0.0, offset + by)
+	var why := ""
+	while target > offset and _limit(target) != "":
+		why = _limit(target)
+		target -= STEP_SECONDS
+	while not is_equal_approx(target, offset) and target > -0.001 and (way < 0.0 or _limit(target) == ""):
+		var barred := _show_moment(target)
+		if barred == "":
+			offset = maxf(0.0, target)
+			_refresh_picker()
+			get_tree().call_group("audio", "play", "ui_click")
+			return true
+		why = barred
+		target += way * STEP_SECONDS
+	_show_moment(offset)  # Stay where it was.
+	_refresh_picker()
+	if why != "":
+		_say(why)
+	return false
+
+
+## Show the party and the monsters as they were `seconds` ago (0: the present). "" if shown, else why not (the present is shown).
+func _show_moment(seconds: float) -> String:
+	_show_present()
+	if seconds < STEP_SECONDS * 0.5:
+		_hide_effect()
+		return ""
+	var data: Dictionary = snapshots[_index(seconds)].data
+	var barred := _barred(data)
+	if barred != "":
+		_hide_effect()
+		return barred
+	_restore(data, _cast_cell)
+	_caster().mana = maxf(0.0, _cast_mana - cost_of(seconds))  # What he would be left with.
+	_show_effect()
+	return ""
+
+
+## Put the moment of the cast back, taking away anything a look into the past brought back.
+func _show_present() -> void:
+	var then := {}
+	for e in _present.monsters:
+		then[int(e.id)] = true
+	for m in get_tree().get_nodes_in_group("monsters"):
+		if m.has_meta(ID) and not then.has(int(m.get_meta(ID))) and not m.is_queued_for_deletion():
+			m.free()
+	_restore(_present, _cast_cell)
+	_caster().mana = _cast_mana
+
+
+## TURN BACK: keep the moment shown, pay for it and let time run.
+func confirm() -> void:
 	if picker == null:
 		return
-	var choice: Dictionary = CHOICES[index]
-	var why := refusal(choice.seconds, choice.mana)
-	if why == "":
-		why = _barred(snapshots[_index(choice.seconds)].data)
-	if why != "":  # Refused: said why, and the list stays for another choice.
-		_say(why)
+	if offset <= 0.0:
+		_say("Step back first.")
 		get_tree().call_group("audio", "play", "ui_click")
 		return
+	var index := _index(offset)
+	var seconds := offset
+	clock = float(snapshots[index].at)  # That moment is now.
+	_record_clock = 0.0
+	snapshots.resize(index + 1)
 	_close_picker()
-	if not go_back(choice.seconds, choice.mana):
-		_release()
-		return
-	_say("Time turns back %d seconds." % int(choice.seconds))
+	_say("Time turns back %.1f s." % seconds)
+	get_tree().call_group("audio", "play", "ui_click")
 	_show_effect()
 	show_left = SHOW_SECONDS
 	var mage = _caster()
@@ -366,8 +477,13 @@ func choose(index: int) -> void:
 		get_tree().get_first_node_in_group("party")._start_cooldown(mage)
 
 
-## Close the pop-up without rewinding: nothing spent.
+## Close the pop-up without rewinding: the present is put back and nothing is spent.
 func cancel() -> void:
+	if picker == null:
+		return
+	if offset > 0.0:
+		_show_present()
+		offset = 0.0
 	_close_picker()
 	_release()
 
@@ -376,13 +492,18 @@ func _close_picker() -> void:
 	if is_instance_valid(picker):
 		picker.queue_free()
 	picker = null
-	picker_rows.clear()
+	picker_buttons.clear()
+	_present = {}
 
 
 func _release() -> void:
 	show_left = 0.0
 	_record_clock = 0.0
 	get_tree().paused = false
+	_hide_effect()
+
+
+func _hide_effect() -> void:
 	if _effect != null:
 		_effect.queue_free()
 		_effect = null
@@ -395,27 +516,46 @@ func _build_picker() -> Control:
 	var column := VBoxContainer.new()
 	column.add_theme_constant_override("separation", 2)
 	panel.add_child(column)
-	var head := Label.new()
-	head.text = "TURN BACK HOW FAR?\nMANA %d   KEPT %d S" % [floori(_caster().mana), floori(remembered())]
-	head.add_theme_font_override("font", FONT)
-	head.add_theme_font_size_override("font_size", 8)
-	head.add_theme_color_override("font_color", TORCH_300)
-	column.add_child(head)
-	picker_rows.clear()
-	for i in CHOICES.size():
-		var choice: Dictionary = CHOICES[i]
-		var b := _button("%2d S       %2d MANA" % [int(choice.seconds), int(choice.mana)])
-		if refusal(choice.seconds, choice.mana) != "":  # Greyed, but still a button: clicking it says why not.
-			b.add_theme_color_override("font_color", STONE_500)
-			b.add_theme_color_override("font_hover_color", STONE_500)
-			b.add_theme_stylebox_override("normal", _box(STONE_900, STONE_900))
-		b.pressed.connect(choose.bind(i))
+	_picker_text = Label.new()
+	_picker_text.add_theme_font_override("font", FONT)
+	_picker_text.add_theme_font_size_override("font_size", 8)
+	_picker_text.add_theme_color_override("font_color", TORCH_300)
+	column.add_child(_picker_text)
+	picker_buttons.clear()
+	var steps_row := HBoxContainer.new()
+	steps_row.add_theme_constant_override("separation", 2)
+	column.add_child(steps_row)
+	for s in [["back_big", "<<5", BIG_STEP_SECONDS], ["back", "<.5", STEP_SECONDS], ["on", ".5>", -STEP_SECONDS],
+			["on_big", "5>>", -BIG_STEP_SECONDS]]:
+		var b := _button(s[1])
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.pressed.connect(step_picker.bind(s[2]))
+		steps_row.add_child(b)
+		picker_buttons[s[0]] = b
+	for s in [["confirm", "TURN BACK", confirm], ["cancel", "CANCEL", cancel]]:
+		var b := _button(s[1])
+		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
+		b.pressed.connect(s[2])
 		column.add_child(b)
-		picker_rows.append(b)
-	var no := _button("CANCEL")
-	no.pressed.connect(cancel)
-	column.add_child(no)
+		picker_buttons[s[0]] = b
 	return panel
+
+
+func _refresh_picker() -> void:
+	_picker_text.text = "BACK %4.1f S\nCOST %2d OF %2d MANA\nKEPT %4.1f S" % [
+			offset, int(cost_of(offset)), floori(_cast_mana), minf(remembered(), MEMORY_SECONDS)]
+	# Greyed, but still buttons: clicking one says why not.
+	for id in ["back", "back_big"]:
+		_grey(picker_buttons[id], _limit(offset + STEP_SECONDS) != "")
+	for id in ["on", "on_big", "confirm"]:
+		_grey(picker_buttons[id], offset <= 0.0)
+
+
+func _grey(b: Button, grey: bool) -> void:
+	b.add_theme_color_override("font_color", STONE_500 if grey else BONE_300)
+	b.add_theme_color_override("font_hover_color", STONE_500 if grey else TORCH_300)
+	b.add_theme_stylebox_override("normal", _box(STONE_900, STONE_900) if grey else _box(STONE_700, STONE_700))
 
 
 func _button(text: String) -> Button:
