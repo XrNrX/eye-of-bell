@@ -322,3 +322,7 @@ None of these were made with the VFX suite, so they should be replaced.
 ## A single dart (28 Nov 2026, 2 generations)
 - `art/items/darts_single{,_floor,_hud}.png`: `create_image_pixflux`, 48x48 (seed 7501) and native 32x32 (seed 7502), no background, single colour outline: one upright dart, shown instead of the three-dart bundle for a stack of one (`ItemDef.single_icon` and friends). Pieces `tools/art/pieces/items48/darts_single.png` and `items32/darts_single.png`, installed with `add_item_art.py darts_single --steel` and `regrade_items.py`.
 - Rewind prototype (test room only): the grey, scanlined view is a shader written in code (`scripts/debug/rewind.gd`).
+
+## Chain Lightning (28 Nov 2026, 1 generation)
+- `art/spells/lightning/bolt_sheet.png`: `vfx_workbench` `bolt_strike` in greys and white (effect `0ac6714d`, 99x144, 14 frames at 20 fps, free). Pieces `tools/art/pieces/spells/lightning/`, sliced by `gen_spell_fx.py`, tinted cold blue in the game.
+- `art/spells/icons/chain_lightning.png`: `create_image_pixflux` 32x32, no background (`chain_lightning_raw.png`), shrunk nearest-neighbour to 16x16, built by `gen_spell_menu.py`.

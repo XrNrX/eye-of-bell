@@ -1092,6 +1092,7 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 				var damage := CombatRules.roll_damage(spell.damage_min, spell.damage_max)
 				var crit := CombatRules.roll_crit(m.def.spell_crit)
 				var dealt := CombatRules.crit_damage(damage, CombatRules.SPELL_CRIT_MULT) if crit else damage
+				var struck: Vector2i = monster.cell
 				monster.take_hit({"hit": true, "damage": dealt, "chance": 100, "crit": crit, "by": m.hero_index, "fire": spell.fire})
 				if crit:
 					spell_crit = true
@@ -1101,7 +1102,14 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 				var opened := 0
 				if spell.breaks_walls:  # The shockwave cracks open any cracked wall beside the target.
 					opened = _break_walls_near(monster.cell, maxi(1, spell.splash_radius))
-				_fx(spell.effect, monster.cell)
+				var leaps: Array[Vector2i] = []
+				if spell.chain_targets > 0:
+					leaps = _chain(monster, spell, damage, m.hero_index)
+					var path: Array[Vector2i] = [struck]
+					path.append_array(leaps)
+					get_tree().call_group("spell_effects", "lightning", player.cell, path)
+				else:
+					_fx(spell.effect, monster.cell)
 				text = "%s casts %s: it hits the %s for %d!" % [who, spell.display_name, monster.def.display_name, dealt]
 				if monster.hp <= 0:
 					text += " It dies!"
@@ -1109,6 +1117,8 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 					text += " %d more %s caught in the blast." % [caught, "is" if caught == 1 else "are"]
 				if opened > 0:
 					text += " The blast breaks open the wall!"
+				if not leaps.is_empty():
+					text += " It leaps to %d more." % leaps.size()
 		SpellDef.Target.HERO:
 			var t := member(target_slot)
 			if t == null or not t.is_alive():
@@ -2180,6 +2190,44 @@ func _splash(target: Node, radius: int, damage: int, by := -1, fire := false) ->
 			other.take_hit({"hit": true, "damage": damage, "chance": 100, "by": by, "fire": fire})
 			count += 1
 	return count
+
+
+## A chain spell's leaps: from the monster last struck to the nearest other living one within chain_range with nothing solid between,
+## up to chain_targets times, each doing chain_percent of the one before. No second roll. Returns the tiles struck, in order.
+func _chain(first: Node, spell: Resource, damage: int, by: int) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	var done := [first]
+	var from: Vector2i = first.cell
+	var share := float(damage)
+	for i in spell.chain_targets:
+		var next: Node = null
+		var best := INF
+		for other in DungeonMap.occupied.values():
+			if not is_instance_valid(other) or other.dying or other in done:
+				continue
+			var d: Vector2i = (other.cell - from).abs()
+			var away := Vector2(d).length()
+			if maxi(d.x, d.y) <= spell.chain_range and away < best and _clear_between(from, other.cell):
+				next = other
+				best = away
+		if next == null:
+			break
+		share *= spell.chain_percent / 100.0
+		from = next.cell
+		done.append(next)
+		cells.append(from)
+		next.take_hit({"hit": true, "damage": maxi(1, ceili(share - 0.001)), "chance": 100, "by": by})
+	return cells
+
+
+## Is there nothing solid (wall, shut door, portcullis) on the straight line between two tiles?
+func _clear_between(a: Vector2i, b: Vector2i) -> bool:
+	var steps := maxi(absi(b.x - a.x), absi(b.y - a.y)) * 4
+	for i in range(1, steps):
+		var c := Vector2i(Vector2(a).lerp(Vector2(b), float(i) / steps).round())
+		if c != a and c != b and DungeonMap.is_blocked(c):
+			return false
+	return true
 
 
 ## The cracked wall straight ahead if nothing else (a wall, a door, a portcullis) is in the way

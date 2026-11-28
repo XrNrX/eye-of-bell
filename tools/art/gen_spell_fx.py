@@ -52,7 +52,9 @@ def slice_atlas(spell, name):
 # green, which is never used for anything but the curse (docs/art_style.md), so they become torch colours.
 RECOLOUR = {"bear_trap": {"curse_300": "torch_300", "curse_500": "torch_500", "curse_700": "rust_500"},
            "oil": {"curse_300": "bone_300", "curse_500": "torch_300", "curse_700": "torch_500"},  # Burning oil: the white-hot core snaps to curse green, so it becomes bone and gold.
-           "web": {"curse_300": "bone_300", "curse_500": "bone_500", "curse_700": "stone_300"}}  # The web ball's white snaps to curse green: it becomes bone, never green.
+           "web": {"curse_300": "bone_300", "curse_500": "bone_500", "curse_700": "stone_300"},  # The web ball's white snaps to curse green: it becomes bone, never green.
+           "lightning": {"curse_300": "bone_300", "curse_500": "stone_100", "curse_700": "stone_300", "slime_300": "stone_100",
+                         "moss_500": "stone_300", "moss_700": "stone_500"}}  # Greys and bone only (tinted cold blue in the game).
 
 
 def build_sheet(spell, name):
@@ -122,7 +124,7 @@ def build(scale=None):
     # Hold Monster: grey and bone runes, tinted cold pale blue in the game like Magic Missile (bind, held loop, shatter).
     # The bear trap's snap: rusted iron jaws, sparks and a spatter (drawn normally in the game, not added).
     # hit_fx: what a monster's landed blow leaves across the view (MonsterDef.hit_effect; hit_overlay.gd), drawn normally.
-    for spell in ("gas", "fireball", "magic_missile", "heal", "bless", "shield", "resurrection", "hold_monster", "bear_trap", "hit_fx", "light", "curse", "oil", "cooking", "shaman", "web"):
+    for spell in ("gas", "fireball", "magic_missile", "heal", "bless", "shield", "resurrection", "hold_monster", "bear_trap", "hit_fx", "light", "curse", "oil", "cooking", "shaman", "web", "lightning"):
         for name in ("cast", "projectile", "impact", "burst", "ring", "flash", "column", "portrait", "portrait_large",
                      "bind", "held", "shatter", "snap", "skeleton_claws", "guard_axe", "slime_splat", "acid_splat", "rat_bite", "shaman_bolt", "bolt", "flame", "haze", "flames", "fog", "wisp", "cloud", "sizzle"):
             if (PIECES / spell / f"{name}.png").exists():

@@ -187,6 +187,44 @@ func _missile_impact(cell: Vector2i) -> void:
 
 
 # --------------------------------------------------------------------------
+# Chain Lightning: a PixelLab bolt (art/spells/lightning/bolt_sheet) on each monster struck, one after another
+# --------------------------------------------------------------------------
+
+func lightning(from_cell: Vector2i, cells: Array) -> void:
+	var sheet := _sheet("lightning", "bolt")
+	if sheet.is_empty():
+		return
+	var c := Config.get_config()
+	for i in cells.size():
+		live += 1
+		var cell: Vector2i = cells[i]
+		if i == 0:
+			_lightning_strike(from_cell, cell, sheet, 1.0)
+		else:
+			var wait := create_tween()
+			wait.tween_interval(c.ltn_leap_seconds * i)
+			wait.tween_callback(_lightning_strike.bind(from_cell, cell, sheet, c.ltn_leap_light))
+
+
+func _lightning_strike(from_cell: Vector2i, cell: Vector2i, sheet: Dictionary, strength: float) -> void:
+	var c := Config.get_config()
+	var toward := Vector3(from_cell.x - cell.x, 0, from_cell.y - cell.y).normalized()
+	var flip := _flipbook(sheet, false, c.ltn_scale, c.mm_tint)
+	flip.position = _cell_pos(cell, c.ltn_height) + toward * c.ltn_toward_party  # In front of the monster's sprite.
+	add_child(flip)
+	flip.finished.connect(func():
+		live -= 1)
+	var light := _fx_light(flip, c.ltn_light_energy, c.mm_impact_light_colors, c.ltn_light_range, false, 0.0, strength)
+	light.position = _cell_pos(cell, c.bolt_height) + toward * 0.4
+	add_child(light)
+	get_tree().call_group("combat_feel", "shake_by", c.mm_impact_shake_strength * strength, c.mm_impact_shake_seconds, Vector2.UP)
+	get_tree().call_group("shockwave", "burst", _cell_pos(cell, c.bolt_height), c.mm_shock_power * strength, c.mm_shock_size)
+	_ensure_pixels()
+	pixels.emit(_cell_pos(cell, 0.15) + toward * 0.2, c.ltn_sparks, {"ramp": c.px_arcane_ramp, "speed": Vector2(0.8, 3.0), "spread": 1.0,
+			"gravity": 3.0, "drag": 0.5, "life": Vector2(0.3, 0.7), "size": c.mm_trail_size, "jitter": Vector3(0.1, 0.05, 0.1)})
+
+
+# --------------------------------------------------------------------------
 # Fireball: PixelLab flipbooks + synced light + pixel particles + aftermath
 # --------------------------------------------------------------------------
 

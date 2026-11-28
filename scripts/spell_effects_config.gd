@@ -267,6 +267,16 @@ func glow(kind: String) -> Dictionary:
 @export var mm_scorch_size := 0.7
 @export var mm_scorch_strength := 0.45
 
+@export_group("Chain lightning")
+@export var ltn_scale := 1.0                  # The bolt sheet is 144 art pixels tall: about floor to ceiling.
+@export var ltn_height := 0.92                # Its middle above the floor, so its foot (row 138) stands on the floor.
+@export var ltn_toward_party := 0.2           # Drawn this far in front of the struck tile's middle.
+@export var ltn_leap_seconds := 0.12          # Between one strike and the next.
+@export var ltn_leap_light := 0.7             # A leap's light and shake, as a share of the first strike's.
+@export var ltn_light_energy := PackedFloat32Array([1.0, 1.4, 2.0, 3.0, 12.0, 10.0, 3.0, 9.0, 4.0, 2.5, 1.5, 0.8, 0.2, 0.0])  # One value a frame.
+@export var ltn_light_range := 10.0
+@export var ltn_sparks := 12
+
 @export_group("Fireball light (synced to the animation)")
 ## One value for each animation frame (the light is blended between frames), so the walls catch what the sprite is doing.
 @export var fb_cast_light_energy := PackedFloat32Array([3.0, 5.0, 3.5, 1.5, 0.4])

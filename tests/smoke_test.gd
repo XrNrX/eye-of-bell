@@ -508,6 +508,18 @@ func _check_spells() -> void:
 	check("Fireball spends its mana", _spent_right(r))
 	dungeon.clear_monsters()
 
+	# Chain Lightning: the monster ahead, then two leaps to the nearest, each weaker; a fourth is left alone.
+	target = _monster("skeleton", AHEAD_2, 99)
+	var second: Node = _monster("skeleton", AHEAD_2 + Vector2i(1, 0), 99)
+	var third: Node = _monster("skeleton", AHEAD_2 + Vector2i(2, 0), 99)
+	var fourth: Node = _monster("skeleton", AHEAD_2 + Vector2i(3, 0), 99)
+	r = _cast("chain_lightning")
+	var lost := [99 - target.hp, 99 - second.hp, 99 - third.hp, 99 - fourth.hp]
+	check("Chain Lightning leaps twice, weaker each time (%s)" % [lost], r.cast and lost[0] >= 4 and lost[1] > 0
+			and lost[1] < lost[0] and lost[2] > 0 and lost[2] <= lost[1] and lost[3] == 0)
+	check("Chain Lightning spends its mana", _spent_right(r))
+	dungeon.clear_monsters()
+
 	# Heal: one hero.
 	_rest_everyone()
 	var hurt = party.members[0]

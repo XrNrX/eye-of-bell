@@ -24,6 +24,9 @@ enum Target { AHEAD, HERO, PARTY }  # First monster ahead / one hero you pick / 
 @export var buff_defence := 0    # Added to defence while it lasts.
 @export var duration := 0.0      # Seconds a buff lasts; recasting refreshes it.
 @export var rewinds_time := false  # PROTOTYPE (data/debug/rewind.tres, test room only): turns time back (scripts/debug/rewind.gd), which charges mana for every step itself.
+@export var chain_targets := 0   # AHEAD: after the first monster the strike leaps on to this many more, each from the last one struck...
+@export var chain_range := 0     # ...to the nearest within this many tiles (diagonals count one) with a clear line to it...
+@export var chain_percent := 0   # ...each leap doing this percent of the one before (of the plain roll: rounded up, at least 1). Never the party.
 @export var reach := 0           # AHEAD: how many tiles ahead it can reach (0: Party.MISSILE_RANGE; 1: only the tile in front).
 @export var recast_seconds := 0.0  # After a cast that took effect, this hero can't cast this spell again for this long.
 @export var applies_status: Resource  # AHEAD: a StatusDef put on the target for status_seconds (Hold Monster), rolled against
