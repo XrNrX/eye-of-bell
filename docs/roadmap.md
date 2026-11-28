@@ -196,7 +196,7 @@ Work down this list. It comes from Fable's expansion design (docs/design/expansi
 13. Phase 8b (Party screen)
 14. Phase C (New classes)
 
-Any time: 7b.8 (Dead weight), the webbed camp check (in Leftovers), 7f.3 to 7f.5 (more banter), VFX.10 and VFX.11, E.6 (Editor: curse zones, puzzles and ambushes, once 7e and 7d exist), E.7 (donjon import). Later: Phase 9.
+Any time: 7b.8 (Dead weight), the webbed camp check (in Leftovers), 7f.3 to 7f.5 (more banter), VFX.10 and VFX.11, E.6 (Editor: curse zones, puzzles and ambushes, once 7e and 7d exist), E.7 (donjon import), Phase 7m (Rewind). Later: Phase 9.
 
 ## Leftovers from finished phases
 
@@ -1739,6 +1739,73 @@ a full clear.
 ```
 
 Done when: you hesitate before throwing your last torch, argue with yourself about whether the fighter should give up his shield to carry it, and walk into a curse zone and feel the dark close in.
+
+## Phase 7m: Rewind
+
+Fennick turns time back to undo a death or a mistake. A prototype was built and approved on 28 Nov on the branch `wip/rewind-test` (`be8504e`, test room only, not merged): read it with `git show wip/rewind-test:scripts/debug/rewind.gd`.
+
+What the prototype settled:
+
+- A spell in Fennick's spellbook. Casting pauses the game and lists 5, 10 or 30 seconds, costing 4, 7 or 12 mana. A choice he can't afford, or longer than what is remembered, is refused and the list stays. Cancel, Esc or right-click costs nothing.
+- It turns back only the party (position, facing, HP, mana, buffs, food, sickness, shaken, oil, webs; a dead hero returns) and monsters within 20 tiles, straight line (position, HP, attack timing, statuses; the killed return).
+- It never touches doors, levers, plates, traps, puzzles, walls, braziers, sconces, oil, gas, floor items, run flags, inventories, cooldowns or recast waits.
+- Fennick's mana is not rewound: he keeps what he had at the cast, less the cost.
+- It is refused if a seal, a shut door or another body stands between the party and where it was.
+
+- [ ] 7m.1 Rewind rules into the combat page
+- [ ] 7m.2 Rewind in the real game
+- [ ] 7m.3 Look, sound and banter
+
+**7m.1 prompt (Rewind rules into the combat page)**
+
+```
+Write the rules in Phase 7m's "What the prototype settled" into
+docs/combat_design.md and the blueprint artifact. No code. First ask me,
+one list, and put my answers in too:
+- Does Fennick start with it, or find it (where)?
+- Are 4, 7 and 12 mana for 5, 10 and 30 seconds final?
+- Items used in the rewound time stay used (a drunk potion stays drunk):
+  keep that?
+- A dead Fennick can't cast it, and a wiped party goes to Game over:
+  keep that?
+- Any limit besides mana (once a fight, once a rest, a long recast)?
+- Does the prototype's held-key rewind (Backspace) go?
+Every one of these is to be checked and tried in the test room. Where an
+answer needs playing to decide, tell me how to try it there, and mark it
+on the combat page as still to be tested.
+```
+
+**7m.2 prompt (Rewind in the real game)**
+
+```
+Build Rewind for real from the combat page, using the prototype on
+wip/rewind-test as a reference. Don't merge the branch.
+- A spell in data/spells, available as 7m.1 decided, with an icon. Its
+  costs and radius are data.
+- Snapshots are kept in memory only, through the save_state() systems,
+  and cleared on a change of level, a load, a camp and the camp zone.
+- Check every kind of monster comes back correctly, the Cursed Warden
+  and held or burning monsters too, and that nothing can be duplicated:
+  drops, XP and kill events from a monster that returns.
+- Saving and loading still work. A test-room station, smoke checks, and
+  CLAUDE.md and docs/game_overview.md updated.
+Run the tests.
+```
+
+**7m.3 prompt (Look, sound and banter)**
+
+```
+Finish Rewind:
+- Replace the prototype's code-drawn grey scanlines with a PixelLab VFX
+  effect following docs/art_style.md (one first for my OK); log it.
+  Reduce flashing softens it.
+- A sound for the cast.
+- Banter (read docs/tone.md first; show me the lines): the party
+  half-remembers what was undone.
+Run the tests.
+```
+
+Done when: a bad death makes you reach for Rewind, and spending Fennick's whole mana bar on it hurts.
 
 ## Phase 8b: Character generator
 
