@@ -1742,11 +1742,11 @@ Done when: you hesitate before throwing your last torch, argue with yourself abo
 
 ## Phase 7m: Rewind
 
-Fennick turns time back to undo a death or a mistake. A prototype was built and approved on 28 Nov on the branch `wip/rewind-test` (`be8504e`, test room only, not merged): read it with `git show wip/rewind-test:scripts/debug/rewind.gd`.
+Fennick turns time back to undo a death or a mistake. A prototype was built and approved on 28 Nov on the branch `wip/rewind-test` (`843a7df`, test room only, not merged): read it with `git show wip/rewind-test:scripts/debug/rewind.gd`.
 
 What the prototype settled:
 
-- A spell in Fennick's spellbook. Casting pauses the game and lists 5, 10 or 30 seconds, costing 4, 7 or 12 mana. A choice he can't afford, or longer than what is remembered, is refused and the list stays. Cancel, Esc or right-click costs nothing.
+- A spell in Fennick's spellbook. Casting pauses the game and opens a pop-up on the present. The player steps back and forth by 0.5 s or 5 s (buttons or arrow keys, Shift for 5 s), seeing the party and monsters as they were, up to 30 s. TURN BACK (or Enter) keeps that moment and charges for it: 4 mana for 5 s, 7 for 10 s, 12 for 30 s, in between along the line, rounded up (0.5 s costs 1). A step he can't afford, or past what is remembered, is refused with the reason. Cancel, Esc or right-click puts the present back and costs nothing.
 - It turns back only the party (position, facing, HP, mana, buffs, food, sickness, shaken, oil, webs; a dead hero returns) and monsters within 20 tiles, straight line (position, HP, attack timing, statuses; the killed return).
 - It never touches doors, levers, plates, traps, puzzles, walls, braziers, sconces, oil, gas, floor items, run flags, inventories, cooldowns or recast waits.
 - Fennick's mana is not rewound: he keeps what he had at the cast, less the cost.
@@ -1763,7 +1763,8 @@ Write the rules in Phase 7m's "What the prototype settled" into
 docs/combat_design.md and the blueprint artifact. No code. First ask me,
 one list, and put my answers in too:
 - Does Fennick start with it, or find it (where)?
-- Are 4, 7 and 12 mana for 5, 10 and 30 seconds final?
+- Are the prices (1 mana for 0.5 s, 4 for 5 s, 7 for 10 s, 12 for 30 s)
+  final?
 - Items used in the rewound time stay used (a drunk potion stays drunk):
   keep that?
 - A dead Fennick can't cast it, and a wiped party goes to Game over:
