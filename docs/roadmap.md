@@ -1742,7 +1742,7 @@ Done when: you hesitate before throwing your last torch, argue with yourself abo
 
 ## Phase 7m: Rewind
 
-Fennick turns time back to undo a death or a mistake. A prototype was built and approved on 28 Nov on the branch `wip/rewind-test` (`843a7df`, test room only, not merged): read it with `git show wip/rewind-test:scripts/debug/rewind.gd`.
+Fennick turns time back to undo a death or a mistake. A prototype was built and approved on 28 Nov in the test room: `scripts/debug/rewind.gd` and `data/debug/rewind.tres` (first built on the branch `wip/rewind-test`).
 
 What the prototype settled:
 
@@ -1779,8 +1779,9 @@ on the combat page as still to be tested.
 **7m.2 prompt (Rewind in the real game)**
 
 ```
-Build Rewind for real from the combat page, using the prototype on
-wip/rewind-test as a reference. Don't merge the branch.
+Build Rewind for real from the combat page, using the test room
+prototype (scripts/debug/rewind.gd) as a reference. Remove the
+prototype when the real one works.
 - A spell in data/spells, available as 7m.1 decided, with an icon. Its
   costs and radius are data.
 - Snapshots are kept in memory only, through the save_state() systems,

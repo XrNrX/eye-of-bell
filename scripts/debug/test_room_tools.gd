@@ -32,6 +32,8 @@ const PACING_FIELDS := [["step_interval", "STEP"], ["reaction_delay", "REACTION"
 const PACING_STEP := 0.1
 const PACK_MONSTER := "res://data/monsters/skeleton.tres"
 const HOLD_SPELL := "res://data/spells/hold_monster.tres"
+const Rewind := preload("res://scripts/debug/rewind.gd")  # PROTOTYPE: hold Backspace to turn time back.
+var rewind: Node
 
 const INK := Color("0b0a10")
 const STONE_900 := Color("14131b")
@@ -75,6 +77,8 @@ func _ready() -> void:
 	if bus != null:
 		bus.fight_ended.connect(_on_fight_ended)
 	_build_help()
+	rewind = Rewind.new()
+	add_child(rewind)
 	_stock_backpacks.call_deferred()  # (Deferred: the party gives out its starting kit in its own _ready.)
 	_say("Test room. H shows the debug keys.")
 
@@ -580,6 +584,7 @@ func _refresh_help() -> void:
 		";   PACK AHEAD    9 HOLD  0 FREE",
 		"-   SHOW NEXT MONSTER HIT EFFECT",
 		"=   BURN LIGHTS DOWN",
+		"BKSP (HOLD)  REWIND (PROTOTYPE)",
 		",   WOUND AND DRAIN THE PARTY (CAMP TEST)",
 		".   MAKE CAMP WITHOUT A BEDROLL",
 		"\\   LIFT / RESTORE CURSE ZONE",
