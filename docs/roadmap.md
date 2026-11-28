@@ -2390,6 +2390,8 @@ Things built from chat prompts that no step above covers. All done; added so the
 - [x] Braziers light only from a torch taken out of a wall sconce or from a Fireball: no more candles, the party's own torches, thrown torches or burning oil; and a torch keeps its burn time when stowed by Shift+click (`d46ae81`)
 - [x] Editor: Esc in a built level asks "BACK TO THE EDITOR?" (Back to Editor, Keep Playing, Quit to Desktop) instead of offering the main menu (`a647f05`)
 - [x] Darts: a single dart is shown as one dart (new PixelLab art) on the floor, in the pack, hands, quick slots and in flight; two or more show the bundle (`a04b8c4`)
+- [x] Chain Lightning: a new Mage spell (5 mana, 4-9 damage, leaps to two more monsters), PixelLab bolt and icon; numbers not yet on the combat design page (`673cbd2`)
+- [x] Main menu buttons moved higher and toward the middle, in the Godot editor (`294acb6`)
 
 ## Ideas inbox
 
