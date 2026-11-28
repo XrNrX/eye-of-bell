@@ -1035,6 +1035,9 @@ func cast(slot: int, hand: int, spell: Resource, target_slot := -1) -> bool:
 		_say("Not enough mana.")
 		Events.send(get_tree(), "mana_low", [m.hero_index])
 		return false
+	if spell.rewinds_time:  # PROTOTYPE: the rewind node takes the mana step by step and starts the cooldown when it is over.
+		var rewind := get_tree().get_first_node_in_group("rewind")
+		return rewind != null and rewind.cast()
 	if spell.applies_status != null and spell.target == SpellDef.Target.AHEAD:  # Hold Monster: a status, no damage.
 		var status_text := _cast_status(m, spell)
 		if status_text == "":

@@ -23,6 +23,7 @@ enum Target { AHEAD, HERO, PARTY }  # First monster ahead / one hero you pick / 
 @export var buff_attack := 0     # HERO or PARTY: added to attack while it lasts.
 @export var buff_defence := 0    # Added to defence while it lasts.
 @export var duration := 0.0      # Seconds a buff lasts; recasting refreshes it.
+@export var rewinds_time := false  # PROTOTYPE (data/debug/rewind.tres, test room only): turns time back (scripts/debug/rewind.gd), which charges mana for every step itself.
 @export var reach := 0           # AHEAD: how many tiles ahead it can reach (0: Party.MISSILE_RANGE; 1: only the tile in front).
 @export var recast_seconds := 0.0  # After a cast that took effect, this hero can't cast this spell again for this long.
 @export var applies_status: Resource  # AHEAD: a StatusDef put on the target for status_seconds (Hold Monster), rolled against

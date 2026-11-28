@@ -321,3 +321,4 @@ None of these were made with the VFX suite, so they should be replaced.
 
 ## A single dart (28 Nov 2026, 2 generations)
 - `art/items/darts_single{,_floor,_hud}.png`: `create_image_pixflux`, 48x48 (seed 7501) and native 32x32 (seed 7502), no background, single colour outline: one upright dart, shown instead of the three-dart bundle for a stack of one (`ItemDef.single_icon` and friends). Pieces `tools/art/pieces/items48/darts_single.png` and `items32/darts_single.png`, installed with `add_item_art.py darts_single --steel` and `regrade_items.py`.
+- Rewind prototype (branch `wip/rewind-test`): the grey, scanlined view is a shader written in code (`scripts/debug/rewind.gd`).
