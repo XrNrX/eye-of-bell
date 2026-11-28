@@ -66,7 +66,7 @@ REMAPS = {
     "azure_brand": AZURE_STEEL,
     "cooked_rat_meat": COOKED_MEAT, "toasted_bread": TOASTED,
     "stale_bread": GRIM_FOOD, "hard_cheese": GRIM_CHEESE,
-    "short_sword": PLAIN_STEEL, "long_sword": PLAIN_STEEL, "flail": FLAIL_STEEL, "bow": BOW_WOOD, "arrow": PLAIN_STEEL, "dagger": PLAIN_STEEL, "mace": PLAIN_STEEL, "war_hammer": PLAIN_STEEL, "darts": PLAIN_STEEL,
+    "short_sword": PLAIN_STEEL, "long_sword": PLAIN_STEEL, "flail": FLAIL_STEEL, "bow": BOW_WOOD, "arrow": PLAIN_STEEL, "dagger": PLAIN_STEEL, "mace": PLAIN_STEEL, "war_hammer": PLAIN_STEEL, "darts": PLAIN_STEEL, "darts_single": PLAIN_STEEL,
     "bear_trap": RUSTY_TRAP, "bear_trap_armed": RUSTY_TRAP_ARMED,
     "torch": TORCH_WOOD, "candle": TORCH_WOOD, "mana_potion": MANA_POTION, "bedroll": TORCH_WOOD,
 }
@@ -74,7 +74,7 @@ REMAPS = {
 # double it. (The skeletons used to be listed here; their untouched copies in pieces/regrade_src/monsters are gone.)
 MONSTERS = {}
 # Hand and quick-slot icons made natively at 32x32 (tools/art/pieces/items32/): already outlined and steel-grey, so left alone.
-NATIVE32 = {"short_sword", "long_sword", "flail", "slingshot", "stone", "bow", "arrow", "war_hammer", "mace", "dagger", "darts", "bear_trap", "torch", "candle", "oil_flask", "mana_potion", "bedroll", "threadbare_robes", "cooked_rat_meat", "toasted_bread", "azure_brand", "hearth_coal"}
+NATIVE32 = {"short_sword", "long_sword", "flail", "slingshot", "stone", "bow", "arrow", "war_hammer", "mace", "dagger", "darts", "darts_single", "bear_trap", "torch", "candle", "oil_flask", "mana_potion", "bedroll", "threadbare_robes", "cooked_rat_meat", "toasted_bread", "azure_brand", "hearth_coal"}
 
 
 def source(rel):
@@ -103,7 +103,7 @@ def outlined(img):
 
 # Floor sprites of the items that were hard to see on a dark floor (under about 2.3:1 at two tiles): their dark pixels are lifted
 # one step and the lit top-left edge gets a pale rim just inside the outline.
-LIFT_FLOOR = {"cooked_rat_meat", "toasted_bread", "bedroll", "mace", "key", "darts", "spellbook", "dried_meat", "raw_rat_meat", "withered_apple", "holy_symbol", "war_hammer", "leather_armour"}
+LIFT_FLOOR = {"cooked_rat_meat", "toasted_bread", "bedroll", "mace", "key", "darts", "darts_single", "spellbook", "dried_meat", "raw_rat_meat", "withered_apple", "holy_symbol", "war_hammer", "leather_armour"}
 LIFT = {"stone_800": "stone_700", "stone_700": "stone_500", "stone_500": "stone_300", "wood_700": "wood_500", "wood_500": "leather_400",
         "rust_700": "rust_500", "rust_500": "rust_300", "moss_700": "moss_500", "soil_900": "wood_700", "bruise_700": "bruise_500",
         "blood_700": "blood_500", "curse_700": "curse_500"}

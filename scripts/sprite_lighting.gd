@@ -24,6 +24,9 @@ func _process(_delta: float) -> void:
 	for cell in dungeon.items:
 		var sprite: Node3D = dungeon.items[cell].sprite
 		var top_def: Resource = dungeon.items[cell].pile.back().def
+		var picture: Texture2D = top_def.floor_texture(dungeon.items[cell].pile.back().count)  # Part of a stack may have been taken: one left looks like one.
+		if sprite.texture != picture:
+			sprite.texture = picture
 		sprite.modulate = light_at(sprite.global_position, cell, lights) * top_def.glow_tint  # (A glowing item's tint: ItemDef.glow_tint.)
 	if dungeon.get("braziers") != null:
 		for cell in dungeon.braziers.braziers:

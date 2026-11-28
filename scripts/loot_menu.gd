@@ -72,7 +72,7 @@ func setup(a_party: Node, a_dungeon: Node, a_player: Node, a_cell: Vector2i) -> 
 	head.add_theme_constant_override("separation", 6)
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(head)
-	var head_icon := _icon(stack.def.shown_icon(), true)
+	var head_icon := _icon(stack.def.shown_icon(stack.count), true)
 	head.add_child(head_icon)
 	LegendaryMark.sync(head_icon, stack)
 	if stack.def.legendary:

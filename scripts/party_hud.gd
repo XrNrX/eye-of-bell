@@ -311,7 +311,7 @@ func _show_hand(m, i: int, hand: TextureButton) -> void:
 	var stack = m.hands[i]
 	var tex: Texture2D = m.def.hand_icon
 	if stack:
-		tex = stack.def.hud_texture()
+		tex = stack.def.hud_texture(stack.count)
 	if hand.texture_normal != tex:
 		hand.texture_normal = tex
 	hand.get_child(0).set_count(stack.count if stack else 0)

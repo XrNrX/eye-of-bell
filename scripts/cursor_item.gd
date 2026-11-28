@@ -65,6 +65,8 @@ func add(piece: RefCounted) -> void:
 
 ## Redraw after the held stack's count changed.
 func refresh() -> void:
+	if held:
+		icon.texture = held.def.shown_icon(held.count)  # The count may have changed: one dart looks like one.
 	count_label.set_count(held.count if held else 0)
 
 
@@ -72,7 +74,7 @@ func refresh() -> void:
 ## (the whole stack) or a plain ItemDef (a stack of one).
 func hold(item) -> void:
 	held = ItemStack.wrap(item)
-	icon.texture = held.def.shown_icon()
+	icon.texture = held.def.shown_icon(held.count)
 	icon.size = icon.texture.get_size()
 	refresh()
 	_follow_mouse()  # Appear at the mouse straight away, not at the old spot for a frame.

@@ -962,7 +962,7 @@ func _pile_news(cell: Vector2i) -> void:
 
 func _show_top(entry: Dictionary) -> void:
 	var def: Resource = entry.pile.back().def
-	entry.sprite.texture = def.floor_icon if def.floor_icon else def.icon  # The small floor version.
+	entry.sprite.texture = def.floor_texture(entry.pile.back().count)  # The small floor version.
 	entry.sprite.pixel_size = def.icon_pixel_size
 	_sync_glow(entry.sprite, def)
 
@@ -991,7 +991,7 @@ func _sync_glow(sprite: Node3D, def: Resource) -> void:
 func show_throw(from_cell: Vector2i, to_cell: Vector2i, def: Resource) -> void:
 	var sprite := Sprite3D.new()
 	sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	sprite.texture = def.floor_icon if def.floor_icon else def.icon
+	sprite.texture = def.floor_texture(1)  # What flies is always a single one.
 	sprite.pixel_size = def.icon_pixel_size
 	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	sprite.billboard = BaseMaterial3D.BILLBOARD_ENABLED

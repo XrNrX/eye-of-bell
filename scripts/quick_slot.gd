@@ -113,7 +113,7 @@ func refresh() -> void:
 	tooltip_text = "Quick slot (key %d)" % (member_slot * 2 + index + 1)
 	if item:
 		var def: Resource = item.def
-		icon.texture = def.hud_texture()  # 32x32 fills the frame's inside; a smaller (24x24) icon sits centred. Never scaled.
+		icon.texture = def.hud_texture(item.count)  # 32x32 fills the frame's inside; a smaller (24x24) icon sits centred. Never scaled.
 		icon.stretch_mode = TextureRect.STRETCH_KEEP_CENTERED
 		if def.legendary:
 			tooltip_text = "%s\n%s\n%s" % [def.display_name, def.legend_text(), tooltip_text]

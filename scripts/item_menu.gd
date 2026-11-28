@@ -62,7 +62,7 @@ func setup(a_screen: Node, a_slot: Node) -> void:
 	head.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(head)
 	var icon := TextureRect.new()
-	icon.texture = stack.def.shown_icon()
+	icon.texture = stack.def.shown_icon(stack.count)
 	icon.custom_minimum_size = Vector2(ICON_SIZE, ICON_SIZE)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_SCALE

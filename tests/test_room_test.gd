@@ -318,6 +318,55 @@ func _check_runes(tools: Node, player: Node) -> void:
 	get_first_node_in_group("banter").reset_timers()
 
 
+## One dart looks like one dart (floor, cursor, quick slot, hand), two or more like the bundle.
+func _check_single_dart() -> void:
+	var dungeon: Node = get_first_node_in_group("dungeon")
+	var party: Node = get_first_node_in_group("party")
+	var cursor: Node = get_first_node_in_group("cursor")
+	var darts: Resource = load("res://data/items/darts.tres")
+	var Stack := preload("res://scripts/item_stack.gd")
+	check("darts have art for one, different from the bundle's", darts.single_icon != null and darts.hud_texture(1) == darts.single_hud_icon and darts.hud_texture(2) == darts.hud_icon
+			and darts.shown_icon(1) == darts.single_icon and darts.shown_icon(5) == darts.icon and darts.floor_texture(1) == darts.single_floor_icon and darts.floor_texture(3) == darts.floor_icon)
+	var other: Resource = load("res://data/items/dagger.tres")
+	check("an item without it keeps its one picture", other.floor_texture(1) == other.floor_icon and other.shown_icon(1) == other.icon)
+	var at := Vector2i(6, 6)
+	dungeon.set_pile(at, [])
+	dungeon.place_item(at, Stack.of(darts, 1))
+	check("one dart on the floor lies as one", dungeon.items[at].sprite.texture == darts.single_floor_icon)
+	dungeon.place_item(at, Stack.of(darts, 1))
+	check("a second landing on it makes the bundle", dungeon.items[at].sprite.texture == darts.floor_icon and dungeon.item_at(at).count == 2)
+	dungeon.item_at(at).count = 1
+	await process_frame
+	await process_frame
+	check("and taking one back off leaves one", dungeon.items[at].sprite.texture == darts.single_floor_icon)
+	dungeon.set_pile(at, [])
+	if cursor.is_holding():
+		cursor.release()
+	cursor.hold(Stack.of(darts, 3))
+	var bundle: bool = cursor.icon.texture == darts.icon
+	cursor.held.count = 1
+	cursor.refresh()
+	check("on the cursor too", bundle and cursor.icon.texture == darts.single_icon)
+	cursor.release()
+	var m: Variant = party.members[0]
+	var keep: Variant = m.quick[0]
+	var keep_hand: Variant = m.hands[1]
+	party.set_quick(m.slot, 0, Stack.of(darts, 1))
+	m.hands[1] = Stack.of(darts, 1)
+	await process_frame
+	await process_frame
+	var hud: Node = get_first_node_in_group("party_hud")
+	var found_quick := false
+	var found_hand := false
+	for node in hud.find_children("*", "TextureRect", true, false):
+		found_quick = found_quick or node.texture == darts.single_hud_icon
+	for node in hud.find_children("*", "TextureButton", true, false):
+		found_hand = found_hand or node.texture_normal == darts.single_hud_icon
+	check("and in a quick slot and a hand", found_quick and found_hand)
+	party.set_quick(m.slot, 0, keep)
+	m.hands[1] = keep_hand
+
+
 ## The monster pacing station: its tuning keys, the pack, and flanking (one monster at a time, only after being held back).
 func _check_pacing(tools: Node, press: Callable, player: Node) -> void:
 	for n in get_nodes_in_group("monsters"):
@@ -769,6 +818,7 @@ func _check_game() -> void:
 	press.call(KEY_N)
 	check("N toggles fog without touching the saved setting", tools.fog_on != fog_before and Settings.fog == fog_before)
 	await _check_pacing(tools, press, player)
+	await _check_single_dart()
 	await _check_pen(tools, player)
 	await _check_braziers(tools, player)
 	await _check_runes(tools, player)

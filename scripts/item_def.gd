@@ -23,6 +23,10 @@ enum Magic { NONE, ARCANE, DIVINE }
 @export var hud_icon: Texture2D      # Small version for the party panel's hand and quick slots (also 2x); falls back to icon.
 @export var floor_icon: Texture2D    # Sprite in the 3D world (NOT enlarged: that view is shown at 2x); falls back to icon.
 @export var icon_pixel_size := 0.03  # World units per pixel of the floor sprite.
+## Art for a stack of exactly one, when the ordinary art draws a bundle (darts): each is used in place of icon / hud_icon / floor_icon.
+@export var single_icon: Texture2D
+@export var single_hud_icon: Texture2D
+@export var single_floor_icon: Texture2D
 @export var max_stack := 1          # How many identical items share one backpack or quick slot (1 = never stacks).
 @export var tags: PackedStringArray = []  # Words a puzzle can ask for on an altar ("bone", "cursed"): the item_on_altar condition.
 
@@ -142,13 +146,22 @@ static func allowed_in_hand(item_type: Type) -> bool:
 
 
 ## The icon for the party panel's hand and quick slots (with the item's glow tint, if it has one).
-func hud_texture() -> Texture2D:
+func hud_texture(count := 0) -> Texture2D:
+	if count == 1 and single_hud_icon != null:
+		return _tinted(single_hud_icon)
 	return _tinted(hud_icon if hud_icon else icon)
 
 
 ## The inventory icon (with the item's glow tint, if it has one): what the slots, the cursor and the loot pop-up draw.
-func shown_icon() -> Texture2D:
-	return _tinted(icon)
+func shown_icon(count := 0) -> Texture2D:
+	return _tinted(single_icon if count == 1 and single_icon != null else icon)
+
+
+## The sprite in the 3D world for a stack of `count` (not tinted here: sprite_lighting.gd does that).
+func floor_texture(count := 0) -> Texture2D:
+	if count == 1 and single_floor_icon != null:
+		return single_floor_icon
+	return floor_icon if floor_icon else icon
 
 
 ## Does this item glow (a tint or a floor light)?

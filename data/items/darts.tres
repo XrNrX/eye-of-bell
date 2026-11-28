@@ -1,9 +1,13 @@
-[gd_resource type="Resource" load_steps=5 format=3]
+[gd_resource type="Resource" load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/item_def.gd" id="1_def"]
 [ext_resource type="Texture2D" path="res://art/items/darts.png" id="2_icon"]
 [ext_resource type="Texture2D" path="res://art/items/darts_floor.png" id="3_floor"]
 [ext_resource type="Texture2D" path="res://art/items/darts_hud.png" id="90_hud"]
+
+[ext_resource type="Texture2D" path="res://art/items/darts_single.png" id="91_one"]
+[ext_resource type="Texture2D" path="res://art/items/darts_single_hud.png" id="92_onehud"]
+[ext_resource type="Texture2D" path="res://art/items/darts_single_floor.png" id="93_onefloor"]
 
 [resource]
 script = ExtResource("1_def")
@@ -13,6 +17,9 @@ icon = ExtResource("2_icon")
 floor_icon = ExtResource("3_floor")
 hud_icon = ExtResource("90_hud")
 icon_pixel_size = 0.01
+single_icon = ExtResource("91_one")
+single_hud_icon = ExtResource("92_onehud")
+single_floor_icon = ExtResource("93_onefloor")
 max_stack = 10
 throw_damage_min = 1
 throw_damage_max = 3

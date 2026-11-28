@@ -318,3 +318,6 @@ None of these were made with the VFX suite, so they should be replaced.
 
 ## 7e.4 darkness runes (27 Nov 2026, 0 generations: the VFX tool is free)
 - `art/runes/rune_sheet.png` (+ `.json`; 12 frames of 160x160, 8 fps, looping) and `rune_fade_sheet.png` (3 frames): the VFX tool's 'Darkness runes' (effect `6e1baa55-c90a-4d06-8d76-9c0caf753425`: a ring of runes round three linked circles, no start or end, curse greens), atlas in `tools/art/pieces/runes/runes.png` + `.json`; `tools/art/gen_runes.py` makes the fade frames by moving the greens to darker palette steps. The opening reuses the corrupted wall's rot and ash.
+
+## A single dart (28 Nov 2026, 2 generations)
+- `art/items/darts_single{,_floor,_hud}.png`: `create_image_pixflux`, 48x48 (seed 7501) and native 32x32 (seed 7502), no background, single colour outline: one upright dart, shown instead of the three-dart bundle for a stack of one (`ItemDef.single_icon` and friends). Pieces `tools/art/pieces/items48/darts_single.png` and `items32/darts_single.png`, installed with `add_item_art.py darts_single --steel` and `regrade_items.py`.
